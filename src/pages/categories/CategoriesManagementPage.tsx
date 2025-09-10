@@ -1,13 +1,43 @@
 import React, { useState, useEffect } from 'react';
 
-const CategoriesManagementPage = () => {
-  const [categories, setCategories] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [expandedCategories, setExpandedCategories] = useState(['1']);
+interface Category {
+  id: number;
+  name: string;
+  nameEng?: string;
+  description?: string;
+  parentId?: number | null;
+  sortOrder: number;
+  status: 'active' | 'inactive';
+  icon?: string;
+  slug?: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  level?: number;
+  productsCount?: number;
+  children?: Category[];
+}
 
-  const [formData, setFormData] = useState({
+interface FormData {
+  name: string;
+  nameEng: string;
+  description: string;
+  parentId: number | null;
+  sortOrder: number;
+  status: 'active' | 'inactive';
+  icon: string;
+  slug: string;
+  seoTitle: string;
+  seoDescription: string;
+}
+
+const CategoriesManagementPage: React.FC = () => {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [expandedCategories, setExpandedCategories] = useState<string[]>(['1']);
+
+  const [formData, setFormData] = useState<FormData>({
     name: '',
     nameEng: '',
     description: '',
@@ -22,7 +52,7 @@ const CategoriesManagementPage = () => {
 
   // 초기 데이터 로드
   useEffect(() => {
-    const sampleCategories = [
+    const sampleCategories: Category[] = [
       {
         id: 1,
         name: '전자제품',
@@ -204,7 +234,7 @@ const CategoriesManagementPage = () => {
     setCategories(sampleCategories);
   }, []);
 
-  const handleInputChange = (field, value) => {
+  const handleInputChange = (field: keyof FormData, value: string | number | null) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -217,7 +247,7 @@ const CategoriesManagementPage = () => {
       return;
     }
 
-    const newCategory = {
+    const newCategory: Category = {
       id: editingCategory ? editingCategory.id : Date.now(),
       ...formData,
       level: formData.parentId ? getLevel(formData.parentId) + 1 : 0,
@@ -229,7 +259,7 @@ const CategoriesManagementPage = () => {
       setCategories(prev => updateCategoryInTree(prev, newCategory));
     } else {
       if (formData.parentId) {
-        setCategories(prev => addChildCategory(prev, formData.parentId, newCategory));
+        setCategories(prev => addChildCategory(prev, formData.parentId!, newCategory));
       } else {
         setCategories(prev => [...prev, newCategory]);
       }
@@ -238,11 +268,11 @@ const CategoriesManagementPage = () => {
     handleCloseModal();
   };
 
-  const getLevel = (parentId) => {
-    const findLevel = (categories, id) => {
+  const getLevel = (parentId: number): number => {
+    const findLevel = (categories: Category[], id: number): number => {
       for (let category of categories) {
         if (category.id === id) {
-          return category.level;
+          return category.level || 0;
         }
         if (category.children) {
           const level = findLevel(category.children, id);
@@ -254,7 +284,7 @@ const CategoriesManagementPage = () => {
     return findLevel(categories, parentId);
   };
 
-  const updateCategoryInTree = (categories, updatedCategory) => {
+  const updateCategoryInTree = (categories: Category[], updatedCategory: Category): Category[] => {
     return categories.map(category => {
       if (category.id === updatedCategory.id) {
         return { ...updatedCategory, children: category.children };
@@ -269,7 +299,7 @@ const CategoriesManagementPage = () => {
     });
   };
 
-  const addChildCategory = (categories, parentId, newCategory) => {
+  const addChildCategory = (categories: Category[], parentId: number, newCategory: Category): Category[] => {
     return categories.map(category => {
       if (category.id === parentId) {
         return {
@@ -287,13 +317,13 @@ const CategoriesManagementPage = () => {
     });
   };
 
-  const handleEdit = (category) => {
+  const handleEdit = (category: Category) => {
     setEditingCategory(category);
     setFormData({
       name: category.name,
       nameEng: category.nameEng || '',
       description: category.description || '',
-      parentId: category.parentId,
+      parentId: category.parentId || null,
       sortOrder: category.sortOrder,
       status: category.status,
       icon: category.icon || '',
@@ -304,13 +334,13 @@ const CategoriesManagementPage = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = (categoryId) => {
+  const handleDelete = (categoryId: number) => {
     if (window.confirm('정말로 이 카테고리를 삭제하시겠습니까? 하위 카테고리도 함께 삭제됩니다.')) {
       setCategories(prev => deleteCategoryFromTree(prev, categoryId));
     }
   };
 
-  const deleteCategoryFromTree = (categories, categoryId) => {
+  const deleteCategoryFromTree = (categories: Category[], categoryId: number): Category[] => {
     return categories.filter(category => {
       if (category.id === categoryId) {
         return false;
@@ -339,7 +369,7 @@ const CategoriesManagementPage = () => {
     });
   };
 
-  const toggleExpanded = (categoryId) => {
+  const toggleExpanded = (categoryId: string) => {
     setExpandedCategories(prev => 
       prev.includes(categoryId)
         ? prev.filter(id => id !== categoryId)
@@ -347,8 +377,8 @@ const CategoriesManagementPage = () => {
     );
   };
 
-  const getFlatCategories = (categories, level = 0) => {
-    let result = [];
+  const getFlatCategories = (categories: Category[], level: number = 0): Category[] => {
+    let result: Category[] = [];
     for (let category of categories) {
       result.push({ ...category, level });
       if (category.children && expandedCategories.includes(category.id.toString())) {
@@ -358,8 +388,8 @@ const CategoriesManagementPage = () => {
     return result;
   };
 
-  const getAllCategories = (categories) => {
-    let result = [];
+  const getAllCategories = (categories: Category[]): Category[] => {
+    let result: Category[] = [];
     for (let category of categories) {
       result.push(category);
       if (category.children) {
@@ -370,7 +400,7 @@ const CategoriesManagementPage = () => {
   };
 
   const filteredCategories = categories.filter(category => {
-    const searchInCategory = (cat) => {
+    const searchInCategory = (cat: Category): boolean => {
       const matches = cat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                      (cat.nameEng && cat.nameEng.toLowerCase().includes(searchTerm.toLowerCase()));
       if (matches) return true;
@@ -458,7 +488,7 @@ const CategoriesManagementPage = () => {
               {flatCategories.map((category) => (
                 <tr key={category.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center" style={{ marginLeft: `${category.level * 24}px` }}>
+                    <div className="flex items-center" style={{ marginLeft: `${(category.level || 0) * 24}px` }}>
                       {category.children && category.children.length > 0 && (
                         <button
                           onClick={() => toggleExpanded(category.id.toString())}
@@ -577,7 +607,7 @@ const CategoriesManagementPage = () => {
                     <option value="">최상위 카테고리</option>
                     {allCategories.filter(cat => cat.id !== editingCategory?.id).map(category => (
                       <option key={category.id} value={category.id}>
-                        {'  '.repeat(category.level)}{category.name}
+                        {'  '.repeat(category.level || 0)}{category.name}
                       </option>
                     ))}
                   </select>
@@ -590,7 +620,7 @@ const CategoriesManagementPage = () => {
                   <textarea
                     value={formData.description}
                     onChange={(e) => handleInputChange('description', e.target.value)}
-                    rows="2"
+                    rows={2}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -618,7 +648,7 @@ const CategoriesManagementPage = () => {
                       value={formData.sortOrder}
                       onChange={(e) => handleInputChange('sortOrder', parseInt(e.target.value) || 1)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      min="1"
+                      min={1}
                     />
                   </div>
 
@@ -628,7 +658,7 @@ const CategoriesManagementPage = () => {
                     </label>
                     <select
                       value={formData.status}
-                      onChange={(e) => handleInputChange('status', e.target.value)}
+                      onChange={(e) => handleInputChange('status', e.target.value as 'active' | 'inactive')}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="active">활성</option>
@@ -669,7 +699,7 @@ const CategoriesManagementPage = () => {
                   <textarea
                     value={formData.seoDescription}
                     onChange={(e) => handleInputChange('seoDescription', e.target.value)}
-                    rows="2"
+                    rows={2}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>

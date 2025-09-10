@@ -1,27 +1,26 @@
-export interface IUser {
-  id: string;
-  username: string;
-  email: string;
-  role: 'admin' | 'manager' | 'user';
-  createdAt: Date;
-  lastLogin?: Date;
-}
+import { User as IUser } from '../types/database';
+
+export type { IUser };
 
 export class User implements IUser {
   public id: string;
+  public createdAt: Date;
+  public updatedAt: Date;
   public username: string;
   public email: string;
   public role: 'admin' | 'manager' | 'user';
-  public createdAt: Date;
   public lastLogin?: Date;
+  public isActive: boolean;
 
   constructor(data: Partial<IUser>) {
     this.id = data.id || '';
+    this.createdAt = data.createdAt || new Date();
+    this.updatedAt = data.updatedAt || new Date();
     this.username = data.username || '';
     this.email = data.email || '';
     this.role = data.role || 'user';
-    this.createdAt = data.createdAt || new Date();
     this.lastLogin = data.lastLogin;
+    this.isActive = data.isActive !== undefined ? data.isActive : true;
   }
 
   public isAdmin(): boolean {

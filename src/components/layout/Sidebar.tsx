@@ -17,14 +17,9 @@ const menuItems: MenuItem[] = [
     label: '상품 관리',
     children: [
       { id: 'products-list', label: '상품 목록' },
-      { id: 'products-add', label: '상품 등록' },
       { id: 'products-csv', label: 'CSV 상품 등록' },
       { id: 'products-import', label: '외부 쇼핑몰 상품 가져오기' }
     ]
-  },
-  {
-    id: 'orders',
-    label: '주문 관리'
   },
   {
     id: 'malls',
@@ -43,10 +38,6 @@ const menuItems: MenuItem[] = [
       { id: 'basic-brands', label: '브랜드 관리' },
       { id: 'basic-categories', label: '카테고리 관리' }
     ]
-  },
-  {
-    id: 'dashboard',
-    label: '대시보드'
   }
 ];
 

@@ -5,48 +5,62 @@ import Sidebar from './components/layout/Sidebar';
 import Dashboard from './pages/dashboard/Dashboard';
 import ProductsListPage from './pages/products/ProductsListPage';
 import ProductsAddPage from './pages/products/ProductsAddPage';
+import ProductDetailPage from './pages/products/ProductDetailPage';
 import ProductCsvUploadPage from './pages/products/ProductCsvUploadPage';
-import ProductImportPage from './pages/products/ProductImportPage';
+import ExternalProductImportPage from './pages/products/ExternalProductImportPage';
 import BasicBrandsPage from './pages/products/BasicBrandsPage';
 import OrderList from './pages/orders/OrderList';
 import MallsListPage from './pages/malls/MallsListPage';
+import MallProductsPage from './pages/malls/MallProductsPage';
+import MallInfoManagementPage from './pages/malls/MallInfoManagementPage';
+import CategoryMappingPage from './pages/malls/CategoryMappingPage';
+import CategoriesManagementPage from './pages/categories/CategoriesManagementPage';
 
-type Page = 'dashboard' | 'products' | 'products-list' | 'products-add' | 'products-csv' | 'products-import' |
+type Page = 'dashboard' | 'products' | 'products-list' | 'products-add' | 'products-detail' | 'products-csv' | 'products-import' |
            'orders' | 'malls' | 'malls-products' | 'malls-info' | 'malls-category-mapping' |
            'basic' | 'basic-brands' | 'basic-categories';
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = React.useState<Page>('products-list');
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [currentProductId, setCurrentProductId] = React.useState<number | undefined>(undefined);
   
   const mockUser = {
     username: '관리자',
     role: 'Admin'
   };
 
+  const handleNavigate = (page: string, productId?: number) => {
+    setCurrentPage(page as Page);
+    if (productId) setCurrentProductId(productId);
+  };
+
   const renderContent = () => {
     switch (currentPage) {
       case 'products-list':
-        return <ProductsListPage />;
+        return <ProductsListPage onNavigate={handleNavigate} />;
       case 'products-add':
-        return <ProductsAddPage />;
+        return <ProductsAddPage onNavigate={handleNavigate} />;
+      case 'products-detail':
+        return <ProductDetailPage onNavigateToList={() => setCurrentPage('products-list')} />;
       case 'products-csv':
         return <ProductCsvUploadPage />;
       case 'products-import':
-        return <ProductImportPage />;
+        return <ExternalProductImportPage />;
       case 'orders':
         return <OrderList />;
       case 'malls':
         return <MallsListPage />;
       case 'malls-products':
-        return <div className="p-6"><h1 className="text-2xl font-bold">쇼핑몰별 상품 관리</h1><p className="mt-2 text-gray-600">쇼핑몰별 상품 관리 페이지입니다.</p></div>;
+        return <MallProductsPage />;
       case 'malls-info':
-        return <div className="p-6"><h1 className="text-2xl font-bold">쇼핑몰별 부가 정보 관리</h1><p className="mt-2 text-gray-600">쇼핑몰별 부가 정보 관리 페이지입니다.</p></div>;
+        return <MallInfoManagementPage />;
       case 'malls-category-mapping':
-        return <div className="p-6"><h1 className="text-2xl font-bold">카테고리 매핑</h1><p className="mt-2 text-gray-600">쇼핑몰 카테고리 매핑 페이지입니다.</p></div>;
+        return <CategoryMappingPage />;
       case 'basic-brands':
         return <BasicBrandsPage />;
       case 'basic-categories':
-        return <div className="p-6"><h1 className="text-2xl font-bold">카테고리 관리</h1><p className="mt-2 text-gray-600">기초 카테고리 관리 페이지입니다.</p></div>;
+        return <CategoriesManagementPage />;
       case 'dashboard':
         return <Dashboard />;
       default:

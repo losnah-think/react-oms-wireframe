@@ -1,88 +1,112 @@
 import React, { useState, useEffect } from 'react';
 
-const MallProductsPage = () => {
+interface Mall {
+  id: string;
+  name: string;
+  status: 'active' | 'inactive';
+  totalProducts: number;
+}
+
+interface MallProduct {
+  id: number;
+  productId: string;
+  name: string;
+  mallProductId: string;
+  mallProductName: string;
+  price: number;
+  mallPrice: number;
+  stock: number;
+  mallStock: number;
+  status: 'active' | 'inactive';
+  syncStatus: 'synced' | 'price_diff' | 'stock_diff' | 'out_of_stock' | 'error';
+  lastSync: string;
+  mallUrl: string;
+  category: string;
+}
+
+const MallProductsPage: React.FC = () => {
   const [selectedMall, setSelectedMall] = useState('');
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState<MallProduct[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
-  const [malls] = useState([
-    { id: 'coupang', name: '쿠팡', status: 'active', totalProducts: 1245 },
-    { id: 'gmarket', name: 'G마켓', status: 'active', totalProducts: 856 },
-    { id: 'auction', name: '옥션', status: 'active', totalProducts: 634 },
+  const malls: Mall[] = [
+    { id: 'naver', name: '네이버 스마트스토어', status: 'active', totalProducts: 1245 },
+    { id: 'coupang', name: '쿠팡', status: 'active', totalProducts: 856 },
+    { id: 'gmarket', name: 'G마켓', status: 'active', totalProducts: 634 },
     { id: '11st', name: '11번가', status: 'active', totalProducts: 423 },
-    { id: 'interpark', name: '인터파크', status: 'active', totalProducts: 289 },
-    { id: 'wemakeprice', name: '위메프', status: 'inactive', totalProducts: 156 }
-  ]);
+    { id: 'wemakeprice', name: '위메프', status: 'active', totalProducts: 289 },
+    { id: 'cafe24', name: '카페24', status: 'inactive', totalProducts: 156 }
+  ];
 
-  const [sampleProducts] = useState([
+  const sampleProducts: MallProduct[] = [
     {
       id: 1,
-      productId: 'PROD001',
-      name: 'iPhone 15 Pro 256GB',
-      mallProductId: 'COUP001',
-      mallProductName: '[Apple] 아이폰 15 프로 256GB 자연 티타늄',
-      price: 1550000,
-      mallPrice: 1480000,
-      stock: 45,
-      mallStock: 40,
+      productId: 'SAMSUNG-S24U-001',
+      name: '삼성 갤럭시 S24 Ultra',
+      mallProductId: 'NAVER001',
+      mallProductName: '[삼성전자] 갤럭시 S24 울트라 256GB 티타늄 그레이',
+      price: 1299000,
+      mallPrice: 1299000,
+      stock: 25,
+      mallStock: 25,
       status: 'active',
       syncStatus: 'synced',
-      lastSync: '2024-09-10 14:30:00',
-      mallUrl: 'https://coupang.com/products/123456',
+      lastSync: '2025-01-20 14:30:00',
+      mallUrl: 'https://smartstore.naver.com/products/123456',
       category: '전자제품 > 스마트폰'
     },
     {
       id: 2,
-      productId: 'PROD002',
-      name: '삼성 갤럭시 S24 Ultra',
-      mallProductId: 'COUP002',
-      mallProductName: '[삼성] 갤럭시 S24 울트라 512GB 타이타늄 그레이',
-      price: 1790000,
-      mallPrice: 1690000,
-      stock: 23,
-      mallStock: 20,
+      productId: 'LG-GRAM17-001',
+      name: 'LG 그램 17인치 노트북',
+      mallProductId: 'NAVER002',
+      mallProductName: '[LG전자] 그램 17인치 i7 16GB 1TB 스노우 화이트',
+      price: 2290000,
+      mallPrice: 2190000,
+      stock: 8,
+      mallStock: 8,
       status: 'active',
       syncStatus: 'price_diff',
-      lastSync: '2024-09-10 14:25:00',
-      mallUrl: 'https://coupang.com/products/123457',
-      category: '전자제품 > 스마트폰'
-    },
-    {
-      id: 3,
-      productId: 'PROD003',
-      name: 'MacBook Pro 14인치',
-      mallProductId: 'COUP003',
-      mallProductName: '[Apple] 맥북 프로 14인치 M3 Pro 칩 512GB',
-      price: 2890000,
-      mallPrice: 2790000,
-      stock: 12,
-      mallStock: 12,
-      status: 'active',
-      syncStatus: 'stock_diff',
-      lastSync: '2024-09-10 14:20:00',
-      mallUrl: 'https://coupang.com/products/123458',
+      lastSync: '2025-01-20 14:25:00',
+      mallUrl: 'https://smartstore.naver.com/products/123457',
       category: '전자제품 > 노트북'
     },
     {
+      id: 3,
+      productId: 'DYSON-V15D-001',
+      name: '다이슨 V15 디텍트 무선청소기',
+      mallProductId: 'NAVER003',
+      mallProductName: '[다이슨] V15 디텍트 무선청소기 골드/퍼플',
+      price: 899000,
+      mallPrice: 899000,
+      stock: 15,
+      mallStock: 12,
+      status: 'active',
+      syncStatus: 'stock_diff',
+      lastSync: '2025-01-20 14:20:00',
+      mallUrl: 'https://smartstore.naver.com/products/123458',
+      category: '가전제품 > 청소기'
+    },
+    {
       id: 4,
-      productId: 'PROD004',
-      name: '나이키 에어맥스 270',
-      mallProductId: 'COUP004',
-      mallProductName: '[Nike] 나이키 에어맥스 270 블랙/화이트',
-      price: 189000,
-      mallPrice: 169000,
+      productId: 'AP-SHS-JA001',
+      name: '아모레퍼시픽 설화수 자음생크림',
+      mallProductId: 'NAVER004',
+      mallProductName: '[설화수] 자음생크림 60ml 정품',
+      price: 195000,
+      mallPrice: 195000,
       stock: 0,
       mallStock: 0,
       status: 'inactive',
       syncStatus: 'out_of_stock',
-      lastSync: '2024-09-10 14:15:00',
-      mallUrl: 'https://coupang.com/products/123459',
-      category: '패션/의류 > 신발'
+      lastSync: '2025-01-20 14:15:00',
+      mallUrl: 'https://smartstore.naver.com/products/123459',
+      category: '화장품/뷰티 > 스킨케어'
     }
-  ]);
+  ];
 
   useEffect(() => {
     if (selectedMall) {
@@ -90,10 +114,10 @@ const MallProductsPage = () => {
     } else {
       setProducts([]);
     }
-  }, [selectedMall, sampleProducts]);
+  }, [selectedMall]);
 
-  const getSyncStatusInfo = (status) => {
-    const statusMap = {
+  const getSyncStatusInfo = (status: string) => {
+    const statusMap: Record<string, { text: string; color: string }> = {
       'synced': { text: '동기화됨', color: 'bg-green-100 text-green-800' },
       'price_diff': { text: '가격 차이', color: 'bg-yellow-100 text-yellow-800' },
       'stock_diff': { text: '재고 차이', color: 'bg-orange-100 text-orange-800' },
@@ -103,12 +127,12 @@ const MallProductsPage = () => {
     return statusMap[status] || { text: status, color: 'bg-gray-100 text-gray-800' };
   };
 
-  const handleSyncProduct = (productId) => {
+  const handleSyncProduct = (productId: number) => {
     setProducts(prev => prev.map(product => 
       product.id === productId 
         ? { 
             ...product, 
-            syncStatus: 'synced',
+            syncStatus: 'synced' as const,
             lastSync: new Date().toLocaleString('ko-KR'),
             mallPrice: product.price,
             mallStock: product.stock
@@ -122,7 +146,7 @@ const MallProductsPage = () => {
     if (window.confirm('모든 상품을 동기화하시겠습니까?')) {
       setProducts(prev => prev.map(product => ({
         ...product,
-        syncStatus: 'synced',
+        syncStatus: 'synced' as const,
         lastSync: new Date().toLocaleString('ko-KR'),
         mallPrice: product.price,
         mallStock: product.stock
@@ -131,7 +155,7 @@ const MallProductsPage = () => {
     }
   };
 
-  const handleDeleteProduct = (productId) => {
+  const handleDeleteProduct = (productId: number) => {
     if (window.confirm('이 상품을 쇼핑몰에서 제거하시겠습니까?')) {
       setProducts(prev => prev.filter(product => product.id !== productId));
       alert('상품이 제거되었습니다.');
@@ -151,6 +175,8 @@ const MallProductsPage = () => {
   );
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+
+  const selectedMallInfo = malls.find(mall => mall.id === selectedMall);
 
   return (
     <div className="p-6">
@@ -202,6 +228,11 @@ const MallProductsPage = () => {
         <>
           {/* 검색 및 필터 */}
           <div className="bg-white border rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-900">
+                {selectedMallInfo?.name} 상품 목록
+              </h3>
+            </div>
             <div className="flex flex-wrap items-center gap-4">
               <div className="flex-1 min-w-64">
                 <input
@@ -262,7 +293,7 @@ const MallProductsPage = () => {
                         <td className="px-6 py-4">
                           <div>
                             <div className="text-sm font-medium text-gray-900">{product.name}</div>
-                            <div className="text-xs text-gray-500 mt-1">ID: {product.productId}</div>
+                            <div className="text-xs text-gray-500 mt-1">코드: {product.productId}</div>
                             <div className="text-xs text-blue-600 mt-1">
                               쇼핑몰: {product.mallProductName}
                             </div>
@@ -272,14 +303,14 @@ const MallProductsPage = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm">
                             <div className={`${product.price !== product.mallPrice ? 'text-red-600' : 'text-gray-900'}`}>
-                              기준: {product.price.toLocaleString()}원
+                              기준: ₩{product.price.toLocaleString()}
                             </div>
                             <div className={`${product.price !== product.mallPrice ? 'text-red-600' : 'text-gray-600'}`}>
-                              쇼핑몰: {product.mallPrice.toLocaleString()}원
+                              쇼핑몰: ₩{product.mallPrice.toLocaleString()}
                             </div>
                             {product.price !== product.mallPrice && (
                               <div className="text-xs text-red-500 mt-1">
-                                차이: {Math.abs(product.price - product.mallPrice).toLocaleString()}원
+                                차이: ₩{Math.abs(product.price - product.mallPrice).toLocaleString()}
                               </div>
                             )}
                           </div>
@@ -307,27 +338,29 @@ const MallProductsPage = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {product.lastSync}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                          <button
-                            onClick={() => handleSyncProduct(product.id)}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            동기화
-                          </button>
-                          <a
-                            href={product.mallUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-green-600 hover:text-green-900"
-                          >
-                            쇼핑몰에서 보기
-                          </a>
-                          <button
-                            onClick={() => handleDeleteProduct(product.id)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            제거
-                          </button>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleSyncProduct(product.id)}
+                              className="text-xs text-blue-600 hover:text-blue-900 border border-blue-300 px-2 py-1 rounded"
+                            >
+                              동기화
+                            </button>
+                            <a
+                              href={product.mallUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-green-600 hover:text-green-900 border border-green-300 px-2 py-1 rounded"
+                            >
+                              보기
+                            </a>
+                            <button
+                              onClick={() => handleDeleteProduct(product.id)}
+                              className="text-xs text-red-600 hover:text-red-900 border border-red-300 px-2 py-1 rounded"
+                            >
+                              제거
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );

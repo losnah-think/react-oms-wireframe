@@ -1,56 +1,59 @@
-export enum OrderStatus {
-  PENDING = 'PENDING',
-  CONFIRMED = 'CONFIRMED',
-  PROCESSING = 'PROCESSING',
-  SHIPPED = 'SHIPPED',
-  DELIVERED = 'DELIVERED',
-  CANCELLED = 'CANCELLED'
-}
+import { Order as IOrder, OrderItem as IOrderItem, OrderStatus } from '../types/database';
 
-export interface IOrderItem {
-  productId: string;
-  productName: string;
-  quantity: number;
-  unitPrice: number;
-  totalPrice: number;
-}
-
-export interface IOrder {
-  id: string;
-  customerId: string;
-  customerName: string;
-  items: IOrderItem[];
-  totalAmount: number;
-  status: OrderStatus;
-  createdAt: Date;
-  updatedAt: Date;
-  shippingAddress?: string;
-  notes?: string;
-}
+// 기존 타입들을 database.ts에서 import
+export type { IOrder, IOrderItem };
+export { OrderStatus };
 
 export class Order implements IOrder {
   public id: string;
-  public customerId: string;
+  public createdAt: Date;
+  public updatedAt: Date;
+  public orderNumber: string;
+  public customerId?: string;
   public customerName: string;
+  public customerPhone?: string;
+  public customerEmail?: string;
   public items: IOrderItem[];
   public totalAmount: number;
   public status: OrderStatus;
-  public createdAt: Date;
-  public updatedAt: Date;
   public shippingAddress?: string;
+  public shippingMethod?: string;
+  public trackingNumber?: string;
+  public paymentMethod?: string;
+  public paymentStatus?: 'pending' | 'paid' | 'cancelled' | 'refunded';
   public notes?: string;
+  public mallId?: string;
 
   constructor(data: Partial<IOrder>) {
     this.id = data.id || '';
-    this.customerId = data.customerId || '';
+    this.createdAt = data.createdAt || new Date();
+    this.updatedAt = data.updatedAt || new Date();
+    this.orderNumber = data.orderNumber || this.generateOrderNumber();
+    this.customerId = data.customerId;
     this.customerName = data.customerName || '';
+    this.customerPhone = data.customerPhone;
+    this.customerEmail = data.customerEmail;
     this.items = data.items || [];
     this.totalAmount = data.totalAmount || 0;
     this.status = data.status || OrderStatus.PENDING;
-    this.createdAt = data.createdAt || new Date();
-    this.updatedAt = data.updatedAt || new Date();
     this.shippingAddress = data.shippingAddress;
+    this.shippingMethod = data.shippingMethod;
+    this.trackingNumber = data.trackingNumber;
+    this.paymentMethod = data.paymentMethod;
+    this.paymentStatus = data.paymentStatus || 'pending';
     this.notes = data.notes;
+    this.mallId = data.mallId;
+    
+    if (this.totalAmount === 0) {
+      this.calculateTotal();
+    }
+  }
+
+  private generateOrderNumber(): string {
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+    const randomStr = Math.random().toString(36).substr(2, 6).toUpperCase();
+    return `ORD-${dateStr}-${randomStr}`;
   }
 
   public addItem(item: IOrderItem): void {

@@ -16,7 +16,7 @@ const OrderList: React.FC = () => {
       status: OrderStatus.PENDING,
       totalAmount: 50000,
       items: [
-        { productId: '1', productName: '베이직 티셔츠', quantity: 2, unitPrice: 25000, totalPrice: 50000 }
+        { id: 'ITEM-001-001', orderId: 'ORD-001', productId: '1', productName: '베이직 티셔츠', quantity: 2, unitPrice: 25000, totalPrice: 50000 }
       ]
     }),
     new Order({
@@ -26,7 +26,7 @@ const OrderList: React.FC = () => {
       status: OrderStatus.CONFIRMED,
       totalAmount: 45000,
       items: [
-        { productId: '2', productName: '청바지', quantity: 1, unitPrice: 45000, totalPrice: 45000 }
+        { id: 'ITEM-002-001', orderId: 'ORD-002', productId: '2', productName: '청바지', quantity: 1, unitPrice: 45000, totalPrice: 45000 }
       ]
     })
   ];
@@ -38,7 +38,7 @@ const OrderList: React.FC = () => {
                            order.id.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesStatus && matchesSearch;
     });
-  }, [statusFilter, searchTerm]);
+  }, [statusFilter, searchTerm, mockOrders]);
 
   if (loading) {
     return (

@@ -2,87 +2,182 @@ import React, { useState, useRef } from 'react';
 
 interface ProductVariant {
   id: number;
-  name: string;
-  optionCode: string;
+  productId: number;
+  variantName: string;
+  safeStock: number;
   stock: number;
-  price: number;
-  barcode?: string;
+  costPrice: number;
+  sellingPrice: number;
+  supplyPrice: number;
+  location?: string;
+  isSelling: boolean;
+  isSoldout: boolean;
+  code?: string;
+  barcode1?: string;
+  barcode2?: string;
+  barcode3?: string;
+  linkCode?: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface ProductDetail {
   id: number;
   name: string;
-  code: string;
-  category: string;
-  brand: string;
-  description: string;
-  price: number;
-  originalPrice: number;
-  supplierPrice: number;
-  consumerPrice: number;
-  margin: number;
-  registrationDate: string;
-  modifiedDate: string;
-  status: 'active' | 'inactive' | 'soldout';
-  images: string[];
+  code?: string;
+  brandName?: string;
+  sellingPrice: number;
+  supplyPrice: number;
+  costPrice: number;
+  largeCategoryNo?: number;
+  mediumCategoryNo?: number;
+  smallCategoryNo?: number;
+  origin?: string;
+  description?: string;
+  summaryDescription?: string;
+  supplierId?: number;
+  categoryId?: number;
+  isDutyfree?: boolean;
+  isTaxfree?: boolean;
+  retailPrice?: number;
+  priceMargin?: number;
+  cafe24Code?: string;
+  hscode?: string;
+  saleStatus: string;
+  manufacturerName?: string;
+  model?: string;
+  publicationDate?: string;
+  createdAt: string;
+  updatedAt: string;
   variants: ProductVariant[];
-  origin: string;
-  manufacturer: string;
-  hsCode: string;
 }
 
-const ProductDetailPage: React.FC = () => {
+interface ProductDetailPageProps {
+  onNavigateToList?: () => void;
+}
+
+const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ onNavigateToList }) => {
   const [selectedVariants, setSelectedVariants] = useState<number[]>([]);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [description, setDescription] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const editorRef = useRef<HTMLTextAreaElement>(null);
 
-  // Mock data
+  // Mock data - 실제 DDL 스키마 기반
   const mockProduct: ProductDetail = {
-    id: 1,
-    name: '베이직 면 티셔츠',
-    code: 'CODE-1059',
-    category: '상의 > 티셔츠',
-    brand: 'Basic Brand',
-    description: '<h2>베이직 면 티셔츠</h2><p>부드럽고 편안한 <strong>100% 면 소재</strong>로 제작된 베이직 티셔츠입니다.</p><ul><li>일상복으로 편안하게 착용 가능</li><li>다양한 코디에 활용</li><li>세탁이 용이함</li></ul><p><em>고품질 원단 사용으로 내구성이 뛰어납니다.</em></p>',
-    price: 15900,
-    originalPrice: 7950,
-    supplierPrice: 11130,
-    consumerPrice: 19900,
-    margin: 4770,
-    registrationDate: '2025. 9. 30.',
-    modifiedDate: '2025. 9. 30.',
-    status: 'active',
-    images: [
-      'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=400&q=80',
-      'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=400&q=80',
-      'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=400&q=80'
-    ],
+    id: 1001,
+    name: '삼성 갤럭시 S24 Ultra',
+    code: 'SAMSUNG-S24U-001',
+    brandName: '삼성전자',
+    sellingPrice: 1299000,
+    supplyPrice: 1170000,
+    costPrice: 1100000,
+    retailPrice: 1399000,
+    priceMargin: 129000,
+    largeCategoryNo: 1,
+    mediumCategoryNo: 11,
+    smallCategoryNo: 111,
+    origin: '한국',
+    description: '<h2>삼성 갤럭시 S24 Ultra</h2><p>최신 플래그십 스마트폰입니다. <strong>200MP 카메라</strong>, S펜 내장, 5000mAh 배터리를 탑재한 프리미엄 모델입니다.</p><ul><li>AI 카메라 기능으로 완벽한 사진 촬영</li><li>S펜으로 정확한 필기와 그림 그리기</li><li>강력한 성능으로 멀티태스킹 완벽 지원</li></ul><p><em>갤럭시 시리즈의 최고급 모델로 모든 기능이 완벽하게 통합되었습니다.</em></p>',
+    summaryDescription: '프리미엄 갤럭시 시리즈 최신 모델',
+    supplierId: 1,
+    categoryId: 101,
+    isDutyfree: false,
+    isTaxfree: false,
+    cafe24Code: 'C24-001',
+    hscode: '851712',
+    saleStatus: 'selling',
+    manufacturerName: '삼성전자',
+    model: 'SM-S928N',
+    createdAt: '2025-01-15T09:00:00Z',
+    updatedAt: '2025-01-20T14:30:00Z',
+    publicationDate: '2025-01-15T09:00:00Z',
     variants: [
-      { id: 1, name: '화이트/S', optionCode: 'WH-S', stock: 10, price: 15900, barcode: '8801234567890' },
-      { id: 2, name: '화이트/M', optionCode: 'WH-M', stock: 15, price: 15900, barcode: '8801234567891' },
-      { id: 3, name: '화이트/L', optionCode: 'WH-L', stock: 8, price: 15900, barcode: '8801234567892' },
-      { id: 4, name: '블랙/S', optionCode: 'BK-S', stock: 12, price: 15900, barcode: '8801234567893' },
-      { id: 5, name: '블랙/M', optionCode: 'BK-M', stock: 20, price: 15900, barcode: '8801234567894' },
-      { id: 6, name: '블랙/L', optionCode: 'BK-L', stock: 5, price: 15900, barcode: '8801234567895' }
-    ],
-    origin: '대한민국',
-    manufacturer: 'Basic Textile Co.',
-    hsCode: '6109.10.0000'
+      {
+        id: 10001,
+        productId: 1001,
+        variantName: '티타늄 그레이 256GB',
+        safeStock: 5,
+        stock: 25,
+        costPrice: 1100000,
+        sellingPrice: 1299000,
+        supplyPrice: 1170000,
+        location: 'A-01-001',
+        isSelling: true,
+        isSoldout: false,
+        code: 'S24U-TG-256',
+        barcode1: '8806095144631',
+        barcode2: 'FULGO240001',
+        active: true,
+        createdAt: '2025-01-15T09:00:00Z',
+        updatedAt: '2025-01-20T14:30:00Z'
+      },
+      {
+        id: 10002,
+        productId: 1001,
+        variantName: '티타늄 바이올렛 512GB',
+        safeStock: 3,
+        stock: 12,
+        costPrice: 1200000,
+        sellingPrice: 1599000,
+        supplyPrice: 1440000,
+        location: 'A-01-002',
+        isSelling: true,
+        isSoldout: false,
+        code: 'S24U-TV-512',
+        barcode1: '8806095144648',
+        barcode2: 'FULGO240002',
+        active: true,
+        createdAt: '2025-01-15T09:00:00Z',
+        updatedAt: '2025-01-20T14:30:00Z'
+      },
+      {
+        id: 10003,
+        productId: 1001,
+        variantName: '티타늄 블랙 1TB',
+        safeStock: 2,
+        stock: 8,
+        costPrice: 1400000,
+        sellingPrice: 1899000,
+        supplyPrice: 1710000,
+        location: 'A-01-003',
+        isSelling: true,
+        isSoldout: false,
+        code: 'S24U-TB-1TB',
+        barcode1: '8806095144655',
+        barcode2: 'FULGO240003',
+        active: true,
+        createdAt: '2025-01-15T09:00:00Z',
+        updatedAt: '2025-01-20T14:30:00Z'
+      }
+    ]
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'active':
+      case 'selling':
         return <span className="px-3 py-1 text-sm bg-green-100 text-green-800 rounded-full">판매중</span>;
-      case 'inactive':
-        return <span className="px-3 py-1 text-sm bg-gray-100 text-gray-800 rounded-full">비활성</span>;
       case 'soldout':
         return <span className="px-3 py-1 text-sm bg-red-100 text-red-800 rounded-full">품절</span>;
+      case 'discontinued':
+        return <span className="px-3 py-1 text-sm bg-gray-100 text-gray-800 rounded-full">단종</span>;
       default:
         return null;
     }
+  };
+
+  const getCategoryName = (product: ProductDetail) => {
+    if (product.largeCategoryNo === 1) return '전자제품 > 스마트폰 > 안드로이드';
+    if (product.largeCategoryNo === 2) return '가전제품';
+    if (product.largeCategoryNo === 3) return '의류/신발';
+    if (product.largeCategoryNo === 4) return '화장품/뷰티';
+    if (product.largeCategoryNo === 5) return '식품/생활용품';
+    return '기타';
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('ko-KR');
   };
 
   const handleVariantSelect = (variantId: number) => {
@@ -102,7 +197,7 @@ const ProductDetailPage: React.FC = () => {
   };
 
   const handleEditDescription = () => {
-    setDescription(mockProduct.description);
+    setDescription(mockProduct.description || '');
     setIsEditingDescription(true);
     setShowPreview(false);
   };
@@ -167,7 +262,7 @@ const ProductDetailPage: React.FC = () => {
       {/* Back Button */}
       <div className="mb-4">
         <button 
-          onClick={() => window.history.back()}
+          onClick={() => onNavigateToList ? onNavigateToList() : window.history.back()}
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -182,14 +277,14 @@ const ProductDetailPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-3 mb-2">
             <h1 className="text-3xl font-bold text-gray-900">{mockProduct.name}</h1>
-            {getStatusBadge(mockProduct.status)}
+            {getStatusBadge(mockProduct.saleStatus)}
           </div>
           <div className="flex items-center gap-4 text-sm text-gray-600">
             <span>상품코드: {mockProduct.code}</span>
             <span>•</span>
-            <span>브랜드: {mockProduct.brand}</span>
+            <span>브랜드: {mockProduct.brandName}</span>
             <span>•</span>
-            <span>카테고리: {mockProduct.category}</span>
+            <span>카테고리: {getCategoryName(mockProduct)}</span>
           </div>
         </div>
         
@@ -214,22 +309,20 @@ const ProductDetailPage: React.FC = () => {
             
             {/* Main Image */}
             <div className="mb-4">
-              <img 
-                src={mockProduct.images[0]} 
-                alt={mockProduct.name}
-                className="w-full aspect-square object-cover rounded-lg border"
-              />
+              <div className="w-full aspect-square bg-gray-100 rounded-lg border flex items-center justify-center">
+                <span className="text-gray-400">상품 이미지</span>
+              </div>
             </div>
             
             {/* Thumbnail Images */}
             <div className="grid grid-cols-3 gap-2">
-              {mockProduct.images.map((image, index) => (
-                <img 
+              {[1, 2, 3, 4, 5, 6].map((index) => (
+                <div 
                   key={index}
-                  src={image} 
-                  alt={`${mockProduct.name} ${index + 1}`}
-                  className="aspect-square object-cover rounded border cursor-pointer hover:opacity-75"
-                />
+                  className="aspect-square bg-gray-100 rounded border cursor-pointer hover:opacity-75 flex items-center justify-center"
+                >
+                  <span className="text-gray-400 text-xs">이미지 {index}</span>
+                </div>
               ))}
             </div>
           </div>
@@ -255,12 +348,12 @@ const ProductDetailPage: React.FC = () => {
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">브랜드</label>
-                  <p className="text-gray-900">{mockProduct.brand}</p>
+                  <p className="text-gray-900">{mockProduct.brandName}</p>
                 </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">카테고리</label>
-                  <p className="text-gray-900">{mockProduct.category}</p>
+                  <p className="text-gray-900">{getCategoryName(mockProduct)}</p>
                 </div>
               </div>
               
@@ -272,17 +365,17 @@ const ProductDetailPage: React.FC = () => {
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">제조사</label>
-                  <p className="text-gray-900">{mockProduct.manufacturer}</p>
+                  <p className="text-gray-900">{mockProduct.manufacturerName}</p>
                 </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">HS Code</label>
-                  <p className="text-gray-900 font-mono">{mockProduct.hsCode}</p>
+                  <p className="text-gray-900 font-mono">{mockProduct.hscode}</p>
                 </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">상태</label>
-                  {getStatusBadge(mockProduct.status)}
+                  {getStatusBadge(mockProduct.saleStatus)}
                 </div>
               </div>
             </div>
@@ -324,7 +417,7 @@ const ProductDetailPage: React.FC = () => {
               {!isEditingDescription ? (
                 <div 
                   className="text-gray-700 bg-gray-50 p-3 rounded prose max-w-none"
-                  dangerouslySetInnerHTML={{ __html: mockProduct.description }}
+                  dangerouslySetInnerHTML={{ __html: mockProduct.description || '' }}
                 />
               ) : (
                 <div className="border rounded-lg">
@@ -413,29 +506,29 @@ const ProductDetailPage: React.FC = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">판매가</label>
-                <p className="text-2xl font-bold text-blue-600">₩{mockProduct.price.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-blue-600">₩{mockProduct.sellingPrice.toLocaleString()}</p>
               </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">공급가</label>
-                <p className="text-xl font-semibold text-gray-900">₩{mockProduct.supplierPrice.toLocaleString()}</p>
+                <p className="text-xl font-semibold text-gray-900">₩{mockProduct.supplyPrice.toLocaleString()}</p>
               </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">원가</label>
-                <p className="text-xl font-semibold text-gray-700">₩{mockProduct.originalPrice.toLocaleString()}</p>
+                <p className="text-xl font-semibold text-gray-700">₩{mockProduct.costPrice.toLocaleString()}</p>
               </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">마진</label>
-                <p className="text-xl font-semibold text-green-600">₩{mockProduct.margin.toLocaleString()}</p>
+                <p className="text-xl font-semibold text-green-600">₩{(mockProduct.priceMargin || (mockProduct.sellingPrice - mockProduct.costPrice)).toLocaleString()}</p>
               </div>
             </div>
             
             <div className="mt-4 pt-4 border-t">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">소비자가</label>
-                <p className="text-lg text-gray-600">₩{mockProduct.consumerPrice.toLocaleString()}</p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">소매가</label>
+                <p className="text-lg text-gray-600">₩{mockProduct.retailPrice?.toLocaleString()}</p>
               </div>
             </div>
           </div>
@@ -495,10 +588,10 @@ const ProductDetailPage: React.FC = () => {
                     />
                   </td>
                   <td className="px-4 py-3">
-                    <div className="text-sm font-medium text-gray-900">{variant.name}</div>
+                    <div className="text-sm font-medium text-gray-900">{variant.variantName}</div>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="text-sm text-gray-600 font-mono">{variant.optionCode}</div>
+                    <div className="text-sm text-gray-600 font-mono">{variant.code}</div>
                   </td>
                   <td className="px-4 py-3">
                     <div className={`text-sm font-medium ${variant.stock > 5 ? 'text-green-600' : variant.stock > 0 ? 'text-yellow-600' : 'text-red-600'}`}>
@@ -506,11 +599,11 @@ const ProductDetailPage: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="text-sm font-medium text-gray-900">₩{variant.price.toLocaleString()}</div>
+                    <div className="text-sm font-medium text-gray-900">₩{variant.sellingPrice.toLocaleString()}</div>
                   </td>
                   <td className="px-4 py-3">
-                    {variant.barcode ? (
-                      <div className="text-sm font-mono text-blue-600">{variant.barcode}</div>
+                    {variant.barcode1 ? (
+                      <div className="text-sm font-mono text-blue-600">{variant.barcode1}</div>
                     ) : (
                       <div className="text-sm text-gray-400">없음</div>
                     )}
@@ -542,16 +635,23 @@ const ProductDetailPage: React.FC = () => {
         <div className="text-sm text-gray-600 space-y-2">
           <div className="flex justify-between items-center py-2 border-b">
             <div>
-              <span className="font-medium">등록일:</span> {mockProduct.registrationDate}
+              <span className="font-medium">등록일:</span> {formatDate(mockProduct.createdAt)}
             </div>
             <div>등록자: 관리자</div>
           </div>
           <div className="flex justify-between items-center py-2 border-b">
             <div>
-              <span className="font-medium">최종 수정일:</span> {mockProduct.modifiedDate}
+              <span className="font-medium">최종 수정일:</span> {formatDate(mockProduct.updatedAt)}
             </div>
             <div>수정자: 관리자</div>
           </div>
+          {mockProduct.publicationDate && (
+            <div className="flex justify-between items-center py-2 border-b">
+              <div>
+                <span className="font-medium">출시일:</span> {formatDate(mockProduct.publicationDate)}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

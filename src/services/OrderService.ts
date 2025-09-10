@@ -14,10 +14,15 @@ export class OrderService implements IOrderService {
   private orders: Order[] = [
     new Order({
       id: '1',
+      orderNumber: 'ORD-20240115-001',
       customerId: 'cust-001',
       customerName: '김철수',
+      customerPhone: '010-1234-5678',
+      customerEmail: 'kim@example.com',
       items: [
         {
+          id: 'item-1',
+          orderId: '1',
           productId: '1',
           productName: '스마트폰 케이스',
           quantity: 2,
@@ -25,6 +30,8 @@ export class OrderService implements IOrderService {
           totalPrice: 50000
         },
         {
+          id: 'item-2',
+          orderId: '1',
           productId: '2',
           productName: '무선 이어폰',
           quantity: 1,
@@ -35,14 +42,20 @@ export class OrderService implements IOrderService {
       totalAmount: 139000,
       status: OrderStatus.CONFIRMED,
       shippingAddress: '서울시 강남구 테헤란로 123',
+      paymentMethod: '신용카드',
+      paymentStatus: 'paid',
       createdAt: new Date('2024-01-15')
     }),
     new Order({
       id: '2',
+      orderNumber: 'ORD-20240116-002',
       customerId: 'cust-002',
       customerName: '박영희',
+      customerPhone: '010-2345-6789',
       items: [
         {
+          id: 'item-3',
+          orderId: '2',
           productId: '3',
           productName: '노트북 스탠드',
           quantity: 1,
@@ -53,14 +66,20 @@ export class OrderService implements IOrderService {
       totalAmount: 45000,
       status: OrderStatus.PENDING,
       shippingAddress: '부산시 해운대구 센텀시티 456',
+      paymentMethod: '계좌이체',
+      paymentStatus: 'pending',
       createdAt: new Date('2024-01-16')
     }),
     new Order({
       id: '3',
+      orderNumber: 'ORD-20240114-003',
       customerId: 'cust-003',
       customerName: '이민수',
+      customerEmail: 'lee@example.com',
       items: [
         {
+          id: 'item-4',
+          orderId: '3',
           productId: '4',
           productName: '마우스 패드',
           quantity: 3,
@@ -71,6 +90,9 @@ export class OrderService implements IOrderService {
       totalAmount: 45000,
       status: OrderStatus.SHIPPED,
       shippingAddress: '대구시 중구 동성로 789',
+      paymentMethod: '무통장입금',
+      paymentStatus: 'paid',
+      trackingNumber: '1234567890',
       createdAt: new Date('2024-01-14')
     })
   ];
@@ -123,8 +145,9 @@ export class OrderService implements IOrderService {
     const lowercaseQuery = query.toLowerCase();
     return this.orders.filter(order => 
       order.id.toLowerCase().includes(lowercaseQuery) ||
+      order.orderNumber.toLowerCase().includes(lowercaseQuery) ||
       order.customerName.toLowerCase().includes(lowercaseQuery) ||
-      order.customerId.toLowerCase().includes(lowercaseQuery)
+      (order.customerId && order.customerId.toLowerCase().includes(lowercaseQuery))
     );
   }
 

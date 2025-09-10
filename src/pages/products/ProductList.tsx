@@ -9,11 +9,91 @@ const ProductList: React.FC = () => {
   
   // Mock data
   const mockProducts: Product[] = [
-    new Product({ id: '1', name: '베이직 티셔츠', description: '편안한 일상복', price: 25000, stock: 100, category: '상의' }),
-    new Product({ id: '2', name: '청바지', description: '클래식 데님', price: 45000, stock: 50, category: '하의' }),
-    new Product({ id: '3', name: '운동화', description: '편안한 스니커즈', price: 80000, stock: 30, category: '신발' }),
-    new Product({ id: '4', name: '가방', description: '실용적인 백팩', price: 60000, stock: 20, category: '가방' }),
-    new Product({ id: '5', name: '모자', description: '캐주얼 캡', price: 20000, stock: 0, category: '액세서리' })
+    new Product({ 
+      id: '1', 
+      productName: '베이직 티셔츠', 
+      productCode: 'BASIC-TEE-001',
+      productCategory: '상의',
+      description: '편안한 일상복', 
+      representativeSellingPrice: 25000, 
+      originalCost: 20000,
+      stock: 100,
+      isOutOfStock: false,
+      isSelling: true,
+      isSoldout: false,
+      descriptionImages: [],
+      isTaxExempt: false,
+      showProductNameOnInvoice: true,
+      active: true
+    }),
+    new Product({ 
+      id: '2', 
+      productName: '청바지', 
+      productCode: 'JEANS-001',
+      productCategory: '하의',
+      description: '클래식 데님', 
+      representativeSellingPrice: 45000, 
+      originalCost: 35000,
+      stock: 50,
+      isOutOfStock: false,
+      isSelling: true,
+      isSoldout: false,
+      descriptionImages: [],
+      isTaxExempt: false,
+      showProductNameOnInvoice: true,
+      active: true
+    }),
+    new Product({ 
+      id: '3', 
+      productName: '운동화', 
+      productCode: 'SHOES-001',
+      productCategory: '신발',
+      description: '편안한 스니커즈', 
+      representativeSellingPrice: 80000, 
+      originalCost: 60000,
+      stock: 30,
+      isOutOfStock: false,
+      isSelling: true,
+      isSoldout: false,
+      descriptionImages: [],
+      isTaxExempt: false,
+      showProductNameOnInvoice: true,
+      active: true
+    }),
+    new Product({ 
+      id: '4', 
+      productName: '가방', 
+      productCode: 'BAG-001',
+      productCategory: '가방',
+      description: '실용적인 백팩', 
+      representativeSellingPrice: 60000, 
+      originalCost: 45000,
+      stock: 20,
+      isOutOfStock: false,
+      isSelling: true,
+      isSoldout: false,
+      descriptionImages: [],
+      isTaxExempt: false,
+      showProductNameOnInvoice: true,
+      active: true
+    }),
+    new Product({ 
+      id: '5', 
+      productName: '모자', 
+      productCode: 'HAT-001',
+      productCategory: '액세서리',
+      description: '캐주얼 캡', 
+      representativeSellingPrice: 20000, 
+      originalCost: 15000,
+      stock: 0,
+      isOutOfStock: true,
+      isSelling: false,
+      isSoldout: true,
+      descriptionImages: [],
+      isTaxExempt: false,
+      showProductNameOnInvoice: true,
+      active: true
+    })
   ];
   
   const categories = ['상의', '하의', '신발', '가방', '액세서리'];
