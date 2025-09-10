@@ -184,7 +184,6 @@ const CategoryMappingPage: React.FC = () => {
     return category.name;
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleCreateMapping = (internalCategoryId: number, mallCategoryId: string) => {
     const newMapping: CategoryMapping = {
       id: mappings.length + 1,

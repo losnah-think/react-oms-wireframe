@@ -26,7 +26,6 @@ type Page = 'dashboard' | 'products' | 'products-list' | 'products-add' | 'produ
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = React.useState<Page>('products-list');
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [currentProductId, setCurrentProductId] = React.useState<number | undefined>(undefined);
   
   const mockUser = {

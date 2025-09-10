@@ -55,7 +55,6 @@ const ProductCsvUploadPage: React.FC = () => {
   const [uploadResults, setUploadResults] = useState<UploadResults | null>(null);
   const [previewData, setPreviewData] = useState<string[][]>([]);
   const [fileAnalysis, setFileAnalysis] = useState<FileAnalysis | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [selectedPlatform, setSelectedPlatform] = useState<string>('');
   const [showPlatformSelector, setShowPlatformSelector] = useState<boolean>(false);
   const [uploadHistory, setUploadHistory] = useState<UploadHistory[]>([]);
