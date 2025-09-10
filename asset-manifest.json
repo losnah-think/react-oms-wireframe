@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/react-oms-wireframe/static/css/main.93bad589.css",
+    "main.js": "/react-oms-wireframe/static/js/main.906dc79f.js",
+    "index.html": "/react-oms-wireframe/index.html",
+    "main.93bad589.css.map": "/react-oms-wireframe/static/css/main.93bad589.css.map",
+    "main.906dc79f.js.map": "/react-oms-wireframe/static/js/main.906dc79f.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.93bad589.css",
+    "static/js/main.906dc79f.js"
+  ]
+}
