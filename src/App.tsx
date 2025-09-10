@@ -1,5 +1,4 @@
 import React from 'react';
-import './App.css';
 import Header from './components/layout/Header';
 import Sidebar from './components/layout/Sidebar';
 import Dashboard from './pages/dashboard/Dashboard';

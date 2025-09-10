@@ -184,8 +184,9 @@ const OrderSlipListPage: React.FC = () => {
   };
 
   const handleCancelOrder = (slipId: string) => {
-    if (confirm('정말 이 발주를 취소하시겠습니까?')) {
-      alert(`발주전표 ${slipId}가 취소되었습니다.`);
+    if (window.confirm('정말 이 발주를 취소하시겠습니까?')) {
+      // 실제로는 API 호출
+      console.log('발주 취소:', slipId);
     }
   };
 
