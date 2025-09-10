@@ -1,36 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-interface ProductData {
-  // 필수 필드 (PRD 기반)
-  productName: string;              // 상품명 (필수)
-  productCode: string;              // 상품코드 (필수)
-  productCategory: string;          // 상품분류 (필수)
-  brand: string;                    // 브랜드 (필수)
-  originalCost: string;             // 원가 (필수)
-  representativeSellingPrice: string; // 대표판매가 (필수)
-  
-  // 선택 필드
+interface ProductsEditPageProps {
+  onNavigate?: (page: string) => void;
+  productId?: number;
+}
+
+interface Product {
+  id: string;
+  productName: string;
+  productCode: string;
+  productCategory: string;
+  brand: string;
+  originalCost: number;
+  representativeSellingPrice: number;
   englishProductName: string;
   representativeImage: string;
   isTaxExempt: string;
-  isOutOfStock: boolean;
-  
-  // 기타 필드들
+  description: string;
   supplier: string;
   hsCode: string;
-  purchaseProductName: string;
   origin: string;
-  representativeSupplyPrice: string;
-  productDescription: string;
-  descriptionImage1: string;
-  descriptionImage2: string;
-  descriptionImage3: string;
-  descriptionImage4: string;
-  showProductNameOnInvoice: boolean;
-  productDesigner: string;
-  productRegistrant: string;
-  marketPrice: string;
-  consumerPrice: string;
+  marketPrice: number;
+  consumerPrice: number;
   productYear: string;
   productSeason: string;
   width: string;
@@ -38,50 +29,20 @@ interface ProductData {
   depth: string;
   weight: string;
   volume: string;
-  foreignCurrencyPrice: string;
+  isOutOfStock: boolean;
 }
 
-interface OptionData {
-  barcodeNumber: string;
+interface Option {
+  id: string;
   optionName: string;
   optionCode: string;
-  sellingPrice: string;
+  barcodeNumber: string;
+  sellingPrice: number;
+  color: string;
+  size: string;
   isForSale: boolean;
   isOutOfStock: boolean;
   inventorySync: boolean;
-  
-  // 추가 필드들
-  newBarcode: string;
-  barcodeNumber2: string;
-  barcodeNumber3: string;
-  optionSupplierName: string;
-  purchaseOptionName: string;
-  safetyStock: string;
-  originalCost: string;
-  optionSupplyPrice: string;
-  productLocation: string;
-  managementGrade: string;
-  remarks: string;
-  automateShippingAndOutbound: boolean;
-  color: string;
-  size: string;
-  width: string;
-  height: string;
-  depth: string;
-  weight: string;
-  volume: string;
-  foreignCurrencyOptionPrice: string;
-  boxQuantity: string;
-  manufacturer: string;
-  countryOfManufacture: string;
-  material: string;
-  productType: string;
-  precautions: string;
-  usageStandards: string;
-}
-
-interface ProductsAddPageProps {
-  onNavigate?: (page: string) => void;
 }
 
 // 모달 컴포넌트들
@@ -212,8 +173,10 @@ const CategoryModal: React.FC<ModalProps> = ({ isOpen, onClose, onSelect, select
   );
 };
 
-const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
-  // 옵션 타입 상태 (single: 단일옵션, multiple: 복수옵션)
+const ProductsEditPage: React.FC<ProductsEditPageProps> = ({ onNavigate, productId }) => {
+  const [loading, setLoading] = useState(true);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [options, setOptions] = useState<Option[]>([]);
   const [optionType, setOptionType] = useState<'single' | 'multiple'>('single');
   
   // 사이드패널 접기/펼치기 상태
@@ -230,41 +193,66 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
     category: false
   });
 
-  const [productData, setProductData] = useState<ProductData>({
-    // 필수 필드
-    productName: '',
-    productCode: '',
-    productCategory: '',
-    brand: '',
-    originalCost: '',
-    representativeSellingPrice: '',
-    
-    // 선택 필드
-    englishProductName: '',
-    representativeImage: '',
-    isTaxExempt: '',
-    isOutOfStock: false,
-    
-    // 기타 필드들
-    supplier: '', hsCode: '', purchaseProductName: '', origin: '', representativeSupplyPrice: '',
-    productDescription: '', descriptionImage1: '', descriptionImage2: '',
-    descriptionImage3: '', descriptionImage4: '', showProductNameOnInvoice: false,
-    productDesigner: '', productRegistrant: '', marketPrice: '', consumerPrice: '',
-    productYear: '', productSeason: '', width: '', height: '', depth: '', weight: '',
-    volume: '', foreignCurrencyPrice: ''
-  });
-  
-  const [options, setOptions] = useState<OptionData[]>([{
-    barcodeNumber: '', optionName: '', optionCode: '', sellingPrice: '',
-    isForSale: true, isOutOfStock: false, inventorySync: true, newBarcode: '',
-    barcodeNumber2: '', barcodeNumber3: '', optionSupplierName: '',
-    purchaseOptionName: '', safetyStock: '', originalCost: '', optionSupplyPrice: '',
-    productLocation: '', managementGrade: '', remarks: '', automateShippingAndOutbound: false,
-    color: '', size: '', width: '', height: '', depth: '', weight: '', volume: '',
-    foreignCurrencyOptionPrice: '', boxQuantity: '', manufacturer: '',
-    countryOfManufacture: '', material: '', productType: '', precautions: '',
-    usageStandards: ''
-  }]);
+  useEffect(() => {
+    // Mock 데이터 로딩 시뮬레이션
+    setTimeout(() => {
+      setProduct({
+        id: `PROD-${String(productId).padStart(3, '0')}`,
+        productName: "삼성 갤럭시 S24 Ultra 256GB",
+        productCode: "SAMSUNG-S24U-256",
+        productCategory: "전자제품",
+        brand: "삼성전자",
+        originalCost: 1100000,
+        representativeSellingPrice: 1299000,
+        englishProductName: "Samsung Galaxy S24 Ultra 256GB",
+        representativeImage: "",
+        isTaxExempt: "N",
+        description: "최신 AI 기능이 탑재된 프리미엄 스마트폰",
+        supplier: "삼성전자",
+        hsCode: "8517.12.00",
+        origin: "한국",
+        marketPrice: 1400000,
+        consumerPrice: 1350000,
+        productYear: "2024",
+        productSeason: "상시",
+        width: "79.0",
+        height: "162.3",
+        depth: "8.6",
+        weight: "232",
+        volume: "110.8",
+        isOutOfStock: false
+      });
+      
+      setOptions([
+        {
+          id: "OPT-001",
+          optionName: "티타늄 블랙/256GB",
+          optionCode: "S24U-TB-256",
+          barcodeNumber: "8806094850000",
+          sellingPrice: 1299000,
+          color: "티타늄 블랙",
+          size: "256GB",
+          isForSale: true,
+          isOutOfStock: false,
+          inventorySync: true
+        },
+        {
+          id: "OPT-002",
+          optionName: "티타늄 그레이/256GB",
+          optionCode: "S24U-TG-256",
+          barcodeNumber: "8806094850001",
+          sellingPrice: 1299000,
+          color: "티타늄 그레이",
+          size: "256GB",
+          isForSale: true,
+          isOutOfStock: false,
+          inventorySync: true
+        }
+      ]);
+      
+      setLoading(false);
+    }, 800);
+  }, [productId]);
 
   // 모달 핸들러
   const openModal = (type: 'brand' | 'category') => {
@@ -277,34 +265,30 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
 
   const handleSelectValue = (type: 'brand' | 'category', value: string) => {
     if (type === 'brand') {
-      setProductData(prev => ({ ...prev, brand: value }));
+      setProduct(prev => prev ? ({ ...prev, brand: value }) : null);
     } else if (type === 'category') {
-      setProductData(prev => ({ ...prev, productCategory: value }));
+      setProduct(prev => prev ? ({ ...prev, productCategory: value }) : null);
     }
   };
 
-  // 입력 핸들러
-  const handleInputChange = (field: keyof ProductData, value: string | boolean) => {
-    setProductData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleOptionChange = (index: number, field: keyof OptionData, value: string | boolean) => {
+  const handleOptionChange = (index: number, field: keyof Option, value: string | number | boolean) => {
     setOptions(prev => prev.map((option, i) => 
       i === index ? { ...option, [field]: value } : option
     ));
   };
 
   const addOption = () => {
-    const newOption: OptionData = {
-      barcodeNumber: '', optionName: '', optionCode: '', sellingPrice: '',
-      isForSale: true, isOutOfStock: false, inventorySync: true, newBarcode: '',
-      barcodeNumber2: '', barcodeNumber3: '', optionSupplierName: '',
-      purchaseOptionName: '', safetyStock: '', originalCost: '', optionSupplyPrice: '',
-      productLocation: '', managementGrade: '', remarks: '', automateShippingAndOutbound: false,
-      color: '', size: '', width: '', height: '', depth: '', weight: '', volume: '',
-      foreignCurrencyOptionPrice: '', boxQuantity: '', manufacturer: '',
-      countryOfManufacture: '', material: '', productType: '', precautions: '',
-      usageStandards: ''
+    const newOption: Option = {
+      id: `OPT-${String(options.length + 1).padStart(3, '0')}`,
+      optionName: '',
+      optionCode: '',
+      barcodeNumber: '',
+      sellingPrice: 0,
+      color: '',
+      size: '',
+      isForSale: true,
+      isOutOfStock: false,
+      inventorySync: true
     };
     setOptions(prev => [...prev, newOption]);
   };
@@ -335,23 +319,44 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSave = () => {
     // 필수 필드 검증
-    if (!productData.productName || !productData.productCode || !productData.productCategory || 
-        !productData.brand || !productData.originalCost || !productData.representativeSellingPrice) {
+    if (!product?.productName || !product?.productCode || !product?.productCategory || 
+        !product?.brand || !product?.originalCost || !product?.representativeSellingPrice) {
       alert('필수 필드를 모두 입력해주세요.');
       return;
     }
 
-    // 상품 등록 처리
-    console.log('상품 데이터:', productData);
-    console.log('옵션 데이터:', options);
-    alert('상품이 성공적으로 등록되었습니다!');
+    // 저장 처리
+    console.log('수정된 상품 데이터:', product);
+    console.log('수정된 옵션 데이터:', options);
+    alert('상품이 성공적으로 수정되었습니다!');
     
     if (onNavigate) {
       onNavigate('products-list');
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">상품 정보를 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">상품을 찾을 수 없습니다.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -360,8 +365,8 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
         <div className="flex-1">
           {/* 헤더 */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">상품 등록</h1>
-            <p className="text-gray-600">새로운 상품의 모든 정보를 한 번에 등록합니다.</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">상품 수정</h1>
+            <p className="text-gray-600">상품 정보를 한 번에 수정합니다. (상품 ID: {product.id})</p>
           </div>
 
         <form className="space-y-8">
@@ -374,7 +379,7 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
                 </div>
                 <div>
                   <h2 className="text-xl font-semibold text-gray-900">기본 정보</h2>
-                  <p className="text-sm text-gray-600">상품의 기본적인 정보를 입력하세요</p>
+                  <p className="text-sm text-gray-600">상품의 기본적인 정보를 수정하세요</p>
                 </div>
               </div>
             </div>
@@ -386,10 +391,9 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
                   </label>
                   <input
                     type="text"
-                    value={productData.productName}
-                    onChange={(e) => handleInputChange('productName', e.target.value)}
+                    value={product?.productName || ''}
+                    onChange={(e) => setProduct(prev => prev ? ({ ...prev, productName: e.target.value }) : null)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="상품명을 입력하세요"
                   />
                 </div>
 
@@ -397,10 +401,9 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">영문 상품명</label>
                   <input
                     type="text"
-                    value={productData.englishProductName}
-                    onChange={(e) => handleInputChange('englishProductName', e.target.value)}
+                    value={product?.englishProductName || ''}
+                    onChange={(e) => setProduct(prev => prev ? ({ ...prev, englishProductName: e.target.value }) : null)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="영문 상품명을 입력하세요"
                   />
                 </div>
 
@@ -410,10 +413,9 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
                   </label>
                   <input
                     type="text"
-                    value={productData.productCode}
-                    onChange={(e) => handleInputChange('productCode', e.target.value)}
+                    value={product?.productCode || ''}
+                    onChange={(e) => setProduct(prev => prev ? ({ ...prev, productCode: e.target.value }) : null)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="상품코드를 입력하세요"
                   />
                 </div>
 
@@ -426,7 +428,7 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
                     onClick={() => openModal('brand')}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md text-left focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white hover:bg-gray-50"
                   >
-                    {productData.brand || '브랜드를 선택하세요'}
+                    {product?.brand || '브랜드를 선택하세요'}
                   </button>
                 </div>
 
@@ -439,7 +441,7 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
                     onClick={() => openModal('category')}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md text-left focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white hover:bg-gray-50"
                   >
-                    {productData.productCategory || '카테고리를 선택하세요'}
+                    {product?.productCategory || '카테고리를 선택하세요'}
                   </button>
                 </div>
 
@@ -447,10 +449,9 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">공급업체</label>
                   <input
                     type="text"
-                    value={productData.supplier}
-                    onChange={(e) => handleInputChange('supplier', e.target.value)}
+                    value={product?.supplier || ''}
+                    onChange={(e) => setProduct(prev => prev ? ({ ...prev, supplier: e.target.value }) : null)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="공급업체명을 입력하세요"
                   />
                 </div>
               </div>
@@ -458,9 +459,9 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
               <div className="mt-6">
                 <label className="block text-sm font-medium text-gray-700 mb-1">상품 설명</label>
                 <textarea
-                  value={productData.productDescription}
-                  onChange={(e) => handleInputChange('productDescription', e.target.value)}
-                  rows={4}
+                  rows={6}
+                  value={product?.description || ''}
+                  onChange={(e) => setProduct(prev => prev ? ({ ...prev, description: e.target.value }) : null)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="상품에 대한 자세한 설명을 입력하세요"
                 />
@@ -477,7 +478,7 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
                 </div>
                 <div>
                   <h2 className="text-xl font-semibold text-gray-900">가격 정보</h2>
-                  <p className="text-sm text-gray-600">상품의 가격 관련 정보를 입력하세요</p>
+                  <p className="text-sm text-gray-600">상품의 가격 관련 정보를 수정하세요</p>
                 </div>
               </div>
             </div>
@@ -489,10 +490,9 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
                   </label>
                   <input
                     type="number"
-                    value={productData.originalCost}
-                    onChange={(e) => handleInputChange('originalCost', e.target.value)}
+                    value={product?.originalCost || ''}
+                    onChange={(e) => setProduct(prev => prev ? ({ ...prev, originalCost: parseInt(e.target.value) }) : null)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="원가를 입력하세요"
                   />
                 </div>
 
@@ -502,10 +502,9 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
                   </label>
                   <input
                     type="number"
-                    value={productData.representativeSellingPrice}
-                    onChange={(e) => handleInputChange('representativeSellingPrice', e.target.value)}
+                    value={product?.representativeSellingPrice || ''}
+                    onChange={(e) => setProduct(prev => prev ? ({ ...prev, representativeSellingPrice: parseInt(e.target.value) }) : null)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="대표 판매가를 입력하세요"
                   />
                 </div>
 
@@ -513,10 +512,9 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">시장가</label>
                   <input
                     type="number"
-                    value={productData.marketPrice}
-                    onChange={(e) => handleInputChange('marketPrice', e.target.value)}
+                    value={product?.marketPrice || ''}
+                    onChange={(e) => setProduct(prev => prev ? ({ ...prev, marketPrice: parseInt(e.target.value) }) : null)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="시장가를 입력하세요"
                   />
                 </div>
 
@@ -524,29 +522,17 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">소비자가</label>
                   <input
                     type="number"
-                    value={productData.consumerPrice}
-                    onChange={(e) => handleInputChange('consumerPrice', e.target.value)}
+                    value={product?.consumerPrice || ''}
+                    onChange={(e) => setProduct(prev => prev ? ({ ...prev, consumerPrice: parseInt(e.target.value) }) : null)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="소비자가를 입력하세요"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">공급가</label>
-                  <input
-                    type="number"
-                    value={productData.representativeSupplyPrice}
-                    onChange={(e) => handleInputChange('representativeSupplyPrice', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="공급가를 입력하세요"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">세금 면세 여부</label>
                   <select
-                    value={productData.isTaxExempt}
-                    onChange={(e) => handleInputChange('isTaxExempt', e.target.value)}
+                    value={product?.isTaxExempt || ''}
+                    onChange={(e) => setProduct(prev => prev ? ({ ...prev, isTaxExempt: e.target.value }) : null)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">선택하세요</option>
@@ -567,7 +553,7 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
                 </div>
                 <div>
                   <h2 className="text-xl font-semibold text-gray-900">상세 정보</h2>
-                  <p className="text-sm text-gray-600">상품의 추가적인 상세 정보를 입력하세요</p>
+                  <p className="text-sm text-gray-600">상품의 추가적인 상세 정보를 수정하세요</p>
                 </div>
               </div>
             </div>
@@ -577,10 +563,9 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">HS 코드</label>
                   <input
                     type="text"
-                    value={productData.hsCode}
-                    onChange={(e) => handleInputChange('hsCode', e.target.value)}
+                    value={product?.hsCode || ''}
+                    onChange={(e) => setProduct(prev => prev ? ({ ...prev, hsCode: e.target.value }) : null)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="HS 코드를 입력하세요"
                   />
                 </div>
 
@@ -588,10 +573,9 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">원산지</label>
                   <input
                     type="text"
-                    value={productData.origin}
-                    onChange={(e) => handleInputChange('origin', e.target.value)}
+                    value={product?.origin || ''}
+                    onChange={(e) => setProduct(prev => prev ? ({ ...prev, origin: e.target.value }) : null)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="원산지를 입력하세요"
                   />
                 </div>
 
@@ -599,10 +583,9 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">제품 연도</label>
                   <input
                     type="text"
-                    value={productData.productYear}
-                    onChange={(e) => handleInputChange('productYear', e.target.value)}
+                    value={product?.productYear || ''}
+                    onChange={(e) => setProduct(prev => prev ? ({ ...prev, productYear: e.target.value }) : null)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="제품 연도를 입력하세요"
                   />
                 </div>
 
@@ -610,32 +593,9 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">시즌</label>
                   <input
                     type="text"
-                    value={productData.productSeason}
-                    onChange={(e) => handleInputChange('productSeason', e.target.value)}
+                    value={product?.productSeason || ''}
+                    onChange={(e) => setProduct(prev => prev ? ({ ...prev, productSeason: e.target.value }) : null)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="시즌을 입력하세요"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">상품 디자이너</label>
-                  <input
-                    type="text"
-                    value={productData.productDesigner}
-                    onChange={(e) => handleInputChange('productDesigner', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="디자이너명을 입력하세요"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">상품 등록자</label>
-                  <input
-                    type="text"
-                    value={productData.productRegistrant}
-                    onChange={(e) => handleInputChange('productRegistrant', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="등록자명을 입력하세요"
                   />
                 </div>
               </div>
@@ -647,55 +607,50 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">폭 (cm)</label>
                     <input
-                      type="number"
-                      value={productData.width}
-                      onChange={(e) => handleInputChange('width', e.target.value)}
+                      type="text"
+                      value={product?.width || ''}
+                      onChange={(e) => setProduct(prev => prev ? ({ ...prev, width: e.target.value }) : null)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="폭"
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">높이 (cm)</label>
                     <input
-                      type="number"
-                      value={productData.height}
-                      onChange={(e) => handleInputChange('height', e.target.value)}
+                      type="text"
+                      value={product?.height || ''}
+                      onChange={(e) => setProduct(prev => prev ? ({ ...prev, height: e.target.value }) : null)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="높이"
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">깊이 (cm)</label>
                     <input
-                      type="number"
-                      value={productData.depth}
-                      onChange={(e) => handleInputChange('depth', e.target.value)}
+                      type="text"
+                      value={product?.depth || ''}
+                      onChange={(e) => setProduct(prev => prev ? ({ ...prev, depth: e.target.value }) : null)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="깊이"
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">무게 (g)</label>
                     <input
-                      type="number"
-                      value={productData.weight}
-                      onChange={(e) => handleInputChange('weight', e.target.value)}
+                      type="text"
+                      value={product?.weight || ''}
+                      onChange={(e) => setProduct(prev => prev ? ({ ...prev, weight: e.target.value }) : null)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="무게"
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">부피 (㎤)</label>
                     <input
-                      type="number"
-                      value={productData.volume}
-                      onChange={(e) => handleInputChange('volume', e.target.value)}
+                      type="text"
+                      value={product?.volume || ''}
+                      onChange={(e) => setProduct(prev => prev ? ({ ...prev, volume: e.target.value }) : null)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="부피"
                     />
                   </div>
                 </div>
@@ -705,8 +660,8 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
                 <input
                   type="checkbox"
                   id="outOfStock"
-                  checked={productData.isOutOfStock}
-                  onChange={(e) => handleInputChange('isOutOfStock', e.target.checked)}
+                  checked={product?.isOutOfStock || false}
+                  onChange={(e) => setProduct(prev => prev ? ({ ...prev, isOutOfStock: e.target.checked }) : null)}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="outOfStock" className="ml-2 block text-sm text-gray-900">
@@ -794,9 +749,9 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
 
               <div className="space-y-6">
                 {options.map((option, index) => (
-                  <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                  <div key={option.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                     <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-lg font-medium text-gray-900">옵션 #{index + 1}</h3>
+                      <h3 className="text-lg font-medium text-gray-900">옵션 #{index + 1} (ID: {option.id})</h3>
                       {optionType === 'multiple' && options.length > 1 && (
                         <button
                           type="button"
@@ -816,7 +771,6 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
                           value={option.optionName}
                           onChange={(e) => handleOptionChange(index, 'optionName', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="예: 블랙/XL"
                         />
                       </div>
 
@@ -827,7 +781,6 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
                           value={option.optionCode}
                           onChange={(e) => handleOptionChange(index, 'optionCode', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="옵션 코드"
                         />
                       </div>
 
@@ -838,7 +791,6 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
                           value={option.barcodeNumber}
                           onChange={(e) => handleOptionChange(index, 'barcodeNumber', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="바코드 번호"
                         />
                       </div>
 
@@ -847,9 +799,8 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
                         <input
                           type="number"
                           value={option.sellingPrice}
-                          onChange={(e) => handleOptionChange(index, 'sellingPrice', e.target.value)}
+                          onChange={(e) => handleOptionChange(index, 'sellingPrice', parseInt(e.target.value))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="판매가"
                         />
                       </div>
 
@@ -860,7 +811,6 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
                           value={option.color}
                           onChange={(e) => handleOptionChange(index, 'color', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="색상"
                         />
                       </div>
 
@@ -871,7 +821,6 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
                           value={option.size}
                           onChange={(e) => handleOptionChange(index, 'size', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="사이즈"
                         />
                       </div>
                     </div>
@@ -933,10 +882,10 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
             </button>
             <button
               type="button"
-              onClick={handleSubmit}
+              onClick={handleSave}
               className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
             >
-              상품 등록
+              수정 완료
             </button>
           </div>
         </form>
@@ -946,38 +895,38 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
           isOpen={modals.brand}
           onClose={() => closeModal('brand')}
           onSelect={(value) => handleSelectValue('brand', value)}
-          selectedValue={productData.brand}
+          selectedValue={product?.brand || ''}
         />
 
         <CategoryModal
           isOpen={modals.category}
           onClose={() => closeModal('category')}
           onSelect={(value) => handleSelectValue('category', value)}
-          selectedValue={productData.productCategory}
+          selectedValue={product?.productCategory || ''}
         />
         </div>
 
-        {/* 사이드 패널 - 입력 정보 미리보기 */}
+        {/* 사이드 패널 - 수정 정보 미리보기 */}
         <div className="w-96 shrink-0">
           <div className="bg-white rounded-lg shadow-lg border border-gray-200 sticky top-6 transition-all duration-300 ease-in-out" style={{ minHeight: 'calc(100vh - 4.5rem)' }}>
-          <div className="p-4 bg-gradient-to-r from-purple-50 to-indigo-50 border-b border-gray-200 rounded-t-lg">
+          <div className="p-4 bg-gradient-to-r from-green-50 to-blue-50 border-b border-gray-200 rounded-t-lg">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-              <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
-              입력 정보 미리보기
+              <div className="w-2 h-2 bg-blue-500 rounded-full mr-2 animate-pulse"></div>
+              수정 정보 미리보기
             </h3>
-            <p className="text-sm text-gray-600">실시간으로 입력한 정보를 확인하세요</p>
+            <p className="text-sm text-gray-600">실시간으로 수정한 정보를 확인하세요</p>
           </div>
 
           {/* 완성률 표시 - 상단 고정 */}
-          <div className="p-4 bg-blue-50 border-b border-gray-200">
+          <div className="p-4 bg-green-50 border-b border-gray-200">
             {(() => {
               const requiredFields = [
-                productData.productName,
-                productData.productCode,
-                productData.productCategory,
-                productData.brand,
-                productData.originalCost,
-                productData.representativeSellingPrice
+                product?.productName,
+                product?.productCode,
+                product?.productCategory,
+                product?.brand,
+                product?.originalCost,
+                product?.representativeSellingPrice
               ];
               const completedFields = requiredFields.filter(field => field).length;
               const completionRate = Math.round((completedFields / requiredFields.length) * 100);
@@ -992,8 +941,9 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
                     <div 
                       className={`h-3 rounded-full transition-all duration-300 ${
                         completionRate === 100 ? 'bg-green-500' : 
-                        completionRate >= 50 ? 'bg-blue-500' : 
-                        completionRate >= 25 ? 'bg-indigo-500' : 'bg-purple-500'
+                        completionRate >= 100 ? 'bg-green-500' :
+                        completionRate >= 75 ? 'bg-blue-500' :
+                        completionRate >= 50 ? 'bg-indigo-500' : 'bg-purple-500'
                       }`}
                       style={{ width: `${completionRate}%` }}
                     ></div>
@@ -1036,13 +986,13 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
               </div>
               {!collapsedSections.step1 && (
                 <div className="space-y-2 text-sm px-4 py-3">
-                <div><span className="text-gray-600">상품명:</span> {productData.productName || '-'}</div>
-                <div><span className="text-gray-600">영문명:</span> {productData.englishProductName || '-'}</div>
-                <div><span className="text-gray-600">상품코드:</span> {productData.productCode || '-'}</div>
-                <div><span className="text-gray-600">브랜드:</span> {productData.brand || '-'}</div>
-                <div><span className="text-gray-600">분류:</span> {productData.productCategory || '-'}</div>
-                <div><span className="text-gray-600">공급업체:</span> {productData.supplier || '-'}</div>
-                <div><span className="text-gray-600">설명:</span> {productData.productDescription ? `${productData.productDescription.substring(0, 30)}...` : '-'}</div>
+                <div><span className="text-gray-600">상품명:</span> {product?.productName || '-'}</div>
+                <div><span className="text-gray-600">영문명:</span> {product?.englishProductName || '-'}</div>
+                <div><span className="text-gray-600">상품코드:</span> {product?.productCode || '-'}</div>
+                <div><span className="text-gray-600">브랜드:</span> {product?.brand || '-'}</div>
+                <div><span className="text-gray-600">분류:</span> {product?.productCategory || '-'}</div>
+                <div><span className="text-gray-600">공급업체:</span> {product?.supplier || '-'}</div>
+                <div><span className="text-gray-600">설명:</span> {product?.description ? `${product.description.substring(0, 30)}...` : '-'}</div>
                 </div>
               )}
             </div>
@@ -1076,12 +1026,11 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
               </div>
               {!collapsedSections.step2 && (
                 <div className="space-y-2 text-sm px-4 py-3">
-                <div><span className="text-gray-600">원가:</span> {productData.originalCost ? `${parseInt(productData.originalCost).toLocaleString()}원` : '-'}</div>
-                <div><span className="text-gray-600">대표판매가:</span> {productData.representativeSellingPrice ? `${parseInt(productData.representativeSellingPrice).toLocaleString()}원` : '-'}</div>
-                <div><span className="text-gray-600">시장가:</span> {productData.marketPrice ? `${parseInt(productData.marketPrice).toLocaleString()}원` : '-'}</div>
-                <div><span className="text-gray-600">소비자가:</span> {productData.consumerPrice ? `${parseInt(productData.consumerPrice).toLocaleString()}원` : '-'}</div>
-                <div><span className="text-gray-600">공급가:</span> {productData.representativeSupplyPrice ? `${parseInt(productData.representativeSupplyPrice).toLocaleString()}원` : '-'}</div>
-                <div><span className="text-gray-600">세금면세:</span> {productData.isTaxExempt || '-'}</div>
+                <div><span className="text-gray-600">원가:</span> {product?.originalCost ? `${product.originalCost.toLocaleString()}원` : '-'}</div>
+                <div><span className="text-gray-600">대표판매가:</span> {product?.representativeSellingPrice ? `${product.representativeSellingPrice.toLocaleString()}원` : '-'}</div>
+                <div><span className="text-gray-600">시장가:</span> {product?.marketPrice ? `${product.marketPrice.toLocaleString()}원` : '-'}</div>
+                <div><span className="text-gray-600">소비자가:</span> {product?.consumerPrice ? `${product.consumerPrice.toLocaleString()}원` : '-'}</div>
+                <div><span className="text-gray-600">세금면세:</span> {product?.isTaxExempt || '-'}</div>
                 </div>
               )}
             </div>
@@ -1115,17 +1064,17 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
               </div>
               {!collapsedSections.step3 && (
                 <div className="space-y-2 text-sm px-4 py-3">
-                <div><span className="text-gray-600">HS코드:</span> {productData.hsCode || '-'}</div>
-                <div><span className="text-gray-600">원산지:</span> {productData.origin || '-'}</div>
-                <div><span className="text-gray-600">제품연도:</span> {productData.productYear || '-'}</div>
-                <div><span className="text-gray-600">시즌:</span> {productData.productSeason || '-'}</div>
+                <div><span className="text-gray-600">HS코드:</span> {product?.hsCode || '-'}</div>
+                <div><span className="text-gray-600">원산지:</span> {product?.origin || '-'}</div>
+                <div><span className="text-gray-600">제품연도:</span> {product?.productYear || '-'}</div>
+                <div><span className="text-gray-600">시즌:</span> {product?.productSeason || '-'}</div>
                 <div><span className="text-gray-600">치수:</span> 
-                  {(productData.width || productData.height || productData.depth || productData.weight || productData.volume) 
-                    ? `${productData.width || '?'} × ${productData.height || '?'} × ${productData.depth || '?'} cm, ${productData.weight || '?'}g, ${productData.volume || '?'}㎤`
+                  {(product?.width || product?.height || product?.depth || product?.weight || product?.volume) 
+                    ? `${product?.width || '?'} × ${product?.height || '?'} × ${product?.depth || '?'} cm, ${product?.weight || '?'}g, ${product?.volume || '?'}㎤`
                     : '-'
                   }
                 </div>
-                <div><span className="text-gray-600">품절상태:</span> {productData.isOutOfStock ? '예' : '아니오'}</div>
+                <div><span className="text-gray-600">품절상태:</span> {product?.isOutOfStock ? '예' : '아니오'}</div>
                 </div>
               )}
             </div>
@@ -1160,13 +1109,13 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
               {!collapsedSections.step4 && (
                 <div className="space-y-3 px-4 py-3">
                 {options.map((option, index) => (
-                  <div key={index} className="bg-gray-50 rounded-lg p-3">
-                    <div className="text-sm font-medium text-gray-800">옵션 #{index + 1}</div>
+                  <div key={option.id} className="bg-gray-50 rounded-lg p-3">
+                    <div className="text-sm font-medium text-gray-800">옵션 #{index + 1} ({option.id})</div>
                     <div className="space-y-1 text-sm text-gray-600 mt-2">
                       <div>옵션명: {option.optionName || '-'}</div>
                       <div>코드: {option.optionCode || '-'}</div>
                       <div>바코드: {option.barcodeNumber || '-'}</div>
-                      <div>판매가: {option.sellingPrice ? `${parseInt(option.sellingPrice).toLocaleString()}원` : '-'}</div>
+                      <div>판매가: {option.sellingPrice ? `${option.sellingPrice.toLocaleString()}원` : '-'}</div>
                       <div>색상/사이즈: {option.color || '-'} / {option.size || '-'}</div>
                       <div className="flex space-x-2 text-xs">
                         <span className={`px-1 rounded ${option.isForSale ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'}`}>
@@ -1190,41 +1139,41 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
             <div className="pt-4 border-t border-gray-200">
               <h4 className="text-sm font-semibold text-gray-800 mb-2">필수 필드 체크리스트</h4>
               <div className="space-y-1 text-xs">
-                <div className={`flex items-center ${productData.productName ? 'text-green-600' : 'text-red-500'}`}>
+                <div className={`flex items-center ${product?.productName ? 'text-green-600' : 'text-red-500'}`}>
                   <div className="w-3 h-3 rounded-full mr-2 flex items-center justify-center text-xs">
-                    {productData.productName ? '✓' : '×'}
+                    {product?.productName ? '✓' : '×'}
                   </div>
-                  상품명 {productData.productName ? '완료' : '필수'}
+                  상품명 {product?.productName ? '완료' : '필수'}
                 </div>
-                <div className={`flex items-center ${productData.productCode ? 'text-green-600' : 'text-red-500'}`}>
+                <div className={`flex items-center ${product?.productCode ? 'text-green-600' : 'text-red-500'}`}>
                   <div className="w-3 h-3 rounded-full mr-2 flex items-center justify-center text-xs">
-                    {productData.productCode ? '✓' : '×'}
+                    {product?.productCode ? '✓' : '×'}
                   </div>
-                  상품코드 {productData.productCode ? '완료' : '필수'}
+                  상품코드 {product?.productCode ? '완료' : '필수'}
                 </div>
-                <div className={`flex items-center ${productData.productCategory ? 'text-green-600' : 'text-red-500'}`}>
+                <div className={`flex items-center ${product?.productCategory ? 'text-green-600' : 'text-red-500'}`}>
                   <div className="w-3 h-3 rounded-full mr-2 flex items-center justify-center text-xs">
-                    {productData.productCategory ? '✓' : '×'}
+                    {product?.productCategory ? '✓' : '×'}
                   </div>
-                  상품분류 {productData.productCategory ? '완료' : '필수'}
+                  상품분류 {product?.productCategory ? '완료' : '필수'}
                 </div>
-                <div className={`flex items-center ${productData.brand ? 'text-green-600' : 'text-red-500'}`}>
+                <div className={`flex items-center ${product?.brand ? 'text-green-600' : 'text-red-500'}`}>
                   <div className="w-3 h-3 rounded-full mr-2 flex items-center justify-center text-xs">
-                    {productData.brand ? '✓' : '×'}
+                    {product?.brand ? '✓' : '×'}
                   </div>
-                  브랜드 {productData.brand ? '완료' : '필수'}
+                  브랜드 {product?.brand ? '완료' : '필수'}
                 </div>
-                <div className={`flex items-center ${productData.originalCost ? 'text-green-600' : 'text-red-500'}`}>
+                <div className={`flex items-center ${product?.originalCost ? 'text-green-600' : 'text-red-500'}`}>
                   <div className="w-3 h-3 rounded-full mr-2 flex items-center justify-center text-xs">
-                    {productData.originalCost ? '✓' : '×'}
+                    {product?.originalCost ? '✓' : '×'}
                   </div>
-                  원가 {productData.originalCost ? '완료' : '필수'}
+                  원가 {product?.originalCost ? '완료' : '필수'}
                 </div>
-                <div className={`flex items-center ${productData.representativeSellingPrice ? 'text-green-600' : 'text-red-500'}`}>
+                <div className={`flex items-center ${product?.representativeSellingPrice ? 'text-green-600' : 'text-red-500'}`}>
                   <div className="w-3 h-3 rounded-full mr-2 flex items-center justify-center text-xs">
-                    {productData.representativeSellingPrice ? '✓' : '×'}
+                    {product?.representativeSellingPrice ? '✓' : '×'}
                   </div>
-                  대표판매가 {productData.representativeSellingPrice ? '완료' : '필수'}
+                  대표판매가 {product?.representativeSellingPrice ? '완료' : '필수'}
                 </div>
               </div>
             </div>
@@ -1236,4 +1185,4 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate }) => {
   );
 };
 
-export default ProductsAddPage;
+export default ProductsEditPage;

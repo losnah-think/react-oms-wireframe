@@ -22,7 +22,16 @@ const menuItems: MenuItem[] = [
     ]
   },
   {
-    id: 'malls',
+    id: 'orders',
+    label: '주문 관리',
+    children: [
+      { id: 'orders-list', label: '주문 목록' },
+      { id: 'orders-analytics', label: '주문 분석' },
+      { id: 'orders-settings', label: '주문 설정' }
+    ]
+  },
+  {
+    id: 'shopping-mall',
     label: '쇼핑몰 관리',
     children: [
       { id: 'malls', label: '쇼핑몰 목록' },
@@ -53,7 +62,15 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange }) => {
   };
 
   const isActive = (id: string) => {
-    return currentPage === id || currentPage.startsWith(id + '-');
+    // 정확한 페이지 매칭
+    if (currentPage === id) return true;
+    
+    // 상위 메뉴 활성화 (하위 메뉴가 선택된 경우)
+    if (id === 'products' && currentPage.startsWith('products-')) return true;
+    if (id === 'orders' && currentPage.startsWith('orders-')) return true;
+    if (id === 'shopping-mall' && currentPage.startsWith('malls-')) return true;
+    if (id === 'basic' && currentPage.startsWith('basic-')) return true;
+    return false;
   };
 
   const handleItemClick = (item: MenuItem) => {

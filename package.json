@@ -2,7 +2,6 @@
   "name": "react-oms-wireframe",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://losnah-think.github.io/react-oms-wireframe",
   "dependencies": {
     "@types/node": "^16.18.0",
     "@types/react": "^18.0.0",

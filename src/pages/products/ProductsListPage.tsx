@@ -150,6 +150,16 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
     );
   };
 
+  const handleDeleteProduct = (productId: string) => {
+    const product = mockProducts.find(p => p.id === productId);
+    if (product && window.confirm(`"${product.productName}" 상품을 정말 삭제하시겠습니까?`)) {
+      // 실제로는 API 호출이 들어갈 자리
+      console.log('상품 삭제:', productId);
+      alert('상품이 삭제되었습니다.');
+      // 목록에서 제거하는 로직은 상태 관리가 필요함 (현재는 mock 데이터)
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'selling':
@@ -311,10 +321,16 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
 
                   <div className="flex flex-col justify-between">
                     <div className="flex gap-2 flex-wrap">
-                      <button className="text-xs text-blue-500 hover:text-blue-700 border border-blue-300 px-2 py-1 rounded">
+                      <button 
+                        onClick={() => onNavigate?.('products-edit', parseInt(product.id.replace('PROD-', '')))}
+                        className="text-xs text-blue-500 hover:text-blue-700 border border-blue-300 px-2 py-1 rounded transition-colors"
+                      >
                         수정
                       </button>
-                      <button className="text-xs text-red-500 hover:text-red-700 border border-red-300 px-2 py-1 rounded">
+                      <button 
+                        onClick={() => handleDeleteProduct(product.id)}
+                        className="text-xs text-red-500 hover:text-red-700 border border-red-300 px-2 py-1 rounded transition-colors"
+                      >
                         삭제
                       </button>
                     </div>
