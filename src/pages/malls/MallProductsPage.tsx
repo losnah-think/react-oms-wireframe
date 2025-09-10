@@ -41,7 +41,7 @@ const MallProductsPage: React.FC = () => {
     { id: 'cafe24', name: '카페24', status: 'inactive', totalProducts: 156 }
   ];
 
-  const sampleProducts: MallProduct[] = [
+  const sampleProducts: MallProduct[] = React.useMemo(() => [
     {
       id: 1,
       productId: 'SAMSUNG-S24U-001',
@@ -106,7 +106,7 @@ const MallProductsPage: React.FC = () => {
       mallUrl: 'https://smartstore.naver.com/products/123459',
       category: '화장품/뷰티 > 스킨케어'
     }
-  ];
+  ], []);
 
   useEffect(() => {
     if (selectedMall) {
@@ -114,7 +114,7 @@ const MallProductsPage: React.FC = () => {
     } else {
       setProducts([]);
     }
-  }, [selectedMall]);
+  }, [selectedMall, sampleProducts]);
 
   const getSyncStatusInfo = (status: string) => {
     const statusMap: Record<string, { text: string; color: string }> = {

@@ -64,7 +64,7 @@ const MallInfoManagementPage: React.FC = () => {
         { id: 'cafe24', name: '카페24', status: 'inactive', logo: '□' }
     ];
 
-    const defaultMallInfo: MallInfo = {
+    const defaultMallInfo: MallInfo = React.useMemo(() => ({
         shipping: {
             freeShippingThreshold: 50000,
             standardShippingFee: 3000,
@@ -130,7 +130,7 @@ A/S 접수는 고객센터 1588-0000으로 연락주시기 바랍니다.
             reviewSync: true,
             qnaAutoReply: true
         }
-    };
+    }), []);
 
     useEffect(() => {
         if (selectedMall) {
@@ -139,7 +139,7 @@ A/S 접수는 고객센터 1588-0000으로 연락주시기 바랍니다.
                 [selectedMall]: prev[selectedMall] || defaultMallInfo
             }));
         }
-    }, [selectedMall]);
+    }, [selectedMall, defaultMallInfo]);
 
     const handleInputChange = (section: keyof MallInfo, field: string, value: any) => {
         setMallInfoData(prev => ({

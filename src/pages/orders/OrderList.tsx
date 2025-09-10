@@ -7,8 +7,8 @@ const OrderList: React.FC = () => {
   const [loading] = React.useState(false);
   const [error] = React.useState<string | null>(null);
   
-  // Mock data
-  const mockOrders: Order[] = [
+  // Mock data - useMemo로 래핑하여 의존성 문제 해결
+  const mockOrders = React.useMemo((): Order[] => [
     new Order({
       id: 'ORD-001',
       customerId: 'CUST-001',
@@ -29,7 +29,7 @@ const OrderList: React.FC = () => {
         { id: 'ITEM-002-001', orderId: 'ORD-002', productId: '2', productName: '청바지', quantity: 1, unitPrice: 45000, totalPrice: 45000 }
       ]
     })
-  ];
+  ], []);
 
   const filteredOrders = React.useMemo(() => {
     return mockOrders.filter(order => {

@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { Order, OrderStatus } from '../../models/Order';
 
 interface OrderSettingsProps {
-  onSave: (settings: OrderSettings) => void;
+  onSave: (settings: OrderSettingsType) => void;
 }
 
-interface OrderSettings {
+interface OrderSettingsType {
   autoConfirmationEnabled: boolean;
   autoConfirmationDelay: number;
   lowStockThreshold: number;
@@ -52,7 +51,7 @@ interface OrderSettings {
 const OrderSettings: React.FC<OrderSettingsProps> = ({ onSave }) => {
   const [activeTab, setActiveTab] = useState<'general' | 'notifications' | 'shipping' | 'returns'>('general');
   
-  const [settings, setSettings] = useState<OrderSettings>({
+  const [settings, setSettings] = useState<OrderSettingsType>({
     autoConfirmationEnabled: true,
     autoConfirmationDelay: 5,
     lowStockThreshold: 10,
@@ -97,7 +96,7 @@ const OrderSettings: React.FC<OrderSettingsProps> = ({ onSave }) => {
   });
 
   const handleSettingChange = (path: string, value: any) => {
-    setSettings(prev => {
+    setSettings((prev: OrderSettingsType) => {
       const keys = path.split('.');
       const newSettings = { ...prev };
       let current: any = newSettings;
@@ -305,7 +304,7 @@ const OrderSettings: React.FC<OrderSettingsProps> = ({ onSave }) => {
                 <label key={key} className="flex items-center space-x-3">
                   <input
                     type="checkbox"
-                    checked={value}
+                    checked={value as boolean}
                     onChange={(e) => handleSettingChange(`emailNotifications.${key}`, e.target.checked)}
                     className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                   />
@@ -328,7 +327,7 @@ const OrderSettings: React.FC<OrderSettingsProps> = ({ onSave }) => {
                 <label key={key} className="flex items-center space-x-3">
                   <input
                     type="checkbox"
-                    checked={value}
+                    checked={value as boolean}
                     onChange={(e) => handleSettingChange(`smsNotifications.${key}`, e.target.checked)}
                     className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                   />
