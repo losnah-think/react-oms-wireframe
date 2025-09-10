@@ -128,7 +128,7 @@ const ProductImportPage: React.FC = () => {
     }
 
     const selectedCount = selectedProducts.length;
-    if (confirm(`선택된 ${selectedCount}개 상품을 등록하시겠습니까?`)) {
+    if (window.confirm(`선택된 ${selectedCount}개 상품을 등록하시겠습니까?`)) {
       // Simulate import process
       alert(`${selectedCount}개 상품이 성공적으로 등록되었습니다.`);
       setSelectedProducts([]);
@@ -142,7 +142,7 @@ const ProductImportPage: React.FC = () => {
     }
 
     const totalCount = externalProducts.length;
-    if (confirm(`전체 ${totalCount}개 상품을 등록하시겠습니까?`)) {
+    if (window.confirm(`전체 ${totalCount}개 상품을 등록하시겠습니까?`)) {
       // Simulate import process
       alert(`전체 ${totalCount}개 상품이 성공적으로 등록되었습니다.`);
       setExternalProducts([]);

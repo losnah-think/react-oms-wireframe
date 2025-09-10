@@ -5,14 +5,18 @@ import Sidebar from './components/layout/Sidebar';
 import Dashboard from './pages/dashboard/Dashboard';
 import ProductsListPage from './pages/products/ProductsListPage';
 import ProductsAddPage from './pages/products/ProductsAddPage';
+import ProductCsvUploadPage from './pages/products/ProductCsvUploadPage';
+import ProductImportPage from './pages/products/ProductImportPage';
 import BasicBrandsPage from './pages/products/BasicBrandsPage';
+import OrderList from './pages/orders/OrderList';
+import MallsListPage from './pages/malls/MallsListPage';
 
 type Page = 'dashboard' | 'products' | 'products-list' | 'products-add' | 'products-csv' | 'products-import' |
-           'malls' | 'malls-products' | 'malls-info' | 'malls-category-mapping' |
+           'orders' | 'malls' | 'malls-products' | 'malls-info' | 'malls-category-mapping' |
            'basic' | 'basic-brands' | 'basic-categories';
 
 const App: React.FC = () => {
-  const [currentPage, setCurrentPage] = React.useState<Page>('dashboard');
+  const [currentPage, setCurrentPage] = React.useState<Page>('products-list');
   
   const mockUser = {
     username: '관리자',
@@ -26,9 +30,13 @@ const App: React.FC = () => {
       case 'products-add':
         return <ProductsAddPage />;
       case 'products-csv':
-        return <div className="p-6"><h1 className="text-2xl font-bold">CSV 상품 등록</h1><p className="mt-2 text-gray-600">CSV 파일을 통한 상품 일괄 등록 페이지입니다.</p></div>;
+        return <ProductCsvUploadPage />;
       case 'products-import':
-        return <div className="p-6"><h1 className="text-2xl font-bold">상품 정보 불러오기</h1><p className="mt-2 text-gray-600">외부에서 상품 정보를 불러오는 페이지입니다.</p></div>;
+        return <ProductImportPage />;
+      case 'orders':
+        return <OrderList />;
+      case 'malls':
+        return <MallsListPage />;
       case 'malls-products':
         return <div className="p-6"><h1 className="text-2xl font-bold">쇼핑몰별 상품 관리</h1><p className="mt-2 text-gray-600">쇼핑몰별 상품 관리 페이지입니다.</p></div>;
       case 'malls-info':
@@ -40,8 +48,9 @@ const App: React.FC = () => {
       case 'basic-categories':
         return <div className="p-6"><h1 className="text-2xl font-bold">카테고리 관리</h1><p className="mt-2 text-gray-600">기초 카테고리 관리 페이지입니다.</p></div>;
       case 'dashboard':
-      default:
         return <Dashboard />;
+      default:
+        return <ProductsListPage />;
     }
   };
 
