@@ -118,13 +118,13 @@ const MallProductsPage: React.FC = () => {
 
   const getSyncStatusInfo = (status: string) => {
     const statusMap: Record<string, { text: string; color: string }> = {
-      'synced': { text: '동기화됨', color: 'bg-green-100 text-green-800' },
-      'price_diff': { text: '가격 차이', color: 'bg-yellow-100 text-yellow-800' },
-      'stock_diff': { text: '재고 차이', color: 'bg-orange-100 text-orange-800' },
-      'out_of_stock': { text: '품절', color: 'bg-red-100 text-red-800' },
-      'error': { text: '오류', color: 'bg-red-100 text-red-800' }
+      'synced': { text: '동기화됨', color: 'border border-gray-400 text-gray-700' },
+      'price_diff': { text: '가격 차이', color: 'border border-gray-400 text-gray-700' },
+      'stock_diff': { text: '재고 차이', color: 'border border-gray-400 text-gray-700' },
+      'out_of_stock': { text: '품절', color: 'border border-gray-400 text-gray-700' },
+      'error': { text: '오류', color: 'border border-gray-400 text-gray-700' }
     };
-    return statusMap[status] || { text: status, color: 'bg-gray-100 text-gray-800' };
+    return statusMap[status] || { text: status, color: 'border border-gray-400 text-gray-700' };
   };
 
   const handleSyncProduct = (productId: number) => {
@@ -192,7 +192,7 @@ const MallProductsPage: React.FC = () => {
           {selectedMall && (
             <button
               onClick={handleSyncAll}
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+              className="px-4 py-2 border border-gray-400 text-gray-700 hover:bg-gray-100"
             >
               전체 동기화
             </button>
@@ -204,19 +204,20 @@ const MallProductsPage: React.FC = () => {
             <div
               key={mall.id}
               onClick={() => setSelectedMall(mall.id)}
-              className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+              className={`p-3 border cursor-pointer ${
                 selectedMall === mall.id
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-200 hover:border-gray-300'
+                  ? 'border-gray-800 bg-gray-100'
+                  : 'border-gray-300 hover:border-gray-400'
               } ${mall.status === 'inactive' ? 'opacity-50' : ''}`}
             >
               <div className="text-center">
-                <div className="text-sm font-medium text-gray-900">{mall.name}</div>
-                <div className="text-xs text-gray-500 mt-1">{mall.totalProducts}개 상품</div>
+                <div className="text-lg mb-2">□</div>
+                <div className="text-sm text-gray-900">{mall.name}</div>
+                <div className="text-xs text-gray-500 mt-1">{mall.totalProducts}개</div>
                 <div className={`text-xs mt-1 ${
-                  mall.status === 'active' ? 'text-green-600' : 'text-red-600'
+                  mall.status === 'active' ? 'text-gray-600' : 'text-gray-400'
                 }`}>
-                  {mall.status === 'active' ? '연결됨' : '연결 안됨'}
+                  {mall.status === 'active' ? '연결' : '미연결'}
                 </div>
               </div>
             </div>
@@ -331,7 +332,7 @@ const MallProductsPage: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${syncInfo.color}`}>
+                          <span className={`inline-flex px-2 py-1 text-xs ${syncInfo.color}`}>
                             {syncInfo.text}
                           </span>
                         </td>
@@ -376,14 +377,14 @@ const MallProductsPage: React.FC = () => {
                   <button
                     onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                     disabled={currentPage === 1}
-                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                    className="relative inline-flex items-center px-4 py-2 border border-gray-400 text-sm text-gray-700 bg-white hover:bg-gray-100 disabled:opacity-50"
                   >
                     이전
                   </button>
                   <button
                     onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                     disabled={currentPage === totalPages}
-                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-400 text-sm text-gray-700 bg-white hover:bg-gray-100 disabled:opacity-50"
                   >
                     다음
                   </button>
@@ -402,10 +403,10 @@ const MallProductsPage: React.FC = () => {
                         <button
                           key={page}
                           onClick={() => setCurrentPage(page)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm ${
                             page === currentPage
-                              ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                              ? 'bg-gray-200 border-gray-400 text-gray-900'
+                              : 'bg-white border-gray-400 text-gray-700 hover:bg-gray-100'
                           }`}
                         >
                           {page}
@@ -421,17 +422,15 @@ const MallProductsPage: React.FC = () => {
           {/* 동기화 통계 */}
           <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             {[
-              { label: '전체', count: products.length, color: 'bg-blue-100 text-blue-800' },
-              { label: '동기화됨', count: products.filter(p => p.syncStatus === 'synced').length, color: 'bg-green-100 text-green-800' },
-              { label: '가격 차이', count: products.filter(p => p.syncStatus === 'price_diff').length, color: 'bg-yellow-100 text-yellow-800' },
-              { label: '재고 차이', count: products.filter(p => p.syncStatus === 'stock_diff').length, color: 'bg-orange-100 text-orange-800' },
-              { label: '품절/오류', count: products.filter(p => ['out_of_stock', 'error'].includes(p.syncStatus)).length, color: 'bg-red-100 text-red-800' }
+              { label: '전체', count: products.length },
+              { label: '동기화됨', count: products.filter(p => p.syncStatus === 'synced').length },
+              { label: '가격 차이', count: products.filter(p => p.syncStatus === 'price_diff').length },
+              { label: '재고 차이', count: products.filter(p => p.syncStatus === 'stock_diff').length },
+              { label: '품절/오류', count: products.filter(p => ['out_of_stock', 'error'].includes(p.syncStatus)).length }
             ].map((stat, index) => (
-              <div key={index} className="bg-white border rounded-lg p-4 text-center">
-                <div className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${stat.color}`}>
-                  {stat.label}
-                </div>
-                <div className="text-2xl font-bold text-gray-900 mt-2">{stat.count}</div>
+              <div key={index} className="bg-white border border-gray-300 p-4 text-center">
+                <div className="text-sm text-gray-700 mb-1">□ {stat.label}</div>
+                <div className="text-xl text-gray-900">{stat.count}</div>
               </div>
             ))}
           </div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 interface ProductsEditPageProps {
   onNavigate?: (page: string) => void;
-  productId?: number;
+  productId?: string;
 }
 
 interface Product {

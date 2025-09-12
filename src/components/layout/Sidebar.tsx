@@ -41,11 +41,14 @@ const menuItems: MenuItem[] = [
     ]
   },
   {
-    id: 'basic',
-    label: '기초 관리',
+    id: 'settings',
+    label: '환경 설정',
     children: [
-      { id: 'basic-brands', label: '브랜드 관리' },
-      { id: 'basic-categories', label: '카테고리 관리' }
+      { id: 'settings-product-classifications', label: '상품 분류 관리' },
+      { id: 'settings-brands', label: '브랜드 관리' },
+      { id: 'settings-product-years', label: '상품 연도 관리' },
+      { id: 'settings-product-seasons', label: '상품 시즌 관리' },
+      { id: 'settings-system', label: '시스템 설정' }
     ]
   }
 ];
@@ -70,6 +73,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange }) => {
     if (id === 'orders' && currentPage.startsWith('orders-')) return true;
     if (id === 'shopping-mall' && currentPage.startsWith('malls-')) return true;
     if (id === 'basic' && currentPage.startsWith('basic-')) return true;
+    if (id === 'settings' && currentPage.startsWith('settings-')) return true;
     return false;
   };
 
