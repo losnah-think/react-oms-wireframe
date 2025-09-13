@@ -1,5 +1,3 @@
-
-
 export default function ProductYearsPage() {
   return (
     <div className="p-6">

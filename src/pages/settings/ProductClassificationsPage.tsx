@@ -1,5 +1,3 @@
-
-
 export default function ProductClassificationsPage() {
   return (
     <div className="p-6">

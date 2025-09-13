@@ -1,47 +1,56 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { Container, Card, Button, Stack } from '../../design-system';
-import { mockOrders } from '../../data/mockOrders';
-import { filterOrders, sortOrders, downloadOrdersCSV, getOrderStats } from '../../utils/orderUtils';
-import OrderFilters from '../../components/orders/OrderFilters';
-import OrderTable from '../../components/orders/OrderTable';
-import Pagination from '../../components/common/Pagination';
-import { GridRow, GridCol } from '../../design-system/components/Grid';
-import type { Order } from '../../types/orders';
+import React, { useState, useMemo, useEffect } from "react";
+import { Container, Card, Button, Stack } from "../../design-system";
+import { mockOrders } from "../../data/mockOrders";
+import {
+  filterOrders,
+  sortOrders,
+  downloadOrdersCSV,
+  getOrderStats,
+} from "../../utils/orderUtils";
+import OrderFilters from "../../components/orders/OrderFilters";
+import OrderTable from "../../components/orders/OrderTable";
+import Pagination from "../../components/common/Pagination";
+import { GridRow, GridCol } from "../../design-system/components/Grid";
+import type { Order } from "../../types/orders";
 
 const OrderListPage: React.FC = () => {
   // 필터 상태
-  const [search, setSearch] = useState('');
-  const [status, setStatus] = useState('all');
-  const [paymentMethod, setPaymentMethod] = useState('all');
-  const [paymentStatus, setPaymentStatus] = useState('all');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("all");
+  const [paymentMethod, setPaymentMethod] = useState("all");
+  const [paymentStatus, setPaymentStatus] = useState("all");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
   // 정렬 상태
-  const [sortBy, setSortBy] = useState<'createdAt' | 'totalAmount' | 'customerName' | 'status'>('createdAt');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  
+  const [sortBy, setSortBy] = useState<
+    "createdAt" | "totalAmount" | "customerName" | "status"
+  >("createdAt");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+
   // 페이지네이션 상태
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // mockOrders를 Order[] 타입에 맞게 변환
-  const orders: Order[] = (mockOrders || []).map(order => ({
-    orderNumber: order.order_code || '',
-    customerName: order.orderer || '',
-    items: [{
-      productId: order.product_id || null,
-      productName: order.product_name || '',
-      variantId: order.variant_id || null,
-      variantName: order.variant_name || '',
-      quantity: order.ordered_qty || 0,
-      price: order.payment_amount || 0
-    }],
+  const orders: Order[] = (mockOrders || []).map((order) => ({
+    orderNumber: order.order_code || "",
+    customerName: order.orderer || "",
+    items: [
+      {
+        productId: order.product_id || null,
+        productName: order.product_name || "",
+        variantId: order.variant_id || null,
+        variantName: order.variant_name || "",
+        quantity: order.ordered_qty || 0,
+        price: order.payment_amount || 0,
+      },
+    ],
     totalAmount: order.payment_amount || 0,
-    status: order.status || 'PENDING',
+    status: order.status || "PENDING",
     createdAt: order.created_at || new Date().toISOString(),
-    paymentMethod: order.payment_method || '',
-    paymentStatus: order.payment_status || '',
+    paymentMethod: order.payment_method || "",
+    paymentStatus: order.payment_status || "",
     // ...order // 기타 필드 유지 (status 중복 제거)
   }));
 
@@ -53,11 +62,20 @@ const OrderListPage: React.FC = () => {
       paymentMethod,
       paymentStatus,
       startDate,
-      endDate
+      endDate,
     });
-    
+
     return sortOrders(filtered, sortBy, sortOrder);
-  }, [search, status, paymentMethod, paymentStatus, startDate, endDate, sortBy, sortOrder]);
+  }, [
+    search,
+    status,
+    paymentMethod,
+    paymentStatus,
+    startDate,
+    endDate,
+    sortBy,
+    sortOrder,
+  ]);
 
   // 페이지네이션을 위한 현재 페이지 주문들
   const currentOrders = useMemo(() => {
@@ -67,10 +85,16 @@ const OrderListPage: React.FC = () => {
   }, [filteredAndSortedOrders, currentPage]);
 
   // 총 페이지 수
-  const totalPages = useMemo(() => Math.ceil(filteredAndSortedOrders.length / itemsPerPage), [filteredAndSortedOrders.length, itemsPerPage]);
+  const totalPages = useMemo(
+    () => Math.ceil(filteredAndSortedOrders.length / itemsPerPage),
+    [filteredAndSortedOrders.length, itemsPerPage],
+  );
 
   // 통계 정보
-  const stats = useMemo(() => getOrderStats(filteredAndSortedOrders || []), [filteredAndSortedOrders]);
+  const stats = useMemo(
+    () => getOrderStats(filteredAndSortedOrders || []),
+    [filteredAndSortedOrders],
+  );
 
   // 페이지 수가 변경될 때 현재 페이지를 조정
   useEffect(() => {
@@ -80,18 +104,20 @@ const OrderListPage: React.FC = () => {
   }, [totalPages, currentPage]);
 
   // 정렬 변경 핸들러
-  const handleSort = (newSortBy: 'createdAt' | 'totalAmount' | 'customerName' | 'status') => {
+  const handleSort = (
+    newSortBy: "createdAt" | "totalAmount" | "customerName" | "status",
+  ) => {
     if (sortBy === newSortBy) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     } else {
       setSortBy(newSortBy);
-      setSortOrder('desc');
+      setSortOrder("desc");
     }
   };
 
   // CSV 다운로드 핸들러
   const handleExportCSV = () => {
-    const filename = `orders_${new Date().toISOString().split('T')[0]}.csv`;
+    const filename = `orders_${new Date().toISOString().split("T")[0]}.csv`;
     downloadOrdersCSV(filteredAndSortedOrders, filename);
   };
 
@@ -103,12 +129,23 @@ const OrderListPage: React.FC = () => {
           <div>
             <h1 className="text-3xl font-bold text-gray-900">주문 관리</h1>
             <p className="text-gray-600 mt-2">
-              전체 {stats?.total ?? 0}건의 주문 <span className="text-blue-600 font-bold">(총 매출: {(stats?.totalRevenue ?? 0).toLocaleString()}원)</span>
+              전체 {stats?.total ?? 0}건의 주문{" "}
+              <span className="text-blue-600 font-bold">
+                (총 매출: {(stats?.totalRevenue ?? 0).toLocaleString()}원)
+              </span>
             </p>
           </div>
           <Stack direction="row" gap={3}>
-            <Button variant="outline" className="border-gray-300" onClick={handleExportCSV}>CSV 내보내기</Button>
-            <Button variant="primary" className="px-6">주문 등록</Button>
+            <Button
+              variant="outline"
+              className="border-gray-300"
+              onClick={handleExportCSV}
+            >
+              CSV 내보내기
+            </Button>
+            <Button variant="primary" className="px-6">
+              주문 등록
+            </Button>
           </Stack>
         </Stack>
       </Card>
@@ -118,7 +155,9 @@ const OrderListPage: React.FC = () => {
         <GridCol span={6} md={3}>
           <Card padding="md" className="shadow">
             <div className="flex items-center">
-              <div className="text-2xl font-bold text-gray-900">{stats.PENDING}</div>
+              <div className="text-2xl font-bold text-gray-900">
+                {stats.PENDING}
+              </div>
               <div className="ml-2 text-sm text-gray-600">대기중</div>
             </div>
           </Card>
@@ -126,7 +165,9 @@ const OrderListPage: React.FC = () => {
         <GridCol span={6} md={3}>
           <Card padding="md" className="shadow">
             <div className="flex items-center">
-              <div className="text-2xl font-bold text-blue-600">{stats.PROCESSING}</div>
+              <div className="text-2xl font-bold text-blue-600">
+                {stats.PROCESSING}
+              </div>
               <div className="ml-2 text-sm text-gray-600">처리중</div>
             </div>
           </Card>
@@ -134,7 +175,9 @@ const OrderListPage: React.FC = () => {
         <GridCol span={6} md={3}>
           <Card padding="md" className="shadow">
             <div className="flex items-center">
-              <div className="text-2xl font-bold text-purple-600">{stats.SHIPPED}</div>
+              <div className="text-2xl font-bold text-purple-600">
+                {stats.SHIPPED}
+              </div>
               <div className="ml-2 text-sm text-gray-600">배송중</div>
             </div>
           </Card>
@@ -142,7 +185,9 @@ const OrderListPage: React.FC = () => {
         <GridCol span={6} md={3}>
           <Card padding="md" className="shadow">
             <div className="flex items-center">
-              <div className="text-2xl font-bold text-green-600">{stats.DELIVERED}</div>
+              <div className="text-2xl font-bold text-green-600">
+                {stats.DELIVERED}
+              </div>
               <div className="ml-2 text-sm text-gray-600">배송완료</div>
             </div>
           </Card>

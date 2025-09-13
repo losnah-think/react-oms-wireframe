@@ -1,5 +1,3 @@
-
-
 export default function ProductSeasonsPage() {
   return (
     <div className="p-6">

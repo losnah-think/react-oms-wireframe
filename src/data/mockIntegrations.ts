@@ -7,6 +7,7 @@ export type Integration = {
   lastSync?: string;
   ordersCount: number;
   itemsCount: number;
+  secrets?: { key: string; value: string }[];
 };
 
 export const mockIntegrations: Integration[] = [
@@ -19,6 +20,7 @@ export const mockIntegrations: Integration[] = [
     lastSync: '2025-09-14T10:12:00Z',
     ordersCount: 24,
     itemsCount: 48,
+    secrets: [{ key: 'api_key', value: 'sk_live_1234abcd' }],
   },
   {
     id: 'int-002',
@@ -39,6 +41,7 @@ export const mockIntegrations: Integration[] = [
     lastSync: '2025-09-13T22:03:00Z',
     ordersCount: 5,
     itemsCount: 10,
+    secrets: [{ key: 'token', value: 'tok_zz987' }],
   },
   {
     id: 'int-004',

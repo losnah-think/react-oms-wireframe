@@ -1,6 +1,6 @@
 "use client";
 import React from 'react';
-import { useRouter } from 'next/router';
+// No direct Next router navigation — SPA uses onPageChange
 import Icon from '../../design-system/components/Icon';
 
 interface MenuItem {
@@ -124,31 +124,14 @@ const Sidebar: React.FC<SidebarProps> = ({
     return false;
   };
 
-  const router = useRouter();
-
   const handleItemClick = (item: MenuItem) => {
     if (item.children && item.children.length > 0) {
       toggleExpanded(item.id);
       return;
     }
 
-    // For leaf items, if it's an SPA route we keep using onPageChange
-    if (item.id === 'settings-integrations') {
-      onPageChange(item.id);
-      return;
-    }
-
-    // For regular page routes, update app state and navigate via router
+    // For SPA leaf items, update app state only
     onPageChange(item.id);
-    const href = getLinkForId(item.id);
-    if (href) {
-      try {
-        router.push(href);
-      } catch (e) {
-        // fallback
-        window.location.href = href;
-      }
-    }
   };
 
   const renderMenuItem = (item: MenuItem, level: number = 0) => {
@@ -163,6 +146,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             className={`
               flex items-center justify-center w-12 h-12 mx-2 rounded-lg cursor-pointer relative
               ${active ? 'bg-primary-100 text-primary-700' : 'text-gray-700 hover:bg-gray-100'}
+              touch-target
             `}
             onClick={() => handleItemClick(item)}
             title={item.label}
@@ -186,7 +170,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           onClick={() => handleItemClick(item)}
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleItemClick(item); }}
           className={`
-            flex items-center justify-between px-4 py-2 text-sm
+            flex items-center justify-between px-4 py-2 text-sm touch-target
             ${level === 0 ? 'mx-2 rounded-lg' : level === 1 ? 'ml-4 mr-2 rounded-md' : 'ml-8 mr-2 rounded-md'}
             ${active ? 'bg-primary-100 text-primary-700' : 'text-gray-700 hover:bg-gray-100'}
             ${level === 1 ? 'text-xs' : level === 2 ? 'text-xs' : ''}
@@ -217,38 +201,17 @@ const Sidebar: React.FC<SidebarProps> = ({
     );
   };
 
-  // map menu id -> pages route
-  function getLinkForId(id: string) {
-    switch (id) {
-      case 'settings-integrations':
-        return '/settings/integration';
-      case 'settings-product-classifications':
-        return '/settings/product-classifications';
-      case 'settings-brands':
-        return '/settings/brands';
-      case 'settings-product-years':
-        return '/settings/product-years';
-      case 'settings-product-seasons':
-        return '/settings/product-seasons';
-      case 'settings-system':
-        return '/settings/system';
-      case 'products-list':
-        return '/products';
-      case 'orders-list':
-        return '/orders';
-      default:
-        return '/';
-    }
-  }
+  // No direct URL mapping — navigation is handled via SPA state (onPageChange)
 
   return (
-    <aside className={`${isCollapsed ? 'w-16' : 'w-64'} bg-white border-r border-gray-200 h-screen overflow-y-auto transition-all duration-300 ease-in-out flex flex-col`}>
+    <aside aria-label="Main sidebar" className={`${isCollapsed ? 'w-16' : 'w-64'} bg-white border-r border-gray-200 h-screen overflow-y-auto transition-all duration-300 ease-in-out flex flex-col sidebar ${isCollapsed ? 'collapsed' : ''}`}>
       {/* 접기/펼치기 버튼 */}
       {onToggleCollapse && (
         <div className="p-2 border-b border-gray-200">
           <button
             onClick={onToggleCollapse}
-            className="w-full flex items-center justify-center p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            aria-label={isCollapsed ? "사이드바 펼치기" : "사이드바 접기"}
+            className="w-full flex items-center justify-center p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors focus:ring-2 focus:ring-primary-500 touch-target"
             title={isCollapsed ? "사이드바 펼치기" : "사이드바 접기"}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -261,9 +224,9 @@ const Sidebar: React.FC<SidebarProps> = ({
           </button>
         </div>
       )}
-      
+
       <div className="flex-1 p-4">
-        <nav className="space-y-1">
+        <nav className="space-y-1" role="navigation" aria-label="Main navigation">
           {menuItems.map(item => renderMenuItem(item))}
         </nav>
       </div>

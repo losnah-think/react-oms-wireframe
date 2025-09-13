@@ -38,11 +38,11 @@ const Header: React.FC<HeaderProps> = ({ user }) => {
 
         {/* User Actions */}
         <div className="flex items-center space-x-4">
-          <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors relative">
+          <button aria-label="Notifications" className="p-2 text-gray-400 hover:text-gray-600 transition-colors relative focus:ring-2 focus:ring-primary-500 rounded">
             <Icon name="bell" size={20} />
-            <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-xs"></span>
+            <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-xs" aria-hidden="true"></span>
           </button>
-          <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
+          <button aria-label="Settings" className="p-2 text-gray-400 hover:text-gray-600 transition-colors focus:ring-2 focus:ring-primary-500 rounded">
             <Icon name="settings" size={20} />
           </button>
           <div className="flex items-center space-x-2">

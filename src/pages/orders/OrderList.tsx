@@ -1,41 +1,61 @@
-import React from 'react';
-import { Order, OrderStatus } from '../../models/Order';
+import React from "react";
+import { Order, OrderStatus } from "../../models/Order";
 
 const OrderList: React.FC = () => {
-  const [statusFilter, setStatusFilter] = React.useState<OrderStatus | ''>('');
-  const [searchTerm, setSearchTerm] = React.useState('');
+  const [statusFilter, setStatusFilter] = React.useState<OrderStatus | "">("");
+  const [searchTerm, setSearchTerm] = React.useState("");
   const [loading] = React.useState(false);
   const [error] = React.useState<string | null>(null);
-  
+
   // Mock data - useMemo로 래핑하여 의존성 문제 해결
-  const mockOrders = React.useMemo((): Order[] => [
-    new Order({
-      id: 'ORD-001',
-      customerId: 'CUST-001',
-      customerName: '김철수',
-      status: OrderStatus.PENDING,
-      totalAmount: 50000,
-      items: [
-        { id: 'ITEM-001-001', orderId: 'ORD-001', productId: '1', productName: '베이직 티셔츠', quantity: 2, unitPrice: 25000, totalPrice: 50000 }
-      ]
-    }),
-    new Order({
-      id: 'ORD-002',
-      customerId: 'CUST-002',
-      customerName: '이영희',
-      status: OrderStatus.CONFIRMED,
-      totalAmount: 45000,
-      items: [
-        { id: 'ITEM-002-001', orderId: 'ORD-002', productId: '2', productName: '청바지', quantity: 1, unitPrice: 45000, totalPrice: 45000 }
-      ]
-    })
-  ], []);
+  const mockOrders = React.useMemo(
+    (): Order[] => [
+      new Order({
+        id: "ORD-001",
+        customerId: "CUST-001",
+        customerName: "김철수",
+        status: OrderStatus.PENDING,
+        totalAmount: 50000,
+        items: [
+          {
+            id: "ITEM-001-001",
+            orderId: "ORD-001",
+            productId: "1",
+            productName: "베이직 티셔츠",
+            quantity: 2,
+            unitPrice: 25000,
+            totalPrice: 50000,
+          },
+        ],
+      }),
+      new Order({
+        id: "ORD-002",
+        customerId: "CUST-002",
+        customerName: "이영희",
+        status: OrderStatus.CONFIRMED,
+        totalAmount: 45000,
+        items: [
+          {
+            id: "ITEM-002-001",
+            orderId: "ORD-002",
+            productId: "2",
+            productName: "청바지",
+            quantity: 1,
+            unitPrice: 45000,
+            totalPrice: 45000,
+          },
+        ],
+      }),
+    ],
+    [],
+  );
 
   const filteredOrders = React.useMemo(() => {
-    return mockOrders.filter(order => {
+    return mockOrders.filter((order) => {
       const matchesStatus = !statusFilter || order.status === statusFilter;
-      const matchesSearch = order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           order.id.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch =
+        order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.id.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesStatus && matchesSearch;
     });
   }, [statusFilter, searchTerm, mockOrders]);
@@ -64,17 +84,17 @@ const OrderList: React.FC = () => {
   const getStatusText = (status: OrderStatus): string => {
     switch (status) {
       case OrderStatus.PENDING:
-        return '대기중';
+        return "대기중";
       case OrderStatus.CONFIRMED:
-        return '주문확인';
+        return "주문확인";
       case OrderStatus.PROCESSING:
-        return '처리중';
+        return "처리중";
       case OrderStatus.SHIPPED:
-        return '배송중';
+        return "배송중";
       case OrderStatus.DELIVERED:
-        return '배송완료';
+        return "배송완료";
       case OrderStatus.CANCELLED:
-        return '취소됨';
+        return "취소됨";
       default:
         return status;
     }
@@ -103,12 +123,16 @@ const OrderList: React.FC = () => {
           </div>
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as OrderStatus | '')}
+            onChange={(e) =>
+              setStatusFilter(e.target.value as OrderStatus | "")
+            }
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
             <option value="">모든 상태</option>
-            {Object.values(OrderStatus).map(status => (
-              <option key={status} value={status}>{getStatusText(status)}</option>
+            {Object.values(OrderStatus).map((status) => (
+              <option key={status} value={status}>
+                {getStatusText(status)}
+              </option>
             ))}
           </select>
         </div>
@@ -141,20 +165,26 @@ const OrderList: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredOrders.map(order => (
+              {filteredOrders.map((order) => (
                 <tr key={order.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">#{order.id}</div>
+                      <div className="text-sm font-medium text-gray-900">
+                        #{order.id}
+                      </div>
                       <div className="text-sm text-gray-500">
-                        {order.createdAt.toLocaleDateString('ko-KR')}
+                        {order.createdAt.toLocaleDateString("ko-KR")}
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">{order.customerName}</div>
-                      <div className="text-sm text-gray-500">{order.customerId}</div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {order.customerName}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {order.customerId}
+                      </div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -172,7 +202,9 @@ const OrderList: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${order.getStatusBadgeColor()}`}>
+                    <span
+                      className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${order.getStatusBadgeColor()}`}
+                    >
                       {getStatusText(order.status)}
                     </span>
                   </td>
