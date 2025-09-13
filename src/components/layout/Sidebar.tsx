@@ -1,7 +1,7 @@
 "use client";
 import React from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/router';
+// No direct Next router navigation — SPA uses onPageChange
+import Icon from '../../design-system/components/Icon';
 
 interface MenuItem {
   id: string;
@@ -77,45 +77,30 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const [expandedItems, setExpandedItems] = React.useState<string[]>(() => initialExpanded ?? ['products']);
 
-  // 아이콘 매핑 함수
+  // 아이콘 매핑 함수 — 우선 design-system의 Icon 사용, 없으면 기존 SVG 파일로 폴백
   const getIconComponent = (iconName: string, size: number = 16, isActive: boolean = false) => {
-    const iconMap: Record<string, string> = {
-      'box': '/icons/Box.svg',
-      'list': '/icons/List.svg',
-      'file': '/icons/File.svg',
-      'download': '/icons/Download.svg',
-      'upload': '/icons/Upload.svg',
-      'external-link': '/icons/External link.svg',
-      'archive': '/icons/Archive.svg',
-      'home': '/icons/Home.svg',
-      'settings': '/icons/Settings.svg',
-      'users': '/icons/Users.svg',
-      'user-plus': '/icons/User plus.svg',
-      'search': '/icons/Search.svg',
-      'edit': '/icons/Edit 4.svg',
-      'copy': '/icons/Copy.svg',
-      'clock': '/icons/Clock.svg',
-      'info': '/icons/Info.svg',
-      'image': '/icons/Image.svg'
+    const mapToIconKey: Record<string, string> = {
+  box: 'package',
+  list: 'menu',
+      file: 'document',
+      download: 'download',
+      upload: 'upload',
+  'external-link': 'externalLink',
+      archive: 'package',
+      home: 'home',
+      settings: 'settings',
+      users: 'user-plus',
+  'user-plus': 'user',
+      search: 'search',
+      edit: 'edit',
+      copy: 'copy',
+      clock: 'clock',
+      info: 'info',
+      image: 'document'
     };
 
-    const iconSrc = iconMap[iconName];
-    if (!iconSrc) return null;
-
-    return (
-      <img 
-        src={iconSrc} 
-        alt={iconName}
-        width={size}
-        height={size}
-        className="flex-shrink-0"
-        style={{ 
-          filter: isActive 
-            ? 'brightness(0) saturate(100%) invert(40%) sepia(91%) saturate(1098%) hue-rotate(202deg) brightness(97%) contrast(86%)' // 파란색
-            : 'brightness(0) saturate(100%) invert(45%) sepia(0%) saturate(5%) hue-rotate(345deg) brightness(98%) contrast(89%)' // 회색
-        }}
-      />
-    );
+    const iconKey = (mapToIconKey[iconName] ?? iconName) as any;
+    return <Icon name={iconKey} size={size} color={isActive ? undefined : 'currentColor'} className="flex-shrink-0" />;
   };
 
   const toggleExpanded = (id: string) => {
@@ -139,31 +124,14 @@ const Sidebar: React.FC<SidebarProps> = ({
     return false;
   };
 
-  const router = useRouter();
-
   const handleItemClick = (item: MenuItem) => {
     if (item.children && item.children.length > 0) {
       toggleExpanded(item.id);
       return;
     }
 
-    // For leaf items, if it's an SPA route we keep using onPageChange
-    if (item.id === 'settings-integrations') {
-      onPageChange(item.id);
-      return;
-    }
-
-    // For regular page routes, update app state and navigate via router
+    // For SPA leaf items, update app state only
     onPageChange(item.id);
-    const href = getLinkForId(item.id);
-    if (href) {
-      try {
-        router.push(href);
-      } catch (e) {
-        // fallback
-        window.location.href = href;
-      }
-    }
   };
 
   const renderMenuItem = (item: MenuItem, level: number = 0) => {
@@ -178,6 +146,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             className={`
               flex items-center justify-center w-12 h-12 mx-2 rounded-lg cursor-pointer relative
               ${active ? 'bg-primary-100 text-primary-700' : 'text-gray-700 hover:bg-gray-100'}
+              touch-target
             `}
             onClick={() => handleItemClick(item)}
             title={item.label}
@@ -201,7 +170,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           onClick={() => handleItemClick(item)}
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleItemClick(item); }}
           className={`
-            flex items-center justify-between px-4 py-2 text-sm
+            flex items-center justify-between px-4 py-2 text-sm touch-target
             ${level === 0 ? 'mx-2 rounded-lg' : level === 1 ? 'ml-4 mr-2 rounded-md' : 'ml-8 mr-2 rounded-md'}
             ${active ? 'bg-primary-100 text-primary-700' : 'text-gray-700 hover:bg-gray-100'}
             ${level === 1 ? 'text-xs' : level === 2 ? 'text-xs' : ''}
@@ -232,38 +201,17 @@ const Sidebar: React.FC<SidebarProps> = ({
     );
   };
 
-  // map menu id -> pages route
-  function getLinkForId(id: string) {
-    switch (id) {
-      case 'settings-integrations':
-        return '/settings/integration';
-      case 'settings-product-classifications':
-        return '/settings/product-classifications';
-      case 'settings-brands':
-        return '/settings/brands';
-      case 'settings-product-years':
-        return '/settings/product-years';
-      case 'settings-product-seasons':
-        return '/settings/product-seasons';
-      case 'settings-system':
-        return '/settings/system';
-      case 'products-list':
-        return '/products';
-      case 'orders-list':
-        return '/orders';
-      default:
-        return '/';
-    }
-  }
+  // No direct URL mapping — navigation is handled via SPA state (onPageChange)
 
   return (
-    <aside className={`${isCollapsed ? 'w-16' : 'w-64'} bg-white border-r border-gray-200 h-screen overflow-y-auto transition-all duration-300 ease-in-out flex flex-col`}>
+    <aside aria-label="Main sidebar" className={`${isCollapsed ? 'w-16' : 'w-64'} bg-white border-r border-gray-200 h-screen overflow-y-auto transition-all duration-300 ease-in-out flex flex-col sidebar ${isCollapsed ? 'collapsed' : ''}`}>
       {/* 접기/펼치기 버튼 */}
       {onToggleCollapse && (
         <div className="p-2 border-b border-gray-200">
           <button
             onClick={onToggleCollapse}
-            className="w-full flex items-center justify-center p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            aria-label={isCollapsed ? "사이드바 펼치기" : "사이드바 접기"}
+            className="w-full flex items-center justify-center p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors focus:ring-2 focus:ring-primary-500 touch-target"
             title={isCollapsed ? "사이드바 펼치기" : "사이드바 접기"}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -276,9 +224,9 @@ const Sidebar: React.FC<SidebarProps> = ({
           </button>
         </div>
       )}
-      
+
       <div className="flex-1 p-4">
-        <nav className="space-y-1">
+        <nav className="space-y-1" role="navigation" aria-label="Main navigation">
           {menuItems.map(item => renderMenuItem(item))}
         </nav>
       </div>

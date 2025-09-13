@@ -1,0 +1,134 @@
+[
+  {
+    "page": "categories/CategoriesManagementPage.tsx",
+    "status": "pass"
+  },
+  {
+    "page": "dashboard/Dashboard.tsx",
+    "status": "pass"
+  },
+  {
+    "page": "index.tsx",
+    "status": "pass"
+  },
+  {
+    "page": "malls/CategoryMappingPage.tsx",
+    "status": "pass"
+  },
+  {
+    "page": "malls/MallInfoManagementPage.tsx",
+    "status": "pass"
+  },
+  {
+    "page": "malls/MallProductsPage.tsx",
+    "status": "pass"
+  },
+  {
+    "page": "malls/MallsListPage.tsx",
+    "status": "pass"
+  },
+  {
+    "page": "orders/OrderAnalytics.tsx",
+    "status": "pass"
+  },
+  {
+    "page": "orders/OrderList.tsx",
+    "status": "pass"
+  },
+  {
+    "page": "orders/OrderListPage.tsx",
+    "status": "pass"
+  },
+  {
+    "page": "orders/OrderSettings.tsx",
+    "status": "pass"
+  },
+  {
+    "page": "products/ExternalProductImportPage.tsx",
+    "status": "pass"
+  },
+  {
+    "page": "products/ProductCsvUploadPage.tsx",
+    "status": "pass"
+  },
+  {
+    "page": "products/ProductDetailPage.tsx",
+    "status": "pass"
+  },
+  {
+    "page": "products/ProductImportPage.tsx",
+    "status": "pass"
+  },
+  {
+    "page": "products/ProductsAddPage.tsx",
+    "status": "pass"
+  },
+  {
+    "page": "products/ProductsEditPage.tsx",
+    "status": "pass"
+  },
+  {
+    "page": "products/ProductsListPage.tsx",
+    "status": "pass"
+  },
+  {
+    "page": "products/[id].tsx",
+    "status": "pass"
+  },
+  {
+    "page": "settings/BrandsPage.tsx",
+    "status": "pass"
+  },
+  {
+    "page": "settings/IntegrationsPage.tsx",
+    "status": "pass"
+  },
+  {
+    "page": "settings/ProductClassificationsPage.tsx",
+    "status": "pass"
+  },
+  {
+    "page": "settings/ProductSeasonsPage.tsx",
+    "status": "pass"
+  },
+  {
+    "page": "settings/ProductYearsPage.tsx",
+    "status": "pass"
+  },
+  {
+    "page": "settings/SystemSettingsPage.tsx",
+    "status": "pass"
+  },
+  {
+    "page": "settings/integration.tsx",
+    "status": "pass"
+  },
+  {
+    "page": "settings/integrations/orderDetail.tsx",
+    "status": "pass"
+  },
+  {
+    "page": "vendors/DeliveryCompanyManagementPage.tsx",
+    "status": "pass"
+  },
+  {
+    "page": "vendors/VendorFixedAddressManagementPage.tsx",
+    "status": "pass"
+  },
+  {
+    "page": "vendors/VendorManagementPage.tsx",
+    "status": "pass"
+  },
+  {
+    "page": "vendors/suppliers/ExpectedDeliveryListPage.tsx",
+    "status": "pass"
+  },
+  {
+    "page": "vendors/suppliers/OrderSlipListPage.tsx",
+    "status": "pass"
+  },
+  {
+    "page": "vendors/suppliers/SupplierOrderPage.tsx",
+    "status": "pass"
+  }
+]

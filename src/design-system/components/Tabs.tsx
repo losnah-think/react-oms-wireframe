@@ -1,5 +1,4 @@
 import React from 'react';
-import { colors, spacing } from '../tokens';
 
 export interface TabItem {
   key: string;

@@ -51,3 +51,54 @@ html {
   outline: 2px solid #6366f1;
   outline-offset: 2px;
 }
+
+/* Skip link styles for keyboard users */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+.skip-link:focus {
+  position: fixed;
+  left: 1rem;
+  top: 1rem;
+  width: auto;
+  height: auto;
+  padding: 0.5rem 0.75rem;
+  background: #111827;
+  color: #fff;
+  border-radius: 4px;
+  z-index: 9999;
+}
+
+/* Touch / hit target helpers */
+.touch-target {
+  padding: 0.5rem; /* ensure visual padding */
+  margin: -0.25rem; /* shrink layout impact while increasing hit area */
+}
+
+/* Sidebar transitions and responsive behavior for OMS */
+.sidebar {
+  transition: width 200ms ease, min-width 200ms ease;
+  will-change: width;
+}
+.sidebar.collapsed {
+  width: 4rem !important;
+  min-width: 4rem !important;
+}
+
+@media (max-width: 768px) {
+  /* On small screens, keep sidebar compact for content priority */
+  .sidebar {
+    width: 4rem !important;
+    min-width: 4rem !important;
+  }
+  /* Increase touch targets on mobile */
+  .touch-target {
+    padding: 0.75rem;
+    margin: -0.5rem;
+  }
+}

@@ -6,8 +6,11 @@ import { GridStyles } from '../src/design-system/components'
 export default function App({ Component, pageProps }: AppProps) {
   return (
     <>
+      <a href="#main-content" className="skip-link">Skip to content</a>
       <GridStyles />
-      <Component {...pageProps} />
+      <main id="main-content">
+        <Component {...pageProps} />
+      </main>
     </>
   )
 }

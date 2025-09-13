@@ -1,4 +1,4 @@
-import { Order as IOrder } from '../types/orders';
+
 import { OrderStatus } from '../types/database';
 
 // 날짜 포맷팅
