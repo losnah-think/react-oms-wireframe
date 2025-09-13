@@ -8,6 +8,7 @@ import {
   GridRow,
   GridCol,
 } from "../../design-system";
+import TableExportButton from "../../components/common/TableExportButton";
 import { mockProducts } from "../../data/mockProducts";
 import { mockProductFilterOptions } from "../../data/mockProductFilters";
 import { formatPrice, getStockStatus } from "../../utils/productUtils";
@@ -281,6 +282,18 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
               </svg>
               신규 상품 등록
             </Button>
+            <TableExportButton
+              data={filteredProducts.map((p) => ({
+                id: p.id,
+                code: p.code,
+                name: p.name,
+                price: p.selling_price,
+                stock: (p.variants || []).reduce((s: number, v: any) => s + (v.stock || 0), 0),
+                brand: p.brand,
+                createdAt: p.created_at,
+              }))}
+              fileName={`products-list.xlsx`}
+            />
           </Stack>
         </Stack>
       </div>

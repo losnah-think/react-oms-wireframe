@@ -41,13 +41,14 @@ html {
   transition: transform 0.2s ease-out;
 }
 
-/* Scroll padding for better sticky positioning */
-* {
+/* Scroll padding for better sticky positioning on main content areas */
+main,
+.page-content {
   scroll-padding-top: 2rem;
 }
 
-/* Better focus visibility */
-*:focus {
+/* Better focus visibility using :focus-visible to avoid styling mouse focus */
+:focus-visible {
   outline: 2px solid #6366f1;
   outline-offset: 2px;
 }
@@ -77,7 +78,7 @@ html {
 /* Touch / hit target helpers */
 .touch-target {
   padding: 0.5rem; /* ensure visual padding */
-  margin: -0.25rem; /* shrink layout impact while increasing hit area */
+  /* avoid negative margins to prevent layout shifts; use inline padding on container instead */
 }
 
 /* Sidebar transitions and responsive behavior for OMS */
@@ -86,15 +87,15 @@ html {
   will-change: width;
 }
 .sidebar.collapsed {
-  width: 4rem !important;
-  min-width: 4rem !important;
+  width: 4rem;
+  min-width: 4rem;
 }
 
 @media (max-width: 768px) {
   /* On small screens, keep sidebar compact for content priority */
   .sidebar {
-    width: 4rem !important;
-    min-width: 4rem !important;
+    width: 4rem;
+    min-width: 4rem;
   }
   /* Increase touch targets on mobile */
   .touch-target {

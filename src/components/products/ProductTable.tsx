@@ -3,6 +3,7 @@ import Table, { TableColumn } from '../../design-system/components/Table';
 import Button from '../../design-system/components/Button';
 import Badge from '../../design-system/components/Badge';
 import Stack from '../../design-system/components/Stack';
+import TableExportButton from '../common/TableExportButton';
 import { formatDate, formatPrice, getStockStatus } from '../../utils/productUtils';
 
 interface ProductTableProps {
@@ -327,7 +328,17 @@ const ProductTable: React.FC<ProductTableProps> = ({
   }, [dropdownOpen]);
 
   return (
-    <Table
+    <div>
+      <div className="flex justify-end mb-2">
+        <TableExportButton data={products.map((p:any)=>({
+          id: p.id,
+          code: p.productCode || p.code,
+          name: p.productName || p.name,
+          price: p.representativeSellingPrice || 0,
+          stock: (p.variants||[]).reduce((s:number,v:any)=>s+(v.stock||0),0)
+        }))} fileName={`product-table.xlsx`} />
+      </div>
+      <Table
       columns={columns}
       data={products}
       loading={loading}
@@ -352,6 +363,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
         className: 'cursor-pointer'
       })}
     />
+    </div>
   );
 };
 

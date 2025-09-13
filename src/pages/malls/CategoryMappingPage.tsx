@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Container } from "../../design-system";
+import TableExportButton from "../../components/common/TableExportButton";
 
 interface Mall {
   id: string;
@@ -255,6 +256,15 @@ const CategoryMappingPage: React.FC = () => {
   const currentMappings = mappings.filter((m) => m.mallId === selectedMall);
   const selectedMallInfo = malls.find((m) => m.id === selectedMall);
 
+  const exportData = currentMappings.map((m) => ({
+    internalCategoryId: m.internalCategoryId,
+    internalCategoryPath: getInternalCategoryPath(m.internalCategoryId),
+    mallCategoryId: m.mallCategoryId,
+    mallCategoryPath: getMallCategoryPath(currentMallCategories, m.mallCategoryId),
+    status: m.isActive ? "활성" : "비활성",
+    createdAt: new Date(m.createdAt).toLocaleString("ko-KR"),
+  }));
+
   return (
     <Container maxWidth="full">
       <div className="p-6">
@@ -312,9 +322,11 @@ const CategoryMappingPage: React.FC = () => {
                 <h3 className="text-lg font-medium text-gray-900">
                   {selectedMallInfo?.name} 카테고리 매핑
                 </h3>
-                <div className="text-sm text-gray-600">
-                  매핑된 카테고리:{" "}
-                  {currentMappings.filter((m) => m.isActive).length}개
+                <div className="flex items-center gap-3">
+                  <div className="text-sm text-gray-600">
+                    매핑된 카테고리: {currentMappings.filter((m) => m.isActive).length}개
+                  </div>
+                  <TableExportButton data={exportData} fileName={`${selectedMall || 'mappings'}-mappings.xlsx`} />
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-4">

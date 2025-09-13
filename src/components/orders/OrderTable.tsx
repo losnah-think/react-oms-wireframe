@@ -1,5 +1,6 @@
 import React from 'react';
 import { Order } from '../../types/database';
+import TableExportButton from '../common/TableExportButton';
 import { formatDate, formatPrice, getOrderStatusText, getOrderStatusClass, getPaymentStatusText, getPaymentStatusClass } from '../../utils/orderUtils';
 
 interface OrderTableProps {
@@ -22,6 +23,16 @@ const OrderTable: React.FC<OrderTableProps> = ({
 
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="p-4 flex justify-end">
+        <TableExportButton data={orders.map(o=>({
+          orderNumber: o.orderNumber,
+          createdAt: o.createdAt,
+          customerName: o.customerName,
+          totalAmount: o.totalAmount,
+          paymentStatus: o.paymentStatus,
+          status: o.status
+        }))} fileName={`orders.xlsx`} />
+      </div>
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
