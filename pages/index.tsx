@@ -40,12 +40,17 @@ import SystemSettingsPage from '../src/pages/settings/SystemSettingsPage';
 export default function Home() {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [selectedProductId, setSelectedProductId] = useState<string>('');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const handleNavigate = (page: string, productId?: string) => {
     setCurrentPage(page);
     if (productId) {
       setSelectedProductId(productId);
     }
+  };
+
+  const toggleSidebar = () => {
+    setSidebarCollapsed(prev => !prev);
   };
 
   const renderCurrentPage = () => {
@@ -123,7 +128,12 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50">
       <Header />
       <div className="flex">
-        <Sidebar currentPage={currentPage} onPageChange={handleNavigate} />
+        <Sidebar 
+          currentPage={currentPage} 
+          onPageChange={handleNavigate}
+          isCollapsed={sidebarCollapsed}
+          onToggleCollapse={toggleSidebar}
+        />
         <main className="flex-1">
           {renderCurrentPage()}
         </main>
