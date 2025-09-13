@@ -186,10 +186,17 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <span>{item.label}</span>
               </button>
             ) : (
-              // Leaf: use Link to pages route and call onPageChange for state
-              <Link href={getLinkForId(item.id)} onClick={() => onPageChange(item.id)}>
-                <span>{item.label}</span>
-              </Link>
+              // Leaf: special-case settings-integrations to use onPageChange (SPA) so LNB stays visible
+              item.id === 'settings-integrations' ? (
+                <button onClick={() => onPageChange(item.id)} className="text-left w-full">
+                  <span>{item.label}</span>
+                </button>
+              ) : (
+                // Default: use Link to pages route and call onPageChange for state
+                <Link href={getLinkForId(item.id)} onClick={() => onPageChange(item.id)}>
+                  <span>{item.label}</span>
+                </Link>
+              )
             )}
           </div>
           {hasChildren && !isCollapsed && (
