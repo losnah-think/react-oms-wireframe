@@ -1,4 +1,4 @@
-import { Order as IOrder } from '../types/database';
+import { Order as IOrder } from '../types/orders';
 import { OrderStatus } from '../types/database';
 
 // 날짜 포맷팅
@@ -74,7 +74,7 @@ export const getPaymentStatusClass = (status: string): string => {
 
 // 주문 필터링 함수
 export const filterOrders = (
-  orders: IOrder[],
+  orders: IOrder[] = [],
   filters: {
     search?: string;
     status?: string;
@@ -84,7 +84,7 @@ export const filterOrders = (
     endDate?: string;
   }
 ): IOrder[] => {
-  return orders.filter(order => {
+  return (orders || []).filter(order => {
     // 검색어 필터링 (주문ID, 고객명, 고객전화번호, 상품명)
     if (filters.search && filters.search.trim()) {
       const searchTerm = filters.search.toLowerCase().trim();
@@ -93,8 +93,8 @@ export const filterOrders = (
         order.customerName.toLowerCase().includes(searchTerm) ||
         (order.customerPhone && order.customerPhone.includes(searchTerm)) ||
         (order.customerEmail && order.customerEmail.toLowerCase().includes(searchTerm)) ||
-        order.items.some((item: any) => 
-          item.productName.toLowerCase().includes(searchTerm)
+        (order.items || []).some((item: any) => 
+          (item.productName || '').toLowerCase().includes(searchTerm)
         );
       
       if (!matchesSearch) return false;
@@ -137,11 +137,11 @@ export const filterOrders = (
 
 // 주문 정렬 함수
 export const sortOrders = (
-  orders: IOrder[],
+  orders: IOrder[] = [],
   sortBy: 'createdAt' | 'totalAmount' | 'customerName' | 'status',
   sortOrder: 'asc' | 'desc'
 ): IOrder[] => {
-  return [...orders].sort((a, b) => {
+  return [...(orders || [])].sort((a, b) => {
     let comparison = 0;
     
     switch (sortBy) {
@@ -168,9 +168,9 @@ export const sortOrders = (
 };
 
 // 주문 통계 계산
-export const getOrderStats = (orders: IOrder[]) => {
+export const getOrderStats = (orders: IOrder[] = []) => {
   const stats = {
-    total: orders.length,
+    total: (orders || []).length,
     [OrderStatus.PENDING]: 0,
     [OrderStatus.CONFIRMED]: 0,
     [OrderStatus.PROCESSING]: 0,
@@ -181,9 +181,13 @@ export const getOrderStats = (orders: IOrder[]) => {
     averageOrderValue: 0
   };
   
-  orders.forEach(order => {
-    (stats as any)[order.status]++;
-    stats.totalRevenue += order.totalAmount;
+  (orders || []).forEach(order => {
+    try {
+      (stats as any)[order.status] = ((stats as any)[order.status] || 0) + 1;
+    } catch (e) {
+      // ignore unknown statuses
+    }
+    stats.totalRevenue += (order.totalAmount || 0);
   });
   
   stats.averageOrderValue = stats.total > 0 ? stats.totalRevenue / stats.total : 0;
