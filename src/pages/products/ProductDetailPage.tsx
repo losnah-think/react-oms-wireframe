@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { Container, Card, Button, Badge, Stack } from '../../design-system';
 import { mockProducts, ProductWithVariants } from '../../data/mockProducts';
 import { formatDate, formatPrice, getStockStatus } from '../../utils/productUtils';
 import { ProductVariant } from '../../types/database';

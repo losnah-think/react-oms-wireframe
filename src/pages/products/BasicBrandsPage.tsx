@@ -1,14 +1,15 @@
 import React from 'react';
+import { Container, Card, Button, Badge, Stack } from '../../design-system';
 
 const BasicBrandsPage: React.FC = () => {
   return (
-    <div className="p-6">
+    <Container maxWidth="full" padding="md" className="min-h-screen bg-gray-50">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">브랜드 관리</h1>
       
-      <div className="bg-white border border-gray-200 rounded-lg">
+      <Card padding="none" className="border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
           <h2 className="text-lg font-medium text-gray-900">브랜드 목록</h2>
-          <button className="px-4 py-2 bg-blue-600 text-white rounded text-sm">새 브랜드 추가</button>
+          <Button variant="primary" size="small">새 브랜드 추가</Button>
         </div>
         <div className="p-6">
           <div className="overflow-x-auto">
@@ -34,17 +35,18 @@ const BasicBrandsPage: React.FC = () => {
                     <td className="py-3 text-sm text-gray-500">{brand.date}</td>
                     <td className="py-3 text-sm text-gray-500">{brand.products}</td>
                     <td className="py-3">
-                      <span className={`px-2 py-1 text-xs rounded ${
-                        brand.status === '활성' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                      }`}>
+                      <Badge
+                        variant={brand.status === '활성' ? 'success' : 'neutral'}
+                        size="small"
+                      >
                         {brand.status}
-                      </span>
+                      </Badge>
                     </td>
                     <td className="py-3">
-                      <div className="flex space-x-2">
-                        <button className="text-xs text-blue-600">편집</button>
-                        <button className="text-xs text-red-600">삭제</button>
-                      </div>
+                      <Stack direction="row" gap={2}>
+                        <Button variant="ghost" size="small">편집</Button>
+                        <Button variant="ghost" size="small" className="text-red-600 hover:text-red-700">삭제</Button>
+                      </Stack>
                     </td>
                   </tr>
                 ))}
@@ -52,8 +54,8 @@ const BasicBrandsPage: React.FC = () => {
             </table>
           </div>
         </div>
-      </div>
-    </div>
+      </Card>
+    </Container>
   );
 };
 

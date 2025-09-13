@@ -33,9 +33,6 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
   // 수정 모드인지 확인 (URL 파라미터에서)
   const [productId] = useState<string | undefined>(undefined);
   
-  // 사이드바 상태
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  
   // 취소 핸들러
   const onCancel = () => {
     if (onNavigate) {
@@ -440,57 +437,20 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
   }
   
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* 좌측 사이드바 (LNB) */}
-      <div className={`bg-white border-r border-gray-200 transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
-        <div className="p-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            {!sidebarCollapsed && (
-              <h2 className="text-lg font-semibold text-gray-900">상품 관리</h2>
+    <Container maxWidth="4xl" padding="md" className="min-h-screen bg-gray-50">
+      {/* 헤더 */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">
+              {productId ? '상품 수정' : '상품 등록'}
+            </h1>
+            {currentTenant && (
+              <p className="text-sm text-gray-500 mt-1">
+                {currentTenant.name} ({currentTenant.type === 'external' ? '외부 공급처' : '자체 화주사'})
+              </p>
             )}
-            <button
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="p-1 rounded hover:bg-gray-100"
-            >
-              {sidebarCollapsed ? '▶' : '◀'}
-            </button>
           </div>
-        </div>
-        
-        {!sidebarCollapsed && (
-          <nav className="p-4 space-y-2">
-            <a href="#" className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded">
-              상품 목록
-            </a>
-            <a href="#" className="flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded">
-              상품 등록
-            </a>
-            <a href="#" className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded">
-              카테고리 관리
-            </a>
-            <a href="#" className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded">
-              브랜드 관리
-            </a>
-          </nav>
-        )}
-      </div>
-      
-      {/* 메인 콘텐츠 */}
-      <div className="flex-1 overflow-auto">
-        <div className="max-w-4xl mx-auto p-6">
-          {/* 헤더 */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-semibold text-gray-900">
-                  {productId ? '상품 수정' : '상품 등록'}
-                </h1>
-                {currentTenant && (
-                  <p className="text-sm text-gray-500 mt-1">
-                    {currentTenant.name} ({currentTenant.type === 'external' ? '외부 공급처' : '자체 화주사'})
-                  </p>
-                )}
-              </div>
               
               <Stack direction="row" gap={3}>
                 <Button
@@ -1083,9 +1043,7 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
               {saving ? '저장 중...' : (productId ? '수정' : '등록')}
             </Button>
           </Stack>
-        </div>
-      </div>
-    </div>
+    </Container>
   );
 };
 

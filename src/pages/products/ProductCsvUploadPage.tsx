@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Container, Card, Button, Badge, Stack, Input } from '../../design-system';
 
 interface Platform {
   id: string;
@@ -362,20 +363,20 @@ const ProductCsvUploadPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6">
+    <Container maxWidth="full" padding="md" className="min-h-screen bg-gray-50">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">CSV 상품 등록</h1>
           <p className="text-gray-600">CSV 파일을 업로드하면 자동으로 쇼핑몰 플랫폼을 감지하여 상품을 등록합니다.</p>
         </div>
-        <div className="flex space-x-3">
-          <button
+        <Stack direction="row" gap={3}>
+          <Button
+            variant="secondary"
             onClick={() => setShowHistory(true)}
-            className="px-4 py-2 text-blue-600 border border-blue-300 rounded hover:bg-blue-50"
           >
             □ 등록 이력 보기
-          </button>
-        </div>
+          </Button>
+        </Stack>
       </div>
 
       {/* 등록 이력 모달 */}
@@ -807,7 +808,7 @@ const ProductCsvUploadPage: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </Container>
   );
 };
 

@@ -52,9 +52,24 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [selectAll, setSelectAll] = useState(false);
   
+  // 옵션 드롭다운 상태
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  
   // 외부 화주사 여부 확인 (조건부 필터용)
   const isExternalTenant = currentTenant?.type === 'external';
   
+  // 외부 클릭 시 드롭다운 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (openDropdown) {
+        setOpenDropdown(null);
+      }
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [openDropdown]);
+
   // 검색 매개변수 메모이제이션
   const searchParams = useMemo<ProductListParams>(() => ({
     page: currentPage,
@@ -648,13 +663,56 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({
                         {new Date(product.updatedAt).toLocaleDateString('ko-KR')}
                       </td>
                       <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-center">
+                        <div className="flex items-center justify-center relative">
                           <Button
                             variant="ghost"
                             size="small"
+                            onClick={() => setOpenDropdown(openDropdown === product.id ? null : product.id)}
                           >
                             ⋮
                           </Button>
+                          {openDropdown === product.id && (
+                            <div className="absolute right-0 top-8 z-10 bg-white border border-gray-200 rounded-md shadow-lg min-w-[120px]">
+                              <div className="py-1">
+                                <button
+                                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                                  onClick={() => {
+                                    console.log('상세보기', product.id);
+                                    setOpenDropdown(null);
+                                  }}
+                                >
+                                  상세보기
+                                </button>
+                                <button
+                                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                                  onClick={() => {
+                                    console.log('수정', product.id);
+                                    setOpenDropdown(null);
+                                  }}
+                                >
+                                  수정
+                                </button>
+                                <button
+                                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                                  onClick={() => {
+                                    console.log('복제', product.id);
+                                    setOpenDropdown(null);
+                                  }}
+                                >
+                                  복제
+                                </button>
+                                <button
+                                  className="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left"
+                                  onClick={() => {
+                                    console.log('삭제', product.id);
+                                    setOpenDropdown(null);
+                                  }}
+                                >
+                                  삭제
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </td>
                     </tr>

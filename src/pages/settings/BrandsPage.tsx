@@ -350,7 +350,6 @@ const BrandsPage: React.FC<BrandsPageProps> = ({ onNavigate }) => {
                 {editingItem ? '수정' : '추가'}
               </Button>
             </Stack>
-          </div>
         </Modal>
     </Container>
   );
