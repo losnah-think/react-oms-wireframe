@@ -11,6 +11,7 @@ import {
 import TableExportButton from "../../components/common/TableExportButton";
 import { mockProducts } from "../../data/mockProducts";
 import { mockProductFilterOptions } from "../../data/mockProductFilters";
+import mockClassifications from '../../data/mockClassifications';
 import { formatPrice, getStockStatus } from "../../utils/productUtils";
 
 interface ProductsListPageProps {
@@ -35,7 +36,13 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 15;
 
-  // 카테고리 이름 매핑
+  // 내부 분류 이름 매핑
+  const classificationNames: { [key: string]: string } = {};
+  mockClassifications.forEach((c) => {
+    classificationNames[c.id] = c.name;
+  });
+
+  // 외부 카테고리 이름 매핑 (기존 필터 옵션)
   const categoryNames: { [key: string]: string } = {};
   mockProductFilterOptions.categories.forEach((cur) => {
     categoryNames[cur.id] = cur.name;
@@ -64,12 +71,10 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
       ) {
         return false;
       }
-      // 카테고리 필터
-      if (
-        selectedCategory !== "전체" &&
-        categoryNames[product.category_id] !== selectedCategory
-      ) {
-        return false;
+      // 내부 분류 필터 (classification 우선)
+      if (selectedCategory !== "전체") {
+        const prodClass = product.classification || categoryNames[product.category_id];
+        if (prodClass !== selectedCategory) return false;
       }
       // 브랜드 필터
       if (selectedBrand !== "전체" && product.brand !== selectedBrand) {
@@ -335,9 +340,9 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
               className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
             >
               <option value="전체">전체</option>
-              {mockProductFilterOptions.categories.map((category) => (
-                <option key={category.id} value={category.name}>
-                  {category.name}
+              {mockClassifications.map((c) => (
+                <option key={c.id} value={c.name}>
+                  {c.name}
                 </option>
               ))}
             </select>
@@ -668,7 +673,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
                     <td className="px-6 py-6 whitespace-nowrap">
                       <div className="space-y-1">
                         <div className="font-semibold text-gray-900">
-                          {categoryNames[product.category_id]}
+                          {product.classification || categoryNames[product.category_id]}
                         </div>
                         {product.brand && (
                           <div className="font-semibold text-gray-900">
