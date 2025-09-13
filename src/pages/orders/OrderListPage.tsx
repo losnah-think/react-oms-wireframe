@@ -26,22 +26,22 @@ const OrderListPage: React.FC = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // mockOrders를 Order[] 타입에 맞게 변환
-  const orders: Order[] = mockOrders.map(order => ({
-    orderNumber: order.order_code,
-    customerName: order.orderer,
+  const orders: Order[] = (mockOrders || []).map(order => ({
+    orderNumber: order.order_code || '',
+    customerName: order.orderer || '',
     items: [{
-      productId: order.product_id,
-      productName: order.product_name,
-      variantId: order.variant_id,
-      variantName: order.variant_name,
-      quantity: order.ordered_qty,
-      price: order.payment_amount
+      productId: order.product_id || null,
+      productName: order.product_name || '',
+      variantId: order.variant_id || null,
+      variantName: order.variant_name || '',
+      quantity: order.ordered_qty || 0,
+      price: order.payment_amount || 0
     }],
-    totalAmount: order.payment_amount,
-    status: order.status,
-    createdAt: order.created_at,
-    paymentMethod: order.payment_method,
-    paymentStatus: order.payment_status,
+    totalAmount: order.payment_amount || 0,
+    status: order.status || 'PENDING',
+    createdAt: order.created_at || new Date().toISOString(),
+    paymentMethod: order.payment_method || '',
+    paymentStatus: order.payment_status || '',
     // ...order // 기타 필드 유지 (status 중복 제거)
   }));
 
@@ -70,7 +70,7 @@ const OrderListPage: React.FC = () => {
   const totalPages = useMemo(() => Math.ceil(filteredAndSortedOrders.length / itemsPerPage), [filteredAndSortedOrders.length, itemsPerPage]);
 
   // 통계 정보
-  const stats = useMemo(() => getOrderStats(filteredAndSortedOrders), [filteredAndSortedOrders]);
+  const stats = useMemo(() => getOrderStats(filteredAndSortedOrders || []), [filteredAndSortedOrders]);
 
   // 페이지 수가 변경될 때 현재 페이지를 조정
   useEffect(() => {
@@ -103,7 +103,7 @@ const OrderListPage: React.FC = () => {
           <div>
             <h1 className="text-3xl font-bold text-gray-900">주문 관리</h1>
             <p className="text-gray-600 mt-2">
-              전체 {stats.total}건의 주문 <span className="text-blue-600 font-bold">(총 매출: {stats.totalRevenue.toLocaleString()}원)</span>
+              전체 {stats?.total ?? 0}건의 주문 <span className="text-blue-600 font-bold">(총 매출: {(stats?.totalRevenue ?? 0).toLocaleString()}원)</span>
             </p>
           </div>
           <Stack direction="row" gap={3}>

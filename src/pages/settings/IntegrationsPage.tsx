@@ -3,6 +3,7 @@ import Container from '../../design-system/components/Container';
 import Card from '../../design-system/components/Card';
 import ConnectorTable from '../../components/integrations/ConnectorTable';
 import TestPreview from '../../components/integrations/TestPreview';
+import ConnectionsList from '../../components/integrations/ConnectionsList';
 import AuthForm from '../../components/integrations/AuthForm';
 import SecretForm from '../../components/integrations/SecretForm';
 
@@ -40,6 +41,7 @@ export default function IntegrationsPage({ onNavigate }: { onNavigate?: (page: s
 
 						<div className="mt-4">
 							<div className="flex gap-2">
+								<button className={`px-3 py-1 rounded ${channel === 'all' ? 'bg-primary-600 text-white' : 'bg-gray-100'}`} onClick={() => setChannel('all')}>All</button>
 								<button className={`px-3 py-1 rounded ${channel === 'cafe24' ? 'bg-primary-600 text-white' : 'bg-gray-100'}`} onClick={() => setChannel('cafe24')}>Cafe24</button>
 								<button className={`px-3 py-1 rounded ${channel === 'oms-mock' ? 'bg-primary-600 text-white' : 'bg-gray-100'}`} onClick={() => setChannel('oms-mock')}>OMS Mock</button>
 								<button className={`px-3 py-1 rounded ${channel === 'custom' ? 'bg-primary-600 text-white' : 'bg-gray-100'}`} onClick={() => setChannel('custom')}>Custom</button>
@@ -50,7 +52,7 @@ export default function IntegrationsPage({ onNavigate }: { onNavigate?: (page: s
 					<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 						<div className="md:col-span-2">
 													<Card className="mb-4 p-4">
-														<ConnectorTable channel={channel} onDetail={(orderId: string) => onNavigate?.('settings-integrations-orderDetail', orderId)} />
+														<ConnectionsList platform={channel} />
 													</Card>
 						</div>
 

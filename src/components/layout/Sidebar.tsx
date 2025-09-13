@@ -1,5 +1,7 @@
+"use client";
 import React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 
 interface MenuItem {
   id: string;
@@ -13,6 +15,10 @@ interface SidebarProps {
   onPageChange: (page: string) => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
+  // optional prop for tests to set initially expanded menu ids
+  initialExpanded?: string[];
+  // optional test helper to force render all child menus
+  forceExpandAll?: boolean;
 }
 
 const menuItems: MenuItem[] = [
@@ -65,9 +71,11 @@ const Sidebar: React.FC<SidebarProps> = ({
   currentPage, 
   onPageChange, 
   isCollapsed = false, 
-  onToggleCollapse 
+  onToggleCollapse,
+  initialExpanded
+  , forceExpandAll = false
 }) => {
-  const [expandedItems, setExpandedItems] = React.useState<string[]>(['products']);
+  const [expandedItems, setExpandedItems] = React.useState<string[]>(() => initialExpanded ?? ['products']);
 
   // 아이콘 매핑 함수
   const getIconComponent = (iconName: string, size: number = 16, isActive: boolean = false) => {
@@ -131,11 +139,30 @@ const Sidebar: React.FC<SidebarProps> = ({
     return false;
   };
 
+  const router = useRouter();
+
   const handleItemClick = (item: MenuItem) => {
     if (item.children && item.children.length > 0) {
       toggleExpanded(item.id);
-    } else {
+      return;
+    }
+
+    // For leaf items, if it's an SPA route we keep using onPageChange
+    if (item.id === 'settings-integrations') {
       onPageChange(item.id);
+      return;
+    }
+
+    // For regular page routes, update app state and navigate via router
+    onPageChange(item.id);
+    const href = getLinkForId(item.id);
+    if (href) {
+      try {
+        router.push(href);
+      } catch (e) {
+        // fallback
+        window.location.href = href;
+      }
     }
   };
 
@@ -168,11 +195,17 @@ const Sidebar: React.FC<SidebarProps> = ({
     return (
       <div key={item.id}>
         <div
+          role="button"
+          tabIndex={0}
+          data-testid={`menu-${item.id}`}
+          onClick={() => handleItemClick(item)}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleItemClick(item); }}
           className={`
-            flex items-center justify-between px-4 py-2 text-sm cursor-pointer
+            flex items-center justify-between px-4 py-2 text-sm
             ${level === 0 ? 'mx-2 rounded-lg' : level === 1 ? 'ml-4 mr-2 rounded-md' : 'ml-8 mr-2 rounded-md'}
             ${active ? 'bg-primary-100 text-primary-700' : 'text-gray-700 hover:bg-gray-100'}
             ${level === 1 ? 'text-xs' : level === 2 ? 'text-xs' : ''}
+            cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-200
           `}
         >
           <div className="flex items-center space-x-2">
@@ -181,23 +214,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 {getIconComponent(item.icon, level === 0 ? 14 : 10, active)}
               </div>
             )}
-            {hasChildren ? (
-              <button onClick={() => handleItemClick(item)} className="text-left w-full">
-                <span>{item.label}</span>
-              </button>
-            ) : (
-              // Leaf: special-case settings-integrations to use onPageChange (SPA) so LNB stays visible
-              item.id === 'settings-integrations' ? (
-                <button onClick={() => onPageChange(item.id)} className="text-left w-full">
-                  <span>{item.label}</span>
-                </button>
-              ) : (
-                // Default: use Link to pages route and call onPageChange for state
-                <Link href={getLinkForId(item.id)} onClick={() => onPageChange(item.id)}>
-                  <span>{item.label}</span>
-                </Link>
-              )
-            )}
+            <span>{item.label}</span>
           </div>
           {hasChildren && !isCollapsed && (
             <span className="ml-auto text-xs">
@@ -206,7 +223,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           )}
         </div>
 
-        {hasChildren && isExpanded && !isCollapsed && (
+        {hasChildren && (isExpanded || forceExpandAll) && !isCollapsed && (
           <div className={level === 0 ? 'ml-2' : 'ml-2'}>
             {item.children?.map(child => renderMenuItem(child, level + 1))}
           </div>

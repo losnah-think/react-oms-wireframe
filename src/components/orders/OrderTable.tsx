@@ -71,8 +71,8 @@ const OrderTable: React.FC<OrderTableProps> = ({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {orders.map((order) => (
-              <tr key={order.id} className="hover:bg-gray-50">
+            {orders.map((order: any, index: number) => (
+              <tr key={order.id ?? order.orderNumber ?? index} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {formatDate(order.createdAt)}
                 </td>
@@ -89,14 +89,18 @@ const OrderTable: React.FC<OrderTableProps> = ({
                   <div>{order.customerEmail}</div>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-900">
-                  {order.items.map((item: any, index: number) => (
-                    <div key={item.id} className={index > 0 ? 'mt-1' : ''}>
-                      <div className="font-medium">{item.productName}</div>
-                      <div className="text-gray-500">
-                        수량: {item.quantity}개 | 단가: {formatPrice(item.unitPrice)}
+                  {(order.items || []).map((item: any, index: number) => {
+                    const key = item.id || `${item.productId ?? 'p'}-${item.variantId ?? 'v'}-${index}`;
+                    const price = item.unitPrice ?? item.price ?? 0;
+                    return (
+                      <div key={key} className={index > 0 ? 'mt-1' : ''}>
+                        <div className="font-medium">{item.productName}</div>
+                        <div className="text-gray-500">
+                          수량: {item.quantity ?? 0}개 | 단가: {formatPrice(price)}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   <div className="font-semibold">{formatPrice(order.totalAmount)}</div>
