@@ -1,20 +1,10 @@
 import React from 'react';
 
 export interface IconProps extends React.SVGAttributes<SVGElement> {
-  /**
-   * Icon name
-   */
   name: keyof typeof iconLibrary;
-  
-  /**
-   * Icon size
-   */
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | number;
-  
-  /**
-   * Icon color
-   */
   color?: string;
+  className?: string;
 }
 
 const sizeConfig = {
@@ -97,6 +87,26 @@ export const iconLibrary = {
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
   ),
 
+  // Extras used across the app
+  bell: (
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118.6 14V11a6 6 0 10-12 0v3c0 .386-.214.742-.595.895L4 17h5m6 0a3 3 0 11-6 0h6z" />
+  ),
+  user: (
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM4 21a8 8 0 0112 0" />
+  ),
+  home: (
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 11l9-7 9 7v8a2 2 0 01-2 2h-4a2 2 0 01-2-2v-5H9v5a2 2 0 01-2 2H3a2 2 0 01-2-2v-8z" />
+  ),
+  externalLink: (
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 13v6a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
+  ),
+  clock: (
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3M12 2a10 10 0 100 20 10 10 0 000-20z" />
+  ),
+  image: (
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4h16v16H4V4zm3 9l2-2 3 3 4-4 3 3v3H7v-3z" />
+  ),
+
   // Business
   package: (
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
@@ -126,25 +136,10 @@ export const iconLibrary = {
   ),
 } as const;
 
-const Icon: React.FC<IconProps> = ({
-  name,
-  size = 'md',
-  color = 'currentColor',
-  className = '',
-  ...props
-}) => {
-  const iconSize = typeof size === 'number' ? size : sizeConfig[size];
-  
+const Icon: React.FC<IconProps> = ({ name, size = 'md', color = 'currentColor', className = '', ...props }) => {
+  const iconSize = typeof size === 'number' ? size : sizeConfig[size as keyof typeof sizeConfig];
   return (
-    <svg
-      width={iconSize}
-      height={iconSize}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={color}
-      className={className}
-      {...props}
-    >
+    <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" stroke={color} className={className} {...props}>
       {iconLibrary[name]}
     </svg>
   );

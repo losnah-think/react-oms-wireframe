@@ -2,6 +2,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import Icon from '../../design-system/components/Icon';
 
 interface MenuItem {
   id: string;
@@ -77,45 +78,30 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const [expandedItems, setExpandedItems] = React.useState<string[]>(() => initialExpanded ?? ['products']);
 
-  // 아이콘 매핑 함수
+  // 아이콘 매핑 함수 — 우선 design-system의 Icon 사용, 없으면 기존 SVG 파일로 폴백
   const getIconComponent = (iconName: string, size: number = 16, isActive: boolean = false) => {
-    const iconMap: Record<string, string> = {
-      'box': '/icons/Box.svg',
-      'list': '/icons/List.svg',
-      'file': '/icons/File.svg',
-      'download': '/icons/Download.svg',
-      'upload': '/icons/Upload.svg',
-      'external-link': '/icons/External link.svg',
-      'archive': '/icons/Archive.svg',
-      'home': '/icons/Home.svg',
-      'settings': '/icons/Settings.svg',
-      'users': '/icons/Users.svg',
-      'user-plus': '/icons/User plus.svg',
-      'search': '/icons/Search.svg',
-      'edit': '/icons/Edit 4.svg',
-      'copy': '/icons/Copy.svg',
-      'clock': '/icons/Clock.svg',
-      'info': '/icons/Info.svg',
-      'image': '/icons/Image.svg'
+    const mapToIconKey: Record<string, string> = {
+  box: 'package',
+  list: 'menu',
+      file: 'document',
+      download: 'download',
+      upload: 'upload',
+  'external-link': 'externalLink',
+      archive: 'package',
+      home: 'home',
+      settings: 'settings',
+      users: 'user-plus',
+  'user-plus': 'user',
+      search: 'search',
+      edit: 'edit',
+      copy: 'copy',
+      clock: 'clock',
+      info: 'info',
+      image: 'document'
     };
 
-    const iconSrc = iconMap[iconName];
-    if (!iconSrc) return null;
-
-    return (
-      <img 
-        src={iconSrc} 
-        alt={iconName}
-        width={size}
-        height={size}
-        className="flex-shrink-0"
-        style={{ 
-          filter: isActive 
-            ? 'brightness(0) saturate(100%) invert(40%) sepia(91%) saturate(1098%) hue-rotate(202deg) brightness(97%) contrast(86%)' // 파란색
-            : 'brightness(0) saturate(100%) invert(45%) sepia(0%) saturate(5%) hue-rotate(345deg) brightness(98%) contrast(89%)' // 회색
-        }}
-      />
-    );
+    const iconKey = (mapToIconKey[iconName] ?? iconName) as any;
+    return <Icon name={iconKey} size={size} color={isActive ? undefined : 'currentColor'} className="flex-shrink-0" />;
   };
 
   const toggleExpanded = (id: string) => {

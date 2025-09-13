@@ -55,6 +55,20 @@ describe('All pages render summary (non-failing)', () => {
     // eslint-disable-next-line no-console
     console.table(results.map(r => ({ page: r.page, status: r.status, message: r.message || '' })));
 
+    // If running in CI, write a machine-readable artifact for later inspection
+    if (process.env.GITHUB_ACTIONS === 'true') {
+      const outDir = path.resolve(__dirname, '..', '..', '..', 'test-results');
+      if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+      const outPath = path.join(outDir, 'pages-summary.json');
+      try {
+        fs.writeFileSync(outPath, JSON.stringify(results, null, 2), 'utf-8');
+        // eslint-disable-next-line no-console
+        console.log('Wrote pages summary to', outPath);
+      } catch (e) {
+        // ignore write errors in CI if any
+      }
+    }
+
     // ensure test does not fail — user will inspect the console table
     expect(true).toBe(true);
   });
