@@ -1,0 +1,74 @@
+erDiagram
+  PRODUCT ||--o{ VARIANT : has
+  PRODUCT }o--|| BRAND : belongs_to
+  PRODUCT }o--|| SUPPLIER : supplied_by
+  PRODUCT }o--o{ CLASSIFICATION : classified_as
+  CLASSIFICATION ||--o{ CLASSIFICATION : parent_of
+  MALL ||--o{ MALL_CATEGORY : has
+  MALL_CATEGORY }o--|| MALL : belongs_to
+  CATEGORY_MAPPING }o--|| CLASSIFICATION : internal_category
+  CATEGORY_MAPPING }o--|| MALL_CATEGORY : mall_category
+  CATEGORY_MAPPING }o--|| MALL : mall
+  ORDER ||--o{ ORDER_ITEM : contains
+  ORDER_ITEM }o--|| PRODUCT : product
+
+  PRODUCT {
+    integer id PK
+    string code
+    string name
+    integer brand_id FK
+    integer supplier_id FK
+    integer selling_price
+    integer cost_price
+    string description
+    datetime created_at
+  }
+  VARIANT {
+    integer id PK
+    integer product_id FK
+    string variant_name
+    string barcode
+    integer stock
+    integer selling_price
+  }
+  CLASSIFICATION {
+    integer id PK
+    string name
+    integer parent_id FK
+    integer level
+  }
+  MALL {
+    string id PK
+    string name
+    string status
+  }
+  MALL_CATEGORY {
+    string id PK
+    string mall_id FK
+    string name
+    string parent_id
+    integer level
+  }
+  CATEGORY_MAPPING {
+    integer id PK
+    integer internal_category_id FK
+    string mall_category_id FK
+    string mall_id FK
+    boolean is_active
+    datetime created_at
+  }
+  ORDER {
+    string orderNumber PK
+    string customerName
+    datetime createdAt
+    integer totalAmount
+    string status
+  }
+  ORDER_ITEM {
+    integer id PK
+    string orderNumber FK
+    integer product_id FK
+    integer variant_id FK
+    integer quantity
+    integer price
+  }
