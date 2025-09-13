@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 
 interface MenuItem {
   id: string;
@@ -31,7 +32,6 @@ const menuItems: MenuItem[] = [
     icon: 'archive',
     children: [
       { id: 'orders-list', label: '주문 목록', icon: 'list' },
-      { id: 'orders-analytics', label: '주문 분석', icon: 'search' },
       { id: 'orders-settings', label: '주문 설정', icon: 'settings' }
     ]
   },
@@ -51,11 +51,12 @@ const menuItems: MenuItem[] = [
     label: '환경 설정',
     icon: 'settings',
     children: [
+      { id: 'settings-integrations', label: '외부 연동 관리', icon: 'external-link' },
       { id: 'settings-product-classifications', label: '상품 분류 관리', icon: 'copy' },
       { id: 'settings-brands', label: '브랜드 관리', icon: 'image' },
       { id: 'settings-product-years', label: '상품 연도 관리', icon: 'clock' },
       { id: 'settings-product-seasons', label: '상품 시즌 관리', icon: 'clock' },
-      { id: 'settings-system', label: '시스템 설정', icon: 'settings' }
+      { id: 'settings-system', label: '시스템 설정', icon: 'settings' },
     ]
   }
 ];
@@ -162,6 +163,8 @@ const Sidebar: React.FC<SidebarProps> = ({
       );
     }
 
+    // special-case removed: use onPageChange for SPA navigation
+    // ...기존 코드...
     return (
       <div key={item.id}>
         <div
@@ -171,7 +174,6 @@ const Sidebar: React.FC<SidebarProps> = ({
             ${active ? 'bg-primary-100 text-primary-700' : 'text-gray-700 hover:bg-gray-100'}
             ${level === 1 ? 'text-xs' : level === 2 ? 'text-xs' : ''}
           `}
-          onClick={() => handleItemClick(item)}
         >
           <div className="flex items-center space-x-2">
             {item.icon && (
@@ -179,7 +181,16 @@ const Sidebar: React.FC<SidebarProps> = ({
                 {getIconComponent(item.icon, level === 0 ? 14 : 10, active)}
               </div>
             )}
-            <span>{item.label}</span>
+            {hasChildren ? (
+              <button onClick={() => handleItemClick(item)} className="text-left w-full">
+                <span>{item.label}</span>
+              </button>
+            ) : (
+              // Leaf: use Link to pages route and call onPageChange for state
+              <Link href={getLinkForId(item.id)} onClick={() => onPageChange(item.id)}>
+                <span>{item.label}</span>
+              </Link>
+            )}
           </div>
           {hasChildren && !isCollapsed && (
             <span className="ml-auto text-xs">
@@ -187,7 +198,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             </span>
           )}
         </div>
-        
+
         {hasChildren && isExpanded && !isCollapsed && (
           <div className={level === 0 ? 'ml-2' : 'ml-2'}>
             {item.children?.map(child => renderMenuItem(child, level + 1))}
@@ -196,6 +207,30 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
     );
   };
+
+  // map menu id -> pages route
+  function getLinkForId(id: string) {
+    switch (id) {
+      case 'settings-integrations':
+        return '/settings/integration';
+      case 'settings-product-classifications':
+        return '/settings/product-classifications';
+      case 'settings-brands':
+        return '/settings/brands';
+      case 'settings-product-years':
+        return '/settings/product-years';
+      case 'settings-product-seasons':
+        return '/settings/product-seasons';
+      case 'settings-system':
+        return '/settings/system';
+      case 'products-list':
+        return '/products';
+      case 'orders-list':
+        return '/orders';
+      default:
+        return '/';
+    }
+  }
 
   return (
     <aside className={`${isCollapsed ? 'w-16' : 'w-64'} bg-white border-r border-gray-200 h-screen overflow-y-auto transition-all duration-300 ease-in-out flex flex-col`}>
