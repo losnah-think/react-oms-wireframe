@@ -12,6 +12,7 @@ import TableExportButton from "../../components/common/TableExportButton";
 import { mockProducts } from "../../data/mockProducts";
 import { mockProductFilterOptions } from "../../data/mockProductFilters";
 import mockClassifications from '../../data/mockClassifications';
+import HierarchicalSelect from '../../components/common/HierarchicalSelect';
 import { formatPrice, getStockStatus } from "../../utils/productUtils";
 
 interface ProductsListPageProps {
@@ -334,18 +335,12 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
 
           {/* 카테고리 필터 */}
           <GridCol span={4}>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
-            >
-              <option value="전체">전체</option>
-              {mockClassifications.map((c) => (
-                <option key={c.id} value={c.name}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+            <HierarchicalSelect
+              data={mockClassifications as any}
+              value={selectedCategory === '전체' ? undefined : selectedCategory}
+              placeholder="분류 선택"
+              onChange={(node) => setSelectedCategory(node ? node.name : '전체')}
+            />
           </GridCol>
 
           {/* 브랜드 필터 */}
