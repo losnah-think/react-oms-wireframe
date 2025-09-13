@@ -4,6 +4,7 @@ import MallProductManager from '../../components/malls/MallProductManager'
 import EditProductModal from '../../components/malls/EditProductModal'
 import MallExtraInfoManager from '../../components/malls/MallExtraInfoManager'
 import MallCategoryMapping from '../../components/malls/MallCategoryMapping'
+import mockClassifications from '../../data/mockClassifications'
 import TableExportButton from '../../components/common/TableExportButton'
 
 type Mall = { id: string; name: string; status: 'active' | 'inactive'; totalProducts: number }
@@ -382,7 +383,13 @@ const MallProductsPage: React.FC = () => {
           <MallExtraInfoManager mallId={selectedMall} onClose={()=>setShowExtraInfoModal(false)} onApply={(v)=>setExtraInfo(v)} />
         )}
         {showCategoryMapModal && selectedMall && (
-          <MallCategoryMapping mallId={selectedMall} internalCategories={Array.from(new Set(products.map((p)=>p.category)))} products={products} onClose={()=>setShowCategoryMapModal(false)} onApply={(m)=>setCategoryMappings(m)} />
+          <MallCategoryMapping
+            mallId={selectedMall}
+            internalCategories={Array.from(new Set((function flatten(t:any[], parents:string[] = []){ const out:string[]=[]; t.forEach(n=>{ const path = parents.concat(n.name); out.push(path.join(' > ')); if(n.children) out.push(...(flatten(n.children, path))); }); return out; })(mockClassifications)))}
+            products={products}
+            onClose={()=>setShowCategoryMapModal(false)}
+            onApply={(m)=>setCategoryMappings(m)}
+          />
         )}
       </div>
     </Container>

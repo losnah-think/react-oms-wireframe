@@ -1,7 +1,18 @@
 import React from 'react';
 import { Container, Card } from '../../design-system';
+import mockClassifications from '../../data/mockClassifications';
 
-type Classification = { id: string; name: string; slug?: string };
+type Classification = { id: string; name: string; slug?: string; path?: string };
+
+function flattenTree(tree: any[], parents: string[] = []) {
+  const out: Classification[] = [];
+  tree.forEach((n: any) => {
+    const path = parents.concat(n.name);
+    out.push({ id: n.id, name: n.name, path: path.join(' > ') });
+    if (n.children) out.push(...flattenTree(n.children, path));
+  });
+  return out;
+}
 
 export default function ProductClassificationsPage() {
   const [items, setItems] = React.useState<Classification[]>([]);
@@ -15,7 +26,7 @@ export default function ProductClassificationsPage() {
       const raw = window.localStorage.getItem('productClassifications');
       if (raw) setItems(JSON.parse(raw));
       else {
-        const seed = [{ id: 'c1', name: '의류', slug: 'clothing' }];
+        const seed = flattenTree(mockClassifications);
         setItems(seed);
         window.localStorage.setItem('productClassifications', JSON.stringify(seed));
       }
