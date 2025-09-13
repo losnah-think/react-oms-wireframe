@@ -52,3 +52,8 @@ export const mockOrders = Array.from({length: 100}, (_, i) => {
     status: mockOrderStatus[i % mockOrderStatus.length]
   };
 });
+
+// Options for filters (used by OrderFilters)
+export const orderStatusOptions = (mockOrderStatus || []).map((s: string) => ({ value: s, label: s }));
+export const paymentMethodOptions = ['all', '카드', '무통장', '페이팔'].map(m => ({ value: m, label: m }));
+export const paymentStatusOptions = (mockPaymentStatus || []).map((s: string) => ({ value: s, label: s }));
