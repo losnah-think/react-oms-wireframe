@@ -105,6 +105,14 @@ export default function Home() {
       // Settings
       case 'settings-product-classifications':
         return <ProductClassificationsPage />;
+      case 'settings-integrations':
+        // render pages-based integrations index for SPA navigation
+        // Dynamically import to avoid SSR issues
+        const IntegrationsPage = require('../src/pages/settings/IntegrationsPage').default;
+        return <IntegrationsPage onNavigate={handleNavigate} />;
+      case 'settings-integrations-orderDetail':
+        const IntegrationOrderDetail = require('../src/pages/settings/integrations/orderDetail').default;
+        return <IntegrationOrderDetail orderId={selectedProductId} />;
       case 'settings-brands':
         return <BrandsPage />;
       case 'settings-product-years':

@@ -5,7 +5,6 @@ import Container from '../../design-system/components/Container';
 import Card from '../../design-system/components/Card';
 import Button from '../../design-system/components/Button';
 import Stack from '../../design-system/components/Stack';
-import Modal from '../../design-system/components/Modal';
 import { GridRow, GridCol } from '../../design-system/components';
 
 interface ProductsEditPageProps {
@@ -14,33 +13,6 @@ interface ProductsEditPageProps {
 }
 
 interface Product {
-  id: string;
-  productName: string;
-  productCode: string;
-  productCategory: string;
-  brand: string;
-  originalCost: number;
-  representativeSellingPrice: number;
-  englishProductName: string;
-  representativeImage: string;
-  isTaxExempt: string;
-  description: string;
-  supplier: string;
-  hsCode: string;
-  origin: string;
-  marketPrice: number;
-  consumerPrice: number;
-  productYear: string;
-  productSeason: string;
-  width: string;
-  height: string;
-  depth: string;
-  weight: string;
-  volume: string;
-  isOutOfStock: boolean;
-}
-
-interface Option {
   id: string;
   optionName: string;
   optionCode: string;
@@ -62,23 +34,11 @@ interface ModalProps {
 
 const ProductsEditPage: React.FC<ProductsEditPageProps> = ({ onNavigate, productId }) => {
   // State for form data and collapsed sections
-  const [formData, setFormData] = useState<any>({});
+  const [formData, setFormData] = useState<any>({ basicInfo: {}, additionalInfo: {} });
   const [collapsedSections, setCollapsedSections] = useState<{ [k: string]: boolean }>({ additionalInfo: true, logistics: true, policies: true });
   const [saving, setSaving] = useState(false);
 
   // Field update function
-  const updateField = (path: string, value: any) => {
-    const keys = path.split('.');
-    setFormData(prev => {
-      const copy = JSON.parse(JSON.stringify(prev));
-      let cur: any = copy;
-      for (let i = 0; i < keys.length - 1; i++) {
-        cur = cur[keys[i]] = cur[keys[i]] ?? {};
-      }
-      cur[keys[keys.length - 1]] = value;
-      return copy;
-    });
-  };
 
   // Load product data (mock for now)
   useEffect(() => {
@@ -92,12 +52,6 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({ onNavigate, product
           categoryId: 'cat-1',
           brandId: 'brand-1',
           supplierId: 'supplier-1',
-          pricing: { sellingPrice: 29900, consumerPrice: 39900, supplyPrice: 25410, commissionRate: 15, isSupplyPriceCalculated: true, calculationMethod: 'commission' },
-          tags: [],
-          description: '기존 상품 설명',
-          thumbnailUrl: '',
-          images: [],
-          stock: 100,
           active: true,
           isSelling: true,
           isOutOfStock: false,
@@ -107,8 +61,6 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({ onNavigate, product
         additionalInfo: {
           productDesigner: '홍길동',
           publishDate: new Date('2025-09-01'),
-          productRegistrant: '관리자',
-          productYear: '2025',
           productSeason: 'FW',
           detailedLogistics: { packageWidth: 20, packageHeight: 15, packageDepth: 5, packageWeight: 300, countryOfOrigin: 'KR', hsCode: '123456', storageConditions: '', shelfLife: 365 }
         },
@@ -117,22 +69,25 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({ onNavigate, product
     }
   }, [productId]);
 
-  // OMS UI/UX structure
+  const updateField = (path: string, value: any) => {
+    const keys = path.split('.');
+    setFormData((prev: any) => {
+      const copy = JSON.parse(JSON.stringify(prev));
+      let cur: any = copy;
+      for (let i = 0; i < keys.length - 1; i++) {
+        cur = cur[keys[i]] = cur[keys[i]] ?? {};
+      }
+      cur[keys[keys.length - 1]] = value;
+      return copy;
+    });
+  };
+
   return (
     <Container>
       <div className="flex gap-8">
         <div className="flex-1">
           {/* 기본 정보 Card */}
-          <Card id="step1" className="mb-6 border-t-4 border-blue-500">
-            <div className="px-6 py-4 bg-blue-50 border-b border-gray-200 rounded-t-lg">
-              <Stack direction="row" gap={3} align="center">
-                <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-semibold">1</div>
-                <Stack gap={1}>
-                  <h2 className="text-xl font-semibold text-gray-900">기본 정보</h2>
-                  <p className="text-sm text-gray-600">상품의 주요 정보를 입력하세요</p>
-                </Stack>
-              </Stack>
-            </div>
+          <Card className="mb-6">
             <div className="p-6">
               <GridRow gutter={16}>
                 <GridCol span={6}>
@@ -217,42 +172,9 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({ onNavigate, product
             <div className="px-6 py-4 bg-green-50 border-b border-gray-200 rounded-t-lg">
               <Stack direction="row" gap={3} align="center">
                 <div className="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-semibold">2</div>
-                <Stack gap={1}>
-                  <h2 className="text-xl font-semibold text-gray-900">추가 정보</h2>
-                  <p className="text-sm text-gray-600">상품의 부가 정보를 입력하세요</p>
-                </Stack>
+                <div className="flex-1" />
               </Stack>
-            </div>
-            <div className="p-6">
               <GridRow gutter={16}>
-                <GridCol span={6}>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">상품 디자이너</label>
-                  <input type="text" value={formData.additionalInfo?.productDesigner || ''} onChange={e => updateField('additionalInfo.productDesigner', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
-                </GridCol>
-                <GridCol span={6}>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">상품 게시일</label>
-                  <input type="date" value={formData.additionalInfo?.publishDate ? new Date(formData.additionalInfo.publishDate).toISOString().slice(0,10) : ''} onChange={e => updateField('additionalInfo.publishDate', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
-                </GridCol>
-                <GridCol span={6}>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">상품 등록자</label>
-                  <input type="text" value={formData.additionalInfo?.productRegistrant || ''} onChange={e => updateField('additionalInfo.productRegistrant', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
-                </GridCol>
-                <GridCol span={6}>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">상품 연도</label>
-                  <input type="text" value={formData.additionalInfo?.productYear || ''} onChange={e => updateField('additionalInfo.productYear', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
-                </GridCol>
-                <GridCol span={6}>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">상품 시즌</label>
-                  <input type="text" value={formData.additionalInfo?.productSeason || ''} onChange={e => updateField('additionalInfo.productSeason', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
-                </GridCol>
-                <GridCol span={6}>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">상세 물류 정보(가로)</label>
-                  <input type="number" value={formData.additionalInfo?.detailedLogistics?.packageWidth || 0} onChange={e => updateField('additionalInfo.detailedLogistics.packageWidth', Number(e.target.value))} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
-                </GridCol>
-                <GridCol span={6}>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">상세 물류 정보(세로)</label>
-                  <input type="number" value={formData.additionalInfo?.detailedLogistics?.packageHeight || 0} onChange={e => updateField('additionalInfo.detailedLogistics.packageHeight', Number(e.target.value))} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
-                </GridCol>
                 <GridCol span={6}>
                   <label className="block text-sm font-medium text-gray-700 mb-1">상세 물류 정보(높이)</label>
                   <input type="number" value={formData.additionalInfo?.detailedLogistics?.packageDepth || 0} onChange={e => updateField('additionalInfo.detailedLogistics.packageDepth', Number(e.target.value))} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
@@ -280,22 +202,23 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({ onNavigate, product
               </GridRow>
             </div>
           </Card>
-          {/* 제출 버튼 */}
           <Stack direction="row" gap={4} justify="end" className="pt-6">
             <Button variant="secondary" onClick={() => onNavigate && onNavigate('products-list')}>취소</Button>
             <Button variant="primary" onClick={() => setSaving(true)}>수정 완료</Button>
           </Stack>
         </div>
-        {/* 사이드 패널 - 수정 정보 미리보기 */}
-        <aside className="w-96 shrink-0">
+        <div className="w-96 shrink-0">
           <Card className="mb-6">
             <h2 className="text-lg font-bold mb-2">상품 미리보기</h2>
             <div className="flex flex-col items-center gap-2">
-              {formData.basicInfo?.thumbnailUrl ? (
-                <img src={formData.basicInfo.thumbnailUrl} alt="상품 이미지" className="w-32 h-32 object-cover rounded" />
-              ) : (
-                <div className="w-32 h-32 bg-gray-100 flex items-center justify-center rounded text-gray-400">이미지 없음</div>
-              )}
+              <img
+                src={formData.basicInfo?.thumbnailUrl || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=128&h=128&fit=crop"}
+                alt="상품 이미지"
+                className="w-32 h-32 object-cover rounded"
+                onError={e => {
+                  (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=128&h=128&fit=crop";
+                }}
+              />
               <div className="text-base font-semibold mt-2">{formData.basicInfo?.productName || '상품명 미입력'}</div>
               <div className="text-sm text-gray-500">{formData.basicInfo?.productCode || '상품코드 미입력'}</div>
               <div className="text-sm text-gray-500">{formData.basicInfo?.categoryId || '카테고리 미입력'}</div>
@@ -311,7 +234,7 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({ onNavigate, product
               <li>활성화: <span className="font-semibold">{formData.basicInfo?.active ? '활성' : '비활성'}</span></li>
             </ul>
           </Card>
-        </aside>
+        </div>
       </div>
     </Container>
   );

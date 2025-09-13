@@ -3,19 +3,26 @@ import { mockCafe24Orders } from '../../../data/mockCafe24Orders';
 import Container from '../../../design-system/components/Container';
 import Card from '../../../design-system/components/Card';
 
-export default function IntegrationOrderDetail() {
-  const [orderId, setOrderId] = useState<string | null>(null);
+export default function IntegrationOrderDetail({ orderId: propOrderId }: { orderId?: string }) {
+  const [orderId, setOrderId] = useState<string | null>(propOrderId || null);
   const [order, setOrder] = useState<any | null>(null);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get('orderId');
-    setOrderId(id);
-    if (id) {
-      const found = mockCafe24Orders.find(o => o.orderId === id);
+    if (propOrderId) {
+      setOrderId(propOrderId);
+    } else {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('orderId');
+      setOrderId(id);
+    }
+  }, [propOrderId]);
+
+  useEffect(() => {
+    if (orderId) {
+      const found = mockCafe24Orders.find(o => o.orderId === orderId);
       setOrder(found || null);
     }
-  }, []);
+  }, [orderId]);
 
   return (
     <Container maxWidth="md">

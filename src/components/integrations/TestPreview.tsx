@@ -14,9 +14,15 @@ function normalizeCafe24(orders: any[]) {
   }));
 }
 
-export default function TestPreview() {
+type TestPreviewProps = {
+  channel?: string;
+}
+
+export default function TestPreview({ channel }: TestPreviewProps) {
   const [raw, setRaw] = useState<any[] | null>(null);
   const [normalized, setNormalized] = useState<any[] | null>(null);
+  
+    const channelLabel = channel ? `채널: ${channel}` : '';
 
   const runTest = () => {
     setRaw(mockCafe24Orders);

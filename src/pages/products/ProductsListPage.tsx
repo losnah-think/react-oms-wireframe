@@ -146,30 +146,50 @@ mockProductFilterOptions.categories.forEach(cur => {
 
     // 가장 심각한 상태를 우선으로 표시
     if (dangerous > 0) {
-      return { 
-        status: '위험', 
-        count: dangerous, 
+      return {
+        status: '위험',
+        count: dangerous,
         total: product.variants.length,
         color: 'text-red-600',
         details: { sufficient, insufficient, dangerous }
       };
     }
     if (insufficient > 0) {
-      return { 
-        status: '부족', 
-        count: insufficient, 
+      return {
+        status: '부족',
+        count: insufficient,
         total: product.variants.length,
         color: 'text-yellow-600',
         details: { sufficient, insufficient, dangerous }
       };
     }
-    return { 
-      status: '충분', 
-      count: sufficient, 
+    return {
+      status: '충분',
+      count: sufficient,
       total: product.variants.length,
       color: 'text-green-600',
       details: { sufficient, insufficient, dangerous }
     };
+  };
+
+  // 상세 페이지 이동 헬퍼 (onNavigate 우선, 없으면 URL fallback)
+  const goToProductDetail = (id: number) => {
+    if (onNavigate) {
+      onNavigate('products-detail', String(id));
+      return;
+    }
+    try {
+      if (typeof window !== 'undefined') {
+        // 해시 라우터/히스토리 라우터 모두 대응
+        if (window.location.hash !== undefined) {
+          window.location.hash = `/products/${id}`;
+        } else {
+          window.location.href = `/products/${id}`;
+        }
+      }
+    } catch (e) {
+      // no-op
+    }
   };
 
   return (
@@ -251,7 +271,7 @@ mockProductFilterOptions.categories.forEach(cur => {
             >
               <option value="전체">전체 브랜드</option>
               {mockProductFilterOptions.brands.map(brand => (
-                <option key={brand.id} value={brand.id}>{brand.name}</option>
+                <option key={brand.id} value={brand.name}>{brand.name}</option>
               ))}
             </select>
           </GridCol>
@@ -379,7 +399,18 @@ mockProductFilterOptions.categories.forEach(cur => {
                     </td>
                     
                     <td className="px-6 py-6 whitespace-nowrap">
-                      <div className="relative rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 border-2 border-gray-200 shadow-lg group-hover:shadow-xl transition-all duration-300" style={{ width: '120px', height: '120px' }}>
+                      <div
+                        className="relative rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 border-2 border-gray-200 shadow-lg group-hover:shadow-xl transition-all duration-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        style={{ width: '120px', height: '120px' }}
+                        onClick={() => goToProductDetail(product.id)}
+                        role="button"
+                        aria-label="상품 상세 보기"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') goToProductDetail(product.id);
+                        }}
+                        data-testid="product-image-link"
+                      >
                         {/* <img
                           src={product.representativeImage}
                           alt={product.name}
@@ -400,14 +431,25 @@ mockProductFilterOptions.categories.forEach(cur => {
                     <td className="px-6 py-6">
                       <div className="flex items-center justify-between">
                         <div className="space-y-2 flex-1">
-                          <button
-                            onClick={() => onNavigate?.('products-detail', String(product.id))}
-                            className="text-left group-hover:text-blue-600 transition-colors duration-200"
+                          <a
+                            href={`/products/${product.id}`}
+                            onClick={(e) => { e.preventDefault(); goToProductDetail(product.id); }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                goToProductDetail(product.id);
+                              }
+                            }}
+                            role="link"
+                            tabIndex={0}
+                            className="text-left group-hover:text-blue-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+                            title="상품 상세 보기"
+                            data-testid="product-title-link"
                           >
                             <h3 className="font-bold text-gray-900 hover:underline text-lg leading-tight line-clamp-2">
                               {product.name}
                             </h3>
-                          </button>
+                          </a>
                           <div className="flex flex-wrap gap-2">
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                               {product.code}
@@ -547,12 +589,9 @@ mockProductFilterOptions.categories.forEach(cur => {
                                   <div className="flex items-center space-x-4">
                                     <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-200 border border-gray-300 shadow-sm">
                                       <img
-                                        src={product.representativeImage}
-                                        alt={`${product.name} - ${variant.variantName}`}
+                                        src={"https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=64&h=64&fit=crop"}
+                                        alt={`${product.name} - ${variant.variant_name}`}
                                         className="w-full h-full object-cover"
-                                        onError={(e) => {
-                                          (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=64&h=64&fit=crop";
-                                        }}
                                       />
                                     </div>
                                     <div className="space-y-1">

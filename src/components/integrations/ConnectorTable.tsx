@@ -4,55 +4,40 @@ import Link from 'next/link';
 import { mockCafe24Orders } from '../../data/mockCafe24Orders';
 import { Cafe24Order } from '../../lib/types/cafe24';
 
-export default function ConnectorTable() {
+type ConnectorTableProps = {
+  onDetail?: (orderId: string) => void;
+  channel?: string;
+};
+export default function ConnectorTable({ onDetail, channel }: ConnectorTableProps) {
   const [orders, setOrders] = useState<Cafe24Order[]>([]);
 
   useEffect(() => {
     setOrders(mockCafe24Orders);
   }, []);
+  // compute summary stats
+  const orderCount = orders.length;
+  const totalItems = orders.reduce((sum, o) => sum + o.items.reduce((s, it) => s + (it.quantity || 0), 0), 0);
+  const uniqueProducts = new Set(orders.flatMap(o => o.items.map(i => i.productNo))).size;
 
   return (
-    <div data-testid="connectors-table" className="overflow-x-auto max-w-full">
-      <table className="min-w-[800px] w-full table-auto border-collapse text-sm">
-        <thead className="sticky top-0 bg-gray-50">
-          <tr>
-            <th className="px-4 py-2 text-left">주문 ID</th>
-            <th className="px-4 py-2 text-left">주문 코드</th>
-            <th className="px-4 py-2 text-left">회원</th>
-            <th className="px-4 py-2 text-left">상태</th>
-            <th className="px-4 py-2 text-left">일시</th>
-            <th className="px-4 py-2 text-left">아이템</th>
-            <th className="px-4 py-2 text-left">수령인</th>
-            <th className="px-4 py-2 text-right">금액</th>
-            <th className="px-4 py-2 text-center">액션</th>
-          </tr>
-        </thead>
-        <tbody>
-          {orders.length === 0 ? (
-            <tr>
-              <td colSpan={9} className="text-center py-8 text-gray-400">주문 데이터가 없습니다.</td>
-            </tr>
-          ) : (
-            orders.map((order: Cafe24Order) => (
-              <tr key={order.orderId} className="bg-white hover:bg-gray-50 border-b">
-                <td className="px-4 py-3">{order.orderId}</td>
-                <td className="px-4 py-3">{order.orderCode}</td>
-                <td className="px-4 py-3">{order.memberId}</td>
-                <td className="px-4 py-3">{order.orderStatus}</td>
-                <td className="px-4 py-3">{order.orderDate}</td>
-                <td className="px-4 py-3">
-                  {order.items.map((item: Cafe24Order['items'][number]) => `${item.productName}(${item.quantity})`).join(', ')}
-                </td>
-                <td className="px-4 py-3">{order.shipping.receiverName}</td>
-                <td className="px-4 py-3 text-right">{order.payment.amount.toLocaleString()}원</td>
-                <td className="px-4 py-3 text-center">
-                  <Link href={`/settings/integrations/orderDetail?orderId=${order.orderId}`} className="inline-block px-3 py-1 text-sm bg-primary-600 text-white rounded">상세</Link>
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+    <div>
+      <div className="mb-3">
+        <h3 className="text-md font-semibold">연동 요약 {channel ? `- ${channel}` : ''}</h3>
+      </div>
+      <div className="grid grid-cols-3 gap-4">
+        <div className="p-4 bg-white rounded shadow-sm">
+          <div className="text-sm text-gray-500">수집된 주문</div>
+          <div className="text-2xl font-bold">{orderCount}</div>
+        </div>
+        <div className="p-4 bg-white rounded shadow-sm">
+          <div className="text-sm text-gray-500">수집된 상품 수량</div>
+          <div className="text-2xl font-bold">{totalItems}</div>
+        </div>
+        <div className="p-4 bg-white rounded shadow-sm">
+          <div className="text-sm text-gray-500">고유 상품 종류</div>
+          <div className="text-2xl font-bold">{uniqueProducts}</div>
+        </div>
+      </div>
     </div>
   );
 }
