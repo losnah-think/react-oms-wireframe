@@ -28,9 +28,18 @@ jobs:
           GITHUB_ACTIONS: true
         run: npx jest --config=jest.config.cjs --runInBand --reporters=default
 
+      - name: Debug: show test-results contents
+        if: always()
+        run: |
+          echo "PWD: $(pwd)"
+          echo "Listing test-results dir (if any):"
+          ls -la ./test-results || true
+          echo "Find pages-summary.json (repo):"
+          find . -maxdepth 4 -type f -name pages-summary.json || true
+
       - name: Upload pages-summary artifact (if present)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: pages-summary
-          path: test-results/pages-summary.json
+          path: test-results/**
