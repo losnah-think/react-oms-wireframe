@@ -11,6 +11,8 @@ export interface Product extends BaseEntity {
   englishProductName?: string;
   productCode: string;
   productCategory: string;
+  // 내부 분류 (ReactOMS에서 사용하는 분류 이름)
+  classification?: string;
   brandId?: string;
   supplierId?: string;
   

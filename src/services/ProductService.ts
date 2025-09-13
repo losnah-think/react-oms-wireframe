@@ -17,7 +17,8 @@ export class ProductService implements IProductService {
       id: '1',
       productName: '스마트폰 케이스',
       productCode: 'ACC-001',
-      productCategory: '액세서리',
+        productCategory: '액세서리',
+        classification: '액세서리',
       originalCost: 15000,
       representativeSellingPrice: 25000,
       stock: 150,
@@ -34,7 +35,8 @@ export class ProductService implements IProductService {
       id: '2',
       productName: '무선 이어폰',
       productCode: 'ELEC-001',
-      productCategory: '전자제품',
+        productCategory: '전자제품',
+        classification: '전자제품',
       originalCost: 65000,
       representativeSellingPrice: 89000,
       stock: 75,
@@ -51,7 +53,8 @@ export class ProductService implements IProductService {
       id: '3',
       productName: '노트북 스탠드',
       productCode: 'OFF-001',
-      productCategory: '사무용품',
+        productCategory: '사무용품',
+        classification: '사무용품',
       originalCost: 30000,
       representativeSellingPrice: 45000,
       stock: 200,
@@ -68,7 +71,8 @@ export class ProductService implements IProductService {
       id: '4',
       productName: '마우스 패드',
       productCode: 'OFF-002',
-      productCategory: '사무용품',
+        productCategory: '사무용품',
+        classification: '사무용품',
       originalCost: 8000,
       representativeSellingPrice: 15000,
       stock: 0,
@@ -141,13 +145,13 @@ export class ProductService implements IProductService {
     return this.products.filter(product => 
       product.name.toLowerCase().includes(lowercaseQuery) ||
       product.description?.toLowerCase().includes(lowercaseQuery) ||
-      product.category.toLowerCase().includes(lowercaseQuery)
+      (product.classification || product.category).toLowerCase().includes(lowercaseQuery)
     );
   }
 
   async getProductsByCategory(category: string): Promise<Product[]> {
     await this.delay(60);
-    return this.products.filter(product => product.category === category);
+    return this.products.filter(product => (product.classification || product.category) === category);
   }
 
   async updateStock(productId: string, quantity: number): Promise<boolean> {

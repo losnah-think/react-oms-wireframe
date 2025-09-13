@@ -11,6 +11,7 @@ export class Product implements IProduct {
   public englishProductName?: string;
   public productCode: string;
   public productCategory: string;
+  public classification?: string;
   public brandId?: string;
   public supplierId?: string;
   
@@ -64,7 +65,8 @@ export class Product implements IProduct {
     this.productName = data.productName || '';
     this.englishProductName = data.englishProductName;
     this.productCode = data.productCode || '';
-    this.productCategory = data.productCategory || '';
+  this.productCategory = data.productCategory || '';
+  this.classification = (data as any).classification;
     this.brandId = data.brandId;
     this.supplierId = data.supplierId;
     
@@ -160,6 +162,7 @@ export class Product implements IProduct {
       englishProductName: this.englishProductName,
       productCode: this.productCode,
       productCategory: this.productCategory,
+  classification: this.classification,
       brandId: this.brandId,
       supplierId: this.supplierId,
       originalCost: this.originalCost,
