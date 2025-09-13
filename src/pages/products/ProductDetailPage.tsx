@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Container, Card, Button, Badge, Stack, Modal } from '../../design-system';
 import { mockProducts } from '../../data/mockProducts';
-import { mockProductFilterOptions } from '../../data/mockProductFilters';
 import { formatDate, formatPrice, getStockStatus } from '../../utils/productUtils';
 
 interface ProductDetailPageProps {

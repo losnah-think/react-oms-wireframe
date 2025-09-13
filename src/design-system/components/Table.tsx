@@ -1,5 +1,5 @@
 import React from 'react';
-import { spacing, typography } from '../tokens';
+import { typography } from '../tokens';
 import Button from './Button';
 
 export interface TableColumn<T = any> {

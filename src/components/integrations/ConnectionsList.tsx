@@ -1,5 +1,4 @@
 "use client";
-import React from 'react';
 import IntegrationCard from './IntegrationCard';
 import { mockIntegrations, Integration } from '../../data/mockIntegrations';
 

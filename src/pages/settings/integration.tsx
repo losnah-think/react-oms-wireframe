@@ -1,4 +1,4 @@
-import React from 'react';
+
 import Container from '../../design-system/components/Container';
 import Card from '../../design-system/components/Card';
 import ConnectorTable from '../../components/integrations/ConnectorTable';

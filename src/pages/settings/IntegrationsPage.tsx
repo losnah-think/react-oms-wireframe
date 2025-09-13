@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import Container from '../../design-system/components/Container';
 import Card from '../../design-system/components/Card';
-import ConnectorTable from '../../components/integrations/ConnectorTable';
 import TestPreview from '../../components/integrations/TestPreview';
 import ConnectionsList from '../../components/integrations/ConnectionsList';
 import AuthForm from '../../components/integrations/AuthForm';

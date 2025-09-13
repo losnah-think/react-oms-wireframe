@@ -1,5 +1,4 @@
 "use client";
-import React from 'react';
 import { Integration } from '../../data/mockIntegrations';
 
 export default function IntegrationCard({ integration, onOpen }: { integration: Integration; onOpen?: (id: string) => void }) {

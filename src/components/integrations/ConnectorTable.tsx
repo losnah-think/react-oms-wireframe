@@ -1,6 +1,5 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { mockCafe24Orders } from '../../data/mockCafe24Orders';
 import { Cafe24Order } from '../../lib/types/cafe24';
 
