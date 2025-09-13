@@ -29,7 +29,7 @@ jobs:
         run: npx jest --config=jest.config.cjs --runInBand --reporters=default
 
       - name: Debug: show test-results contents
-        if: always()
+        if: ${{ always() }}
         run: |
           echo "PWD: $(pwd)"
           echo "Listing test-results dir (if any):"
@@ -38,7 +38,7 @@ jobs:
           find . -maxdepth 4 -type f -name pages-summary.json || true
 
       - name: Upload pages-summary artifact (if present)
-        if: always()
+        if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
           name: pages-summary
