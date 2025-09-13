@@ -1,6 +1,17 @@
 import { Product, ProductVariant } from '../types/database';
 import { mockProducts } from '../data/mockProducts';
 
+export type FilterState = {
+  searchTerm: string;
+  selectedCategory: string;
+  selectedBrand: string;
+  selectedStatus: string;
+  sortBy: string;
+  priceRange: { min?: number | string; max?: number | string };
+  stockRange: { min?: number | string; max?: number | string };
+  dateRange: { start?: string; end?: string };
+};
+
 export const formatPrice = (price: number): string => {
   return new Intl.NumberFormat('ko-KR', {
     style: 'currency',
@@ -111,8 +122,9 @@ export const sortProducts = (products: Product[], sortBy: string): Product[] => 
   }
 };
 
-export const getProductById = (id: string): Product | undefined => {
-  return mockProducts.find(product => product.id === id);
+export const getProductById = (id: number | string): any => {
+  const numericId = typeof id === 'string' ? Number(id) : id;
+  return mockProducts.find(product => product.id === numericId);
 };
 
 export const calculateTotalValue = (products: Product[]): number => {

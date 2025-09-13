@@ -969,7 +969,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
             </Button>
 
             {Array.from({ length: Math.min(7, totalPages) }, (_, i) => {
-              let pageNumber;
+              let pageNumber: number;
               if (totalPages <= 7) {
                 pageNumber = i + 1;
               } else if (currentPage <= 4) {

@@ -3,15 +3,14 @@ import Table, { TableColumn } from '../../design-system/components/Table';
 import Button from '../../design-system/components/Button';
 import Badge from '../../design-system/components/Badge';
 import Stack from '../../design-system/components/Stack';
-import { ProductWithVariants } from '../../data/mockProducts';
 import { formatDate, formatPrice, getStockStatus } from '../../utils/productUtils';
 
 interface ProductTableProps {
-  products: ProductWithVariants[];
+  products: any[];
   loading?: boolean;
   selectedProducts?: string[];
-  onSelectionChange?: (selectedKeys: string[], selectedRows: ProductWithVariants[]) => void;
-  onProductClick?: (product: ProductWithVariants) => void;
+  onSelectionChange?: (selectedKeys: string[], selectedRows: any[]) => void;
+  onProductClick?: (product: any) => void;
   onProductEdit?: (productId: string) => void;
   onProductDelete?: (productId: string) => void;
   onProductCopy?: (productId: string) => void;
@@ -42,7 +41,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
   };
 
   // 테이블 컬럼 정의
-  const columns: TableColumn<ProductWithVariants>[] = [
+  const columns: TableColumn<any>[] = [
     {
       key: 'thumbnail',
       title: '',
@@ -128,7 +127,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
       width: '10%',
       align: 'center',
       render: (_, product) => {
-        const totalStock = product.variants?.reduce((sum, variant) => sum + (variant.stock || 0), 0) || product.stock || 0;
+  const totalStock = product.variants?.reduce((sum: number, variant: any) => sum + (variant.stock || 0), 0) || product.stock || 0;
         const stockStatus = getStockStatus(totalStock);
         
         return (
@@ -223,8 +222,8 @@ const ProductTable: React.FC<ProductTableProps> = ({
     }
   ];
 
-  // 확장된 행 렌더링 (옵션 정보)
-  const expandedRowRender = (product: ProductWithVariants) => {
+  // 확장된 행 렌더링 (옵션 정보) — handled below with a generic any-based renderer
+  const expandedRowRender = (product: any) => {
     if (!product.variants || product.variants.length === 0) {
       return (
         <div className="p-4 text-center text-gray-500">
@@ -252,7 +251,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {product.variants.map((variant) => (
+              {product.variants.map((variant: any) => (
                 <tr key={variant.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3">
                     <div className="font-medium text-gray-900">{variant.variantName}</div>
