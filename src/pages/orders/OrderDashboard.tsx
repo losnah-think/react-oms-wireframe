@@ -267,12 +267,12 @@ const OrderDashboard: React.FC = () => {
         <h2 className="text-xl font-semibold text-gray-900 mb-4">주문 처리 현황</h2>
         <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
           {[
-            { status: '대기중', count: 23, color: 'yellow', icon: '⏳' },
-            { status: '확인됨', count: 45, color: 'blue', icon: '✅' },
-            { status: '처리중', count: 67, color: 'purple', icon: '🔄' },
-            { status: '배송중', count: 89, color: 'indigo', icon: '🚚' },
-            { status: '완료', count: 234, color: 'green', icon: '📋' },
-            { status: '취소', count: 12, color: 'red', icon: '❌' }
+            { status: '대기중', count: 23, color: 'yellow', icon: '' },
+            { status: '확인됨', count: 45, color: 'blue', icon: '' },
+            { status: '처리중', count: 67, color: 'purple', icon: '' },
+            { status: '배송중', count: 89, color: 'indigo', icon: '' },
+            { status: '완료', count: 234, color: 'green', icon: '' },
+            { status: '취소', count: 12, color: 'red', icon: '' }
           ].map((item) => (
             <div key={item.status} className="text-center p-4 border border-gray-200 rounded-lg">
               <div className="text-2xl mb-2">{item.icon}</div>
@@ -286,19 +286,19 @@ const OrderDashboard: React.FC = () => {
       {/* 빠른 작업 */}
       <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white border border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 hover:bg-blue-50 cursor-pointer transition-colors">
-          <div className="text-3xl text-blue-500 mb-3">📝</div>
+          <div className="text-3xl text-blue-500 mb-3"></div>
           <h3 className="font-medium text-gray-900 mb-2">신규 주문 등록</h3>
           <p className="text-sm text-gray-600">고객을 위한 수동 주문을 생성합니다</p>
         </div>
 
         <div className="bg-white border border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-400 hover:bg-green-50 cursor-pointer transition-colors">
-          <div className="text-3xl text-green-500 mb-3">📊</div>
+          <div className="text-3xl text-green-500 mb-3"></div>
           <h3 className="font-medium text-gray-900 mb-2">매출 리포트</h3>
           <p className="text-sm text-gray-600">상세한 매출 분석 보고서를 확인합니다</p>
         </div>
 
         <div className="bg-white border border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 hover:bg-purple-50 cursor-pointer transition-colors">
-          <div className="text-3xl text-purple-500 mb-3">⚙️</div>
+          <div className="text-3xl text-purple-500 mb-3"></div>
           <h3 className="font-medium text-gray-900 mb-2">주문 설정</h3>
           <p className="text-sm text-gray-600">주문 처리 규칙과 알림을 설정합니다</p>
         </div>

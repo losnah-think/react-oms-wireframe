@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Card, Button, Badge, Stack, Input } from '../../design-system';
+import { Container, Card, Button, Badge, Stack, Input, GridRow, GridCol } from '../../design-system';
 
 interface Platform {
   id: string;
@@ -363,7 +363,8 @@ const ProductCsvUploadPage: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="full" padding="md" className="min-h-screen bg-gray-50">
+    <Container maxWidth="full" padding="md" className="min-h-screen bg-gray-50 overflow-x-hidden">
+      <div className="mx-auto w-full max-w-screen-2xl">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">CSV 상품 등록</h1>
@@ -403,7 +404,7 @@ const ProductCsvUploadPage: React.FC = () => {
                 </div>
                 
                 {uploadHistory.length > 0 ? (
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto max-w-full">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr>
@@ -665,7 +666,7 @@ const ProductCsvUploadPage: React.FC = () => {
         <div className="bg-white border rounded-lg p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">4. 파일 미리보기</h2>
           
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-w-full">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
@@ -808,6 +809,7 @@ const ProductCsvUploadPage: React.FC = () => {
           </div>
         </div>
       )}
+      </div>
     </Container>
   );
 };

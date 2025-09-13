@@ -13,7 +13,6 @@ import ProductsEditPage from '../src/pages/products/ProductsEditPage';
 import ProductCsvUploadPage from '../src/pages/products/ProductCsvUploadPage';
 import ProductImportPage from '../src/pages/products/ProductImportPage';
 import ExternalProductImportPage from '../src/pages/products/ExternalProductImportPage';
-import BasicBrandsPage from '../src/pages/products/BasicBrandsPage';
 
 // Orders
 import OrderList from '../src/pages/orders/OrderList';
@@ -63,7 +62,7 @@ export default function Home() {
       case 'products':
       case 'products-list':
         return <ProductsListPage onNavigate={handleNavigate} />;
-      case 'product-detail':
+      case 'products-detail':
         return <ProductDetailPage productId={selectedProductId} onNavigate={handleNavigate} />;
       case 'products-add':
         return <ProductsAddPage onNavigate={handleNavigate} />;
@@ -75,8 +74,6 @@ export default function Home() {
         return <ProductImportPage />;
       case 'products-external-import':
         return <ExternalProductImportPage />;
-      case 'basic-brands':
-        return <BasicBrandsPage />;
       
       // Orders
       case 'orders':

@@ -18,45 +18,44 @@ const menuItems: MenuItem[] = [
   {
     id: 'products',
     label: '상품 관리',
-    icon: '📦',
+    icon: 'box',
     children: [
-      { id: 'products-list', label: '상품 목록', icon: '📋' },
-      { id: 'products-add', label: '상품 등록', icon: '➕' },
-      { id: 'products-csv', label: 'CSV 상품 등록', icon: '📄' },
-      { id: 'products-import', label: '외부 쇼핑몰 상품 가져오기', icon: '📥' }
+      { id: 'products-list', label: '상품 목록', icon: 'list' },
+      { id: 'products-csv', label: 'CSV 상품 등록', icon: 'upload' },
+      { id: 'products-import', label: '외부 쇼핑몰 상품 가져오기', icon: 'external-link' }
     ]
   },
   {
     id: 'orders',
     label: '주문 관리',
-    icon: '🛒',
+    icon: 'archive',
     children: [
-      { id: 'orders-list', label: '주문 목록', icon: '📝' },
-      { id: 'orders-analytics', label: '주문 분석', icon: '📊' },
-      { id: 'orders-settings', label: '주문 설정', icon: '⚙️' }
+      { id: 'orders-list', label: '주문 목록', icon: 'list' },
+      { id: 'orders-analytics', label: '주문 분석', icon: 'search' },
+      { id: 'orders-settings', label: '주문 설정', icon: 'settings' }
     ]
   },
   {
     id: 'shopping-mall',
     label: '쇼핑몰 관리',
-    icon: '🏪',
+    icon: 'home',
     children: [
-      { id: 'malls', label: '쇼핑몰 목록', icon: '🏬' },
-      { id: 'malls-products', label: '쇼핑몰별 상품 관리', icon: '🛍️' },
-      { id: 'malls-info', label: '쇼핑몰별 부가 정보 관리', icon: 'ℹ️' },
-      { id: 'malls-category-mapping', label: '카테고리 매핑', icon: '🔗' }
+      { id: 'malls', label: '쇼핑몰 목록', icon: 'list' },
+      { id: 'malls-products', label: '쇼핑몰별 상품 관리', icon: 'box' },
+      { id: 'malls-info', label: '쇼핑몰별 부가 정보 관리', icon: 'info' },
+      { id: 'malls-category-mapping', label: '카테고리 매핑', icon: 'copy' }
     ]
   },
   {
     id: 'settings',
     label: '환경 설정',
-    icon: '⚙️',
+    icon: 'settings',
     children: [
-      { id: 'settings-product-classifications', label: '상품 분류 관리', icon: '🏷️' },
-      { id: 'settings-brands', label: '브랜드 관리', icon: '🏭' },
-      { id: 'settings-product-years', label: '상품 연도 관리', icon: '📅' },
-      { id: 'settings-product-seasons', label: '상품 시즌 관리', icon: '🌸' },
-      { id: 'settings-system', label: '시스템 설정', icon: '🔧' }
+      { id: 'settings-product-classifications', label: '상품 분류 관리', icon: 'copy' },
+      { id: 'settings-brands', label: '브랜드 관리', icon: 'image' },
+      { id: 'settings-product-years', label: '상품 연도 관리', icon: 'clock' },
+      { id: 'settings-product-seasons', label: '상품 시즌 관리', icon: 'clock' },
+      { id: 'settings-system', label: '시스템 설정', icon: 'settings' }
     ]
   }
 ];
@@ -68,6 +67,47 @@ const Sidebar: React.FC<SidebarProps> = ({
   onToggleCollapse 
 }) => {
   const [expandedItems, setExpandedItems] = React.useState<string[]>(['products']);
+
+  // 아이콘 매핑 함수
+  const getIconComponent = (iconName: string, size: number = 16, isActive: boolean = false) => {
+    const iconMap: Record<string, string> = {
+      'box': '/icons/Box.svg',
+      'list': '/icons/List.svg',
+      'file': '/icons/File.svg',
+      'download': '/icons/Download.svg',
+      'upload': '/icons/Upload.svg',
+      'external-link': '/icons/External link.svg',
+      'archive': '/icons/Archive.svg',
+      'home': '/icons/Home.svg',
+      'settings': '/icons/Settings.svg',
+      'users': '/icons/Users.svg',
+      'user-plus': '/icons/User plus.svg',
+      'search': '/icons/Search.svg',
+      'edit': '/icons/Edit 4.svg',
+      'copy': '/icons/Copy.svg',
+      'clock': '/icons/Clock.svg',
+      'info': '/icons/Info.svg',
+      'image': '/icons/Image.svg'
+    };
+
+    const iconSrc = iconMap[iconName];
+    if (!iconSrc) return null;
+
+    return (
+      <img 
+        src={iconSrc} 
+        alt={iconName}
+        width={size}
+        height={size}
+        className="flex-shrink-0"
+        style={{ 
+          filter: isActive 
+            ? 'brightness(0) saturate(100%) invert(40%) sepia(91%) saturate(1098%) hue-rotate(202deg) brightness(97%) contrast(86%)' // 파란색
+            : 'brightness(0) saturate(100%) invert(45%) sepia(0%) saturate(5%) hue-rotate(345deg) brightness(98%) contrast(89%)' // 회색
+        }}
+      />
+    );
+  };
 
   const toggleExpanded = (id: string) => {
     setExpandedItems(prev => 
@@ -114,9 +154,9 @@ const Sidebar: React.FC<SidebarProps> = ({
             onClick={() => handleItemClick(item)}
             title={item.label}
           >
-            <span className="text-lg">
-              {item.icon || item.label.charAt(0)}
-            </span>
+            {item.icon ? getIconComponent(item.icon, 16, active) : (
+              <span className="text-lg">{item.label.charAt(0)}</span>
+            )}
           </div>
         </div>
       );
@@ -135,9 +175,9 @@ const Sidebar: React.FC<SidebarProps> = ({
         >
           <div className="flex items-center space-x-2">
             {item.icon && (
-              <span className={`${level === 0 ? 'text-base' : 'text-sm'}`}>
-                {item.icon}
-              </span>
+              <div className={`${level === 0 ? 'w-4 h-4' : 'w-3 h-3'} flex items-center justify-center`}>
+                {getIconComponent(item.icon, level === 0 ? 14 : 10, active)}
+              </div>
             )}
             <span>{item.label}</span>
           </div>
@@ -158,7 +198,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   return (
-    <aside className={`${isCollapsed ? 'w-16' : 'w-64'} bg-white border-r border-gray-200 h-full overflow-y-auto transition-all duration-300 ease-in-out`}>
+    <aside className={`${isCollapsed ? 'w-16' : 'w-64'} bg-white border-r border-gray-200 h-screen overflow-y-auto transition-all duration-300 ease-in-out flex flex-col`}>
       {/* 접기/펼치기 버튼 */}
       {onToggleCollapse && (
         <div className="p-2 border-b border-gray-200">
@@ -178,7 +218,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
       )}
       
-      <div className="p-4">
+      <div className="flex-1 p-4">
         <nav className="space-y-1">
           {menuItems.map(item => renderMenuItem(item))}
         </nav>

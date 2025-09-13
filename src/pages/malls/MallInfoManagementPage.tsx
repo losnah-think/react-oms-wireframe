@@ -266,7 +266,7 @@ A/S 접수는 고객센터 1588-0000으로 연락주시기 바랍니다.
                             className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50"
                         >
                             <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                                🚛 배송비 설정
+                                배송비 설정
                             </h2>
                             <svg
                                 className={`w-5 h-5 text-gray-500 transition-transform ${
@@ -382,7 +382,7 @@ A/S 접수는 고객센터 1588-0000으로 연락주시기 바랍니다.
                             className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50"
                         >
                             <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                                📋 정책 설정
+                                정책 설정
                             </h2>
                             <svg
                                 className={`w-5 h-5 text-gray-500 transition-transform ${
@@ -470,7 +470,7 @@ A/S 접수는 고객센터 1588-0000으로 연락주시기 바랍니다.
                             className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50"
                         >
                             <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                                📄 템플릿 관리
+                                템플릿 관리
                             </h2>
                             <svg
                                 className={`w-5 h-5 text-gray-500 transition-transform ${
@@ -524,7 +524,7 @@ A/S 접수는 고객센터 1588-0000으로 연락주시기 바랍니다.
                             className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50"
                         >
                             <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                                ⚙️ 연동 옵션
+                                연동 옵션
                             </h2>
                             <svg
                                 className={`w-5 h-5 text-gray-500 transition-transform ${

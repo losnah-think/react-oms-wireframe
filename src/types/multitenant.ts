@@ -111,7 +111,8 @@ export interface ProductPricing {
   supplyPrice: number; // 공급가 (자동계산, 읽기전용)
   commissionRate: number; // 수수료율 (%)
   marginRate?: number; // 마진율 (%)
-  
+  marketPrice?: number;
+  foreignCurrencyPrice?: number;
   // 자동계산 관련
   isSupplyPriceCalculated: boolean;
   calculatedAt?: Date;
@@ -167,11 +168,10 @@ export interface LogisticsInfo {
   height?: number; // 세로 (cm)
   depth?: number; // 높이 (cm)
   weight?: number; // 무게 (g)
-  
+  volume?: number;
   // 포장 정보
   packagingUnit: 'box' | 'ea' | 'set';
   packagingQuantity: number; // 포장 단위당 수량
-  
   // 배송 제한
   isFragile: boolean; // 파손 주의
   isLiquid: boolean; // 액체 여부
@@ -321,19 +321,47 @@ export interface ProductFormData {
 export interface ProductBasicInfo {
   productName: string;
   englishProductName?: string;
+  productCode: string;
+  productCategory: string;
+  brandId?: string;
+  supplierId?: string;
   codes: ProductCodes;
   categoryId: string;
-  brandId?: string;
   pricing: ProductPricing;
-  tags: ProductTag[];
+  originalCost: number;
+  representativeSellingPrice: number;
+  representativeSupplyPrice?: number;
+  marketPrice?: number;
+  consumerPrice?: number;
+  foreignCurrencyPrice?: number;
+  stock: number;
+  safeStock?: number;
+  isOutOfStock: boolean;
+  isSelling: boolean;
+  isSoldout: boolean;
   description?: string;
+  representativeImage?: string;
+  descriptionImages: string[];
   thumbnailUrl?: string;
   images: string[];
-  
-  // 물류 간편 필드 (기본 정보로 이동)
+  width?: number;
+  height?: number;
+  depth?: number;
+  weight?: number;
+  volume?: number;
+  hsCode?: string;
+  origin?: string;
+  isTaxExempt: boolean;
+  showProductNameOnInvoice: boolean;
+  productDesigner?: string;
+  productRegistrant?: string;
+  productYear?: string;
+  productSeason?: string;
+  externalProductId?: string;
+  externalUrl?: string;
+  active: boolean;
+  tags: ProductTag[];
   logistics: LogisticsInfo;
-  
-  // 정책 필드들
   policies: ProductPolicies;
 }
 
@@ -341,10 +369,11 @@ export interface ProductAdditionalInfo {
   // 상품 디자이너 및 관리 정보
   productDesigner?: string;
   publishDate?: Date; // 상품 게시일
-  
+  productRegistrant?: string;
+  productYear?: string;
+  productSeason?: string;
   // 상세 물류 정보 (추가 정보에서 관리)
   detailedLogistics: DetailedLogisticsInfo;
-  
   // 옵션 관리 (백로그)
   options?: ProductOption[];
 }

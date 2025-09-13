@@ -1,205 +1,121 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Button, Input, Card, Container, Stack, Badge, Dropdown } from '../../design-system/components';
-import type { 
-  MultiTenantProduct, 
-  ProductSearchFilters, 
-  ProductListParams,
-  BulkOperation,
-  Tenant,
-  ProductSortField
-} from '../../types/multitenant';
+import React, { useState, useMemo } from 'react';
+import { Container, Card, Button, Badge, Stack, GridRow, GridCol } from '../../design-system';
+import { mockProducts } from '../../data/mockProducts';
+import { mockProductFilterOptions } from '../../data/mockProductFilters';
+import { formatPrice, getStockStatus } from '../../utils/productUtils';
 
 interface ProductsListPageProps {
   onNavigate?: (page: string, productId?: string) => void;
-  onEdit?: (product: MultiTenantProduct) => void;
-  onDelete?: (productId: string) => void;
 }
 
-const ProductsListPage: React.FC<ProductsListPageProps> = ({
-  onNavigate,
-  onEdit,
-  onDelete
-}) => {
-  // 현재 테넌트 (임시 데이터)
-  const [currentTenant] = useState<Tenant>({
-    id: 'tenant-1',
-    code: 'T001',
-    name: '화주사 A',
-    type: 'external', // 외부 화주사로 설정하여 공급처 필터 테스트
-    isActive: true,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  });
+const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
+  // 필터 상태
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('전체');
+  const [selectedBrand, setSelectedBrand] = useState('전체');
+  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [sortBy, setSortBy] = useState('newest');
+  const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   
-  // 상품 목록 상태
-  const [products, setProducts] = useState<MultiTenantProduct[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [totalCount, setTotalCount] = useState(0);
+  // 옵션 펼치기 상태
+  const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
   
   // 페이지네이션
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-  
-  // 정렬
-  const [sortBy, setSortBy] = useState<ProductSortField>('updatedAt');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  
-  // 필터 상태
-  const [filters, setFilters] = useState<ProductSearchFilters>({});
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  
-  // 선택 상태
-  const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
-  const [selectAll, setSelectAll] = useState(false);
-  
-  // 옵션 드롭다운 상태
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  
-  // 외부 화주사 여부 확인 (조건부 필터용)
-  const isExternalTenant = currentTenant?.type === 'external';
-  
-  // 외부 클릭 시 드롭다운 닫기
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (openDropdown) {
-        setOpenDropdown(null);
-      }
-    };
-    
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, [openDropdown]);
+  const pageSize = 15;
 
-  // 검색 매개변수 메모이제이션
-  const searchParams = useMemo<ProductListParams>(() => ({
-    page: currentPage,
-    pageSize,
-    sortBy,
-    sortOrder,
-    filters: {
-      ...filters,
-      // 현재 테넌트 필터 자동 적용
-      ...(currentTenant?.id && { tenantId: currentTenant.id })
-    },
-    tenantId: currentTenant?.id
-  }), [currentPage, pageSize, sortBy, sortOrder, filters, currentTenant?.id]);
-  
-  // 상품 목록 조회
-  const fetchProducts = useCallback(async (params: ProductListParams) => {
-    setLoading(true);
-    try {
-      // API 호출 시뮬레이션
-      await new Promise(resolve => setTimeout(resolve, 500));
+  // 브랜드 이름 매핑
+  const brandNames: { [key: string]: string } = {
+    'BRAND-SAMSUNG': '삼성',
+    'BRAND-LG': 'LG',
+    'BRAND-APPLE': '애플',
+    'BRAND-DYSON': '다이슨',
+    'BRAND-NIKE': '나이키'
+  };
+
+  // 정렬 옵션 정의
+  const sortOptions = [
+    { value: 'newest', label: '최신순' },
+    { value: 'oldest', label: '오래된순' },
+    { value: 'name_asc', label: '상품명 (가나다순)' },
+    { value: 'name_desc', label: '상품명 (가나다 역순)' },
+    { value: 'price_high', label: '가격 높은순' },
+    { value: 'price_low', label: '가격 낮은순' },
+    { value: 'stock_high', label: '재고 많은순' },
+    { value: 'stock_low', label: '재고 적은순' }
+  ];
+
+  // 필터링된 상품 목록
+  const filteredProducts = useMemo(() => {
+    let filtered = mockProducts.filter(product => {
+      // 검색어 필터
+      if (searchTerm && !product.productName.toLowerCase().includes(searchTerm.toLowerCase()) && 
+          !product.productCode.toLowerCase().includes(searchTerm.toLowerCase())) {
+        return false;
+      }
       
-      // 임시 데이터
-      const mockProducts: MultiTenantProduct[] = Array.from({ length: params.pageSize }, (_, index) => ({
-        id: `product-${params.page}-${index}`,
-        tenantId: currentTenant?.id || 'tenant-1',
-        productName: `상품 ${params.page * params.pageSize + index + 1}`,
-        codes: {
-          internal: `PRD${String(params.page * params.pageSize + index + 1).padStart(6, '0')}`,
-          cafe24: `C24${String(params.page * params.pageSize + index + 1).padStart(6, '0')}`,
-          channels: [
-            { channelId: 'naver', channelName: '네이버', code: `N${String(params.page * params.pageSize + index + 1).padStart(6, '0')}` },
-            { channelId: 'coupang', channelName: '쿠팡', code: `CP${String(params.page * params.pageSize + index + 1).padStart(6, '0')}` }
-          ]
-        },
-        categoryId: 'cat-1',
-        categoryName: '카테고리 A',
-        brandId: 'brand-1',
-        brandName: '브랜드 A',
-        pricing: {
-          sellingPrice: 29900,
-          consumerPrice: 39900,
-          supplyPrice: 25410,
-          commissionRate: 15,
-          isSupplyPriceCalculated: true,
-          calculationMethod: 'commission'
-        },
-        stockInfo: {
-          totalStock: 100,
-          availableStock: 95,
-          reservedStock: 5,
-          lastStockUpdate: new Date(),
-          warehouseStocks: [
-            { warehouseId: 'wh-1', warehouseName: '본사창고', stock: 100 }
-          ]
-        },
-        status: {
-          isActive: true,
-          isSelling: true,
-          isDisplayed: true,
-          isSoldOut: false
-        },
-        tags: [
-          { id: 'tag-1', name: '신상품', category: 'general' },
-          { id: 'tag-2', name: '베스트', category: 'general' }
-        ],
-        logistics: {
-          width: 20,
-          height: 15,
-          depth: 5,
-          weight: 300,
-          packagingUnit: 'ea',
-          packagingQuantity: 1,
-          isFragile: false,
-          isLiquid: false
-        },
-        policies: {
-          showProductNameOnInvoice: true,
-          preventConsolidation: false,
-          shippingPolicyId: 'policy-1',
-          isReturnable: true,
-          isExchangeable: true,
-          returnPeriodDays: 14
-        },
-        description: '상품 설명입니다.',
-        thumbnailUrl: `https://via.placeholder.com/100x100?text=Product${index + 1}`,
-        images: [],
-        supplier: isExternalTenant ? {
-          id: 'supplier-1',
-          name: '공급처 A',
-          code: 'SUP001',
-          contactPerson: '홍길동',
-          phone: '02-1234-5678',
-          email: 'contact@supplier-a.com'
-        } : undefined,
-        hasBarcode: Math.random() > 0.5,
-        barcodes: Math.random() > 0.5 ? [`880123456789${index}`.slice(0, 13)] : [],
-        createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
-        updatedAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
-        createdBy: 'user-1',
-        updatedBy: 'user-1',
-        syncStatus: [
-          { channelId: 'naver', channelName: '네이버', syncStatus: 'success', needsSync: false },
-          { channelId: 'coupang', channelName: '쿠팡', syncStatus: 'pending', needsSync: true }
-        ]
-      }));
+      // 카테고리 필터
+      if (selectedCategory !== '전체' && product.productCategory !== selectedCategory) {
+        return false;
+      }
       
-      setProducts(mockProducts);
-      setTotalCount(1000); // 전체 개수 시뮬레이션
-    } catch (error) {
-      console.error('상품 목록 조회 실패:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [currentTenant?.id, isExternalTenant]);
-  
-  // 초기 로딩 및 검색 매개변수 변경 시 재조회
-  useEffect(() => {
-    fetchProducts(searchParams);
-  }, [fetchProducts, searchParams]);
-  
+      // 브랜드 필터
+      if (selectedBrand !== '전체' && product.brandId !== selectedBrand) {
+        return false;
+      }
+      
+      // 상태 필터
+      if (selectedStatus === 'selling' && !product.isSelling) return false;
+      if (selectedStatus === 'soldout' && !product.isSoldout) return false;
+      if (selectedStatus === 'discontinued' && product.active) return false;
+      
+      return true;
+    });
+
+    // 정렬
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'newest':
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        case 'oldest':
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        case 'name_asc':
+          return a.productName.localeCompare(b.productName);
+        case 'name_desc':
+          return b.productName.localeCompare(a.productName);
+        case 'price_high':
+          return b.representativeSellingPrice - a.representativeSellingPrice;
+        case 'price_low':
+          return a.representativeSellingPrice - b.representativeSellingPrice;
+        case 'stock_high':
+          return b.stock - a.stock;
+        case 'stock_low':
+          return a.stock - b.stock;
+        default:
+          return 0;
+      }
+    });
+
+    return filtered;
+  }, [searchTerm, selectedCategory, selectedBrand, selectedStatus, sortBy]);
+
+  // 페이지네이션된 상품 목록
+  const paginatedProducts = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredProducts.slice(startIndex, startIndex + pageSize);
+  }, [filteredProducts, currentPage, pageSize]);
+
+  const totalPages = Math.ceil(filteredProducts.length / pageSize);
+
   // 전체 선택 토글
   const handleSelectAll = () => {
-    if (selectAll) {
+    if (selectedProducts.size === paginatedProducts.length) {
       setSelectedProducts(new Set());
     } else {
-      setSelectedProducts(new Set(products.map(p => p.id)));
+      setSelectedProducts(new Set(paginatedProducts.map(p => p.id)));
     }
-    setSelectAll(!selectAll);
   };
-  
+
   // 개별 선택 토글
   const handleSelectProduct = (productId: string) => {
     const newSelected = new Set(selectedProducts);
@@ -209,583 +125,594 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({
       newSelected.add(productId);
     }
     setSelectedProducts(newSelected);
-    setSelectAll(newSelected.size === products.length);
   };
-  
-  // 일괄 작업 처리
-  const handleBulkOperation = async (operation: BulkOperation) => {
-    if (selectedProducts.size === 0) {
-      alert('선택된 상품이 없습니다.');
-      return;
-    }
-    
-    switch (operation.type) {
-      case 'status_change':
-        console.log('상태 변경:', operation);
-        break;
-      case 'excel_download':
-        console.log('엑셀 다운로드:', operation);
-        break;
-      case 'channel_sync':
-        console.log('채널 동기화:', operation);
-        break;
-    }
-  };
-  
-  // 필터 변경 처리
-  const handleFilterChange = (newFilters: Partial<ProductSearchFilters>) => {
-    setFilters((prev: ProductSearchFilters) => ({ ...prev, ...newFilters }));
-    setCurrentPage(1);
-  };
-  
-  // 정렬 변경 처리
-  const handleSort = (field: string) => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+
+  // 옵션 펼치기 토글
+  const handleToggleExpand = (productId: string) => {
+    const newExpanded = new Set(expandedProducts);
+    if (newExpanded.has(productId)) {
+      newExpanded.delete(productId);
     } else {
-      setSortBy(field as any);
-      setSortOrder('desc');
+      newExpanded.add(productId);
     }
-    setCurrentPage(1);
+    setExpandedProducts(newExpanded);
   };
-  
-  // 페이지 변경 처리
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+
+  // 옵션별 재고 상태 분석
+  const getVariantStockStatus = (product: any) => {
+    if (!product.variants || product.variants.length === 0) {
+      // 옵션이 없는 상품의 경우 메인 재고 사용
+      const stock = product.stock;
+      if (stock > 50) return { status: '충분', count: 1, color: 'text-green-600' };
+      if (stock > 10) return { status: '부족', count: 1, color: 'text-yellow-600' };
+      return { status: '위험', count: 1, color: 'text-red-600' };
+    }
+
+    const sufficient = product.variants.filter((v: any) => v.stock > 50).length;
+    const insufficient = product.variants.filter((v: any) => v.stock > 10 && v.stock <= 50).length;
+    const dangerous = product.variants.filter((v: any) => v.stock <= 10).length;
+
+    // 가장 심각한 상태를 우선으로 표시
+    if (dangerous > 0) {
+      return { 
+        status: '위험', 
+        count: dangerous, 
+        total: product.variants.length,
+        color: 'text-red-600',
+        details: { sufficient, insufficient, dangerous }
+      };
+    }
+    if (insufficient > 0) {
+      return { 
+        status: '부족', 
+        count: insufficient, 
+        total: product.variants.length,
+        color: 'text-yellow-600',
+        details: { sufficient, insufficient, dangerous }
+      };
+    }
+    return { 
+      status: '충분', 
+      count: sufficient, 
+      total: product.variants.length,
+      color: 'text-green-600',
+      details: { sufficient, insufficient, dangerous }
+    };
   };
-  
-  // 상품 상태 표시
-  const getStatusBadge = (status: any) => {
-    if (!status.isActive) return <Badge variant="neutral" outline>비활성</Badge>;
-    if (status.isSoldOut) return <Badge variant="danger">품절</Badge>;
-    if (!status.isSelling) return <Badge variant="warning">판매중지</Badge>;
-    return <Badge variant="success">판매중</Badge>;
-  };
-  
-  // 가격 포맷팅
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('ko-KR').format(price) + '원';
-  };
-  
+
   return (
-    <Container maxWidth="full" padding="xs" className="h-screen bg-gray-50">
-      {/* 메인 콘텐츠 */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* 헤더 */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold text-gray-900">상품 목록</h1>
-              {currentTenant && (
-                <p className="text-sm text-gray-500 mt-1">
-                  {currentTenant.name} ({currentTenant.type === 'external' ? '외부 공급처' : '자체 화주사'})
-                </p>
-              )}
-            </div>
-            <Stack direction="row" gap={3}>
-              <Button
-                onClick={() => handleBulkOperation({ type: 'excel_download', productIds: Array.from(selectedProducts), params: { format: 'selected' } })}
-                disabled={selectedProducts.size === 0}
-                variant="outline"
-                size="default"
-                leftIcon={<span>📥</span>}
-              >
-                엑셀 다운로드
-              </Button>
-              <Button 
-                onClick={() => onNavigate?.('products-add')}
-                variant="primary"
-                size="default"
-              >
-                상품 등록
-              </Button>
-            </Stack>
+    <Container maxWidth="full" padding="md" className="bg-gray-50 min-h-screen">
+      {/* 헤더 */}
+      <div className="mb-6">
+        <Stack direction="row" justify="between" align="center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">상품 목록</h1>
+            <p className="text-gray-600 mt-1 text-lg">
+              총 <span className="font-bold text-blue-600">{filteredProducts.length}</span>개 상품 
+              <span className="text-gray-400 ml-2">(전체 {mockProducts.length}개)</span>
+            </p>
           </div>
-        </div>
-        
-        {/* 필터 및 검색 영역 */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
-          <Stack direction="row" gap={4} className="mb-4">
-            {/* 검색 */}
-            <div className="flex-1 max-w-md">
-              <Input
-                placeholder="상품명 또는 상품코드 검색"
-                fullWidth
-                leftIcon={<span>🔍</span>}
-                value={filters.productName || ''}
-                onChange={(e) => handleFilterChange({ productName: e.target.value })}
-              />
-            </div>
-            
-            {/* 기본 필터 */}
-            <select
-              value={filters.categoryIds?.[0] || ''}
-              onChange={(e) => handleFilterChange({ categoryIds: e.target.value ? [e.target.value] : undefined })}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">전체 카테고리</option>
-              <option value="cat-1">카테고리 A</option>
-              <option value="cat-2">카테고리 B</option>
-            </select>
-            
-            <select
-              value={filters.brandIds?.[0] || ''}
-              onChange={(e) => handleFilterChange({ brandIds: e.target.value ? [e.target.value] : undefined })}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">전체 브랜드</option>
-              <option value="brand-1">브랜드 A</option>
-              <option value="brand-2">브랜드 B</option>
-            </select>
-            
-            {/* 조건부 공급처 필터 (외부 화주사만) */}
-            {isExternalTenant && (
-              <select
-                value={filters.supplierIds?.[0] || ''}
-                onChange={(e) => handleFilterChange({ supplierIds: e.target.value ? [e.target.value] : undefined })}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">전체 공급처</option>
-                <option value="supplier-1">공급처 A</option>
-                <option value="supplier-2">공급처 B</option>
-              </select>
-            )}
-            
-            {/* 고급 필터 토글 */}
+          <Stack direction="row" gap={3}>
             <Button
-              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
               variant="outline"
-              size="default"
-              leftIcon={<span>🔧</span>}
-              rightIcon={<span>{showAdvancedFilters ? '▲' : '▼'}</span>}
+              onClick={() => onNavigate?.('products-import')}
+              className="border-gray-300"
             >
-              고급 필터
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+              상품 가져오기
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => onNavigate?.('products-add')}
+              className="px-6"
+            >
+              <svg className="w-4 h-4 mr-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              신규 상품 등록
             </Button>
           </Stack>
-          
-          {/* 고급 필터 */}
-          {showAdvancedFilters && (
-            <Card variant="outlined" padding="md" className="mt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">상태</label>
-                  <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
-                    <option value="">전체</option>
-                    <option value="active">활성</option>
-                    <option value="inactive">비활성</option>
-                    <option value="selling">판매중</option>
-                    <option value="soldout">품절</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <Input
-                    label="등록일"
-                    type="date"
-                    fullWidth
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">바코드</label>
-                  <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
-                    <option value="">전체</option>
-                    <option value="true">있음</option>
-                    <option value="false">없음</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <Input
-                    label="태그"
-                    placeholder="태그 검색"
-                    fullWidth
-                  />
-                </div>
-              </div>
-              
-              <Stack direction="row" justify="end" gap={2} className="mt-4">
-                <Button
-                  onClick={() => {
-                    setFilters({});
-                    setShowAdvancedFilters(false);
-                  }}
-                  variant="outline"
-                  size="default"
-                >
-                  초기화
-                </Button>
-                <Button
-                  onClick={() => setShowAdvancedFilters(false)}
-                  variant="primary"
-                  size="default"
-                >
-                  적용
-                </Button>
-              </Stack>
-            </Card>
-          )}
-        </div>
-        
-        {/* 일괄 작업 바 */}
-        {selectedProducts.size > 0 && (
-          <Card variant="outlined" padding="sm" className="mx-6 mt-4 bg-blue-50 border-blue-200">
-            <Stack direction="row" justify="between" align="center">
-              <Badge variant="primary" size="default">
+        </Stack>
+      </div>
+
+      {/* 검색 및 필터 */}
+      <Card padding="lg" className="mb-6 shadow-sm">
+        <GridRow gutter={16}>
+          {/* 검색창 */}
+          <GridCol span={8}>
+            <div className="relative">
+              <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                placeholder="상품명, 상품코드로 검색..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+              />
+            </div>
+          </GridCol>
+
+          {/* 카테고리 필터 */}
+          <GridCol span={4}>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+            >
+              <option value="전체">전체</option>
+              {mockProductFilterOptions.categories.map(category => (
+                <option key={category.id} value={category.name}>{category.name}</option>
+              ))}
+            </select>
+          </GridCol>
+
+          {/* 브랜드 필터 */}
+          <GridCol span={4}>
+            <select
+              value={selectedBrand}
+              onChange={(e) => setSelectedBrand(e.target.value)}
+              className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+            >
+              <option value="전체">전체 브랜드</option>
+              {mockProductFilterOptions.brands.map(brand => (
+                <option key={brand.id} value={brand.id}>{brand.name}</option>
+              ))}
+            </select>
+          </GridCol>
+
+          {/* 상태 필터 */}
+          <GridCol span={4}>
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+            >
+              <option value="all">전체 상태</option>
+              {mockProductFilterOptions.status.map(status => (
+                <option key={status} value={status}>{status}</option>
+              ))}
+            </select>
+          </GridCol>
+
+          {/* 정렬 */}
+          <GridCol span={4}>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+            >
+              {sortOptions.map(option => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </GridCol>
+        </GridRow>
+      </Card>
+
+      {/* 선택된 항목 액션 바 */}
+      {selectedProducts.size > 0 && (
+        <Card padding="md" className="mb-6 bg-blue-50 border-blue-200 border-2">
+          <Stack direction="row" justify="between" align="center">
+            <div className="flex items-center space-x-3">
+              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-blue-800 font-bold text-lg">
                 {selectedProducts.size}개 상품 선택됨
-              </Badge>
-              <Stack direction="row" gap={2}>
-                <select
-                  onChange={(e) => {
-                    if (e.target.value) {
-                      handleBulkOperation({
-                        type: 'status_change',
-                        productIds: Array.from(selectedProducts),
-                        params: { status: e.target.value }
-                      });
-                    }
-                  }}
-                  className="px-3 py-1.5 text-sm border border-blue-300 rounded-md bg-white"
-                  value=""
-                >
-                  <option value="">상태 변경</option>
-                  <option value="active">활성화</option>
-                  <option value="inactive">비활성화</option>
-                  <option value="selling">판매 시작</option>
-                  <option value="stop_selling">판매 중지</option>
-                </select>
-                
-                <Button
-                  onClick={() => handleBulkOperation({ type: 'excel_download', productIds: Array.from(selectedProducts) })}
-                  variant="outline"
-                  size="small"
-                  leftIcon={<span>📥</span>}
-                >
-                  선택 다운로드
-                </Button>
-                
-                <Button
-                  onClick={() => handleBulkOperation({ type: 'channel_sync', productIds: Array.from(selectedProducts) })}
-                  variant="outline"
-                  size="small"
-                  leftIcon={<span>📤</span>}
-                >
-                  외부 송신
-                </Button>
-              </Stack>
+              </span>
+            </div>
+            <Stack direction="row" gap={2}>
+              <Button variant="outline" size="small" className="border-blue-300 text-blue-600">
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                엑셀 다운로드
+              </Button>
+              <Button variant="outline" size="small" className="border-green-300 text-green-600">
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                일괄 활성화
+              </Button>
+              <Button variant="outline" size="small" className="border-orange-300 text-orange-600">
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                일괄 비활성화
+              </Button>
+              <Button variant="outline" size="small" className="border-red-300 text-red-600">
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                일괄 삭제
+              </Button>
             </Stack>
-          </Card>
-        )}
-        
-        {/* 테이블 */}
-        <div className="flex-1 overflow-auto">
-          <div className="min-w-full">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50 sticky top-0">
-                <tr>
-                  <th className="w-12 px-6 py-3">
-                    <button
-                      onClick={handleSelectAll}
-                      className="flex items-center justify-center"
-                    >
-                      {selectAll ? '☑' : '☐'}
-                    </button>
-                  </th>
-                  <th className="w-20 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    썸네일
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <button
-                      onClick={() => handleSort('productName')}
-                      className="flex items-center space-x-1 hover:text-gray-700"
-                    >
-                      <span>상품명</span>
-                      {sortBy === 'productName' && (
-                        <span>{sortOrder === 'asc' ? '▲' : '▼'}</span>
-                      )}
-                    </button>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    자체상품코드
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    카테고리
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    브랜드
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <button
-                      onClick={() => handleSort('sellingPrice')}
-                      className="flex items-center space-x-1 hover:text-gray-700"
-                    >
-                      <span>판매가</span>
-                      {sortBy === 'sellingPrice' && (
-                        <span>{sortOrder === 'asc' ? '▲' : '▼'}</span>
-                      )}
-                    </button>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    공급가
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    소비자가
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    상태
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    바코드
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    태그
-                  </th>
-                  {isExternalTenant && (
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      공급처
-                    </th>
-                  )}
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <button
-                      onClick={() => handleSort('updatedAt')}
-                      className="flex items-center space-x-1 hover:text-gray-700"
-                    >
-                      <span>수정일</span>
-                      {sortBy === 'updatedAt' && (
-                        <span>{sortOrder === 'asc' ? '▲' : '▼'}</span>
-                      )}
-                    </button>
-                  </th>
-                  <th className="w-20 px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    작업
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {loading ? (
-                  <tr>
-                    <td colSpan={isExternalTenant ? 15 : 14} className="px-6 py-12 text-center">
-                      <div className="flex items-center justify-center">
-                        <span className="animate-spin mr-2">⏳</span>
-                        <span>로딩 중...</span>
+          </Stack>
+        </Card>
+      )}
+
+      {/* 상품 목록 테이블 */}
+      <Card padding="none" className="overflow-hidden shadow-sm">
+        {/* 테이블 헤더 */}
+        <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+          <Stack direction="row" justify="between" align="center">
+            <div className="flex items-center space-x-4 flex-1">
+              <input
+                type="checkbox"
+                checked={selectedProducts.size === paginatedProducts.length && paginatedProducts.length > 0}
+                onChange={handleSelectAll}
+                className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+              />
+              <span className="text-base font-semibold text-gray-700 flex-1">
+                전체 선택 ({paginatedProducts.length}개)
+              </span>
+            </div>
+            <div className="text-sm text-gray-500">
+              페이지: {currentPage} / {totalPages}
+            </div>
+          </Stack>
+        </div>
+
+        {/* 테이블 본문 */}
+        <div className="overflow-auto">
+          <table className="min-w-full">
+            <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
+              <tr>
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-16">선택</th>
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-36">이미지</th>
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">상품정보</th>
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-32">분류/브랜드</th>
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-28">재고상태</th>
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-32">가격정보</th>
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-28">등록일</th>
+                <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-32">관리</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {paginatedProducts.map((product) => (
+                <React.Fragment key={product.id}>
+                  {/* 메인 상품 행 */}
+                  <tr className="hover:bg-gray-50 transition-colors duration-200 group">
+                    <td className="px-6 py-6 whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={selectedProducts.has(product.id)}
+                        onChange={() => handleSelectProduct(product.id)}
+                        className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 focus:ring-2"
+                      />
+                    </td>
+                    
+                    <td className="px-6 py-6 whitespace-nowrap">
+                      <div className="relative rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 border-2 border-gray-200 shadow-lg group-hover:shadow-xl transition-all duration-300" style={{ width: '120px', height: '120px' }}>
+                        <img
+                          src={product.representativeImage}
+                          alt={product.productName}
+                          className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
+                          style={{ width: '120px', height: '120px' }}
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=120&h=120&fit=crop";
+                          }}
+                        />
+                        {product.variants && product.variants.length > 1 && (
+                          <div className="absolute bottom-1 right-1 bg-blue-600 text-white text-xs px-2 py-1 rounded-full font-semibold">
+                            +{product.variants.length - 1}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    
+                    <td className="px-6 py-6">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-2 flex-1">
+                          <button
+                            onClick={() => onNavigate?.('products-detail', product.id)}
+                            className="text-left group-hover:text-blue-600 transition-colors duration-200"
+                          >
+                            <h3 className="font-bold text-gray-900 hover:underline text-lg leading-tight line-clamp-2">
+                              {product.productName}
+                            </h3>
+                          </button>
+                          <div className="flex flex-wrap gap-2">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                              {product.productCode}
+                            </span>
+                            {product.isSelling && (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                판매중
+                              </span>
+                            )}
+                            {product.isSoldout && (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                품절
+                              </span>
+                            )}
+                            {!product.active && (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+                                중단
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* 옵션 펼치기 버튼 */}
+                        {product.variants && product.variants.length > 0 && (
+                          <button
+                            onClick={() => handleToggleExpand(product.id)}
+                            className="ml-4 p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                            title="옵션 보기"
+                          >
+                            <svg 
+                              className={`w-5 h-5 transform transition-transform duration-200 ${
+                                expandedProducts.has(product.id) ? 'rotate-180' : ''
+                              }`} 
+                              fill="none" 
+                              stroke="currentColor" 
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                            <span className="text-xs text-gray-500 mt-1 block">
+                              {product.variants.length}개
+                            </span>
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                    
+                    <td className="px-6 py-6 whitespace-nowrap">
+                      <div className="space-y-1">
+                        <div className="font-semibold text-gray-900">{product.productCategory}</div>
+                        {product.brandId && (
+                          <div className="text-sm text-blue-600 font-medium">
+                            {brandNames[product.brandId] || product.brandId}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    
+                    <td className="px-6 py-6 whitespace-nowrap">
+                      {(() => {
+                        const stockStatus = getVariantStockStatus(product);
+                        return (
+                          <div className="text-center space-y-2">
+                            <div className={`text-lg font-bold ${stockStatus.color}`}>
+                              {stockStatus.status}
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              {stockStatus.total ? (
+                                <div>
+                                  <div>{stockStatus.count}/{stockStatus.total} 옵션</div>
+                                  {stockStatus.details && (
+                                    <div className="text-xs mt-1 space-y-1">
+                                      {stockStatus.details.sufficient > 0 && (
+                                        <div className="text-green-600">충분: {stockStatus.details.sufficient}</div>
+                                      )}
+                                      {stockStatus.details.insufficient > 0 && (
+                                        <div className="text-yellow-600">부족: {stockStatus.details.insufficient}</div>
+                                      )}
+                                      {stockStatus.details.dangerous > 0 && (
+                                        <div className="text-red-600">위험: {stockStatus.details.dangerous}</div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <div>총 {product.stock}개</div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </td>
+                    
+                    <td className="px-6 py-6">
+                      <div className="text-right space-y-1">
+                        <div className="text-sm text-gray-500">원가</div>
+                        <div className="font-medium text-gray-700">{formatPrice(product.originalCost)}</div>
+                        <div className="border-t border-gray-200 pt-2 mt-2">
+                          <div className="text-sm text-green-700 font-medium">판매가</div>
+                          <div className="text-xl font-bold text-green-600">
+                            {formatPrice(product.representativeSellingPrice)}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    
+                    <td className="px-6 py-6 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {new Date(product.createdAt).toLocaleDateString('ko-KR', { 
+                          year: 'numeric', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        })}
+                      </div>
+                    </td>
+                    
+                    <td className="px-6 py-6 whitespace-nowrap">
+                      <div className="flex justify-center items-center space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="small"
+                          onClick={() => onNavigate?.('products-edit', product.id)}
+                          className="text-green-600 hover:bg-green-50 hover:text-green-700"
+                          title="상품 수정"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="small"
+                          className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                          title="상품 삭제"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </Button>
                       </div>
                     </td>
                   </tr>
-                ) : products.length === 0 ? (
-                  <tr>
-                    <td colSpan={isExternalTenant ? 15 : 14} className="px-6 py-12 text-center text-gray-500">
-                      검색 결과가 없습니다.
-                    </td>
-                  </tr>
-                ) : (
-                  products.map((product) => (
-                    <tr 
-                      key={product.id} 
-                      className="hover:bg-gray-50 cursor-pointer"
-                      onClick={() => onNavigate?.('product-detail', product.id)}
-                    >
-                      <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          onClick={() => handleSelectProduct(product.id)}
-                          className="flex items-center justify-center"
-                        >
-                          {selectedProducts.has(product.id) ? '☑' : '☐'}
-                        </button>
-                      </td>
-                      <td className="px-6 py-4">
-                        {product.thumbnailUrl && (
-                          <img
-                            src={product.thumbnailUrl}
-                            alt={product.productName}
-                            className="w-12 h-12 object-cover rounded"
-                          />
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-gray-900">{product.productName}</div>
-                        {product.englishProductName && (
-                          <div className="text-sm text-gray-500">{product.englishProductName}</div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {product.codes.internal}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {product.categoryName}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {product.brandName || '-'}
-                      </td>
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                        {formatPrice(product.pricing.sellingPrice)}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {formatPrice(product.pricing.supplyPrice)}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {product.pricing.consumerPrice ? formatPrice(product.pricing.consumerPrice) : '-'}
-                      </td>
-                      <td className="px-6 py-4">
-                        {getStatusBadge(product.status)}
-                      </td>
-                      <td className="px-6 py-4">
-                        {product.hasBarcode ? (
-                          <span className="text-sm text-green-600">있음</span>
-                        ) : (
-                          <span className="text-sm text-gray-500">없음</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-wrap gap-1">
-                          {product.tags.slice(0, 2).map((tag) => (
-                            <Badge
-                              key={tag.id}
-                              variant="primary"
-                              size="small"
-                              outline
-                            >
-                              {tag.name}
-                            </Badge>
-                          ))}
-                          {product.tags.length > 2 && (
-                            <span className="text-xs text-gray-500">
-                              +{product.tags.length - 2}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      {isExternalTenant && (
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          {product.supplier?.name || '-'}
-                        </td>
-                      )}
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {new Date(product.updatedAt).toLocaleDateString('ko-KR')}
-                      </td>
-                      <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-center relative">
-                          <Button
-                            variant="ghost"
-                            size="small"
-                            onClick={() => setOpenDropdown(openDropdown === product.id ? null : product.id)}
-                          >
-                            ⋮
-                          </Button>
-                          {openDropdown === product.id && (
-                            <div className="absolute right-0 top-8 z-10 bg-white border border-gray-200 rounded-md shadow-lg min-w-[120px]">
-                              <div className="py-1">
-                                <button
-                                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                                  onClick={() => {
-                                    console.log('상세보기', product.id);
-                                    setOpenDropdown(null);
-                                  }}
-                                >
-                                  상세보기
-                                </button>
-                                <button
-                                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                                  onClick={() => {
-                                    console.log('수정', product.id);
-                                    setOpenDropdown(null);
-                                  }}
-                                >
-                                  수정
-                                </button>
-                                <button
-                                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                                  onClick={() => {
-                                    console.log('복제', product.id);
-                                    setOpenDropdown(null);
-                                  }}
-                                >
-                                  복제
-                                </button>
-                                <button
-                                  className="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left"
-                                  onClick={() => {
-                                    console.log('삭제', product.id);
-                                    setOpenDropdown(null);
-                                  }}
-                                >
-                                  삭제
-                                </button>
+                  
+                  {/* 옵션 펼치기 행 */}
+                  {expandedProducts.has(product.id) && product.variants && product.variants.length > 0 && (
+                    <tr className="bg-blue-50">
+                      <td colSpan={8} className="px-6 py-4">
+                        <div className="bg-white rounded-lg p-4 shadow-inner">
+                          <h4 className="font-bold text-gray-900 mb-4 text-lg">상품 옵션 ({product.variants.length}개)</h4>
+                          <div className="space-y-3">
+                            {product.variants.map((variant: any, index: number) => (
+                              <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200">
+                                <div className="flex-1">
+                                  <div className="flex items-center space-x-4">
+                                    <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-200 border border-gray-300 shadow-sm">
+                                      <img
+                                        src={product.representativeImage}
+                                        alt={`${product.productName} - ${variant.variantName}`}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                          (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=64&h=64&fit=crop";
+                                        }}
+                                      />
+                                    </div>
+                                    <div className="space-y-1">
+                                      <div className="font-semibold text-gray-900">
+                                        {variant.variantName}
+                                      </div>
+                                      <div className="text-sm text-gray-600">
+                                        {variant.code && `코드: ${variant.code}`}
+                                        {variant.barcode1 && ` | 바코드: ${variant.barcode1}`}
+                                      </div>
+                                      <div className="flex space-x-2">
+                                        {variant.stock > 0 ? (
+                                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            재고 {variant.stock}개
+                                          </span>
+                                        ) : (
+                                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                            품절
+                                          </span>
+                                        )}
+                                        {variant.isSelling && (
+                                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                            판매중
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="text-right space-y-1">
+                                  <div className="text-sm text-gray-500">원가</div>
+                                  <div className="font-medium text-gray-700">{formatPrice(variant.costPrice)}</div>
+                                  <div className="text-sm text-gray-500">공급가</div>
+                                  <div className="font-medium text-blue-600">{formatPrice(variant.supplyPrice)}</div>
+                                  <div className="text-sm text-gray-500">판매가</div>
+                                  <div className="text-lg font-bold text-green-600">{formatPrice(variant.sellingPrice)}</div>
+                                </div>
                               </div>
-                            </div>
-                          )}
+                            ))}
+                          </div>
                         </div>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  )}
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
         </div>
-        
-        {/* 페이지네이션 */}
-        {!loading && totalCount > 0 && (
-          <div className="bg-white border-t border-gray-200 px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-700">
-                  총 {totalCount.toLocaleString()}개 중 {((currentPage - 1) * pageSize + 1).toLocaleString()}-{Math.min(currentPage * pageSize, totalCount).toLocaleString()}개
-                </span>
-                <select
-                  value={pageSize}
-                  onChange={(e) => {
-                    setPageSize(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-md"
-                >
-                  <option value={10}>10개씩</option>
-                  <option value={20}>20개씩</option>
-                  <option value={50}>50개씩</option>
-                  <option value={100}>100개씩</option>
-                </select>
-              </div>
-              
-              <Stack direction="row" gap={2}>
-                <Button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  variant="outline"
-                  size="small"
-                >
-                  이전
-                </Button>
-                
-                {/* 페이지 번호 */}
-                {Array.from({ length: Math.min(5, Math.ceil(totalCount / pageSize)) }, (_, i) => {
-                  const pageNumber = Math.max(1, currentPage - 2) + i;
-                  if (pageNumber > Math.ceil(totalCount / pageSize)) return null;
-                  
-                  return (
-                    <Button
-                      key={pageNumber}
-                      onClick={() => handlePageChange(pageNumber)}
-                      variant={pageNumber === currentPage ? "primary" : "outline"}
-                      size="small"
-                    >
-                      {pageNumber}
-                    </Button>
-                  );
-                })}
-                
-                <Button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === Math.ceil(totalCount / pageSize)}
-                  variant="outline"
-                  size="small"
-                >
-                  다음
-                </Button>
-              </Stack>
-            </div>
+      </Card> 
+
+      {/* 빈 상태 */}
+      {paginatedProducts.length === 0 && (
+        <Card padding="xl" className="text-center">
+          <div className="w-24 h-24 mx-auto mb-6 text-gray-300">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-full h-full">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
           </div>
-        )}
-      </div>
+          <h3 className="text-2xl font-semibold text-gray-600 mb-3">검색 결과가 없습니다</h3>
+          <p className="text-gray-500 mb-8 text-lg">다른 검색어나 필터 조건을 시도해보세요.</p>
+          <Button
+            variant="primary"
+            size="big"
+            onClick={() => {
+              setSearchTerm('');
+              setSelectedCategory('전체');
+              setSelectedBrand('전체');
+              setSelectedStatus('all');
+            }}
+            className="px-8 py-3"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            필터 초기화
+          </Button>
+        </Card>
+      )}
+
+      {/* 페이지네이션 */}
+      {totalPages > 1 && (
+        <div className="mt-8 flex justify-center">
+          <Stack direction="row" gap={2} align="center">
+            <Button
+              variant="outline"
+              size="small"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(currentPage - 1)}
+              className="px-3"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </Button>
+            
+            {Array.from({ length: Math.min(7, totalPages) }, (_, i) => {
+              let pageNumber;
+              if (totalPages <= 7) {
+                pageNumber = i + 1;
+              } else if (currentPage <= 4) {
+                pageNumber = i + 1;
+              } else if (currentPage >= totalPages - 3) {
+                pageNumber = totalPages - 6 + i;
+              } else {
+                pageNumber = currentPage - 3 + i;
+              }
+              
+              return (
+                <Button
+                  key={pageNumber}
+                  variant={currentPage === pageNumber ? 'primary' : 'outline'}
+                  size="small"
+                  onClick={() => setCurrentPage(pageNumber)}
+                  className="px-3"
+                >
+                  {pageNumber}
+                </Button>
+              );
+            })}
+            
+            <Button
+              variant="outline"
+              size="small"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(currentPage + 1)}
+              className="px-3"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Button>
+          </Stack>
+        </div>
+      )}
     </Container>
   );
 };

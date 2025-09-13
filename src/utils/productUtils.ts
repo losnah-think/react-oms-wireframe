@@ -8,36 +8,45 @@ export const formatPrice = (price: number): string => {
   }).format(price);
 };
 
-export const getStockStatus = (product: Product): 'in-stock' | 'low-stock' | 'out-of-stock' => {
-  if (product.isOutOfStock || product.stock === 0) {
-    return 'out-of-stock';
+export const formatDate = (date: string | Date): string => {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return dateObj.toLocaleDateString('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+};
+
+export const getStockStatus = (stockQuantity: number): { label: string; color: 'success' | 'warning' | 'danger' } => {
+  if (stockQuantity === 0) {
+    return { label: '품절', color: 'danger' };
   }
   
-  if (product.stock <= (product.safeStock || 10)) {
-    return 'low-stock';
+  if (stockQuantity < 10) {
+    return { label: '재고부족', color: 'warning' };
   }
   
-  return 'in-stock';
+  return { label: '재고보유', color: 'success' };
 };
 
 export const getProductStatusBadge = (product: Product) => {
-  const stockStatus = getStockStatus(product);
+  const stockStatus = getStockStatus(product.stock || 0);
   
   if (!product.isSelling) {
-    return { text: '판매중단', color: 'gray' };
+    return { text: '판매중단', className: 'bg-gray-100 text-gray-800' };
   }
   
   if (product.isSoldout) {
-    return { text: '품절', color: 'red' };
+    return { text: '품절', className: 'bg-red-100 text-red-800' };
   }
   
-  switch (stockStatus) {
-    case 'out-of-stock':
-      return { text: '재고없음', color: 'red' };
-    case 'low-stock':
-      return { text: '재고부족', color: 'yellow' };
+  switch (stockStatus.label) {
+    case '품절':
+      return { text: '재고없음', className: 'bg-red-100 text-red-800' };
+    case '재고부족':
+      return { text: '재고부족', className: 'bg-yellow-100 text-yellow-800' };
     default:
-      return { text: '정상', color: 'green' };
+      return { text: '정상', className: 'bg-green-100 text-green-800' };
   }
 };
 

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Container, Card, Button, Badge, Stack } from '../../design-system';
 
 interface ShoppingMallIntegration {
   id: string;
@@ -27,7 +28,7 @@ const ExternalProductImportPage: React.FC = () => {
     {
       id: 'makeshop',
       name: '메이크샵',
-      icon: '🏪',
+      icon: '',
       description: '메이크샵 쇼핑몰 플랫폼에서 상품을 가져옵니다',
       isConnected: true,
       lastSync: '2025-01-15 14:30',
@@ -38,7 +39,7 @@ const ExternalProductImportPage: React.FC = () => {
     {
       id: 'cafe24',
       name: '카페24',
-      icon: '☕',
+      icon: '',
       description: '카페24 쇼핑몰 플랫폼에서 상품을 가져옵니다',
       isConnected: true,
       lastSync: '2025-01-15 12:15',
@@ -49,7 +50,7 @@ const ExternalProductImportPage: React.FC = () => {
     {
       id: 'wemakeprice',
       name: '위메프',
-      icon: '💰',
+      icon: '',
       description: '위메프 오픈마켓에서 상품을 가져옵니다',
       isConnected: false,
       lastSync: undefined,
@@ -60,7 +61,7 @@ const ExternalProductImportPage: React.FC = () => {
     {
       id: 'godo',
       name: '고도몰5',
-      icon: '🏢',
+      icon: '',
       description: '고도몰5 쇼핑몰 플랫폼에서 상품을 가져옵니다',
       isConnected: true,
       lastSync: '2025-01-15 10:45',
@@ -71,7 +72,7 @@ const ExternalProductImportPage: React.FC = () => {
     {
       id: 'naver',
       name: '네이버 스마트스토어',
-      icon: '🛍️',
+      icon: '',
       description: '네이버 스마트스토어에서 상품을 가져옵니다',
       isConnected: true,
       lastSync: '2025-01-15 13:20',
@@ -157,7 +158,7 @@ const ExternalProductImportPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <Container maxWidth="6xl" padding="md" className="min-h-screen bg-gray-50">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">외부 쇼핑몰 상품 가져오기</h1>
         <p className="text-gray-600">다양한 쇼핑몰 플랫폼에서 상품을 가져오고 통합 관리합니다.</p>
@@ -165,45 +166,45 @@ const ExternalProductImportPage: React.FC = () => {
 
       {/* 전체 현황 대시보드 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-6 text-white">
+        <Card padding="md" className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-blue-100 text-sm">연결된 쇼핑몰</p>
               <p className="text-3xl font-bold">{shoppingMalls.filter(m => m.isConnected).length}</p>
             </div>
-            <div className="text-4xl">🔗</div>
+            <div className="text-4xl"></div>
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-6 text-white">
+        <Card padding="md" className="bg-gradient-to-r from-green-500 to-green-600 text-white">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-green-100 text-sm">총 상품 수</p>
               <p className="text-3xl font-bold">{shoppingMalls.reduce((sum, mall) => sum + mall.productCount, 0).toLocaleString()}</p>
             </div>
-            <div className="text-4xl">📦</div>
+            <div className="text-4xl"></div>
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg p-6 text-white">
+        <Card padding="md" className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-purple-100 text-sm">오늘 가져온 상품</p>
               <p className="text-3xl font-bold">127</p>
             </div>
-            <div className="text-4xl">📈</div>
+            <div className="text-4xl"></div>
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg p-6 text-white">
+        <Card padding="md" className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-orange-100 text-sm">동기화 대기</p>
               <p className="text-3xl font-bold">23</p>
             </div>
-            <div className="text-4xl">⏰</div>
+            <div className="text-4xl"></div>
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* 쇼핑몰별 아코디언 */}
@@ -444,7 +445,7 @@ const ExternalProductImportPage: React.FC = () => {
           </button>
         </div>
       </div>
-    </div>
+    </Container>
   );
 };
 

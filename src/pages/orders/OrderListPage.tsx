@@ -1,10 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Container, Card, Button, Input, Badge, Stack } from '../../design-system';
+import { Container, Card, Button, Stack } from '../../design-system';
 import { mockOrders } from '../../data/mockOrders';
 import { filterOrders, sortOrders, downloadOrdersCSV, getOrderStats } from '../../utils/orderUtils';
 import OrderFilters from '../../components/orders/OrderFilters';
 import OrderTable from '../../components/orders/OrderTable';
 import Pagination from '../../components/common/Pagination';
+import { GridRow, GridCol } from '../../design-system/Grid';
 
 const OrderListPage: React.FC = () => {
   // 필터 상태
@@ -75,90 +76,103 @@ const OrderListPage: React.FC = () => {
 
   return (
     <Container maxWidth="full" padding="md" className="min-h-screen bg-gray-50">
-      {/* 헤더 */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">주문 관리</h1>
-          <p className="text-gray-600 mt-2">
-            전체 {stats.total}건의 주문 (총 매출: {stats.totalRevenue.toLocaleString()}원)
-          </p>
-        </div>
-        <Stack direction="row" gap={4}>
-          <Button
-            variant="secondary"
-            onClick={handleExportCSV}
-          >
-            CSV 내보내기
-          </Button>
-          <Button variant="primary">
-            주문 등록
-          </Button>
+      {/* 헤더 및 액션바 */}
+      <Card padding="lg" className="mb-6 shadow-sm">
+        <Stack direction="row" justify="between" align="center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">주문 관리</h1>
+            <p className="text-gray-600 mt-2">
+              전체 {stats.total}건의 주문 <span className="text-blue-600 font-bold">(총 매출: {stats.totalRevenue.toLocaleString()}원)</span>
+            </p>
+          </div>
+          <Stack direction="row" gap={3}>
+            <Button variant="outline" className="border-gray-300" onClick={handleExportCSV}>CSV 내보내기</Button>
+            <Button variant="primary" className="px-6">주문 등록</Button>
+          </Stack>
         </Stack>
-      </div>
+      </Card>
 
       {/* 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card padding="md" className="shadow">
-          <div className="flex items-center">
-            <div className="text-2xl font-bold text-gray-900">{stats.PENDING}</div>
-            <div className="ml-2 text-sm text-gray-600">대기중</div>
-          </div>
-        </Card>
-        <Card padding="md" className="shadow">
-          <div className="flex items-center">
-            <div className="text-2xl font-bold text-blue-600">{stats.PROCESSING}</div>
-            <div className="ml-2 text-sm text-gray-600">처리중</div>
-          </div>
-        </Card>
-        <Card padding="md" className="shadow">
-          <div className="flex items-center">
-            <div className="text-2xl font-bold text-purple-600">{stats.SHIPPED}</div>
-            <div className="ml-2 text-sm text-gray-600">배송중</div>
-          </div>
-        </Card>
-        <Card padding="md" className="shadow">
-          <div className="flex items-center">
-            <div className="text-2xl font-bold text-green-600">{stats.DELIVERED}</div>
-            <div className="ml-2 text-sm text-gray-600">배송완료</div>
-          </div>
-        </Card>
-      </div>
+      <GridRow gutter={16} className="mb-6">
+        <GridCol span={6} md={3}>
+          <Card padding="md" className="shadow">
+            <div className="flex items-center">
+              <div className="text-2xl font-bold text-gray-900">{stats.PENDING}</div>
+              <div className="ml-2 text-sm text-gray-600">대기중</div>
+            </div>
+          </Card>
+        </GridCol>
+        <GridCol span={6} md={3}>
+          <Card padding="md" className="shadow">
+            <div className="flex items-center">
+              <div className="text-2xl font-bold text-blue-600">{stats.PROCESSING}</div>
+              <div className="ml-2 text-sm text-gray-600">처리중</div>
+            </div>
+          </Card>
+        </GridCol>
+        <GridCol span={6} md={3}>
+          <Card padding="md" className="shadow">
+            <div className="flex items-center">
+              <div className="text-2xl font-bold text-purple-600">{stats.SHIPPED}</div>
+              <div className="ml-2 text-sm text-gray-600">배송중</div>
+            </div>
+          </Card>
+        </GridCol>
+        <GridCol span={6} md={3}>
+          <Card padding="md" className="shadow">
+            <div className="flex items-center">
+              <div className="text-2xl font-bold text-green-600">{stats.DELIVERED}</div>
+              <div className="ml-2 text-sm text-gray-600">배송완료</div>
+            </div>
+          </Card>
+        </GridCol>
+      </GridRow>
 
-      {/* 필터 */}
-      <OrderFilters
-        search={search}
-        setSearch={setSearch}
-        status={status}
-        setStatus={setStatus}
-        paymentMethod={paymentMethod}
-        setPaymentMethod={setPaymentMethod}
-        paymentStatus={paymentStatus}
-        setPaymentStatus={setPaymentStatus}
-        startDate={startDate}
-        setStartDate={setStartDate}
-        endDate={endDate}
-        setEndDate={setEndDate}
-      />
+      {/* 필터 영역 */}
+      <Card padding="lg" className="mb-6 shadow-sm">
+        <GridRow gutter={16}>
+          <GridCol span={6} md={3}>
+            <OrderFilters
+              search={search}
+              setSearch={setSearch}
+              status={status}
+              setStatus={setStatus}
+              paymentMethod={paymentMethod}
+              setPaymentMethod={setPaymentMethod}
+              paymentStatus={paymentStatus}
+              setPaymentStatus={setPaymentStatus}
+              startDate={startDate}
+              setStartDate={setStartDate}
+              endDate={endDate}
+              setEndDate={setEndDate}
+            />
+          </GridCol>
+        </GridRow>
+      </Card>
 
-      {/* 테이블 */}
-      <OrderTable
-        orders={currentOrders}
-        sortBy={sortBy}
-        sortOrder={sortOrder}
-        onSort={handleSort}
-      />
+      {/* 주문 테이블 */}
+      <Card padding="none" className="overflow-hidden shadow-sm">
+        <OrderTable
+          orders={currentOrders}
+          sortBy={sortBy}
+          sortOrder={sortOrder}
+          onSort={handleSort}
+        />
+      </Card>
 
       {/* 페이지네이션 */}
       {totalPages > 1 && (
-        <div className="mt-6">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={filteredAndSortedOrders.length}
-            itemsPerPage={itemsPerPage}
-            onPageChange={setCurrentPage}
-            onItemsPerPageChange={setItemsPerPage}
-          />
+        <div className="mt-8 flex justify-center">
+          <Stack direction="row" gap={2} align="center">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredAndSortedOrders.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={setItemsPerPage}
+            />
+          </Stack>
         </div>
       )}
     </Container>

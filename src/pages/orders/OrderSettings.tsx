@@ -116,10 +116,10 @@ const OrderSettings: React.FC<OrderSettingsProps> = ({ onSave }) => {
   };
 
   const tabs = [
-    { id: 'general', label: '일반 설정', icon: '⚙️' },
-    { id: 'notifications', label: '알림 설정', icon: '🔔' },
-    { id: 'shipping', label: '배송 설정', icon: '🚚' },
-    { id: 'returns', label: '반품 설정', icon: '↩️' },
+    { id: 'general', label: '일반 설정', icon: '' },
+    { id: 'notifications', label: '알림 설정', icon: '' },
+    { id: 'shipping', label: '배송 설정', icon: '' },
+    { id: 'returns', label: '반품 설정', icon: '' },
   ];
 
   return (

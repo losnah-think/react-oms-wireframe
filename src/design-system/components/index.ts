@@ -13,3 +13,15 @@ export { default as Badge, type BadgeProps } from './Badge';
 export { default as Modal, type ModalProps } from './Modal';
 export { default as Dropdown, type DropdownProps, type DropdownOption } from './Dropdown';
 export { default as Icon, type IconProps, iconLibrary } from './Icon';
+export { default as Table, type TableProps, type TableColumn } from './Table';
+export { default as Tabs, type TabsProps, type TabItem } from './Tabs';
+export { 
+  default as Grid,
+  GridContainer,
+  GridItem,
+  GridRow,
+  GridCol,
+  Row,
+  Col,
+  GridStyles
+} from './Grid';

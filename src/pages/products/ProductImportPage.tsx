@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Container, Card, Button, Input, Badge, Stack } from '../../design-system';
 
 interface ExternalProduct {
   id: string;
@@ -243,7 +244,7 @@ const ProductImportPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6">
+    <Container maxWidth="full" padding="md" className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">외부 쇼핑몰 상품 가져오기</h1>
@@ -251,22 +252,19 @@ const ProductImportPage: React.FC = () => {
       </div>
 
       {/* 쇼핑몰 탭 선택 */}
-      <div className="bg-white border rounded-lg mb-6">
+      <Card padding="none" className="mb-6">
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex space-x-8 overflow-x-auto">
             {malls.map((mall) => (
-              <button
+              <Button
                 key={mall.id}
+                variant={activeTab === mall.id ? "primary" : "ghost"}
                 onClick={() => setActiveTab(mall.id as any)}
-                className={`pb-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${
-                  activeTab === mall.id 
-                    ? `text-${mall.color}-600 border-${mall.color}-600` 
-                    : 'text-gray-500 border-transparent hover:text-gray-700'
-                }`}
+                className="whitespace-nowrap flex items-center gap-2"
               >
                 <span>{mall.emoji}</span>
                 {mall.name}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -586,7 +584,7 @@ const ProductImportPage: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Loading State */}
       {isLoading && (
@@ -747,30 +745,30 @@ const ProductImportPage: React.FC = () => {
 
           {/* Import Statistics */}
           <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-blue-50 p-4 rounded-lg">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
               <div className="text-2xl font-bold text-blue-600">{externalProducts.length}</div>
               <div className="text-sm text-blue-700">총 상품 수</div>
-            </div>
-            <div className="bg-green-50 p-4 rounded-lg">
+            </Card>
+            <Card className="bg-gradient-to-br from-green-50 to-green-100">
               <div className="text-2xl font-bold text-green-600">
                 {externalProducts.filter(p => p.productStatus === 'sale').length}
               </div>
               <div className="text-sm text-green-700">판매중 상품</div>
-            </div>
-            <div className="bg-yellow-50 p-4 rounded-lg">
+            </Card>
+            <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100">
               <div className="text-2xl font-bold text-yellow-600">
                 {externalProducts.filter(p => p.hasBarcode).length}
               </div>
               <div className="text-sm text-yellow-700">바코드 보유</div>
-            </div>
-            <div className="bg-purple-50 p-4 rounded-lg">
+            </Card>
+            <Card className="bg-gradient-to-br from-purple-50 to-purple-100">
               <div className="text-2xl font-bold text-purple-600">{selectedProducts.length}</div>
               <div className="text-sm text-purple-700">선택된 상품</div>
-            </div>
+            </Card>
           </div>
 
           {/* Import Policy Notice */}
-          <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded">
+          <Card className="mt-6 bg-yellow-50 border-yellow-200">
             <h4 className="text-sm font-medium text-yellow-800 mb-2">📋 등록 정책</h4>
             <ul className="text-sm text-yellow-700 space-y-1">
               <li>• 외부 상품코드가 기존 상품과 중복되는 경우 자동으로 번호가 추가됩니다.</li>
@@ -779,13 +777,13 @@ const ProductImportPage: React.FC = () => {
               <li>• 등록 후 상품 목록에서 추가 정보를 수정할 수 있습니다.</li>
               <li>• 진열 상태와 판매 상태는 외부 쇼핑몰 설정이 우선 적용됩니다.</li>
             </ul>
-          </div>
+          </Card>
         </div>
       )}
 
       {/* Empty State */}
       {externalProducts.length === 0 && !isLoading && (
-        <div className="bg-white border rounded-lg p-12 text-center">
+        <Card className="text-center p-12">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="text-2xl">{malls.find(m => m.id === activeTab)?.emoji || '🛒'}</span>
           </div>
@@ -821,15 +819,16 @@ const ProductImportPage: React.FC = () => {
             </ul>
           </div>
           
-          <button 
+          <Button 
+            variant="secondary"
             onClick={() => handleFetchProducts()}
-            className="mt-6 px-6 py-2 text-sm text-blue-600 border border-blue-300 rounded hover:bg-blue-50"
+            className="mt-6"
           >
             다시 조회하기
-          </button>
-        </div>
+          </Button>
+        </Card>
       )}
-    </div>
+    </Container>
   );
 };
 

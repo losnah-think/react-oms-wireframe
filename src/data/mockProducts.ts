@@ -1,432 +1,136 @@
-import { Product, ProductVariant } from '../types/database';
+import { ProductBasicInfo, ProductOption, ProductOptionValue } from '../types/multitenant';
+import { mockBrands } from './mockBrands';
+import { mockCategories } from './mockCategories';
 
-// UI에서 사용할 Product with Variants 타입
-export interface ProductWithVariants extends Product {
-  variants?: ProductVariant[];
+function generateProductCode(i: number) {
+  const prefix = 'PRD';
+  const date = new Date(2025, 8, 13); // 2025-09-13
+  const dateStr = `${date.getFullYear()}${String(date.getMonth()+1).padStart(2,'0')}${String(date.getDate()).padStart(2,'0')}`;
+  const rand = String(Math.floor(Math.random()*9000)+1000); // 4자리 랜덤
+  return `${prefix}-${dateStr}-${rand}-${i+1}`;
 }
 
-// Mock 데이터
-export const mockProducts: ProductWithVariants[] = [
-  {
-    id: "PROD-001",
-    createdAt: new Date("2025-01-15T09:00:00Z"),
-    updatedAt: new Date("2025-01-20T14:30:00Z"),
-    productName: "삼성 갤럭시 S24 Ultra 256GB",
-    englishProductName: "Samsung Galaxy S24 Ultra 256GB",
-    productCode: "SAMSUNG-S24U-256",
-    productCategory: "스마트폰",
-    brandId: "BRAND-SAMSUNG",
-    supplierId: "SUPPLIER-001",
-    originalCost: 1100000,
-    representativeSellingPrice: 1299000,
-    representativeSupplyPrice: 1170000,
-    marketPrice: 1399000,
-    consumerPrice: 1449000,
-    foreignCurrencyPrice: 1099,
-    stock: 125,
-    safeStock: 10,
-    isOutOfStock: false,
-    isSelling: true,
-    isSoldout: false,
-    description: "최신 AI 기능이 탑재된 프리미엄 스마트폰. 200MP 카메라와 S펜이 내장된 고성능 플래그십 모델",
-    representativeImage: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=400&fit=crop",
-    descriptionImages: [
-      "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=600&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=600&h=400&fit=crop"
-    ],
-    width: 162.3,
-    height: 79.0,
-    depth: 8.6,
-    weight: 232.0,
-    volume: 110.2,
-    hsCode: "8517120000",
-    origin: "대한민국",
-    isTaxExempt: false,
-    showProductNameOnInvoice: true,
-    productDesigner: "김디자인",
-    productRegistrant: "이등록",
-    productYear: "2025",
-    productSeason: "상시",
-    externalProductId: "EXT-SAMSUNG-001",
-    externalUrl: "https://samsung.com/galaxy-s24-ultra",
-    active: true,
-    variants: [
-      {
-        id: "VAR-001-001",
-        createdAt: new Date("2025-01-15T09:00:00Z"),
-        updatedAt: new Date("2025-01-15T09:00:00Z"),
-        productId: "PROD-001",
-        variantName: "갤럭시 S24 Ultra 256GB 티타늄 블랙",
-        optionCode: "256GB-BLACK",
-        stock: 45,
-        safeStock: 5,
-        costPrice: 1290000,
-        sellingPrice: 1550000,
-        supplyPrice: 1395000,
-        isSelling: true,
-        isSoldout: false,
-        active: true
-      },
-      {
-        id: "VAR-001-002",
-        createdAt: new Date("2025-01-15T09:00:00Z"),
-        updatedAt: new Date("2025-01-15T09:00:00Z"),
-        productId: "PROD-001",
-        variantName: "갤럭시 S24 Ultra 256GB 티타늄 그레이",
-        optionCode: "256GB-GRAY",
-        stock: 35,
-        safeStock: 5,
-        costPrice: 1290000,
-        sellingPrice: 1550000,
-        supplyPrice: 1395000,
-        isSelling: true,
-        isSoldout: false,
-        active: true
-      },
-      {
-        id: "VAR-001-003",
-        createdAt: new Date("2025-01-15T09:00:00Z"),
-        updatedAt: new Date("2025-01-15T09:00:00Z"),
-        productId: "PROD-001",
-        variantName: "갤럭시 S24 Ultra 512GB 티타늄 블랙",
-        optionCode: "512GB-BLACK",
-        stock: 45,
-        safeStock: 5,
-        costPrice: 1390000,
-        sellingPrice: 1750000,
-        supplyPrice: 1570000,
-        isSelling: true,
-        isSoldout: false,
-        active: true
-      }
-    ]
-  },
-  {
-    id: "PROD-002",
-    createdAt: new Date("2025-01-10T10:30:00Z"),
-    updatedAt: new Date("2025-01-18T16:45:00Z"),
-    productName: "LG 그램 17인치 노트북 32GB",
-    englishProductName: "LG Gram 17inch Laptop 32GB",
-    productCode: "LG-GRAM17-32GB",
-    productCategory: "노트북",
-    brandId: "BRAND-LG",
-    supplierId: "SUPPLIER-002",
-    originalCost: 1900000,
-    representativeSellingPrice: 2290000,
-    representativeSupplyPrice: 2061000,
-    marketPrice: 2390000,
-    consumerPrice: 2499000,
-    foreignCurrencyPrice: 1899,
-    stock: 45,
-    safeStock: 5,
-    isOutOfStock: false,
-    isSelling: true,
-    isSoldout: false,
-    description: "17인치 대화면에 초경량 1.35kg의 혁신적인 프리미엄 노트북. 인텔 13세대 코어 프로세서 탑재",
-    representativeImage: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400&h=400&fit=crop",
-    descriptionImages: [
-      "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=600&h=400&fit=crop"
-    ],
-    width: 380.0,
-    height: 258.8,
-    depth: 17.4,
-    weight: 1350.0,
-    volume: 1713.2,
-    hsCode: "8471300000",
-    origin: "대한민국",
-    isTaxExempt: false,
-    showProductNameOnInvoice: true,
-    productDesigner: "박노트북",
-    productRegistrant: "최등록자",
-    productYear: "2025",
-    productSeason: "상시",
-    externalProductId: "EXT-LG-001",
-    externalUrl: "https://lg.com/gram-17",
-    active: true,
-    variants: [
-      {
-        id: "VAR-002-001",
-        createdAt: new Date("2025-01-10T10:30:00Z"),
-        updatedAt: new Date("2025-01-10T10:30:00Z"),
-        productId: "PROD-002",
-        variantName: "LG 그램 17인치 32GB 스노우 화이트",
-        optionCode: "32GB-WHITE",
-        stock: 25,
-        safeStock: 3,
-        costPrice: 2200000,
-        sellingPrice: 2650000,
-        supplyPrice: 2380000,
-        isSelling: true,
-        isSoldout: false,
-        active: true
-      },
-      {
-        id: "VAR-002-002",
-        createdAt: new Date("2025-01-10T10:30:00Z"),
-        updatedAt: new Date("2025-01-10T10:30:00Z"),
-        productId: "PROD-002",
-        variantName: "LG 그램 17인치 16GB 스노우 화이트",
-        optionCode: "16GB-WHITE",
-        stock: 20,
-        safeStock: 2,
-        costPrice: 1900000,
-        sellingPrice: 2290000,
-        supplyPrice: 2061000,
-        isSelling: true,
-        isSoldout: false,
-        active: true
-      }
-    ]
-  },
-  {
-    id: "PROD-003",
-    createdAt: new Date("2025-01-08T15:20:00Z"),
-    updatedAt: new Date("2025-01-12T11:15:00Z"),
-    productName: "애플 아이패드 프로 12.9인치",
-    englishProductName: "Apple iPad Pro 12.9inch",
-    productCode: "APPLE-IPADPRO-129",
-    productCategory: "태블릿",
-    brandId: "BRAND-APPLE",
-    supplierId: "SUPPLIER-003",
-    originalCost: 1500000,
-    representativeSellingPrice: 1790000,
-    representativeSupplyPrice: 1620000,
-    marketPrice: 1890000,
-    consumerPrice: 1999000,
-    foreignCurrencyPrice: 1299,
-    stock: 3,
-    safeStock: 5,
-    isOutOfStock: true,
-    isSelling: false,
-    isSoldout: true,
-    description: "M2 칩이 탑재된 최고 성능의 프로 태블릿. 12.9인치 Liquid Retina XDR 디스플레이",
-    representativeImage: "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=400&h=400&fit=crop",
-    descriptionImages: ["https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=600&h=400&fit=crop"],
-    width: 280.6,
-    height: 214.9,
-    depth: 6.4,
-    weight: 682.0,
-    volume: 386.2,
-    hsCode: "8471300000",
-    origin: "중국",
-    isTaxExempt: false,
-    showProductNameOnInvoice: true,
-    productDesigner: "애플",
-    productRegistrant: "김등록",
-    productYear: "2024",
-    productSeason: "상시",
-    externalProductId: "EXT-APPLE-001",
-    externalUrl: "https://apple.com/ipad-pro",
-    active: true,
-    variants: [
-      {
-        id: "VAR-003-001",
-        createdAt: new Date("2025-01-08T15:20:00Z"),
-        updatedAt: new Date("2025-01-08T15:20:00Z"),
-        productId: "PROD-003",
-        variantName: "아이패드 프로 12.9인치 256GB 스페이스 그레이",
-        optionCode: "256GB-GRAY",
-        stock: 2,
-        safeStock: 3,
-        costPrice: 1750000,
-        sellingPrice: 2090000,
-        supplyPrice: 1880000,
-        isSelling: false,
-        isSoldout: true,
-        active: true
-      },
-      {
-        id: "VAR-003-002",
-        createdAt: new Date("2025-01-08T15:20:00Z"),
-        updatedAt: new Date("2025-01-08T15:20:00Z"),
-        productId: "PROD-003",
-        variantName: "아이패드 프로 12.9인치 128GB 실버",
-        optionCode: "128GB-SILVER",
-        stock: 1,
-        safeStock: 2,
-        costPrice: 1500000,
-        sellingPrice: 1790000,
-        supplyPrice: 1620000,
-        isSelling: false,
-        isSoldout: true,
-        active: true
-      }
-    ]
-  },
-  {
-    id: "PROD-004",
-    createdAt: new Date("2025-01-05T08:45:00Z"),
-    updatedAt: new Date("2025-01-15T13:20:00Z"),
-    productName: "다이슨 V15 무선청소기",
-    englishProductName: "Dyson V15 Cordless Vacuum",
-    productCode: "DYSON-V15-DETECT",
-    productCategory: "가전제품",
-    brandId: "BRAND-DYSON",
-    supplierId: "SUPPLIER-004",
-    originalCost: 650000,
-    representativeSellingPrice: 890000,
-    representativeSupplyPrice: 720000,
-    marketPrice: 950000,
-    consumerPrice: 999000,
-    foreignCurrencyPrice: 649,
-    stock: 78,
-    safeStock: 15,
-    isOutOfStock: false,
-    isSelling: true,
-    isSoldout: false,
-    description: "레이저로 먼지를 감지하는 혁신적인 무선 청소기. 60분 강력한 흡입력",
-    representativeImage: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop",
-    descriptionImages: [
-      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=600&h=400&fit=crop"
-    ],
-    width: 250.0,
-    height: 1230.0,
-    depth: 223.0,
-    weight: 3200.0,
-    volume: 7068.0,
-    hsCode: "8508110000",
-    origin: "말레이시아",
-    isTaxExempt: false,
-    showProductNameOnInvoice: true,
-    productDesigner: "다이슨 팀",
-    productRegistrant: "청소기매니저",
-    productYear: "2024",
-    productSeason: "상시",
-    externalProductId: "EXT-DYSON-001",
-    externalUrl: "https://dyson.com/v15",
-    active: true,
-    variants: [
-      {
-        id: "VAR-004-001",
-        createdAt: new Date("2025-01-05T08:45:00Z"),
-        updatedAt: new Date("2025-01-05T08:45:00Z"),
-        productId: "PROD-004",
-        variantName: "다이슨 V15 디텍트 - 기본형",
-        optionCode: "BASIC",
-        stock: 78,
-        safeStock: 15,
-        costPrice: 650000,
-        sellingPrice: 890000,
-        supplyPrice: 720000,
-        isSelling: true,
-        isSoldout: false,
-        active: true
-      }
-    ]
-  },
-  {
-    id: "PROD-005",
-    createdAt: new Date("2025-01-03T12:00:00Z"),
-    updatedAt: new Date("2025-01-10T09:30:00Z"),
-    productName: "나이키 에어맥스 270",
-    englishProductName: "Nike Air Max 270",
-    productCode: "NIKE-AIRMAX270-BLK",
-    productCategory: "의류/신발",
-    brandId: "BRAND-NIKE",
-    supplierId: "SUPPLIER-005",
-    originalCost: 95000,
-    representativeSellingPrice: 169000,
-    representativeSupplyPrice: 126000,
-    marketPrice: 189000,
-    consumerPrice: 199000,
-    foreignCurrencyPrice: 130,
-    stock: 0,
-    safeStock: 20,
-    isOutOfStock: true,
-    isSelling: false,
-    isSoldout: true,
-    description: "나이키의 아이코닉한 에어맥스 라인. 최고의 쿠셔닝과 스타일을 제공하는 운동화",
-    representativeImage: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop",
-    descriptionImages: ["https://images.unsplash.com/photo-1549298916-b41d501d3772?w=600&h=400&fit=crop"],
-    width: 320.0,
-    height: 130.0,
-    depth: 120.0,
-    weight: 450.0,
-    volume: 4992.0,
-    hsCode: "6403999000",
-    origin: "베트남",
-    isTaxExempt: false,
-    showProductNameOnInvoice: true,
-    productDesigner: "나이키 디자인팀",
-    productRegistrant: "신발담당자",
-    productYear: "2024",
-    productSeason: "상시",
-    externalProductId: "EXT-NIKE-001",
-    externalUrl: "https://nike.com/airmax270",
-    active: false,
-    variants: [
-      {
-        id: "VAR-005-001",
-        createdAt: new Date("2025-01-03T12:00:00Z"),
-        updatedAt: new Date("2025-01-03T12:00:00Z"),
-        productId: "PROD-005",
-        variantName: "에어맥스 270 블랙 240mm",
-        optionCode: "BLACK-240",
-        stock: 0,
-        safeStock: 5,
-        costPrice: 95000,
-        sellingPrice: 169000,
-        supplyPrice: 126000,
-        isSelling: false,
-        isSoldout: true,
-        active: false
-      },
-      {
-        id: "VAR-005-002",
-        createdAt: new Date("2025-01-03T12:00:00Z"),
-        updatedAt: new Date("2025-01-03T12:00:00Z"),
-        productId: "PROD-005",
-        variantName: "에어맥스 270 블랙 250mm",
-        optionCode: "BLACK-250",
-        stock: 0,
-        safeStock: 5,
-        costPrice: 95000,
-        sellingPrice: 169000,
-        supplyPrice: 126000,
-        isSelling: false,
-        isSoldout: true,
-        active: false
-      },
-      {
-        id: "VAR-005-003",
-        createdAt: new Date("2025-01-03T12:00:00Z"),
-        updatedAt: new Date("2025-01-03T12:00:00Z"),
-        productId: "PROD-005",
-        variantName: "에어맥스 270 화이트 240mm",
-        optionCode: "WHITE-240",
-        stock: 0,
-        safeStock: 5,
-        costPrice: 95000,
-        sellingPrice: 169000,
-        supplyPrice: 126000,
-        isSelling: false,
-        isSoldout: true,
-        active: false
-      }
-    ]
-  }
-];
+function generateDate(i: number) {
+  // 2025-09-01 ~ 2025-09-30
+  const day = (i % 30) + 1;
+  return `2025-09-${String(day).padStart(2,'0')}T10:00:00Z`;
+}
 
-// 필터 옵션들
-export const filterOptions = {
-  categories: ['전체', '스마트폰', '노트북', '태블릿', '가전제품', '의류/신발', '화장품/뷰티', '식품/생활용품'],
-  brands: ['전체', 'BRAND-SAMSUNG', 'BRAND-LG', 'BRAND-APPLE', 'BRAND-DYSON', 'BRAND-NIKE'],
-  statuses: [
-    { value: 'all', label: '전체' },
-    { value: 'selling', label: '판매중' },
-    { value: 'soldout', label: '품절' },
-    { value: 'discontinued', label: '판매중지' }
-  ],
-  sortOptions: [
-    { value: 'newest', label: '최신순' },
-    { value: 'oldest', label: '오래된순' },
-    { value: 'name_asc', label: '상품명 (가나다순)' },
-    { value: 'name_desc', label: '상품명 (가나다 역순)' },
-    { value: 'price_high', label: '가격 높은순' },
-    { value: 'price_low', label: '가격 낮은순' },
-    { value: 'stock_high', label: '재고 많은순' },
-    { value: 'stock_low', label: '재고 적은순' }
-  ]
-};
+function generateOptions(i: number): ProductOption[] {
+  return [
+    {
+      id: `opt-color-${i+1}`,
+      name: '색상',
+      type: 'color',
+      isRequired: true,
+      values: [
+        { id: `optval-${i+1}-red`, value: 'Red', additionalPrice: 0, stock: 10, isActive: true },
+        { id: `optval-${i+1}-blue`, value: 'Blue', additionalPrice: 500, stock: 8, isActive: true },
+        { id: `optval-${i+1}-green`, value: 'Green', additionalPrice: 1000, stock: 5, isActive: true }
+      ]
+    },
+    {
+      id: `opt-size-${i+1}`,
+      name: '사이즈',
+      type: 'size',
+      isRequired: true,
+      values: [
+        { id: `optval-${i+1}-s`, value: 'S', additionalPrice: 0, stock: 7, isActive: true },
+        { id: `optval-${i+1}-m`, value: 'M', additionalPrice: 0, stock: 12, isActive: true },
+        { id: `optval-${i+1}-l`, value: 'L', additionalPrice: 0, stock: 6, isActive: true }
+      ]
+    },
+    {
+      id: `opt-material-${i+1}`,
+      name: '소재',
+      type: 'material',
+      isRequired: false,
+      values: [
+        { id: `optval-${i+1}-cotton`, value: 'Cotton', additionalPrice: 0, stock: 10, isActive: true },
+        { id: `optval-${i+1}-poly`, value: 'Poly', additionalPrice: 0, stock: 10, isActive: true }
+      ]
+    }
+  ];
+}
+
+function generateVariants(i: number) {
+  return [
+    {
+      id: `variant-${i+1}-1`,
+      variantName: 'Red / S',
+      code: `V${i+1}-RS`,
+      barcode1: `8800000${i+1}01`,
+      sellingPrice: 10000 + i*100,
+      supplyPrice: 9000 + i*100,
+      costPrice: 8000 + i*100,
+      stock: 10,
+      isSelling: true,
+      isActive: true
+    },
+    {
+      id: `variant-${i+1}-2`,
+      variantName: 'Blue / M',
+      code: `V${i+1}-BM`,
+      barcode1: `8800000${i+1}02`,
+      sellingPrice: 10500 + i*100,
+      supplyPrice: 9500 + i*100,
+      costPrice: 8500 + i*100,
+      stock: 8,
+      isSelling: true,
+      isActive: true
+    }
+  ];
+}
+
+export const mockProducts = Array.from({length: 100}, (_, i) => ({
+  id: `prd-${i+1}`,
+  productName: `상품${i+1}`,
+  englishProductName: `Product${i+1}`,
+  productCode: generateProductCode(i),
+  productCategory: mockCategories[i % mockCategories.length].name,
+  brandId: mockBrands[i % mockBrands.length].id,
+  supplierId: `supplier-${(i%10)+1}`,
+  codes: { internal: generateProductCode(i), cafe24: `C24${String(i+1).padStart(5, '0')}`, channels: [] },
+  categoryId: mockCategories[i % mockCategories.length].id,
+  pricing: { sellingPrice: 10000 + i*100, consumerPrice: 12000 + i*100, supplyPrice: 9000 + i*100, commissionRate: 10 + (i%10), isSupplyPriceCalculated: true, calculationMethod: 'commission' },
+  originalCost: 8000 + i*100,
+  representativeSellingPrice: 10000 + i*100,
+  representativeSupplyPrice: 9000 + i*100,
+  marketPrice: 13000 + i*100,
+  consumerPrice: 12000 + i*100,
+  foreignCurrencyPrice: 10 + i,
+  stock: 50 + i,
+  safeStock: 5 + (i%10),
+  isOutOfStock: i % 20 === 0,
+  isSelling: i % 3 !== 0,
+  isSoldout: i % 25 === 0,
+  description: `상품${i+1} 설명입니다.`,
+  representativeImage: '',
+  descriptionImages: [],
+  thumbnailUrl: '',
+  images: [],
+  width: 10 + i,
+  height: 5 + (i%10),
+  depth: 2 + (i%5),
+  weight: 100 + i*2,
+  volume: 50 + i*3,
+  hsCode: `HS${1000+i}`,
+  origin: 'KR',
+  isTaxExempt: i % 10 === 0,
+  showProductNameOnInvoice: true,
+  productDesigner: `디자이너${(i%10)+1}`,
+  productRegistrant: `등록자${(i%5)+1}`,
+  classification: `분류${(i%10)+1}`,
+  productYear: `202${i%10}`,
+  productSeason: ['SS','FW','ALL'][i%3],
+  externalProductId: `EXT-${i+1}`,
+  externalUrl: `https://example.com/product/${i+1}`,
+  active: i % 2 === 0,
+  tags: [{ id: `tag-${(i%5)+1}`, name: `태그${(i%5)+1}`, category: 'general' }],
+  logistics: { width: 10 + i, height: 5 + (i%10), depth: 2 + (i%5), weight: 100 + i*2, packagingUnit: 'ea', packagingQuantity: 1, isFragile: i%2===0, isLiquid: i%3===0 },
+  policies: { showProductNameOnInvoice: true, preventConsolidation: false, shippingPolicyId: undefined, giftPolicyId: undefined, isSampleIncluded: false, isReturnable: true, isExchangeable: true, returnPeriodDays: 14 },
+  createdAt: generateDate(i),
+  updatedAt: generateDate(i),
+  options: generateOptions(i),
+  variants: generateVariants(i)
+}));
