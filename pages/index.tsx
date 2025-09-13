@@ -79,8 +79,6 @@ export default function Home() {
       case 'orders':
       case 'orders-list':
         return <OrderList />;
-      case 'orders-dashboard':
-        return <OrderDashboard />;
       case 'orders-analytics':
         return <OrderAnalytics orders={[]} />;
       case 'orders-settings':
