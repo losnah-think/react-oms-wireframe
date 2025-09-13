@@ -1,4 +1,5 @@
 import React from 'react';
+import { Container, Card, Button, Badge } from '../../design-system';
 
 const Dashboard: React.FC = () => {
   // 와이어프레임용 mock 데이터
@@ -18,7 +19,7 @@ const Dashboard: React.FC = () => {
   ];
 
   return (
-    <div className="p-6">
+    <Container maxWidth="full" padding="md" className="min-h-screen bg-gray-50">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">대시보드</h1>
         <p className="text-gray-600">Order Management System</p>
@@ -26,7 +27,7 @@ const Dashboard: React.FC = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <Card padding="md" className="shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">총 주문</p>
@@ -36,9 +37,9 @@ const Dashboard: React.FC = () => {
               <span className="text-blue-600 text-xs font-bold">주문</span>
             </div>
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <Card padding="md" className="shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">총 상품</p>
@@ -48,9 +49,9 @@ const Dashboard: React.FC = () => {
               <span className="text-green-600 text-xs font-bold">상품</span>
             </div>
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <Card padding="md" className="shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">총 매출액</p>
@@ -60,9 +61,9 @@ const Dashboard: React.FC = () => {
               <span className="text-yellow-600 text-xs font-bold">매출</span>
             </div>
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <Card padding="md" className="shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">평균 주문액</p>
@@ -72,13 +73,13 @@ const Dashboard: React.FC = () => {
               <span className="text-purple-600 text-xs font-bold">평균</span>
             </div>
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* Charts and Tables */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Orders */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <Card padding="md" className="shadow-sm">
           <h3 className="text-lg font-medium text-gray-900 mb-4">최근 주문</h3>
           <div className="space-y-4">
             {mockRecentOrders.map((order) => (
@@ -94,17 +95,17 @@ const Dashboard: React.FC = () => {
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-medium text-gray-900">₩{order.amount.toLocaleString()}</p>
-                  <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                  <Badge variant="success" size="small">
                     {order.status}
-                  </span>
+                  </Badge>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </Card>
 
         {/* Popular Products */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <Card padding="md" className="shadow-sm">
           <h3 className="text-lg font-medium text-gray-900 mb-4">인기 상품</h3>
           <div className="space-y-4">
             {[
@@ -125,9 +126,9 @@ const Dashboard: React.FC = () => {
               </div>
             ))}
           </div>
-        </div>
+        </Card>
       </div>
-    </div>
+    </Container>
   );
 };
 

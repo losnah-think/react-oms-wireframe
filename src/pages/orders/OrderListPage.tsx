@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { Container, Card, Button, Input, Badge, Stack } from '../../design-system';
 import { mockOrders } from '../../data/mockOrders';
 import { filterOrders, sortOrders, downloadOrdersCSV, getOrderStats } from '../../utils/orderUtils';
 import OrderFilters from '../../components/orders/OrderFilters';
@@ -73,7 +74,7 @@ const OrderListPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6">
+    <Container maxWidth="full" padding="md" className="min-h-screen bg-gray-50">
       {/* 헤더 */}
       <div className="flex justify-between items-center mb-6">
         <div>
@@ -82,45 +83,45 @@ const OrderListPage: React.FC = () => {
             전체 {stats.total}건의 주문 (총 매출: {stats.totalRevenue.toLocaleString()}원)
           </p>
         </div>
-        <div className="flex space-x-4">
-          <button
+        <Stack direction="row" gap={4}>
+          <Button
+            variant="secondary"
             onClick={handleExportCSV}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors"
           >
             CSV 내보내기
-          </button>
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors">
+          </Button>
+          <Button variant="primary">
             주문 등록
-          </button>
-        </div>
+          </Button>
+        </Stack>
       </div>
 
       {/* 통계 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white p-6 rounded-lg shadow">
+        <Card padding="md" className="shadow">
           <div className="flex items-center">
             <div className="text-2xl font-bold text-gray-900">{stats.PENDING}</div>
             <div className="ml-2 text-sm text-gray-600">대기중</div>
           </div>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow">
+        </Card>
+        <Card padding="md" className="shadow">
           <div className="flex items-center">
             <div className="text-2xl font-bold text-blue-600">{stats.PROCESSING}</div>
             <div className="ml-2 text-sm text-gray-600">처리중</div>
           </div>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow">
+        </Card>
+        <Card padding="md" className="shadow">
           <div className="flex items-center">
             <div className="text-2xl font-bold text-purple-600">{stats.SHIPPED}</div>
             <div className="ml-2 text-sm text-gray-600">배송중</div>
           </div>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow">
+        </Card>
+        <Card padding="md" className="shadow">
           <div className="flex items-center">
             <div className="text-2xl font-bold text-green-600">{stats.DELIVERED}</div>
             <div className="ml-2 text-sm text-gray-600">배송완료</div>
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* 필터 */}
@@ -160,7 +161,7 @@ const OrderListPage: React.FC = () => {
           />
         </div>
       )}
-    </div>
+    </Container>
   );
 };
 

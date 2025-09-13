@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Container, Card, Button, Input, Badge, Stack, Modal } from '../../design-system';
 
 interface Brand {
   id: string;
@@ -143,22 +144,22 @@ const BrandsPage: React.FC<BrandsPageProps> = ({ onNavigate }) => {
   };
 
   return (
-    <div className="p-6">
+    <Container maxWidth="full" padding="md" className="min-h-screen bg-gray-50">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">브랜드 관리</h1>
           <p className="text-gray-600 mt-1">상품 등록 시 사용할 브랜드를 관리합니다. (총 {brands.length}개)</p>
         </div>
-        <button
+        <Button
+          variant="primary"
           onClick={handleAdd}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
         >
           브랜드 추가
-        </button>
+        </Button>
       </div>
 
       {/* 브랜드 목록 */}
-      <div className="bg-white shadow rounded-lg overflow-hidden">
+      <Card padding="none" className="shadow overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -220,67 +221,66 @@ const BrandsPage: React.FC<BrandsPageProps> = ({ onNavigate }) => {
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <button
+                  <Badge
+                    variant={item.isActive ? "success" : "danger"}
                     onClick={() => handleToggleActive(item.id)}
-                    className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      item.isActive 
-                        ? 'bg-green-100 text-green-800 hover:bg-green-200' 
-                        : 'bg-red-100 text-red-800 hover:bg-red-200'
-                    }`}
+                    className="cursor-pointer"
                   >
                     {item.isActive ? '활성' : '비활성'}
-                  </button>
+                  </Badge>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {item.updatedAt}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button
-                    onClick={() => handleEdit(item)}
-                    className="text-blue-600 hover:text-blue-900 mr-3"
-                  >
-                    수정
-                  </button>
-                  <button
-                    onClick={() => handleDelete(item.id)}
-                    className="text-red-600 hover:text-red-900"
-                  >
-                    삭제
-                  </button>
+                  <Stack direction="row" gap={3}>
+                    <Button
+                      variant="ghost"
+                      size="small"
+                      onClick={() => handleEdit(item)}
+                    >
+                      수정
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="small"
+                      onClick={() => handleDelete(item.id)}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      삭제
+                    </Button>
+                  </Stack>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-      </div>
+      </Card>
 
       {/* 모달 */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96 max-w-md">
-            <h3 className="text-lg font-semibold mb-4">
-              {editingItem ? '브랜드 수정' : '브랜드 추가'}
-            </h3>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">브랜드명</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="예: 삼성전자"
-                />
-              </div>
+      <Modal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={editingItem ? '브랜드 수정' : '브랜드 추가'}
+        size="default"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">브랜드명</label>
+            <Input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({...formData, name: e.target.value})}
+              placeholder="예: 삼성전자"
+            />
+          </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">코드</label>
-                <input
+                <Input
                   type="text"
                   value={formData.code}
                   onChange={(e) => setFormData({...formData, code: e.target.value.toUpperCase()})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
                   placeholder="예: SAMSUNG"
                 />
               </div>
@@ -335,25 +335,24 @@ const BrandsPage: React.FC<BrandsPageProps> = ({ onNavigate }) => {
               </div>
             </div>
 
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
+            <Stack direction="row" gap={3} justify="end" className="mt-6">
+              <Button
+                variant="secondary"
                 onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
               >
                 취소
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="primary"
                 onClick={handleSave}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                 disabled={!formData.name || !formData.code}
               >
                 {editingItem ? '수정' : '추가'}
-              </button>
-            </div>
+              </Button>
+            </Stack>
           </div>
-        </div>
-      )}
-    </div>
+        </Modal>
+    </Container>
   );
 };
 

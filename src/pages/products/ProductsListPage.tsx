@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Button, Input, Card, Container, Stack, Badge, Dropdown } from '../../design-system/components';
 import type { 
   MultiTenantProduct, 
   ProductSearchFilters, 
@@ -240,10 +241,10 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({
   
   // 상품 상태 표시
   const getStatusBadge = (status: any) => {
-    if (!status.isActive) return <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600">비활성</span>;
-    if (status.isSoldOut) return <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-600">품절</span>;
-    if (!status.isSelling) return <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-600">판매중지</span>;
-    return <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-600">판매중</span>;
+    if (!status.isActive) return <Badge variant="neutral" outline>비활성</Badge>;
+    if (status.isSoldOut) return <Badge variant="danger">품절</Badge>;
+    if (!status.isSelling) return <Badge variant="warning">판매중지</Badge>;
+    return <Badge variant="success">판매중</Badge>;
   };
   
   // 가격 포맷팅
@@ -252,7 +253,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({
   };
   
   return (
-    <div className="h-screen bg-gray-50">
+    <Container maxWidth="full" padding="xs" className="h-screen bg-gray-50">
       {/* 메인 콘텐츠 */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* 헤더 */}
@@ -266,40 +267,39 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({
                 </p>
               )}
             </div>
-            <div className="flex items-center space-x-3">
-              <button
+            <Stack direction="row" gap={3}>
+              <Button
                 onClick={() => handleBulkOperation({ type: 'excel_download', productIds: Array.from(selectedProducts), params: { format: 'selected' } })}
                 disabled={selectedProducts.size === 0}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                variant="outline"
+                size="default"
+                leftIcon={<span>📥</span>}
               >
-                <span>📥</span>
-                <span>엑셀 다운로드</span>
-              </button>
-              <button 
+                엑셀 다운로드
+              </Button>
+              <Button 
                 onClick={() => onNavigate?.('products-add')}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 flex items-center space-x-2"
+                variant="primary"
+                size="default"
               >
-                <span>상품 등록</span>
-              </button>
-            </div>
+                상품 등록
+              </Button>
+            </Stack>
           </div>
         </div>
         
         {/* 필터 및 검색 영역 */}
         <div className="bg-white border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center space-x-4 mb-4">
+          <Stack direction="row" gap={4} className="mb-4">
             {/* 검색 */}
             <div className="flex-1 max-w-md">
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
-                <input
-                  type="text"
-                  placeholder="상품명 또는 상품코드 검색"
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  value={filters.productName || ''}
-                  onChange={(e) => handleFilterChange({ productName: e.target.value })}
-                />
-              </div>
+              <Input
+                placeholder="상품명 또는 상품코드 검색"
+                fullWidth
+                leftIcon={<span>🔍</span>}
+                value={filters.productName || ''}
+                onChange={(e) => handleFilterChange({ productName: e.target.value })}
+              />
             </div>
             
             {/* 기본 필터 */}
@@ -337,19 +337,20 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({
             )}
             
             {/* 고급 필터 토글 */}
-            <button
+            <Button
               onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-              className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 flex items-center space-x-2"
+              variant="outline"
+              size="default"
+              leftIcon={<span>🔧</span>}
+              rightIcon={<span>{showAdvancedFilters ? '▲' : '▼'}</span>}
             >
-              <span>🔧</span>
-              <span>고급 필터</span>
-              <span>{showAdvancedFilters ? '▲' : '▼'}</span>
-            </button>
-          </div>
+              고급 필터
+            </Button>
+          </Stack>
           
           {/* 고급 필터 */}
           {showAdvancedFilters && (
-            <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+            <Card variant="outlined" padding="md" className="mt-4">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">상태</label>
@@ -363,10 +364,10 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">등록일</label>
-                  <input
+                  <Input
+                    label="등록일"
                     type="date"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    fullWidth
                   />
                 </div>
                 
@@ -380,44 +381,45 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">태그</label>
-                  <input
-                    type="text"
+                  <Input
+                    label="태그"
                     placeholder="태그 검색"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    fullWidth
                   />
                 </div>
               </div>
               
-              <div className="flex justify-end space-x-2">
-                <button
+              <Stack direction="row" justify="end" gap={2} className="mt-4">
+                <Button
                   onClick={() => {
                     setFilters({});
                     setShowAdvancedFilters(false);
                   }}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                  variant="outline"
+                  size="default"
                 >
                   초기화
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => setShowAdvancedFilters(false)}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                  variant="primary"
+                  size="default"
                 >
                   적용
-                </button>
-              </div>
-            </div>
+                </Button>
+              </Stack>
+            </Card>
           )}
         </div>
         
         {/* 일괄 작업 바 */}
         {selectedProducts.size > 0 && (
-          <div className="bg-blue-50 border-b border-blue-200 px-6 py-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-blue-700">
+          <Card variant="outlined" padding="sm" className="mx-6 mt-4 bg-blue-50 border-blue-200">
+            <Stack direction="row" justify="between" align="center">
+              <Badge variant="primary" size="default">
                 {selectedProducts.size}개 상품 선택됨
-              </span>
-              <div className="flex items-center space-x-2">
+              </Badge>
+              <Stack direction="row" gap={2}>
                 <select
                   onChange={(e) => {
                     if (e.target.value) {
@@ -438,24 +440,26 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({
                   <option value="stop_selling">판매 중지</option>
                 </select>
                 
-                <button
+                <Button
                   onClick={() => handleBulkOperation({ type: 'excel_download', productIds: Array.from(selectedProducts) })}
-                  className="px-3 py-1.5 text-sm font-medium text-blue-700 bg-white border border-blue-300 rounded-md hover:bg-blue-50 flex items-center space-x-1"
+                  variant="outline"
+                  size="small"
+                  leftIcon={<span>📥</span>}
                 >
-                  <span>📥</span>
-                  <span>선택 다운로드</span>
-                </button>
+                  선택 다운로드
+                </Button>
                 
-                <button
+                <Button
                   onClick={() => handleBulkOperation({ type: 'channel_sync', productIds: Array.from(selectedProducts) })}
-                  className="px-3 py-1.5 text-sm font-medium text-blue-700 bg-white border border-blue-300 rounded-md hover:bg-blue-50 flex items-center space-x-1"
+                  variant="outline"
+                  size="small"
+                  leftIcon={<span>📤</span>}
                 >
-                  <span>📤</span>
-                  <span>외부 송신</span>
-                </button>
-              </div>
-            </div>
-          </div>
+                  외부 송신
+                </Button>
+              </Stack>
+            </Stack>
+          </Card>
         )}
         
         {/* 테이블 */}
@@ -619,12 +623,14 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-1">
                           {product.tags.slice(0, 2).map((tag) => (
-                            <span
+                            <Badge
                               key={tag.id}
-                              className="inline-block px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-600"
+                              variant="primary"
+                              size="small"
+                              outline
                             >
                               {tag.name}
-                            </span>
+                            </Badge>
                           ))}
                           {product.tags.length > 2 && (
                             <span className="text-xs text-gray-500">
@@ -643,9 +649,12 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({
                       </td>
                       <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-center">
-                          <button className="text-gray-400 hover:text-gray-500">
+                          <Button
+                            variant="ghost"
+                            size="small"
+                          >
                             ⋮
-                          </button>
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -679,14 +688,15 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({
                 </select>
               </div>
               
-              <div className="flex items-center space-x-2">
-                <button
+              <Stack direction="row" gap={2}>
+                <Button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  variant="outline"
+                  size="small"
                 >
                   이전
-                </button>
+                </Button>
                 
                 {/* 페이지 번호 */}
                 {Array.from({ length: Math.min(5, Math.ceil(totalCount / pageSize)) }, (_, i) => {
@@ -694,33 +704,31 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({
                   if (pageNumber > Math.ceil(totalCount / pageSize)) return null;
                   
                   return (
-                    <button
+                    <Button
                       key={pageNumber}
                       onClick={() => handlePageChange(pageNumber)}
-                      className={`px-3 py-1.5 text-sm font-medium rounded-md ${
-                        pageNumber === currentPage
-                          ? 'text-blue-600 bg-blue-50 border border-blue-300'
-                          : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
-                      }`}
+                      variant={pageNumber === currentPage ? "primary" : "outline"}
+                      size="small"
                     >
                       {pageNumber}
-                    </button>
+                    </Button>
                   );
                 })}
                 
-                <button
+                <Button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === Math.ceil(totalCount / pageSize)}
-                  className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  variant="outline"
+                  size="small"
                 >
                   다음
-                </button>
-              </div>
+                </Button>
+              </Stack>
             </div>
           </div>
         )}
       </div>
-    </div>
+    </Container>
   );
 };
 
