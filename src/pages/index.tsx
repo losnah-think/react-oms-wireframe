@@ -2,7 +2,6 @@
 export { default as Dashboard } from './dashboard/Dashboard';
 export { default as OrderList } from './orders/OrderList';
 export { default as OrderListPage } from './orders/OrderListPage';
-export { default as OrderDashboard } from './orders/OrderDashboard';
 export { default as OrderAnalytics } from './orders/OrderAnalytics';
 export { default as OrderSettings } from './orders/OrderSettings';
 

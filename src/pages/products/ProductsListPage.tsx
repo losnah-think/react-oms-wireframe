@@ -15,23 +15,18 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
   const [selectedBrand, setSelectedBrand] = useState('전체');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
-  const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
-  
-  // 옵션 펼치기 상태
-  const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
+  const [selectedProducts, setSelectedProducts] = useState<Set<number>>(new Set());
+  const [expandedProducts, setExpandedProducts] = useState<Set<number>>(new Set());
   
   // 페이지네이션
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 15;
 
-  // 브랜드 이름 매핑
-  const brandNames: { [key: string]: string } = {
-    'BRAND-SAMSUNG': '삼성',
-    'BRAND-LG': 'LG',
-    'BRAND-APPLE': '애플',
-    'BRAND-DYSON': '다이슨',
-    'BRAND-NIKE': '나이키'
-  };
+  // 카테고리 이름 매핑
+  const categoryNames: { [key: string]: string } = {};
+mockProductFilterOptions.categories.forEach(cur => {
+  categoryNames[cur.id] = cur.name;
+});
 
   // 정렬 옵션 정의
   const sortOptions = [
@@ -49,53 +44,50 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
   const filteredProducts = useMemo(() => {
     let filtered = mockProducts.filter(product => {
       // 검색어 필터
-      if (searchTerm && !product.productName.toLowerCase().includes(searchTerm.toLowerCase()) && 
-          !product.productCode.toLowerCase().includes(searchTerm.toLowerCase())) {
+      if (searchTerm && !product.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+          !product.code.toLowerCase().includes(searchTerm.toLowerCase())) {
         return false;
       }
-      
       // 카테고리 필터
-      if (selectedCategory !== '전체' && product.productCategory !== selectedCategory) {
+      if (selectedCategory !== '전체' && categoryNames[product.category_id] !== selectedCategory) {
         return false;
       }
-      
       // 브랜드 필터
-      if (selectedBrand !== '전체' && product.brandId !== selectedBrand) {
+      if (selectedBrand !== '전체' && product.brand !== selectedBrand) {
         return false;
       }
-      
-      // 상태 필터
-      if (selectedStatus === 'selling' && !product.isSelling) return false;
-      if (selectedStatus === 'soldout' && !product.isSoldout) return false;
-      if (selectedStatus === 'discontinued' && product.active) return false;
-      
+      // 상태 필터 (isSelling, isSoldout, active 없음 → 생략)
       return true;
     });
-
     // 정렬
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'newest':
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         case 'oldest':
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
         case 'name_asc':
-          return a.productName.localeCompare(b.productName);
+          return a.name.localeCompare(b.name);
         case 'name_desc':
-          return b.productName.localeCompare(a.productName);
+          return b.name.localeCompare(a.name);
         case 'price_high':
-          return b.representativeSellingPrice - a.representativeSellingPrice;
+          return b.selling_price - a.selling_price;
         case 'price_low':
-          return a.representativeSellingPrice - b.representativeSellingPrice;
-        case 'stock_high':
-          return b.stock - a.stock;
-        case 'stock_low':
-          return a.stock - b.stock;
+          return a.selling_price - b.selling_price;
+        case 'stock_high': {
+          const aStock = a.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0;
+          const bStock = b.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0;
+          return bStock - aStock;
+        }
+        case 'stock_low': {
+          const aStock = a.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0;
+          const bStock = b.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0;
+          return aStock - bStock;
+        }
         default:
           return 0;
       }
     });
-
     return filtered;
   }, [searchTerm, selectedCategory, selectedBrand, selectedStatus, sortBy]);
 
@@ -117,7 +109,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
   };
 
   // 개별 선택 토글
-  const handleSelectProduct = (productId: string) => {
+  const handleSelectProduct = (productId: number) => {
     const newSelected = new Set(selectedProducts);
     if (newSelected.has(productId)) {
       newSelected.delete(productId);
@@ -128,7 +120,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
   };
 
   // 옵션 펼치기 토글
-  const handleToggleExpand = (productId: string) => {
+  const handleToggleExpand = (productId: number) => {
     const newExpanded = new Set(expandedProducts);
     if (newExpanded.has(productId)) {
       newExpanded.delete(productId);
@@ -388,15 +380,15 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
                     
                     <td className="px-6 py-6 whitespace-nowrap">
                       <div className="relative rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 border-2 border-gray-200 shadow-lg group-hover:shadow-xl transition-all duration-300" style={{ width: '120px', height: '120px' }}>
-                        <img
+                        {/* <img
                           src={product.representativeImage}
-                          alt={product.productName}
+                          alt={product.name}
                           className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
                           style={{ width: '120px', height: '120px' }}
                           onError={(e) => {
                             (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=120&h=120&fit=crop";
                           }}
-                        />
+                        /> */}
                         {product.variants && product.variants.length > 1 && (
                           <div className="absolute bottom-1 right-1 bg-blue-600 text-white text-xs px-2 py-1 rounded-full font-semibold">
                             +{product.variants.length - 1}
@@ -409,32 +401,17 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
                       <div className="flex items-center justify-between">
                         <div className="space-y-2 flex-1">
                           <button
-                            onClick={() => onNavigate?.('products-detail', product.id)}
+                            onClick={() => onNavigate?.('products-detail', String(product.id))}
                             className="text-left group-hover:text-blue-600 transition-colors duration-200"
                           >
                             <h3 className="font-bold text-gray-900 hover:underline text-lg leading-tight line-clamp-2">
-                              {product.productName}
+                              {product.name}
                             </h3>
                           </button>
                           <div className="flex flex-wrap gap-2">
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                              {product.productCode}
+                              {product.code}
                             </span>
-                            {product.isSelling && (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                판매중
-                              </span>
-                            )}
-                            {product.isSoldout && (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                품절
-                              </span>
-                            )}
-                            {!product.active && (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
-                                중단
-                              </span>
-                            )}
                           </div>
                         </div>
                         
@@ -465,11 +442,9 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
                     
                     <td className="px-6 py-6 whitespace-nowrap">
                       <div className="space-y-1">
-                        <div className="font-semibold text-gray-900">{product.productCategory}</div>
-                        {product.brandId && (
-                          <div className="text-sm text-blue-600 font-medium">
-                            {brandNames[product.brandId] || product.brandId}
-                          </div>
+                        <div className="font-semibold text-gray-900">{categoryNames[product.category_id]}</div>
+                        {product.brand && (
+                          <div className="font-semibold text-gray-900">{product.brand}</div>
                         )}
                       </div>
                     </td>
@@ -501,7 +476,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
                                   )}
                                 </div>
                               ) : (
-                                <div>총 {product.stock}개</div>
+                                <div>총 {(product.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0)}개</div>
                               )}
                             </div>
                           </div>
@@ -512,11 +487,11 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
                     <td className="px-6 py-6">
                       <div className="text-right space-y-1">
                         <div className="text-sm text-gray-500">원가</div>
-                        <div className="font-medium text-gray-700">{formatPrice(product.originalCost)}</div>
+                        <div className="font-medium text-gray-700">{formatPrice(product.cost_price)}</div>
                         <div className="border-t border-gray-200 pt-2 mt-2">
                           <div className="text-sm text-green-700 font-medium">판매가</div>
                           <div className="text-xl font-bold text-green-600">
-                            {formatPrice(product.representativeSellingPrice)}
+                            {formatPrice(product.selling_price)}
                           </div>
                         </div>
                       </div>
@@ -524,10 +499,10 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
                     
                     <td className="px-6 py-6 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {new Date(product.createdAt).toLocaleDateString('ko-KR', { 
+                        {new Date(product.created_at).toLocaleDateString('ko-KR', { 
                           year: 'numeric', 
-                          month: 'short', 
-                          day: 'numeric' 
+                          month: '2-digit', 
+                          day: '2-digit' 
                         })}
                       </div>
                     </td>
@@ -537,7 +512,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
                         <Button
                           variant="ghost"
                           size="small"
-                          onClick={() => onNavigate?.('products-edit', product.id)}
+                          onClick={() => onNavigate?.('products-edit', String(product.id))}
                           className="text-green-600 hover:bg-green-50 hover:text-green-700"
                           title="상품 수정"
                         >
@@ -573,7 +548,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
                                     <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-200 border border-gray-300 shadow-sm">
                                       <img
                                         src={product.representativeImage}
-                                        alt={`${product.productName} - ${variant.variantName}`}
+                                        alt={`${product.name} - ${variant.variantName}`}
                                         className="w-full h-full object-cover"
                                         onError={(e) => {
                                           (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=64&h=64&fit=crop";

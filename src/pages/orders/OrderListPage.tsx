@@ -5,7 +5,8 @@ import { filterOrders, sortOrders, downloadOrdersCSV, getOrderStats } from '../.
 import OrderFilters from '../../components/orders/OrderFilters';
 import OrderTable from '../../components/orders/OrderTable';
 import Pagination from '../../components/common/Pagination';
-import { GridRow, GridCol } from '../../design-system/Grid';
+import { GridRow, GridCol } from '../../design-system/components/Grid';
+import type { Order } from '../../types/orders';
 
 const OrderListPage: React.FC = () => {
   // 필터 상태
@@ -24,9 +25,29 @@ const OrderListPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
+  // mockOrders를 Order[] 타입에 맞게 변환
+  const orders: Order[] = mockOrders.map(order => ({
+    orderNumber: order.order_code,
+    customerName: order.orderer,
+    items: [{
+      productId: order.product_id,
+      productName: order.product_name,
+      variantId: order.variant_id,
+      variantName: order.variant_name,
+      quantity: order.ordered_qty,
+      price: order.payment_amount
+    }],
+    totalAmount: order.payment_amount,
+    status: order.status,
+    createdAt: order.created_at,
+    paymentMethod: order.payment_method,
+    paymentStatus: order.payment_status,
+    // ...order // 기타 필드 유지 (status 중복 제거)
+  }));
+
   // 필터링 및 정렬된 주문 목록
   const filteredAndSortedOrders = useMemo(() => {
-    const filtered = filterOrders(mockOrders, {
+    const filtered = filterOrders(orders, {
       search,
       status,
       paymentMethod,
