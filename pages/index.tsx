@@ -16,7 +16,6 @@ import ExternalProductImportPage from '../src/pages/products/ExternalProductImpo
 
 // Orders
 import OrderList from '../src/pages/orders/OrderList';
-import OrderDashboard from '../src/pages/orders/OrderDashboard';
 import OrderAnalytics from '../src/pages/orders/OrderAnalytics';
 import OrderSettings from '../src/pages/orders/OrderSettings';
 

@@ -12,6 +12,7 @@ import OrderTable from "../../components/orders/OrderTable";
 import Pagination from "../../components/common/Pagination";
 import { GridRow, GridCol } from "../../design-system/components/Grid";
 import type { Order } from "../../types/orders";
+import { OrderStatus } from "../../types/database";
 
 const OrderListPage: React.FC = () => {
   // 필터 상태
@@ -38,16 +39,16 @@ const OrderListPage: React.FC = () => {
     customerName: order.orderer || "",
     items: [
       {
-        productId: order.product_id || null,
+        productId: order.product_id ?? 0,
         productName: order.product_name || "",
-        variantId: order.variant_id || null,
+        variantId: order.variant_id ?? 0,
         variantName: order.variant_name || "",
         quantity: order.ordered_qty || 0,
         price: order.payment_amount || 0,
       },
     ],
     totalAmount: order.payment_amount || 0,
-    status: order.status || "PENDING",
+  status: (order.status as OrderStatus) || OrderStatus.PENDING,
     createdAt: order.created_at || new Date().toISOString(),
     paymentMethod: order.payment_method || "",
     paymentStatus: order.payment_status || "",
@@ -56,7 +57,7 @@ const OrderListPage: React.FC = () => {
 
   // 필터링 및 정렬된 주문 목록
   const filteredAndSortedOrders = useMemo(() => {
-    const filtered = filterOrders(orders, {
+    const filtered = filterOrders(orders as any, {
       search,
       status,
       paymentMethod,
@@ -65,7 +66,7 @@ const OrderListPage: React.FC = () => {
       endDate,
     });
 
-    return sortOrders(filtered, sortBy, sortOrder);
+    return sortOrders(filtered as any, sortBy, sortOrder);
   }, [
     search,
     status,
@@ -92,7 +93,7 @@ const OrderListPage: React.FC = () => {
 
   // 통계 정보
   const stats = useMemo(
-    () => getOrderStats(filteredAndSortedOrders || []),
+    () => getOrderStats(filteredAndSortedOrders as any || []),
     [filteredAndSortedOrders],
   );
 
@@ -118,7 +119,7 @@ const OrderListPage: React.FC = () => {
   // CSV 다운로드 핸들러
   const handleExportCSV = () => {
     const filename = `orders_${new Date().toISOString().split("T")[0]}.csv`;
-    downloadOrdersCSV(filteredAndSortedOrders, filename);
+    downloadOrdersCSV(filteredAndSortedOrders as any, filename);
   };
 
   return (

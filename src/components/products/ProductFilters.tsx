@@ -1,6 +1,16 @@
 import React from 'react';
-import { FilterState } from '../../utils/productUtils';
-import { filterOptions } from '../../data/mockProducts';
+import { mockProductFilterOptions } from '../../data/mockProductFilters';
+
+type FilterState = {
+  searchTerm: string;
+  selectedCategory: string;
+  selectedBrand: string;
+  selectedStatus: string;
+  sortBy: string;
+  priceRange: { min?: number | string; max?: number | string };
+  stockRange: { min?: number | string; max?: number | string };
+  dateRange: { start?: string; end?: string };
+};
 
 interface ProductFiltersProps {
   filters: FilterState;
@@ -54,8 +64,8 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
                 onChange={(e) => onFilterChange({ selectedCategory: e.target.value })}
                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                {filterOptions.categories.map(category => (
-                  <option key={category} value={category}>{category}</option>
+                {mockProductFilterOptions.categories.map((category: any) => (
+                  <option key={category.id} value={category.name}>{category.name}</option>
                 ))}
               </select>
             </div>
@@ -68,10 +78,8 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
                 onChange={(e) => onFilterChange({ selectedBrand: e.target.value })}
                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                {filterOptions.brands.map(brand => (
-                  <option key={brand} value={brand}>
-                    {brand === '전체' ? '전체' : brand.replace('BRAND-', '')}
-                  </option>
+                {mockProductFilterOptions.brands.map((brand: any) => (
+                  <option key={brand.id} value={brand.name}>{brand.name}</option>
                 ))}
               </select>
             </div>
@@ -84,8 +92,8 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
                 onChange={(e) => onFilterChange({ selectedStatus: e.target.value })}
                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                {filterOptions.statuses.map(status => (
-                  <option key={status.value} value={status.value}>{status.label}</option>
+                {mockProductFilterOptions.status.map((status: any) => (
+                  <option key={status} value={status}>{status}</option>
                 ))}
               </select>
             </div>
@@ -94,14 +102,19 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">정렬</label>
               <select
-                value={filters.sortBy}
-                onChange={(e) => onFilterChange({ sortBy: e.target.value })}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                {filterOptions.sortOptions.map(option => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
+                    value={filters.sortBy}
+                    onChange={(e) => onFilterChange({ sortBy: e.target.value })}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    {[
+                      { value: 'newest', label: '최신순' },
+                      { value: 'oldest', label: '오래된순' },
+                      { value: 'name_asc', label: '상품명 (가나다순)' },
+                      { value: 'name_desc', label: '상품명 (가나다 역순)' },
+                    ].map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
             </div>
           </div>
 

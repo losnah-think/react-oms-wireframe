@@ -6,3 +6,5 @@ describe("Render all page modules in src/pages (placeholder)", () => {
     expect(true).toBe(true);
   });
 });
+
+export {};

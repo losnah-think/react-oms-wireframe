@@ -1,4 +1,5 @@
 
+import { IOrder } from '@/models/Order';
 import { OrderStatus } from '../types/database';
 
 // 날짜 포맷팅
