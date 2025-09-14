@@ -3,10 +3,25 @@ import path from 'path'
 import fs from 'fs'
 
 const DB_DIR = path.resolve(process.cwd(), 'data')
-if (!fs.existsSync(DB_DIR)) fs.mkdirSync(DB_DIR, { recursive: true })
+if (!fs.existsSync(DB_DIR)) {
+  try {
+    fs.mkdirSync(DB_DIR, { recursive: true })
+  } catch (e) {
+    // ignore - fallback to memory DB below
+  }
+}
 const DB_PATH = path.join(DB_DIR, 'app.db')
 
-const db = new Database(DB_PATH)
+let db: any
+try {
+  db = new Database(DB_PATH)
+} catch (e) {
+  // In environments where filesystem is read-only (e.g., some serverless hosts),
+  // fall back to an in-memory DB so the app doesn't crash with a 500.
+  // This means data won't persist across restarts, but it keeps the UI functional.
+  console.warn('warning: falling back to in-memory SQLite DB due to filesystem error', String(e))
+  db = new Database(':memory:')
+}
 
 // initialize tables
 db.exec(`
