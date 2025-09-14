@@ -44,3 +44,8 @@ pids
 ehthumbs.db
 Thumbs.db
 .vercel
+
+# Docs generated images (Mermaid renders)
+docs/diagrams/*.png
+docs/diagrams/*.svg
+docs/*.png

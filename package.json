@@ -35,13 +35,17 @@
     "mini-css-extract-plugin": "^2.9.4",
     "postcss": "^8.4.21",
     "tailwindcss": "^3.2.4",
-    "ts-jest": "^29.1.1"
+    "ts-jest": "^29.1.1",
+    "gh-pages": "^5.0.0"
   },
   "scripts": {
     "test": "jest --config=jest.config.cjs --passWithNoTests",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "diagrams:render": "./node_modules/.bin/mmdc -i docs/diagrams/orders-list.mmd -o docs/diagrams/orders-list.png -b transparent && ./node_modules/.bin/mmdc -i docs/diagrams/order-detail.mmd -o docs/diagrams/order-detail.png -b transparent && ./node_modules/.bin/mmdc -i docs/diagrams/products-list.mmd -o docs/diagrams/products-list.png -b transparent && ./node_modules/.bin/mmdc -i docs/diagrams/product-detail.mmd -o docs/diagrams/product-detail.png -b transparent && ./node_modules/.bin/mmdc -i docs/diagrams/settings-integration.mmd -o docs/diagrams/settings-integration.png -b transparent && ./node_modules/.bin/mmdc -i docs/diagrams/settings-users.mmd -o docs/diagrams/settings-users.png -b transparent",
+    "diagrams:clean": "rm -f docs/diagrams/*.png docs/diagrams/*.svg || true",
+    "deploy:docs": "gh-pages -d docs"
   }
 }
