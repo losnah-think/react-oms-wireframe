@@ -56,6 +56,7 @@ export interface Product extends BaseEntity {
   // 외부 연동 정보
   externalProductId?: string;
   externalUrl?: string;
+  classificationId?: string;
   
   active: boolean;
 }

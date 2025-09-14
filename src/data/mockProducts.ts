@@ -52,8 +52,11 @@ export const mockProducts = Array.from({length: 100}, (_, i) => {
     code: generateProductCode(i), // varchar(50)
     name: `상품${i+1}`, // varchar(255)
     brand: mockBrands[i % mockBrands.length].name, // varchar(255)
-    // internal classification used by ReactOMS (e.g., '의류', '전자', '잡화')
+    brand_id: mockBrands[i % mockBrands.length].id,
+    // internal classification used by ReactOMS (e.g., ['의류','남성','셔츠'])
+    classificationPath: (i % 5) === 0 ? ['의류','남성','셔츠'] : (i % 5) === 1 ? ['의류','여성','원피스'] : (i % 5) === 2 ? ['전자제품'] : (i % 5) === 3 ? ['뷰티'] : ['식품'],
     classification: ["의류", "전자제품", "잡화", "뷰티", "식품"][i % 5],
+    classificationId: `c-${(i % 15) + 1}`,
     selling_price: 10000 + i*100, // int
     supply_price: 9000 + i*100, // int
     cost_price: 8000 + i*100, // int

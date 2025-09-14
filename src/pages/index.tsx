@@ -31,4 +31,3 @@ export { default as BrandsPage } from "./settings/BrandsPage";
 export { default as ProductClassificationsPage } from "./settings/ProductClassificationsPage";
 export { default as ProductSeasonsPage } from "./settings/ProductSeasonsPage";
 export { default as ProductYearsPage } from "./settings/ProductYearsPage";
-export { default as SystemSettingsPage } from "./settings/SystemSettingsPage";

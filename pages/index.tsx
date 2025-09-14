@@ -33,7 +33,6 @@ import BrandsPage from '../src/pages/settings/BrandsPage';
 import ProductClassificationsPage from '../src/pages/settings/ProductClassificationsPage';
 import ProductSeasonsPage from '../src/pages/settings/ProductSeasonsPage';
 import ProductYearsPage from '../src/pages/settings/ProductYearsPage';
-import SystemSettingsPage from '../src/pages/settings/SystemSettingsPage';
 
 export default function Home() {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -118,8 +117,6 @@ export default function Home() {
         return <ProductYearsPage />;
       case 'settings-product-seasons':
         return <ProductSeasonsPage />;
-      case 'settings-system':
-        return <SystemSettingsPage />;
       
       default:
         return <Dashboard />;

@@ -47,9 +47,9 @@ const menuItems: MenuItem[] = [
     icon: 'home',
     children: [
       { id: 'malls', label: '쇼핑몰 목록', icon: 'list' },
-      { id: 'malls-products', label: '쇼핑몰별 상품 관리', icon: 'box' },
-      { id: 'malls-info', label: '쇼핑몰별 부가 정보 관리', icon: 'info' },
-      { id: 'malls-category-mapping', label: '카테고리 매핑', icon: 'copy' }
+  { id: 'malls-products', label: '쇼핑몰별 상품 관리', icon: 'box' },
+  { id: 'malls-info', label: '쇼핑몰별 부가 정보 관리', icon: 'info' },
+  { id: 'category-mapping', label: '카테고리 매핑', icon: 'copy' }
     ]
   },
   {
@@ -62,7 +62,7 @@ const menuItems: MenuItem[] = [
       { id: 'settings-brands', label: '브랜드 관리', icon: 'image' },
       { id: 'settings-product-years', label: '상품 연도 관리', icon: 'clock' },
       { id: 'settings-product-seasons', label: '상품 시즌 관리', icon: 'clock' },
-      { id: 'settings-system', label: '시스템 설정', icon: 'settings' },
+          
     ]
   }
 ];

@@ -10,5 +10,11 @@ function generateBrandCode(i: number) {
 export const mockBrands = Array.from({length: 100}, (_, i) => ({
   id: `brand-${i+1}`,
   code: generateBrandCode(i),
-  name: `브랜드${i+1}`
+  name: `브랜드${i+1}`,
+  // preferred classification ids for this brand (example)
+  preferredClassificationIds: [`c-${(i % 6) + 1}`],
+  // a few brands may map to multiple categories
+  preferredCategories: [
+    ['의류', '남성', '셔츠']
+  ]
 }));

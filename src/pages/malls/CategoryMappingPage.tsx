@@ -35,6 +35,8 @@ const CategoryMappingPage: React.FC = () => {
   const [selectedMall, setSelectedMall] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLevel, setSelectedLevel] = useState("all");
+  const [selectedInternalId, setSelectedInternalId] = useState<number | null>(null);
+  const [selectedMallCategoryId, setSelectedMallCategoryId] = useState<string | null>(null);
 
   const malls: Mall[] = [
     { id: "naver", name: "네이버 스마트스토어", status: "active" },
@@ -213,6 +215,15 @@ const CategoryMappingPage: React.FC = () => {
     internalCategoryId: number,
     mallCategoryId: string,
   ) => {
+    // prevent duplicates for same mall/internal/mallCategory
+    const exists = mappings.some(
+      (m) => m.mallId === selectedMall && m.internalCategoryId === internalCategoryId && m.mallCategoryId === mallCategoryId && m.isActive,
+    );
+    if (exists) {
+      alert('이미 동일한 매핑이 존재합니다.')
+      return
+    }
+
     const newMapping: CategoryMapping = {
       id: mappings.length + 1,
       internalCategoryId,
@@ -223,7 +234,10 @@ const CategoryMappingPage: React.FC = () => {
     };
 
     setMappings([...mappings, newMapping]);
-    alert("카테고리 매핑이 생성되었습니다.");
+    alert('카테고리 매핑이 생성되었습니다.');
+    // clear selections
+    setSelectedInternalId(null)
+    setSelectedMallCategoryId(null)
   };
 
   const handleDeleteMapping = (mappingId: number) => {
@@ -468,15 +482,17 @@ const CategoryMappingPage: React.FC = () => {
                     const isAlreadyMapped = currentMappings.some(
                       (m) => m.internalCategoryId === category.id && m.isActive,
                     );
+                    const isSelected = selectedInternalId === category.id
 
                     return (
                       <div
                         key={category.id}
+                        onClick={() => !isAlreadyMapped && setSelectedInternalId(category.id)}
                         className={`p-3 border rounded-lg ${
                           isAlreadyMapped
                             ? "bg-gray-50 border-gray-200"
                             : "hover:bg-blue-50 border-gray-200 hover:border-blue-300 cursor-pointer"
-                        }`}
+                        } ${isSelected ? 'ring-2 ring-blue-200 bg-blue-50' : ''}`}
                       >
                         <div className="flex items-center justify-between">
                           <div>
@@ -512,22 +528,26 @@ const CategoryMappingPage: React.FC = () => {
                 </h3>
 
                 <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {currentMallCategories.map((category) => (
-                    <div
-                      key={category.id}
-                      className="p-3 border rounded-lg hover:bg-green-50 border-gray-200 hover:border-green-300 cursor-pointer"
-                    >
-                      <div className="text-sm font-medium text-gray-900">
-                        {getMallCategoryPath(
-                          currentMallCategories,
-                          category.id,
-                        )}
+                  {currentMallCategories.map((category) => {
+                    const isSel = selectedMallCategoryId === category.id
+                    return (
+                      <div
+                        key={category.id}
+                        onClick={() => setSelectedMallCategoryId(category.id)}
+                        className={`p-3 border rounded-lg ${isSel ? 'ring-2 ring-green-200 bg-green-50' : 'hover:bg-green-50 border-gray-200 hover:border-green-300 cursor-pointer'}`}
+                      >
+                        <div className="text-sm font-medium text-gray-900">
+                          {getMallCategoryPath(
+                            currentMallCategories,
+                            category.id,
+                          )}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          ID: {category.id} | 레벨: {category.level}
+                        </div>
                       </div>
-                      <div className="text-xs text-gray-500">
-                        ID: {category.id} | 레벨: {category.level}
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
 
                 {currentMallCategories.length === 0 && (
@@ -554,6 +574,17 @@ const CategoryMappingPage: React.FC = () => {
                 </p>
                 <p>4. 생성된 매핑은 "현재 매핑 현황"에서 확인할 수 있습니다</p>
               </div>
+            </div>
+
+            <div className="mt-4 flex items-center gap-4">
+              <button
+                disabled={!selectedInternalId || !selectedMallCategoryId}
+                onClick={() => selectedInternalId && selectedMallCategoryId && handleCreateMapping(selectedInternalId, selectedMallCategoryId)}
+                className={`px-4 py-2 rounded ${selectedInternalId && selectedMallCategoryId ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-500 cursor-not-allowed'}`}
+              >
+                매핑 생성
+              </button>
+              <div className="text-sm text-gray-600">선택 내부: <span className="font-medium">{selectedInternalId ?? '-'}</span> / 선택 쇼핑몰: <span className="font-medium">{selectedMallCategoryId ?? '-'}</span></div>
             </div>
 
             {/* 통계 */}

@@ -38,6 +38,7 @@ const MallProductsPage: React.FC = () => {
   const [showExtraInfoModal, setShowExtraInfoModal] = useState(false)
   const [showCategoryMapModal, setShowCategoryMapModal] = useState(false)
   const [categoryMappings, setCategoryMappings] = useState<Record<string,string>>({})
+  const [pathToId, setPathToId] = useState<Record<string,string>>({})
   const [extraInfo, setExtraInfo] = useState<Record<string,string>>({})
   const [overrides, setOverrides] = useState<Record<string, any>>({})
 
@@ -147,6 +148,20 @@ const MallProductsPage: React.FC = () => {
       setExtraInfo(parsed2[selectedMall]||{})
     }catch(e){setExtraInfo({})}
   },[selectedMall])
+
+  // build path -> id map for classifications
+  useEffect(() => {
+    const p2i: Record<string,string> = {}
+    const walk = (nodes: any[], parents: string[] = []) => {
+      nodes.forEach(n => {
+        const path = parents.concat(n.name).join(' > ')
+        p2i[path] = n.id
+        if (n.children) walk(n.children, parents.concat(n.name))
+      })
+    }
+    walk(mockClassifications as any)
+    setPathToId(p2i)
+  }, [])
 
   const applyOverridesToProduct = (product: MallProduct) => {
     const byKey = overrides?.[product.productId]
@@ -297,7 +312,14 @@ const MallProductsPage: React.FC = () => {
                               </div>
                               <div className="text-xs text-gray-500 mt-1">코드: {effective.productId}</div>
                               <div className="text-xs text-blue-600 mt-1">쇼핑몰: {effective.mallProductName}</div>
-                              <div className="text-xs text-gray-400 mt-1">{effective.category} {categoryMappings[effective.category] && (<span className="ml-2 text-xs text-green-600">→ {categoryMappings[effective.category]}</span>)}</div>
+                              <div className="text-xs text-gray-400 mt-1">
+                                {effective.category}
+                                {(() => {
+                                  const cid = pathToId[effective.category]
+                                  const mapped = cid ? categoryMappings[cid] : categoryMappings[effective.category]
+                                  return mapped ? (<span className="ml-2 text-xs text-green-600">→ {mapped}</span>) : null
+                                })()}
+                              </div>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">

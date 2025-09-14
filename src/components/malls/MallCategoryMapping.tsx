@@ -1,4 +1,7 @@
 import React, { useEffect, useState } from 'react'
+import mockClassifications from '../../data/mockClassifications'
+import TableExportButton from '../../components/common/TableExportButton'
+import PresetSelect from '../../components/common/PresetSelect'
 
 type Mapping = Record<string, string>
 
@@ -28,13 +31,72 @@ const MallCategoryMapping: React.FC<{
   onApply?: (m: Mapping) => void
 }> = ({ mallId, internalCategories = [], products = [], onClose, onApply }) => {
   const [map, setMap] = useState<Mapping>({})
+  const [classTree, setClassTree] = useState<any[]>([])
+  const [pathToId, setPathToId] = useState<Record<string,string>>({})
+  const [idToPath, setIdToPath] = useState<Record<string,string>>({})
+  const [presets, setPresets] = useState<string[]>([])
   const [internalFilter, setInternalFilter] = useState('')
   const [suggested, setSuggested] = useState<Mapping>({})
 
+  // build classification maps and migrate mappings to id-keys
   useEffect(() => {
+    const tree = (function load() {
+      try {
+        const raw = window.localStorage.getItem('productClassificationsTree')
+        if (raw) return JSON.parse(raw)
+      } catch (e) {}
+      return mockClassifications as any
+    })()
+    setClassTree(tree)
+
+    const p2i: Record<string,string> = {}
+    const i2p: Record<string,string> = {}
+    const walk = (nodes: any[], parents: string[] = []) => {
+      nodes.forEach(n => {
+        const path = parents.concat(n.name).join(' > ')
+        p2i[path] = n.id
+        i2p[n.id] = path
+        if (n.children) walk(n.children, parents.concat(n.name))
+      })
+    }
+    walk(tree)
+    setPathToId(p2i)
+    setIdToPath(i2p)
+
+    // migrate stored mappings for this mall: convert path keys to id keys when possible
     const all = readMappings()
-    setMap(all[mallId] || {})
+    const rawMap = all[mallId] || {}
+    const migrated: Mapping = {}
+    Object.keys(rawMap).forEach((k) => {
+      const v = rawMap[k]
+      if (i2p[k]) {
+        // already an id
+        migrated[k] = v
+      } else if (p2i[k]) {
+        // key is a path -> convert to id
+        migrated[p2i[k]] = v
+      } else {
+        // try trimmed match
+        const trimmed = String(k).trim()
+        if (p2i[trimmed]) migrated[p2i[trimmed]] = v
+        else migrated[k] = v
+      }
+    })
+    // extract presets from migrated values
+    const vals = Array.from(new Set(Object.values(migrated).map(String).filter(Boolean)))
+    setPresets(vals)
+    setMap(migrated)
   }, [mallId])
+
+  const exportData = React.useMemo(() => {
+    const out: any[] = []
+    internalCategories.forEach((path) => {
+      const cid = pathToId[path]
+      const mapped = cid ? map[cid] : map[path]
+      out.push({ internalPath: path, internalId: cid || '', internalLabel: cid ? idToPath[cid] || path : path, mallCategory: mapped || '' })
+    })
+    return out
+  }, [internalCategories, pathToId, idToPath, map])
 
   const [platform, setPlatform] = useState<string>('custom')
   const [colInternal, setColInternal] = useState<string>('internalCategory')
@@ -157,11 +219,32 @@ const MallCategoryMapping: React.FC<{
         const json: any[] = XLSX.utils.sheet_to_json(ws)
         const imported: Mapping = {}
         json.forEach((row: any) => {
-          const internal = row[colInternal] || row['internalCategory'] || row['internal'] || row['내부카테고리']
-          const mall = row[colMall] || row['mallCategory'] || row['mall'] || row['쇼핑몰카테고리']
-          if (internal && mall) imported[String(internal)] = String(mall)
+          // accept exported columns: internalId, internalPath, mallCategory
+          const rawId = row['internalId'] || row['internal_id'] || row['internalId'.toLowerCase()]
+          const rawPath = row['internalPath'] || row['internal_path'] || row[colInternal] || row['internalCategory'] || row['internal'] || row['내부카테고리']
+          const mall = row['mallCategory'] || row['mall'] || row[colMall] || row['쇼핑몰카테고리']
+          if (!rawPath && !rawId) return
+          if (!mall) return
+          const mallVal = String(mall)
+          if (rawId) {
+            const id = String(rawId).trim()
+            imported[id] = mallVal
+          } else if (rawPath) {
+            const p = String(rawPath).trim()
+            const id = pathToId[p]
+            if (id) imported[id] = mallVal
+            else imported[p] = mallVal
+          }
         })
-        setMap((s) => ({ ...s, ...imported }))
+        if (Object.keys(imported).length > 0) {
+          setMap((s) => {
+            const next = { ...s, ...imported }
+            const all = readMappings()
+            all[mallId] = next
+            writeMappings(all)
+            return next
+          })
+        }
         alert('업로드 완료: ' + Object.keys(imported).length + '개 항목 적용')
       } catch (err) {
         console.error(err)
@@ -179,9 +262,10 @@ const MallCategoryMapping: React.FC<{
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold">{mallId} - 카테고리 매핑</h3>
           <div className="flex gap-2">
-            <button onClick={onClose} className="px-3 py-1 border rounded">취소</button>
-            <button onClick={handleSave} className="px-3 py-1 bg-blue-600 text-white rounded">저장</button>
-          </div>
+              <TableExportButton data={exportData} fileName={`${mallId || 'mappings'}-mappings.xlsx`} />
+              <button onClick={onClose} className="px-3 py-1 border rounded">취소</button>
+              <button onClick={handleSave} className="px-3 py-1 bg-blue-600 text-white rounded">저장</button>
+            </div>
         </div>
 
         <div className="mb-4 flex items-center gap-2">
@@ -219,15 +303,25 @@ const MallCategoryMapping: React.FC<{
             </div>
           )}
           {items.length === 0 && <div className="text-sm text-gray-500">내부 카테고리가 없습니다.</div>}
-          {items.map((c) => (
-            <div key={c} className="p-2 border rounded flex items-center justify-between">
-              <div>
-                <div className="text-sm font-medium">{c}</div>
-                <div className="text-xs text-gray-500">매핑: {map[c] || '미지정'}</div>
+          {items.map((c) => {
+            const cid = pathToId[c]
+            const mapped = cid ? map[cid] : map[c]
+            return (
+              <div key={c} className="p-2 border rounded flex items-center justify-between">
+                <div className="flex-1 pr-4">
+                  <div className="text-sm font-medium">{c}</div>
+                  <div className="text-xs text-gray-500">매핑: {mapped || '미지정'}</div>
+                </div>
+                <div style={{ width: 300 }}>
+                  <PresetSelect presets={presets} value={mapped || ''} onChange={(v) => {
+                    handleSet(cid || c, v)
+                    // add to presets
+                    setPresets((p) => Array.from(new Set([v, ...p].filter(Boolean))))
+                  }} />
+                </div>
               </div>
-              <input placeholder="쇼핑몰 카테고리 입력" value={map[c] || ''} onChange={(e) => handleSet(c, e.target.value)} className="px-2 py-1 border" />
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </div>

@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useLayoutEffect } from 'react';
+import ReactDOM from 'react-dom';
 
 export interface TreeNode {
   id: string;
@@ -8,10 +9,13 @@ export interface TreeNode {
 
 interface Props {
   data: TreeNode[];
+  // value is the full path string like '의류 > 남성 > 셔츠'
   value?: string | null;
   placeholder?: string;
-  onChange: (selected: TreeNode | null) => void;
+  onChange: (selected: TreeNode | null, path?: string[]) => void;
 }
+
+const MAX_DEPTH = 4
 
 const flatten = (nodes: TreeNode[], parents: string[] = []) => {
   const out: Array<{ node: TreeNode; path: string[] }> = [];
@@ -29,6 +33,9 @@ const HierarchicalSelect: React.FC<Props> = ({ data, value, placeholder, onChang
   const [query, setQuery] = useState('');
   const [activePath, setActivePath] = useState<string[]>([]);
   const ref = useRef<HTMLDivElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const [panelStyle, setPanelStyle] = useState<React.CSSProperties | null>(null);
+  const colWidth = 220 // per-column width in px
 
   const flat = useMemo(() => flatten(data), [data]);
 
@@ -45,7 +52,26 @@ const HierarchicalSelect: React.FC<Props> = ({ data, value, placeholder, onChang
     return () => document.removeEventListener('mousedown', onDoc);
   }, []);
 
-  const selected = useMemo(() => flat.find(f => f.node.name === value)?.node || null, [flat, value]);
+  useLayoutEffect(() => {
+    if (!open || !ref.current) return
+    const rect = ref.current.getBoundingClientRect()
+    const totalWidth = Math.max(320, rect.width, colWidth * MAX_DEPTH)
+    const offset = 8
+    // Open below the button, left-aligned; clamp to viewport
+    let left = rect.left + window.scrollX
+    if (left + totalWidth + 8 > window.innerWidth) left = Math.max(8, window.innerWidth - totalWidth - 8)
+    const top = rect.bottom + window.scrollY + offset
+    const style: React.CSSProperties = {
+      position: 'absolute',
+      top,
+      left,
+      width: totalWidth,
+      zIndex: 1000,
+    }
+    setPanelStyle(style)
+  }, [open])
+
+  const selected = useMemo(() => flat.find(f => f.path.join(' > ') === value)?.node || null, [flat, value]);
 
   const filtered = useMemo(() => {
     if (!query) return flat;
@@ -56,10 +82,24 @@ const HierarchicalSelect: React.FC<Props> = ({ data, value, placeholder, onChang
   const roots = data;
 
   const handleSelectNode = (node: TreeNode, path: string[]) => {
-    onChange(node);
+    onChange(node, path);
     setActivePath(path);
     setOpen(false);
   };
+
+  // get nodes for a given level based on activePath prefix
+  const getNodesAtLevel = (level: number) => {
+    if (level === 0) return roots
+    let cur: TreeNode | undefined = undefined
+    for (let i = 0; i < level; i++) {
+      const name = activePath[i]
+      if (!name) return []
+  const list: TreeNode[] = i === 0 ? roots : (cur && cur.children ? cur.children : [])
+  cur = list.find((x: TreeNode) => x.name === name)
+      if (!cur) return []
+    }
+    return cur && cur.children ? cur.children : []
+  }
 
   return (
     <div className="relative inline-block" ref={ref}>
@@ -79,7 +119,8 @@ const HierarchicalSelect: React.FC<Props> = ({ data, value, placeholder, onChang
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-2 w-96 bg-white border border-gray-200 rounded shadow-lg">
+        (panelStyle && ReactDOM.createPortal(
+          <div ref={panelRef} className="bg-white border border-gray-200 rounded shadow-lg" style={{ ...panelStyle, minWidth: 320 }}>
           <div className="p-3">
             <input
               value={query}
@@ -90,53 +131,36 @@ const HierarchicalSelect: React.FC<Props> = ({ data, value, placeholder, onChang
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-0 divide-x" style={{ minHeight: 220 }}>
-            <div className="p-2 overflow-auto">
-              {roots.map((r) => (
-                <div
-                  key={r.id}
-                  className={`px-2 py-2 rounded cursor-pointer hover:bg-gray-100 ${activePath[0] === r.name ? 'bg-gray-100 font-semibold' : ''}`}
-                  onMouseEnter={() => setActivePath([r.name])}
-                  onClick={() => r.children ? setActivePath([r.name]) : handleSelectNode(r, [r.name])}
-                >
-                  {r.name}
-                </div>
-              ))}
-            </div>
-
-            <div className="p-2 overflow-auto">
-              {(() => {
-                const level1 = roots.find(x => x.name === activePath[0]);
-                if (!level1 || !level1.children) return <div className="text-sm text-gray-500">하위 없음</div>;
-                return level1.children.map((c) => (
-                  <div
-                    key={c.id}
-                    className={`px-2 py-2 rounded cursor-pointer hover:bg-gray-100 ${activePath[1] === c.name ? 'bg-gray-100 font-semibold' : ''}`}
-                    onMouseEnter={() => setActivePath([level1.name, c.name])}
-                    onClick={() => c.children ? setActivePath([level1.name, c.name]) : handleSelectNode(c, [level1.name, c.name])}
-                  >
-                    {c.name}
-                  </div>
-                ));
-              })()}
-            </div>
-
-            <div className="p-2 overflow-auto">
-              {(() => {
-                const level1 = roots.find(x => x.name === activePath[0]);
-                const level2 = level1?.children?.find(x => x.name === activePath[1]);
-                if (!level2 || !level2.children) return <div className="text-sm text-gray-500">하위 없음</div>;
-                return level2.children.map((c) => (
-                  <div
-                    key={c.id}
-                    className={`px-2 py-2 rounded cursor-pointer hover:bg-gray-100`}
-                    onClick={() => handleSelectNode(c, [level1!.name, level2.name, c.name])}
-                  >
-                    {c.name}
-                  </div>
-                ));
-              })()}
-            </div>
+          <div style={{ minHeight: 220, display: 'grid', gridTemplateColumns: `repeat(${MAX_DEPTH}, ${colWidth}px)`, gap: 0 }}>
+            {Array.from({ length: MAX_DEPTH }).map((_, level) => (
+              <div key={level} className="p-2 overflow-auto" style={{ borderLeft: level === 0 ? 'none' : '1px solid #eef2f7' }}>
+                {(() => {
+                  const list = getNodesAtLevel(level)
+                  if (!list || list.length === 0) return <div className="text-sm text-gray-500">하위 없음</div>
+                  return list.map((c) => (
+                    <div
+                      key={c.id}
+                      className={`px-2 py-2 rounded cursor-pointer hover:bg-gray-100 ${activePath[level] === c.name ? 'bg-gray-100 font-semibold' : ''}`}
+                      onMouseEnter={() => setActivePath((p) => {
+                        const next = p.slice(0, level)
+                        next[level] = c.name
+                        return next
+                      })}
+                      onClick={() => {
+                        const path = [...activePath.slice(0, level), c.name].filter(Boolean)
+                        if (c.children && level < (MAX_DEPTH - 1)) {
+                          setActivePath(path)
+                        } else {
+                          handleSelectNode(c, path)
+                        }
+                      }}
+                    >
+                      {c.name}
+                    </div>
+                  ))
+                })()}
+              </div>
+            ))}
           </div>
 
           {query && (
@@ -152,7 +176,7 @@ const HierarchicalSelect: React.FC<Props> = ({ data, value, placeholder, onChang
               </div>
             </div>
           )}
-        </div>
+          </div>, document.body)) || null
       )}
     </div>
   );
