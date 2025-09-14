@@ -59,3 +59,5 @@ Thumbs.db
 docs/diagrams/*.png
 docs/diagrams/*.svg
 docs/*.png
+
+/generated/prisma
