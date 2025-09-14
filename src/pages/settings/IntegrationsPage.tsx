@@ -67,27 +67,11 @@ export default function IntegrationsPage({
           </div>
 
           <div className="space-x-2">
-            <div className="inline-flex items-center space-x-2">
-              <label className="text-sm text-gray-600">수집 주기</label>
-              <select
-                className="border rounded px-2 py-1"
-                value={collectionInterval}
-                onChange={(e) => setCollectionInterval(e.target.value)}
-              >
-                <option value="5m">5분</option>
-                <option value="15m">15분</option>
-                <option value="30m">30분</option>
-                <option value="1h">1시간</option>
-                <option value="6h">6시간</option>
-              </select>
-            </div>
-
             <button
-              className="btn"
-              onClick={handleRunCafe24Test}
-              aria-label="run-order-collection-test"
+              className="px-3 py-1 bg-indigo-600 text-white rounded"
+              onClick={() => setShowRegisterModal(true)}
             >
-              {channel} 주문 수집 테스트 ({collectionInterval})
+              새 샵 등록
             </button>
           </div>
         </div>

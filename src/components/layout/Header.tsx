@@ -1,25 +1,42 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Icon from '../../design-system/components/Icon';
+import { signOut, signIn, useSession } from 'next-auth/react'
+import { useRouter } from 'next/router'
 
-interface HeaderProps {
-  user?: {
-    username: string;
-    role: string;
-  };
-}
+const Header: React.FC = () => {
+  const { data: session, status } = useSession()
+  const user = (session as any)?.user
+  const router = useRouter()
+  const role = user?.role
+  const [open, setOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement | null>(null)
 
-const Header: React.FC<HeaderProps> = ({ user }) => {
+  useEffect(() => {
+    function onDocClick(e: MouseEvent) {
+      if (!menuRef.current) return
+      if (!(e.target instanceof Node)) return
+      if (!menuRef.current.contains(e.target)) setOpen(false)
+    }
+    function onEsc(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('click', onDocClick)
+    document.addEventListener('keydown', onEsc)
+    return () => {
+      document.removeEventListener('click', onDocClick)
+      document.removeEventListener('keydown', onEsc)
+    }
+  }, [])
+
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
       <div className="flex items-center justify-between px-6 py-4">
         {/* Logo and Title */}
         <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">OMS</span>
-            </div>
-            <h1 className="text-xl font-bold text-gray-900">React OMS</h1>
-          </div>
+          <a href="/" className="flex items-center space-x-3" aria-label="Go to home">
+            <img src="/icons/FULGO-truck.svg" alt="FULGO" className="w-12 h-auto" />
+            <span className="text-xl font-bold text-gray-900">FULGO</span>
+          </a>
         </div>
 
         {/* Search Bar */}
@@ -38,6 +55,7 @@ const Header: React.FC<HeaderProps> = ({ user }) => {
 
         {/* User Actions */}
         <div className="flex items-center space-x-4">
+          {/* Integration page add-button removed from header to avoid duplicate controls. */}
           <button aria-label="Notifications" className="p-2 text-gray-400 hover:text-gray-600 transition-colors relative focus:ring-2 focus:ring-primary-500 rounded">
             <Icon name="bell" size={20} />
             <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-xs" aria-hidden="true"></span>
@@ -45,18 +63,29 @@ const Header: React.FC<HeaderProps> = ({ user }) => {
           <button aria-label="Settings" className="p-2 text-gray-400 hover:text-gray-600 transition-colors focus:ring-2 focus:ring-primary-500 rounded">
             <Icon name="settings" size={20} />
           </button>
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-              <Icon name="user" size={16} />
-            </div>
-            <div className="text-sm">
-              <div className="font-medium text-gray-900">
-                {user?.username || '관리자'}
+          <div className="relative" ref={menuRef}>
+            {status === 'loading' ? (
+              <div className="w-20 h-6 bg-gray-100 rounded animate-pulse" aria-hidden="true" />
+            ) : status === 'unauthenticated' ? (
+              <button onClick={() => signIn(undefined, { callbackUrl: '/' })} className="text-sm text-primary-600 hover:underline">Sign in</button>
+            ) : (
+              <div className="relative inline-block text-left">
+                <button className="inline-flex items-center space-x-2 focus:outline-none" aria-haspopup="true" aria-expanded={open} onClick={() => setOpen(s => !s)}>
+                  <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+                    <Icon name="user" size={16} />
+                  </div>
+                  <div className="text-sm text-gray-900">{user?.email}</div>
+                </button>
+                {open && (
+                  <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
+                    <div className="py-1" role="none">
+                      <a href="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">My Page</a>
+                      <button onClick={() => signOut({ callbackUrl: '/settings/integration-admin/login' })} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Sign out</button>
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="text-gray-500">
-                {user?.role || 'Admin'}
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

@@ -20,6 +20,18 @@ interface ProductImportStats {
   lastImportDate: string;
 }
 
+// Minimal product shape mapped from 외부 쇼핑몰 (참고: Cafe24 Admin API 제품 속성)
+interface ExternalProduct {
+  product_no?: string;
+  name: string;
+  price: number;
+  inventory: number;
+  selling: boolean;
+  last_update?: string;
+  options?: Record<string, string>;
+  image?: string;
+}
+
 const ExternalProductImportPage: React.FC = () => {
   const [expandedMall, setExpandedMall] = useState<string | null>(null);
   const [importProgress, setImportProgress] = useState<Record<string, number>>(
@@ -84,7 +96,7 @@ const ExternalProductImportPage: React.FC = () => {
     },
   ];
 
-  const [importStats] = useState<Record<string, ProductImportStats>>({
+  const [importStats, setImportStats] = useState<Record<string, ProductImportStats>>({
     makeshop: {
       totalProducts: 1247,
       successCount: 1198,
@@ -104,6 +116,81 @@ const ExternalProductImportPage: React.FC = () => {
       lastImportDate: "2025-01-15 13:20",
     },
   });
+
+  const [importedSamples, setImportedSamples] = useState<Record<string, ExternalProduct[]>>({});
+
+  // Filters state for the filter panel
+  interface Filters {
+    seller: string;
+    dateFrom: string;
+    dateTo: string;
+    costModified?: 'modified' | 'not-modified' | '';
+    display?: 'displayed' | 'hidden' | '';
+    selling?: 'selling' | 'not-selling' | '';
+    productName?: string;
+    autoRegisterCategory?: boolean;
+    optionNameApply?: boolean;
+  }
+
+  const [filters, setFilters] = useState<Filters>({
+    seller: 'all',
+    dateFrom: '',
+    dateTo: '',
+    costModified: '',
+    display: '',
+    selling: '',
+    productName: '',
+    autoRegisterCategory: false,
+    optionNameApply: false,
+  });
+
+  function formatDate(d: Date) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  function applyPreset(preset: string) {
+    const today = new Date();
+    let from = new Date();
+    switch (preset) {
+      case '오늘':
+        from = today;
+        break;
+      case '7일':
+        from = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '10일':
+        from = new Date(today.getTime() - 10 * 24 * 60 * 60 * 1000);
+        break;
+      case '15일':
+        from = new Date(today.getTime() - 15 * 24 * 60 * 60 * 1000);
+        break;
+      case '1개월':
+        from = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case '3개월':
+        from = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000);
+        break;
+      case '6개월':
+        from = new Date(today.getTime() - 180 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        from = new Date(0);
+    }
+    setFilters((f: Filters) => ({ ...f, dateFrom: formatDate(from), dateTo: formatDate(today) }));
+  }
+
+  function applyFilters() {
+    // For now, just log or alert the active filters; real implementation should call API
+    console.log('Apply filters', filters);
+    alert('필터가 적용되었습니다. (시연용)');
+  }
+
+  function resetFilters() {
+    setFilters({ seller: 'all', dateFrom: '', dateTo: '', costModified: '', display: '', selling: '', productName: '', autoRegisterCategory: false, optionNameApply: false });
+  }
 
   const toggleAccordion = (mallId: string) => {
     setExpandedMall(expandedMall === mallId ? null : mallId);
@@ -125,18 +212,84 @@ const ExternalProductImportPage: React.FC = () => {
     // 진행률 시뮬레이션
     setImportProgress((prev) => ({ ...prev, [mallId]: 0 }));
 
-    const interval = setInterval(() => {
-      setImportProgress((prev) => {
-        const current = prev[mallId] || 0;
-        if (current >= 100) {
-          clearInterval(interval);
-          alert(`${mall.name} 상품 가져오기가 완료되었습니다!`);
-          return { ...prev, [mallId]: 0 };
+    const interval = setInterval(async () => {
+      setImportProgress((prev) => ({ ...prev, [mallId]: ((prev[mallId] || 0) + 10) }));
+      const current = importProgress[mallId] || 0;
+      if (current >= 90) {
+        clearInterval(interval);
+        try {
+          if (mallId === 'cafe24') {
+            // call server-side API to fetch cafe24 products
+            const resp = await fetch('/api/integrations/cafe24/products');
+            if (resp.ok) {
+              const body = await resp.json();
+              const products = body.products || [];
+              setImportedSamples((p) => ({ ...p, [mallId]: products }));
+              setImportStats((s) => ({
+                ...s,
+                [mallId]: {
+                  totalProducts: products.length,
+                  successCount: products.length,
+                  failureCount: 0,
+                  lastImportDate: new Date().toLocaleString(),
+                },
+              }));
+            } else {
+              // fallback to mock
+              const samples = generateMockProducts(mallId);
+              setImportedSamples((p) => ({ ...p, [mallId]: samples }));
+              setImportStats((s) => ({
+                ...s,
+                [mallId]: {
+                  totalProducts: samples.length,
+                  successCount: samples.length,
+                  failureCount: 0,
+                  lastImportDate: new Date().toLocaleString(),
+                },
+              }));
+            }
+          } else {
+            // non-cafe24: use local mock samples
+            const samples = generateMockProducts(mallId);
+            setImportedSamples((p) => ({ ...p, [mallId]: samples }));
+            setImportStats((s) => ({
+              ...s,
+              [mallId]: {
+                totalProducts: samples.length,
+                successCount: samples.length,
+                failureCount: 0,
+                lastImportDate: new Date().toLocaleString(),
+              },
+            }));
+          }
+          alert(`${mall.name} 상품 가져오기가 완료되었습니다.`);
+          setImportProgress((prev) => ({ ...prev, [mallId]: 0 }));
+        } catch (err: any) {
+          alert(`가져오기 중 오류가 발생했습니다: ${err.message || err}`);
+          setImportProgress((prev) => ({ ...prev, [mallId]: 0 }));
         }
-        return { ...prev, [mallId]: current + 10 };
-      });
+      }
     }, 200);
   };
+
+  // Generate lightweight mock products that roughly map to Cafe24 product properties
+  function generateMockProducts(mallId: string): ExternalProduct[] {
+    const count = 8;
+    const now = new Date().toISOString();
+    const items: ExternalProduct[] = [];
+    for (let i = 1; i <= count; i++) {
+      items.push({
+        product_no: `${mallId.toUpperCase()}-${1000 + i}`,
+        name: `${shoppingMalls.find((m) => m.id === mallId)?.name} 샘플 상품 ${i}`,
+        price: Math.round(10000 + Math.random() * 90000),
+        inventory: Math.floor(Math.random() * 200),
+        selling: Math.random() > 0.1,
+        last_update: now,
+        options: { color: i % 2 === 0 ? 'Black' : 'White' },
+      });
+    }
+    return items;
+  }
 
   const handleSync = (mallId: string) => {
     const mall = shoppingMalls.find((m) => m.id === mallId);
@@ -183,6 +336,114 @@ const ExternalProductImportPage: React.FC = () => {
           다양한 쇼핑몰 플랫폼에서 상품을 가져오고 통합 관리합니다.
         </p>
       </div>
+
+      {/* 필터 패널 */}
+      <Card padding="md" className="mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <label className="text-sm text-gray-700">판매처 선택</label>
+            <select
+              value={(filters && filters.seller) || 'all'}
+              onChange={(e) => setFilters((f) => ({ ...f, seller: e.target.value }))}
+              className="w-full border rounded px-3 py-2"
+            >
+              <option value="all">전체</option>
+              {shoppingMalls.map((m) => (
+                <option key={m.id} value={m.id}>{m.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm text-gray-700">기간 선택</label>
+            <div className="flex gap-2">
+              <input
+                type="date"
+                value={filters.dateFrom}
+                onChange={(e) => setFilters((f) => ({ ...f, dateFrom: e.target.value }))}
+                className="border rounded px-2 py-2 w-full"
+              />
+              <input
+                type="date"
+                value={filters.dateTo}
+                onChange={(e) => setFilters((f) => ({ ...f, dateTo: e.target.value }))}
+                className="border rounded px-2 py-2 w-full"
+              />
+            </div>
+            <div className="flex gap-2 mt-2 flex-wrap">
+              {['오늘','7일','10일','15일','1개월','3개월','6개월'].map((p) => (
+                <Button
+                  key={p}
+                  onClick={() => applyPreset(p)}
+                  className="text-sm px-3 py-1 border rounded bg-gray-50 hover:bg-gray-100"
+                >
+                  {p}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm text-gray-700">등록일자</label>
+            <div className="text-sm text-gray-600">범위 선택 및 전체 포함</div>
+            <div className="flex items-center gap-2 mt-2">
+              <Button onClick={() => setFilters((f) => ({ ...f, dateFrom: '', dateTo: '' }))} className="px-3 py-2">전체</Button>
+              <div className="ml-auto flex gap-2">
+                <Button onClick={applyFilters} className="px-4 py-2 bg-blue-600 text-white">필터 적용</Button>
+                <Button onClick={resetFilters} className="px-4 py-2 border">초기화</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div>
+            <label className="text-sm text-gray-700">원가/판매가 수정여부</label>
+            <div className="flex gap-2 mt-2">
+              <Button onClick={() => setFilters((f) => ({ ...f, costModified: 'modified' }))} className="px-3 py-1 border rounded">수정함</Button>
+              <Button onClick={() => setFilters((f) => ({ ...f, costModified: 'not-modified' }))} className="px-3 py-1 border rounded">수정안함</Button>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-sm text-gray-700">진열여부</label>
+            <div className="flex gap-2 mt-2">
+              <Button onClick={() => setFilters((f) => ({ ...f, display: 'displayed' }))} className="px-3 py-1 border rounded">진열함</Button>
+              <Button onClick={() => setFilters((f) => ({ ...f, display: 'hidden' }))} className="px-3 py-1 border rounded">진열안함</Button>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-sm text-gray-700">판매여부</label>
+            <div className="flex gap-2 mt-2">
+              <Button onClick={() => setFilters((f) => ({ ...f, selling: 'selling' }))} className="px-3 py-1 border rounded">판매함</Button>
+              <Button onClick={() => setFilters((f) => ({ ...f, selling: 'not-selling' }))} className="px-3 py-1 border rounded">판매안함</Button>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div>
+            <label className="text-sm text-gray-700">상품명</label>
+            <input value={filters.productName} onChange={(e) => setFilters((f) => ({ ...f, productName: e.target.value }))} className="w-full border rounded px-3 py-2" placeholder="상품명으로 검색" />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input id="auto-cat" type="checkbox" checked={filters.autoRegisterCategory} onChange={(e) => setFilters((f) => ({ ...f, autoRegisterCategory: e.target.checked }))} />
+            <label htmlFor="auto-cat" className="text-sm text-gray-700">상품분류 등록여부 (체크 시 자동 등록)</label>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input id="option-apply" type="checkbox" checked={filters.optionNameApply} onChange={(e) => setFilters((f) => ({ ...f, optionNameApply: e.target.checked }))} />
+            <label htmlFor="option-apply" className="text-sm text-gray-700">옵션명 적용여부 (체크 시 "색상,사이즈=빨강,M" 형태 저장)</label>
+          </div>
+        </div>
+
+        <div className="mt-4 text-sm text-gray-600 border-t pt-3">
+          <strong>카페24상품 자동상품등록 사용방법</strong>
+          <div className="mt-2">※ 상품명과 옵션명이 중복될 경우 등록되지 않습니다. 상품코드가 중복될 경우 등록되지 않습니다. 상품명은 존재하나 옵션이 없을 경우, 해당 상품에 옵션만 추가 등록됩니다.</div>
+        </div>
+      </Card>
 
       {/* 전체 현황 대시보드 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -346,6 +607,39 @@ const ExternalProductImportPage: React.FC = () => {
                             className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                           />
                         </div>
+
+                      {importedSamples[mall.id] && importedSamples[mall.id].length > 0 && (
+                        <div className="mt-4 bg-white rounded-lg border p-4">
+                          <h5 className="font-medium text-gray-900 mb-2">가져온 상품 미리보기</h5>
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-sm text-left">
+                              <thead>
+                                <tr>
+                                  <th className="px-2 py-1">상품번호</th>
+                                  <th className="px-2 py-1">상품명</th>
+                                  <th className="px-2 py-1">가격</th>
+                                  <th className="px-2 py-1">재고</th>
+                                  <th className="px-2 py-1">상태</th>
+                                  <th className="px-2 py-1">마지막 업데이트</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {importedSamples[mall.id].slice(0, 5).map((p, idx) => (
+                                  <tr key={idx} className="border-t">
+                                    <td className="px-2 py-2 text-gray-700">{p.product_no}</td>
+                                    <td className="px-2 py-2 text-gray-800">{p.name}</td>
+                                    <td className="px-2 py-2 text-gray-700">{p.price.toLocaleString()}원</td>
+                                    <td className="px-2 py-2 text-gray-700">{p.inventory}</td>
+                                    <td className="px-2 py-2 text-gray-700">{p.selling ? '판매중' : '판매중단'}</td>
+                                    <td className="px-2 py-2 text-gray-600">{p.last_update}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+
                       </div>
 
                       <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
@@ -457,7 +751,6 @@ const ExternalProductImportPage: React.FC = () => {
                       </div>
                     ) : (
                       <div className="bg-white rounded-lg border p-6 text-center">
-                        <div className="text-gray-400 text-6xl mb-4">📊</div>
                         <p className="text-gray-600 mb-4">
                           {mall.isConnected
                             ? "통계를 불러오는 중..."

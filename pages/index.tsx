@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from './api/auth/[...nextauth]'
+import LoginPage from './settings/integration-admin/login'
 import Header from '../src/components/layout/Header';
 import Sidebar from '../src/components/layout/Sidebar';
 
@@ -34,7 +37,10 @@ import ProductClassificationsPage from '../src/pages/settings/ProductClassificat
 import ProductSeasonsPage from '../src/pages/settings/ProductSeasonsPage';
 import ProductYearsPage from '../src/pages/settings/ProductYearsPage';
 
-export default function Home() {
+export default function Home(props: any) {
+  // If no session, render the login UI inline at '/'
+  const sessionExists = !!props.session
+  if (!sessionExists) return <LoginPage />
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [selectedProductId, setSelectedProductId] = useState<string>('');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -139,4 +145,10 @@ export default function Home() {
       </div>
     </div>
   );
+}
+// client-side session check replaces server-side redirect for smoother dev flow
+
+export async function getServerSideProps(ctx: any) {
+  const session = await getServerSession(ctx.req, ctx.res, authOptions as any)
+  return { props: { session: !!session } }
 }

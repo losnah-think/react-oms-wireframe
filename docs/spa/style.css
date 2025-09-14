@@ -1,0 +1,4 @@
+/* reuse existing style with small adjustments for SPA container */
+@import url('../web/style.css');
+
+#app{padding:32px}

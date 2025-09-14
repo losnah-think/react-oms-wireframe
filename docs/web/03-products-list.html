@@ -1,0 +1,33 @@
+<link rel="stylesheet" href="style.css">
+<div class="content">
+  <div class="card-visual"></div>
+  <h2>제품 — 목록</h2>
+  <div class="meta">목적: 연결된 마켓(몰)에 매핑된 카탈로그 항목을 찾아보고, 필터링하고 관리합니다.</div>
+
+  <div class="section"><strong>주 사용자</strong><div class="list">상품 담당자(머천다이저), 상품 관리자, 운영팀</div></div>
+
+  <div class="section"><strong>주요 동작</strong>
+    <ul class="list">
+      <li>필터(상품코드, 이름, 브랜드, 분류, 재고 수준)로 페이징된 제품 목록 조회</li>
+      <li>일괄 편집: 가격 변경, 분류 변경, 활성/비활성 전환</li>
+      <li>가져오기/내보내기(CSV), 제품 상세 또는 몰별 매핑으로 이동</li>
+    </ul>
+  </div>
+
+  <div class="section"><strong>표시되는 데이터</strong><div class="list">SKU, 제목, 브랜드, 분류, 가격, 재고, 상태</div></div>
+
+  <div class="section"><strong>업무 규칙 / 정책 (쉬운 말)</strong>
+    <ul class="list">
+      <li>가격 변경은 이 시스템에서 즉시 적용됩니다; 마켓으로 반영하려면 별도 동기화(푸시)가 필요합니다.</li>
+      <li>핵심 상품 정보 변경은 `products:edit` 권한이 필요합니다.</li>
+    </ul>
+  </div>
+
+  <div class="section"><strong>권한 (임시)</strong><div class="list">조회: `products:view` · 수정: `products:edit` · 가져오기: `products:import`</div></div>
+
+  <div class="section"><strong>성공 지표 / KPI</strong><div class="kpi"><div class="item">일괄 작업 완료 목표: 1,000개 기준 90초 미만</div><div class="item">가져오기 성공률: 98% 이상</div></div></div>
+
+  <div class="section"><strong>오류 조건 및 UX</strong><div class="list">CSV 가져오기 실패 시 검증 문제 인라인 표시 및 샘플 제공</div></div>
+
+  <div class="section"><strong>비고 / 연동</strong><div class="list">`ProductService`와 몰 매핑 컴포넌트 연동</div></div>
+</div>

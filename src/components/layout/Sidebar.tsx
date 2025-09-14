@@ -67,6 +67,8 @@ const menuItems: MenuItem[] = [
   }
 ];
 
+import { useSession } from 'next-auth/react'
+
 const Sidebar: React.FC<SidebarProps> = ({ 
   currentPage, 
   onPageChange, 
@@ -76,6 +78,15 @@ const Sidebar: React.FC<SidebarProps> = ({
   , forceExpandAll = false
 }) => {
   const [expandedItems, setExpandedItems] = React.useState<string[]>(() => initialExpanded ?? ['products']);
+  const sessObj: any = (useSession && (useSession() as any)) || {}
+  const session = sessObj.data
+
+  // filter menu items by role: clients see only products
+  const role = (session as any)?.user?.role || 'operator'
+  const visibleMenuItems = React.useMemo(() => {
+    if (role === 'client') return menuItems.filter(m => m.id === 'products')
+    return menuItems
+  }, [role])
 
   // 아이콘 매핑 함수 — 우선 design-system의 Icon 사용, 없으면 기존 SVG 파일로 폴백
   const getIconComponent = (iconName: string, size: number = 16, isActive: boolean = false) => {
@@ -227,7 +238,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       <div className="flex-1 p-4">
         <nav className="space-y-1" role="navigation" aria-label="Main navigation">
-          {menuItems.map(item => renderMenuItem(item))}
+          {visibleMenuItems.map(item => renderMenuItem(item))}
         </nav>
       </div>
     </aside>

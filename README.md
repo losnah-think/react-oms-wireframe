@@ -1,4 +1,4 @@
-# React OMS Wireframe
+# FULGO Wireframe
 
 React + TypeScript + Tailwind CSS 기반의 객체지향 Order Management System (주문관리시스템) 와이어프레임입니다.
 
