@@ -148,3 +148,16 @@ npm run deploy
 ## 📝 라이선스
 
 MIT License
+
+## ⚠️ Runtime DB configuration (production)
+
+This project uses a local SQLite file by default for development. In some hosting environments (serverless platforms like Vercel), writing files to the project filesystem may fail or be ephemeral. To control where SQLite is created you can set the environment variable `SQLITE_DB_PATH`.
+
+- Priority for DB path selection (in order):
+  1. `process.env.SQLITE_DB_PATH` (if set)
+  2. `./data/app.db`
+  3. `/tmp/app.db` (writable on many hosts)
+
+- If all file paths fail the app will fall back to an in-memory SQLite database (non-persistent) so pages don't return HTTP 500 on startup.
+
+Recommended long-term approach: use an external, managed database (e.g. Postgres via Supabase, RDS, or a hosted Postgres) and migrate the data access layer. This avoids file-writability issues and is better for multi-instance production deployment.

@@ -2,24 +2,37 @@ import Database from 'better-sqlite3'
 import path from 'path'
 import fs from 'fs'
 
-const DB_DIR = path.resolve(process.cwd(), 'data')
-if (!fs.existsSync(DB_DIR)) {
-  try {
-    fs.mkdirSync(DB_DIR, { recursive: true })
-  } catch (e) {
-    // ignore - fallback to memory DB below
-  }
-}
-const DB_PATH = path.join(DB_DIR, 'app.db')
+const envPath = process.env.SQLITE_DB_PATH
+const dataPath = path.join(process.cwd(), 'data', 'app.db')
+const tmpPath = path.join('/tmp', 'app.db')
+
+const candidates = [envPath, dataPath, tmpPath].filter((c): c is string => Boolean(c))
 
 let db: any
-try {
-  db = new Database(DB_PATH)
-} catch (e) {
+let usedPath: string | null = null
+let lastError: any = null
+
+for (const candidate of candidates) {
+  try {
+    const dir = path.dirname(candidate as string)
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true })
+    }
+    db = new Database(candidate as string)
+    usedPath = candidate as string
+    break
+  } catch (e) {
+    lastError = e
+    // try next candidate
+    console.warn(`warning: failed to open sqlite at ${candidate}: ${String(e)}`)
+  }
+}
+
+if (!db) {
   // In environments where filesystem is read-only (e.g., some serverless hosts),
   // fall back to an in-memory DB so the app doesn't crash with a 500.
   // This means data won't persist across restarts, but it keeps the UI functional.
-  console.warn('warning: falling back to in-memory SQLite DB due to filesystem error', String(e))
+  console.warn('warning: falling back to in-memory SQLite DB; all file candidates failed', String(lastError))
   db = new Database(':memory:')
 }
 
