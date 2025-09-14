@@ -1,5 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { Pool } from 'pg'
+// We avoid static import of 'pg' to prevent Next.js build from failing
+// when 'pg' cannot be resolved in the build environment. We'll require it
+// at runtime inside `getPool()` using `eval('require')` so bundlers won't
+// try to statically analyze the dependency.
+type Pool = any
 
 type Data = {
 	ok: boolean
@@ -21,19 +25,31 @@ if (!connectionString) {
 // Reuse pool across lambda invocations to avoid exhausting connections
 declare global {
 	// eslint-disable-next-line @typescript-eslint/no-namespace
-	var __pg_pool__: Pool | undefined
+	var __pg_pool__: any | undefined
 }
 
 function getPool() {
 	if (!connectionString) throw new Error('DATABASE_URL not set')
 	if (!global.__pg_pool__) {
-		global.__pg_pool__ = new Pool({
+		let pg: any
+		try {
+			// use eval to avoid static analysis by bundlers
+			// eslint-disable-next-line no-eval
+			pg = eval("require")('pg')
+		} catch (e) {
+			throw new Error("'pg' module not available at runtime: " + String(e))
+		}
+
+		const PoolCtor = pg.Pool || pg.default?.Pool
+		if (!PoolCtor) throw new Error("'pg' Pool constructor not found")
+
+		global.__pg_pool__ = new PoolCtor({
 			connectionString,
 			ssl: process.env.PGSSLMODE === 'disable' ? false : { rejectUnauthorized: false } as any,
 			max: 10,
 		})
 	}
-	return global.__pg_pool__!
+	return global.__pg_pool__
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
