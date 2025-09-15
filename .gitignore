@@ -31,6 +31,7 @@ pids
 
 # Local DB / runtime data
 data/*.lock
+data/*.db
 
 # Local logs and temp files
 *.log
