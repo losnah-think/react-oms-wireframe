@@ -104,7 +104,16 @@ export const authOptions = {
               } catch (e2) {
                 // ignore and fallthrough to env-admin fallback
               }
-              if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
+              const envAdminEmail = process.env.ADMIN_EMAIL?.trim()
+              const envAdminPassword = process.env.ADMIN_PASSWORD?.trim()
+              if (
+                envAdminEmail &&
+                envAdminPassword &&
+                typeof email === 'string' &&
+                envAdminEmail.toLowerCase() === email.toLowerCase() &&
+                password === envAdminPassword
+              ) {
+                console.log('[nextauth] authorize: environment admin login used for', email)
                 return { id: 'admin', name: 'Admin', email, role: 'admin' }
               }
               return null
