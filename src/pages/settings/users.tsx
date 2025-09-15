@@ -48,4 +48,4 @@ export default function UsersPage({ users: initialUsers }: any) {
 
 // Note: server-side data fetching and auth should happen in the page wrapper
 // under `pages/` (which runs on the server). This file is a client-side
-// React component and must not import server-only modules like `better-sqlite3`.
+// React component and must not import server-only modules.

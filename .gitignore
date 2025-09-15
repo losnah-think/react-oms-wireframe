@@ -30,8 +30,6 @@ pids
 *.pid.lock
 
 # Local DB / runtime data
-data/app.db
-data/app.db-*
 data/*.lock
 
 # Local logs and temp files
