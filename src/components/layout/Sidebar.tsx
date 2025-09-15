@@ -58,6 +58,7 @@ const menuItems: MenuItem[] = [
     icon: 'settings',
     children: [
       { id: 'settings-integrations', label: '외부 연동 관리', icon: 'external-link' },
+  { id: 'settings-barcodes', label: '바코드 관리', icon: 'barcode' },
       { id: 'settings-product-classifications', label: '상품 분류 관리', icon: 'copy' },
       { id: 'settings-brands', label: '브랜드 관리', icon: 'image' },
       { id: 'settings-product-years', label: '상품 연도 관리', icon: 'clock' },
