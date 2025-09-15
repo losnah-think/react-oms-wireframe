@@ -17,17 +17,25 @@ const BarcodePreview: React.FC<Props> = ({ template }) => {
         const bwip = await import('bwip-js')
         if (cancelled) return
         if (!canvasRef.current) return
-        // @ts-ignore bwip to canvas
-        bwip.toCanvas(canvasRef.current, {
-          bcid: 'code128',
+
+        const opts: any = {
+          bcid: template.barcodeType || 'code128',
           text: template.value || '',
-          scale: 3,
-          height: 10,
-          includetext: true,
+          scale: template.scale ?? 3,
+          height: template.height ?? 10,
+          includetext: template.includetext ?? true,
           textxalign: 'center'
-        })
+        }
+
+        // type-specific fixes
+        if ((opts.bcid === 'ean13' || opts.bcid === 'upca') && opts.text) {
+          // ensure numeric-only for those types
+          opts.text = (opts.text || '').replace(/[^0-9]/g, '')
+        }
+
+        // @ts-ignore bwip to canvas
+        bwip.toCanvas(canvasRef.current, opts)
       } catch (err) {
-        // ignore, bwip may not be available in environment
         console.error('bwip-js render error', err)
       }
     })()

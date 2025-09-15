@@ -9,12 +9,12 @@ export default function AddShopPage() {
   const [name, setName] = useState('')
   const [platform, setPlatform] = useState('cafe24')
   const [clientId, setClientId] = useState('')
-  const [accessToken, setAccessToken] = useState('')
+  const [clientSecret, setClientSecret] = useState('')
 
   const handleSubmit = async () => {
     if (!shopId) return alert('shopId required')
     try {
-      const resp = await fetch(`/api/integrations/shops/${shopId}/credentials`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ platform, name, clientId, accessToken }) })
+      const resp = await fetch(`/api/integrations/shops/${shopId}/credentials`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ platform, clientId, clientSecret }) })
       const body = await resp.json()
       if (body?.ok) {
         alert('샾 등록 성공')
@@ -31,16 +31,9 @@ export default function AddShopPage() {
       <Card>
         <div style={{ display: 'grid', gap: 8 }}>
           <input placeholder="Shop ID" value={shopId} onChange={e => setShopId(e.target.value)} />
-          <input placeholder="Name" value={name} onChange={e => setName(e.target.value)} />
-          <select value={platform} onChange={e => setPlatform(e.target.value)}>
-            <option value="cafe24">Cafe24</option>
-            <option value="makeshop">MakeShop</option>
-            <option value="smartstore">SmartStore</option>
-            <option value="wisa">Wisa</option>
-            <option value="godomall">GodoMall</option>
-          </select>
-          <input placeholder="Client ID (optional)" value={clientId} onChange={e => setClientId(e.target.value)} />
-          <input placeholder="Access Token (optional)" value={accessToken} onChange={e => setAccessToken(e.target.value)} />
+          <input placeholder="Shop ID" value={shopId} onChange={e => setShopId(e.target.value)} />
+          <input placeholder="Client ID" value={clientId} onChange={e => setClientId(e.target.value)} />
+          <input placeholder="Client Secret" value={clientSecret} onChange={e => setClientSecret(e.target.value)} />
           <div>
             <button onClick={handleSubmit} className="px-3 py-1 bg-green-600 text-white rounded">등록</button>
             <a href="/settings/integration" className="ml-2 px-3 py-1 bg-gray-200 rounded">취소</a>
