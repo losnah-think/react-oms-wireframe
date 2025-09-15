@@ -8,7 +8,8 @@
   },
   "dependencies": {
     "@prisma/client": "^6.16.1",
-  "bcryptjs": "^2.4.3",
+    "bcryptjs": "^2.4.3",
+    "bwip-js": "^4.7.0",
     "next": "^15.5.3",
     "next-auth": "^4.24.11",
     "node-fetch": "^3.3.2",
