@@ -153,10 +153,10 @@ const Sidebar: React.FC<SidebarProps> = ({
 
     if (isCollapsed && level === 0) {
       return (
-        <div key={item.id} className="mb-2">
+        <div key={item.id} className="mb-2 flex justify-center">
           <div
             className={`
-              flex items-center justify-center w-12 h-12 mx-2 rounded-lg cursor-pointer relative
+              flex items-center justify-center w-10 h-10 rounded-lg cursor-pointer relative
               ${active ? 'bg-primary-100 text-primary-700' : 'text-gray-700 hover:bg-gray-100'}
               touch-target
             `}
@@ -168,7 +168,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             )}
           </div>
         </div>
-      );
+      )
     }
 
     // special-case removed: use onPageChange for SPA navigation
@@ -189,13 +189,13 @@ const Sidebar: React.FC<SidebarProps> = ({
             cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-200
           `}
         >
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center">
             {item.icon && (
-              <div className={`${level === 0 ? 'w-4 h-4' : 'w-3 h-3'} flex items-center justify-center`}>
+              <div className={`flex items-center justify-center ${isCollapsed ? 'w-8 h-8 mx-auto' : (level === 0 ? 'w-4 h-4 mr-2' : 'w-3 h-3 mr-2')}`}>
                 {getIconComponent(item.icon, level === 0 ? 14 : 10, active)}
               </div>
             )}
-            <span>{item.label}</span>
+            {!isCollapsed && <span>{item.label}</span>}
           </div>
           {hasChildren && !isCollapsed && (
             <span className="ml-auto text-xs">
@@ -216,7 +216,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   // No direct URL mapping — navigation is handled via SPA state (onPageChange)
 
   return (
-    <aside aria-label="Main sidebar" className={`${isCollapsed ? 'w-16' : 'w-64'} bg-white border-r border-gray-200 h-screen overflow-y-auto transition-all duration-300 ease-in-out flex flex-col sidebar ${isCollapsed ? 'collapsed' : ''}`}>
+    <aside aria-label="Main sidebar" className={`${isCollapsed ? 'w-16 p-2' : 'w-64 p-4'} bg-white border-r border-gray-200 h-screen overflow-y-auto transition-all duration-300 ease-in-out flex flex-col sidebar ${isCollapsed ? 'collapsed' : ''}`}>
       {/* 접기/펼치기 버튼 */}
       {onToggleCollapse && (
         <div className="p-2 border-b border-gray-200">
