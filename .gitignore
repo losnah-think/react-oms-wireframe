@@ -60,3 +60,4 @@ docs/diagrams/*.svg
 docs/*.png
 
 /generated/prisma
+.env
