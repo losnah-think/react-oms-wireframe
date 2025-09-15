@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto'
-import { query } from './pgClient'
+import supabaseAdmin from './supabaseClient'
 
 export type Shop = {
   id: string
@@ -8,29 +8,32 @@ export type Shop = {
   credentials?: Record<string, any>
 }
 
-if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL must be set for Postgres-only mode')
-
 export async function listShops(): Promise<Shop[]> {
-  const r = await query('SELECT id, name, platform, credentials FROM shops')
-  return r.rows.map((row: any) => ({ ...row, credentials: row.credentials ?? undefined }))
+  const { data, error } = await supabaseAdmin.from('shops').select('id, name, platform, credentials')
+  if (error) throw error
+  return (data || []).map((row: any) => ({ ...row, credentials: row.credentials ?? undefined }))
 }
 
 export async function getShop(id: string): Promise<Shop | undefined> {
-  const r = await query('SELECT id, name, platform, credentials FROM shops WHERE id = $1', [id])
-  const row = r.rows[0]
-  if (!row) return undefined
-  return { ...row, credentials: row.credentials ?? undefined }
+  const { data, error } = await supabaseAdmin.from('shops').select('id, name, platform, credentials').eq('id', id).limit(1).maybeSingle()
+  if (error) throw error
+  if (!data) return undefined
+  return { ...data, credentials: data.credentials ?? undefined }
 }
 
 export async function setShopCredentials(id: string, creds: Record<string, any>) {
   const existing = (await getShop(id)) || { id, name: id, platform: 'unknown', credentials: {} }
   const merged = { ...(existing.credentials || {}), ...creds }
-  await query('INSERT INTO shops (id, name, platform, credentials) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, platform = EXCLUDED.platform, credentials = EXCLUDED.credentials', [existing.id, existing.name, existing.platform, JSON.stringify(merged)])
+  const payload = { id: existing.id, name: existing.name, platform: existing.platform, credentials: merged }
+  const { error } = await supabaseAdmin.from('shops').upsert(payload)
+  if (error) throw error
   return getShop(id)
 }
 
 export async function addShop(s: Omit<Shop, 'id'> & { id?: string }): Promise<Shop> {
   const id = s.id || randomUUID()
-  await query('INSERT INTO shops (id, name, platform, credentials) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING', [id, s.name, s.platform, JSON.stringify(s.credentials || {})])
+  const payload = { id, name: s.name, platform: s.platform, credentials: s.credentials || {} }
+  const { error } = await supabaseAdmin.from('shops').insert(payload).select()
+  if (error) throw error
   return getShop(id) as Promise<Shop>
 }

@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.16.1",
+  "@supabase/supabase-js": "^2.32.0",
     "bcryptjs": "^2.4.3",
     "bwip-js": "^4.7.0",
     "html2canvas": "^1.4.1",
