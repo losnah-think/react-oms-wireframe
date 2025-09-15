@@ -1,59 +1,74 @@
 "use client";
 import React, { useState } from 'react';
-import { Integration } from '../../data/mockIntegrations';
+import { mockShops } from '../../data/mockShops';
 
-export default function RegisterIntegrationForm({ onClose }: { onClose?: () => void }) {
+type Props = { onClose?: () => void };
+
+export default function RegisterIntegrationForm({ onClose }: Props) {
   const [platform, setPlatform] = useState('cafe24');
-  const [storeName, setStoreName] = useState('');
-  const [domain, setDomain] = useState('');
+  const [shopId, setShopId] = useState('');
+  const [clientId, setClientId] = useState('');
+  const [clientSecret, setClientSecret] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newIntegration: Integration = {
-      id: `int-${Date.now()}`,
-      platform,
-      storeName: storeName || `${platform} store`,
-      storeDomain: domain || undefined,
-      status: 'disconnected',
-      ordersCount: 0,
-      itemsCount: 0,
-    };
-    console.log('Registering (mock):', newIntegration);
-    alert('연결이 등록되었습니다. (mock)');
-    onClose?.();
+    const id = shopId?.trim();
+    if (!id) return alert('상점 ID를 입력해주세요');
+    if (!clientId.trim()) return alert('Client ID를 입력해주세요');
+
+    try {
+      const resp = await fetch(`/api/integrations/shops/${encodeURIComponent(id)}/credentials`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ platform, clientId: clientId.trim(), clientSecret: clientSecret.trim() }),
+      });
+      const body = await resp.json();
+      if (body?.ok) {
+        alert('샵이 등록되었습니다');
+        onClose?.();
+      } else alert('등록에 실패했습니다');
+    } catch (err) {
+      console.error(err);
+      alert('등록 중 오류가 발생했습니다');
+    }
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-lg">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium">연결 추가</h3>
+          <h3 className="text-lg font-medium">새 샵 등록</h3>
           <button onClick={() => onClose?.()} className="text-gray-500">닫기</button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm text-gray-700">플랫폼</label>
             <select value={platform} onChange={(e) => setPlatform(e.target.value)} className="mt-1 block w-full border px-3 py-2 rounded">
               <option value="cafe24">Cafe24</option>
-              <option value="godomall">GodoMall</option>
-              <option value="sabangnet">SabangNet</option>
+              <option value="makeshop">MakeShop</option>
               <option value="custom">Custom</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-sm text-gray-700">상점명</label>
-            <input value={storeName} onChange={(e) => setStoreName(e.target.value)} className="mt-1 block w-full border px-3 py-2 rounded" />
+            <label className="block text-sm text-gray-700">상점 ID</label>
+            <input value={shopId} onChange={(e) => setShopId(e.target.value)} className="mt-1 block w-full border px-3 py-2 rounded" placeholder="상점 ID 입력" />
           </div>
 
           <div>
-            <label className="block text-sm text-gray-700">도메인</label>
-            <input value={domain} onChange={(e) => setDomain(e.target.value)} className="mt-1 block w-full border px-3 py-2 rounded" />
+            <label className="block text-sm text-gray-700">Client ID</label>
+            <input value={clientId} onChange={(e) => setClientId(e.target.value)} className="mt-1 block w-full border px-3 py-2 rounded" />
           </div>
 
-          <div className="text-right">
+          <div>
+            <label className="block text-sm text-gray-700">Client Secret</label>
+            <input value={clientSecret} onChange={(e) => setClientSecret(e.target.value)} className="mt-1 block w-full border px-3 py-2 rounded" />
+          </div>
+
+          <div className="flex justify-end gap-2">
             <button type="submit" className="px-3 py-1 bg-primary-600 text-white rounded">등록</button>
+            <button type="button" className="px-3 py-1 bg-red-200 rounded" onClick={() => onClose?.()}>취소</button>
           </div>
         </form>
       </div>

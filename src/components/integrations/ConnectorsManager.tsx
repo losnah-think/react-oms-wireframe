@@ -8,6 +8,7 @@ export default function ConnectorsManager() {
   const [form, setForm] = useState({ shopId: '', clientId: '', clientSecret: '', redirectUri: '', accessToken: '' });
   const [adding, setAdding] = useState(false);
   const [addForm, setAddForm] = useState({ shopId: '', name: '', platform: 'cafe24', clientId: '', accessToken: '' });
+  const [revealSecret, setRevealSecret] = useState<{[k:string]: boolean}>({});
   const { data: session } = useSession()
   const role = (session as any)?.user?.role || 'operator'
 
@@ -134,6 +135,14 @@ export default function ConnectorsManager() {
             <input placeholder="Access Token (optional)" value={form.accessToken} onChange={e => setForm(f => ({ ...f, accessToken: e.target.value }))} />
           </div>
 
+          <div className="mt-2">
+            <label className="block text-sm text-gray-700">Client Secret</label>
+            <div className="flex gap-2 mt-1">
+              <input className="flex-1 border px-3 py-2 rounded" value={revealSecret[form.shopId || 'current'] ? form.clientSecret : (form.clientSecret ? '••••••••' : '')} onChange={e => setForm(f => ({ ...f, clientSecret: e.target.value }))} />
+              <button className="px-3 py-1 bg-gray-100 rounded" onClick={() => setRevealSecret(s => ({ ...s, [form.shopId || 'current']: !s[form.shopId || 'current'] }))}>{revealSecret[form.shopId || 'current'] ? '숨기기' : '보기'}</button>
+            </div>
+          </div>
+
           <div className="mt-3 flex gap-2">
             <button className="px-3 py-1 bg-green-600 text-white rounded" onClick={saveCreds}>저장 (수동 토큰)</button>
             <a
@@ -156,6 +165,15 @@ export default function ConnectorsManager() {
                 }
               }}
             >OAuth 시작</a>
+            <button className="px-3 py-1 bg-gray-200 rounded" onClick={async () => {
+              try {
+                const apiBase = form.redirectUri || form.accessToken || ''
+                const resp = await fetch('/api/integrations/test-connection', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ apiBaseUrl: apiBase, accessToken: form.accessToken }) })
+                const data = await resp.json()
+                if (data?.ok) alert('테스트 연결 성공')
+                else alert('테스트 연결 실패')
+              } catch (err) { console.error(err); alert('테스트 실패') }
+            }}>테스트 연결</button>
             <button className="px-3 py-1 bg-red-200 rounded" onClick={() => setEditing(null)}>취소</button>
           </div>
 

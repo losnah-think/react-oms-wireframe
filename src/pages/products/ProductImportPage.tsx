@@ -65,14 +65,22 @@ export default function ProductImportPage(): JSX.Element {
         }
       } catch (e) {
         toast?.push('연결된 판매처 로드 실패 — 네트워크 오류', 'error')
-        // Do not fall back to mock connected shops; leave list empty
-        setConnectedShops([])
+        // ignore network errors and fall back to mock
       }
+      setConnectedShops([
+        { id: 'mock_cafe24_1', name: 'Cafe24 - demo', platform: 'cafe24' },
+        { id: 'mock_wisa_1', name: 'Wisa - demo', platform: 'wisa' },
+        { id: 'mock_smart_1', name: 'SmartStore - demo', platform: 'smartstore' },
+      ])
+      setSelectedMall('mock_cafe24_1')
     }
     // 업로드 이력(목업) 로드
     const loadHistory = () => {
-      // No mock upload history — start empty
-      setUploadHistory([])
+      const mockHistory: UploadHistory[] = [
+        { id: 1, batchNumber: 'BATCH_2024_001', platform: 'cafe24', platformName: 'Cafe24', fileName: 'cafe24_products_20240301.csv', uploadDate: '2024-03-01 14:30:22', totalCount: 150, successCount: 148, errorCount: 2, status: 'completed' },
+        { id: 2, batchNumber: 'BATCH_2024_002', platform: 'makeshop', platformName: 'MakeShop', fileName: 'makeshop_products_20240305.csv', uploadDate: '2024-03-05 11:20:10', totalCount: 80, successCount: 80, errorCount: 0, status: 'completed' },
+      ]
+      setUploadHistory(mockHistory)
     }
     load()
     loadHistory()

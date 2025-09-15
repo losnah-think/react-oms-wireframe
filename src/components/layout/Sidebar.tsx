@@ -38,7 +38,7 @@ const menuItems: MenuItem[] = [
     icon: 'archive',
     children: [
       { id: 'orders-list', label: '주문 목록', icon: 'list' },
-      { id: 'orders-settings', label: '주문 설정', icon: 'settings' }
+      // Order settings moved under '환경 설정'
     ]
   },
   {
@@ -59,6 +59,7 @@ const menuItems: MenuItem[] = [
     children: [
       { id: 'settings-integrations', label: '외부 연동 관리', icon: 'external-link' },
   { id: 'settings-barcodes', label: '바코드 관리', icon: 'barcode' },
+      { id: 'orders-settings', label: '주문 설정', icon: 'settings' },
       { id: 'settings-product-classifications', label: '상품 분류 관리', icon: 'copy' },
       { id: 'settings-brands', label: '브랜드 관리', icon: 'image' },
       { id: 'settings-product-years', label: '상품 연도 관리', icon: 'clock' },
