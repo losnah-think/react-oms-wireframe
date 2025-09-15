@@ -41,7 +41,9 @@ export default function Home(props: any) {
   // If no session, render the login UI inline at '/'
   const sessionExists = !!props.session
   if (!sessionExists) return <LoginPage />
-  const [currentPage, setCurrentPage] = useState('dashboard');
+
+  const initialPage = props.initialPage ?? 'dashboard'
+  const [currentPage, setCurrentPage] = useState(initialPage);
   const [selectedProductId, setSelectedProductId] = useState<string>('');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -123,6 +125,9 @@ export default function Home(props: any) {
         return <ProductYearsPage />;
       case 'settings-product-seasons':
         return <ProductSeasonsPage />;
+      case 'settings-barcodes':
+        const BarcodeManagement = require('../src/pages/settings/bc').default;
+        return <BarcodeManagement onNavigate={handleNavigate} />;
       
       default:
         return <Dashboard />;
@@ -149,6 +154,12 @@ export default function Home(props: any) {
 // client-side session check replaces server-side redirect for smoother dev flow
 
 export async function getServerSideProps(ctx: any) {
+  // In dev we allow using a query param to preview pages without login
+  const page = ctx.query?.page ?? null
+  if (process.env.NEXT_PUBLIC_DEV_NO_AUTH === '1' || process.env.NODE_ENV !== 'production') {
+    return { props: { session: true, initialPage: page } }
+  }
+
   const session = await getServerSession(ctx.req, ctx.res, authOptions as any)
-  return { props: { session: !!session } }
+  return { props: { session: !!session, initialPage: page } }
 }
