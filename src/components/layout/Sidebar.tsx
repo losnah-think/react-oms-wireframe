@@ -101,6 +101,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       archive: 'package',
       home: 'home',
       settings: 'settings',
+      barcode: 'barcode',
       users: 'user-plus',
   'user-plus': 'user',
       search: 'search',
