@@ -7,7 +7,18 @@ export default function UrlBanner(){
   const [url, setUrl] = useState<string>('')
 
   useEffect(() => {
-    const update = () => setUrl(window.location.href)
+    const update = () => {
+      try {
+        const raw = router.asPath || window.location.pathname
+        // remove query and hash
+        const clean = raw.split('#')[0].split('?')[0]
+        // remove trailing slash unless root
+        const path = clean !== '/' ? clean.replace(/\/$/, '') : '/'
+        setUrl(window.location.origin + path)
+      } catch (e) {
+        setUrl(window.location.href)
+      }
+    }
     // initial
     update()
     // update on client-side navigation
