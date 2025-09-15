@@ -952,6 +952,22 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
             </svg>
             필터 초기화
           </Button>
+          <div className="mt-4">
+            <Button
+              variant="outline"
+              size="big"
+              onClick={() => {
+                if (onNavigate) {
+                  onNavigate('products-add')
+                } else if (typeof window !== 'undefined') {
+                  window.location.href = '/products/add'
+                }
+              }}
+              className="px-8 py-3"
+            >
+              신규 상품 등록
+            </Button>
+          </div>
         </Card>
       )}
 
@@ -1028,6 +1044,21 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
               </svg>
             </Button>
           </Stack>
+          <div className="ml-4">
+            <Button
+              variant="primary"
+              size="small"
+              onClick={() => {
+                if (onNavigate) {
+                  onNavigate('products-add')
+                } else if (typeof window !== 'undefined') {
+                  window.location.href = '/products/add'
+                }
+              }}
+            >
+              신규 상품 등록
+            </Button>
+          </div>
         </div>
       )}
     </Container>
