@@ -17,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       clientSecret: process.env.CAFE24_CLIENT_SECRET || 'mock_secret',
       redirectUri: process.env.CAFE24_REDIRECT_URI || 'https://example.com/callback',
     } as any)
-    setShopCredentials(shopId, { accessToken: token.accessToken, refreshToken: token.refreshToken })
+  await setShopCredentials(shopId, { accessToken: token.accessToken, refreshToken: token.refreshToken })
     return res.status(200).json({ ok: true })
   } catch (e) {
     console.error(e)

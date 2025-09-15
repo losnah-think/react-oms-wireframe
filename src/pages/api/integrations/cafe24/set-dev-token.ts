@@ -14,13 +14,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!shopId) return res.status(400).json({ error: 'shopId required' })
   if (!accessToken && !refreshToken) return res.status(400).json({ error: 'accessToken or refreshToken required' })
 
-  const shop = getShop(shopId)
+  const shop = await getShop(shopId)
   if (!shop) return res.status(404).json({ error: 'shop not found' })
 
   const creds: any = {}
   if (accessToken) creds.accessToken = accessToken
   if (refreshToken) creds.refreshToken = refreshToken
 
-  const updated = setShopCredentials(shopId, creds)
+  const updated = await setShopCredentials(shopId, creds)
   return res.status(200).json({ ok: true, shop: updated })
 }

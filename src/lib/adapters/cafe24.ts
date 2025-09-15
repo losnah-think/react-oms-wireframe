@@ -48,7 +48,8 @@ export async function fetchCafe24Products(accessToken: string, shopId: string) :
     attempt += 1
     try {
       logIntegration(shopId, 'cafe24', 'info', `attempt ${attempt}: requesting products`, { attempt })
-      let res = await doRequest(attempt === 1 ? accessToken : (getShop(shopId)?.credentials?.accessToken || accessToken))
+      const tokenToUse = attempt === 1 ? accessToken : ((await getShop(shopId))?.credentials?.accessToken || accessToken)
+      let res = await doRequest(tokenToUse)
 
       if (res.status === 401) {
         // try server-side refresh
@@ -95,7 +96,7 @@ export async function fetchCafe24Products(accessToken: string, shopId: string) :
 // Registry-compatible wrapper: (shopId, params) => products[]
 export async function fetchProducts(shopId: string, params?: any) {
   // Try to read shop credentials from registry
-  const shop = getShop(shopId)
+  const shop = await getShop(shopId)
   const accessToken = shop?.credentials?.accessToken || process.env.CAFE24_ACCESS_TOKEN || ''
   // If no token available, throw or return empty in production; here we simulate.
   if (!accessToken) {

@@ -16,7 +16,7 @@ export const authOptions = {
         try {
           const { getUserByEmail } = await import('src/lib/users')
           const bcrypt = await import('bcryptjs')
-          const u = getUserByEmail(email)
+          const u = await getUserByEmail(email)
           if (!u) return null
           const hash = (u as any).password_hash
           if (!hash) return null
@@ -37,7 +37,7 @@ export const authOptions = {
       if (user && (user as any).email) {
         try {
           const { getUserByEmail } = await import('src/lib/users')
-          const u = getUserByEmail((user as any).email)
+          const u = await getUserByEmail((user as any).email)
           token.role = u?.role || 'operator'
         } catch (e) {
           token.role = 'operator'

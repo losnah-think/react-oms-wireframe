@@ -8,7 +8,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!shopId) return res.status(400).json({ error: 'shopId required' })
   const check = await requireRole(req as any, res as any, ['admin', 'operator'])
   if (!check.ok) return res.status(check.status).json(check.body)
-  const shop = getShop(shopId)
+  const shop = await getShop(shopId)
   const refreshToken = shop?.credentials?.refreshToken
   const clientId = shop?.credentials?.clientId || process.env.CAFE24_CLIENT_ID
   const clientSecret = shop?.credentials?.clientSecret || process.env.CAFE24_CLIENT_SECRET
@@ -31,7 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       throw new Error(`refresh failed: ${resp.status} ${text}`)
     }
     const data = await resp.json()
-    setShopCredentials(shopId, { accessToken: data.access_token, refreshToken: data.refresh_token })
+  await setShopCredentials(shopId, { accessToken: data.access_token, refreshToken: data.refresh_token })
     return res.status(200).json({ ok: true })
   } catch (e) {
     console.error(e)

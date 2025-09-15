@@ -8,14 +8,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!check.ok) return res.status(check.status).json(check.body)
 
   if (req.method === 'GET') {
-    return res.status(200).json(listUsers())
+    const users = await listUsers()
+    return res.status(200).json(users)
   }
   if (req.method === 'POST') {
     const { email, name, role, password } = req.body || {}
     if (!email || !role) return res.status(400).json({ error: 'email and role required' })
     const salt = bcrypt.genSaltSync(10)
     const hash = password ? bcrypt.hashSync(password, salt) : undefined
-    const u = addUser({ id: `u-${Date.now()}`, email, name, role, password_hash: hash })
+    const u = await addUser({ id: `u-${Date.now()}`, email, name, role, password_hash: hash })
     return res.status(201).json(u)
   }
   return res.status(405).end()

@@ -1,6 +1,4 @@
-// Persist demo shops and a dev admin into Supabase via REST
-// Run with: SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... node scripts/persist-mocks-to-db.js
-
+#!/usr/bin/env node
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
 
@@ -18,7 +16,7 @@ async function upsert(table, rows) {
         apikey: SUPABASE_KEY,
         Authorization: `Bearer ${SUPABASE_KEY}`,
         'Content-Type': 'application/json',
-        Prefer: 'return=representation, resolution=merge-duplicates',
+        Prefer: 'return=representation',
       },
       body: JSON.stringify(row),
     })
@@ -26,28 +24,19 @@ async function upsert(table, rows) {
       const text = await r.text()
       throw new Error(`Failed to insert into ${table}: ${r.status} ${text}`)
     }
-    let text = await r.text()
-    let body = null
-    try {
-      body = text ? JSON.parse(text) : null
-    } catch (err) {
-      // non-JSON response — not fatal
-      body = text
-    }
-    console.log(`Upserted into ${table}:`, Array.isArray(body) ? body[0] : body)
+    const body = await r.json()
+    console.log(`Inserted into ${table}:`, body[0])
   }
 }
 
 ;(async () => {
   try {
     await upsert('users', [
-      { id: 'user_dev_admin', email: 'ui-admin@local', name: 'Dev Admin', role: 'admin', password_hash: '$2a$10$abcdefghijklmnopqrstuv' }
+      { id: 'dev-admin', email: 'admin@example.com', name: 'Dev Admin', role: 'admin', password_hash: '' }
     ])
 
     await upsert('shops', [
-      { id: 'shop_cafe24_1', name: 'Cafe24 Demo Shop', platform: 'cafe24', credentials: { clientId: 'demo_client', clientSecret: 'demo_secret' } },
-      { id: 'shop_makeshop_1', name: 'Makeshop Demo', platform: 'makeshop', credentials: {} },
-      { id: 'shop_mock_oms', name: 'OMS Mock Shop', platform: 'oms-mock', credentials: {} },
+      { id: 'shop_demo_1', name: 'Demo Shop', platform: 'supabase', credentials: { clientId: 'demo', clientSecret: 'demo' } }
     ])
 
     console.log('Seeding complete')

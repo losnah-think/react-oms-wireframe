@@ -11,5 +11,6 @@ export async function getServerSideProps(ctx: any) {
   const session = await getServerSession(ctx.req, ctx.res, authOptions as any)
   if (!session || (session as any).user?.role !== 'admin') return { redirect: { destination: '/settings/integration-admin/login', permanent: false } }
   const { listUsers } = await import('src/lib/users')
-  return { props: { users: listUsers() } }
+  const users = await listUsers()
+  return { props: { users } }
 }

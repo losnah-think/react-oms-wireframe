@@ -6,7 +6,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { shopId } = req.query as { shopId: string }
 
   if (req.method === 'GET') {
-    const s = getShop(shopId)
+    const s = await getShop(shopId)
     if (!s) return res.status(404).json({ error: 'not found' })
     return res.json(s)
   }
@@ -16,12 +16,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!check.ok) return res.status(check.status).json(check.body)
     const creds = req.body || {}
     // ensure shop exists
-    const existing = getShop(shopId)
+    const existing = await getShop(shopId)
     if (!existing) {
-      addShop({ id: shopId, name: shopId, platform: creds.platform || 'unknown', credentials: creds })
+      await addShop({ id: shopId, name: shopId, platform: creds.platform || 'unknown', credentials: creds })
       return res.json({ ok: true })
     }
-    setShopCredentials(shopId, creds)
+    await setShopCredentials(shopId, creds)
     return res.json({ ok: true })
   }
 

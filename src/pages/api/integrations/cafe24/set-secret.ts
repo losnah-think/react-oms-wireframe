@@ -10,6 +10,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { shopId, clientSecret } = req.body || {}
   if (!shopId || !clientSecret) return res.status(400).json({ error: 'shopId and clientSecret required' })
 
-  setShopCredentials(shopId, { clientSecret })
+  await setShopCredentials(shopId, { clientSecret })
   return res.status(200).json({ ok: true })
 }

@@ -17,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // if server env has a global client secret, save it as well
   const creds: any = { clientId, redirectUri, oauthState: nonce }
   if (process.env.CAFE24_CLIENT_SECRET) creds.clientSecret = process.env.CAFE24_CLIENT_SECRET
-  setShopCredentials(shopId, creds)
+  await setShopCredentials(shopId, creds)
 
   const state = encodeURIComponent(`${shopId}::${nonce}`)
   const authUrl = `https://auth.cafe24.com/oauth/authorize?response_type=code&client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`

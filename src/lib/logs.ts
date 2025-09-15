@@ -1,19 +1,18 @@
-import db from './db'
+import { query } from './pgClient'
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 
-const insertLog = db.prepare(`INSERT INTO integration_logs (shop_id, adapter, level, message, meta) VALUES (@shop_id, @adapter, @level, @message, @meta)`)
-const selectLogs = db.prepare(`SELECT id, created_at, shop_id, adapter, level, message, meta FROM integration_logs ORDER BY id DESC LIMIT ? OFFSET ?`)
+if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL must be set for Postgres-only mode')
 
-export function logIntegration(shopId: string | null, adapter: string, level: LogLevel, message: string, meta?: any) {
+export async function logIntegration(shopId: string | null, adapter: string, level: LogLevel, message: string, meta?: any) {
   try {
-    insertLog.run({ shop_id: shopId, adapter, level, message, meta: meta ? JSON.stringify(meta) : null })
+    await query('INSERT INTO integration_logs (shop_id, adapter, level, message, meta) VALUES ($1, $2, $3, $4, $5)', [shopId, adapter, level, message, meta ? JSON.stringify(meta) : null])
   } catch (e) {
-    // swallow logging errors to avoid cascading failures
     console.error('failed to write integration log', e)
   }
 }
 
-export function listIntegrationLogs(limit = 50, offset = 0) {
-  return selectLogs.all(limit, offset).map((r: any) => ({ ...r, meta: r.meta ? JSON.parse(r.meta) : null }))
+export async function listIntegrationLogs(limit = 50, offset = 0) {
+  const r = await query('SELECT id, created_at, shop_id, adapter, level, message, meta FROM integration_logs ORDER BY id DESC LIMIT $1 OFFSET $2', [limit, offset])
+  return r.rows.map((row: any) => ({ ...row, meta: row.meta ? JSON.parse(row.meta) : null }))
 }

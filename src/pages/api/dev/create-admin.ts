@@ -8,9 +8,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== 'POST') return res.status(405).end()
   const { email, password, name } = req.body || {}
   if (!email || !password) return res.status(400).json({ error: 'email and password required' })
-  const existing = getUserByEmail(email)
+  const existing = await getUserByEmail(email)
   if (existing) return res.status(200).json({ ok: true, user: existing })
-  const hash = await bcrypt.hash(password, 10)
-  const user = addUser({ email, name: name || 'Admin', role: 'admin', password_hash: hash })
+  const hash = await (bcrypt as any).hash(password, 10)
+  const user = await addUser({ email, name: name || 'Admin', role: 'admin', password_hash: hash })
   return res.status(201).json({ ok: true, user })
 }

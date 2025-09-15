@@ -32,7 +32,7 @@ const MOCK_SHOPS = [
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { shopId } = req.query as { shopId: string };
 
-  const shop = getShop(shopId)
+  const shop = await getShop(shopId)
   if (!shop) {
     return res.status(404).json({ error: 'Shop not found' });
   }

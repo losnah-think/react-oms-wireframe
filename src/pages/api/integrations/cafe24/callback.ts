@@ -35,7 +35,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // state encoded as `${shopId}::${nonce}`
   const [shopId, nonce] = (stateVal || '').split('::')
 
-  const shop = getShop(shopId)
+  const shop = await getShop(shopId)
   const clientId = shop?.credentials?.clientId
   const clientSecret = shop?.credentials?.clientSecret
   const redirectUri = shop?.credentials?.redirectUri
@@ -51,8 +51,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const token = await exchangeCodeForToken(Array.isArray(code) ? code[0] : code, clientId, clientSecret || '', redirectUri)
-    // clear oauthState after successful exchange
-    setShopCredentials(shopId, { accessToken: token.access_token, refreshToken: token.refresh_token, clientId, clientSecret, redirectUri, oauthState: undefined })
+  // clear oauthState after successful exchange
+  await setShopCredentials(shopId, { accessToken: token.access_token, refreshToken: token.refresh_token, clientId, clientSecret, redirectUri, oauthState: undefined })
     // redirect back to integration page
     return res.redirect('/settings/integration')
   } catch (err) {
