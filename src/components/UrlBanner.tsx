@@ -1,16 +1,21 @@
 "use client"
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/router'
 
 export default function UrlBanner(){
+  const router = useRouter()
   const [url, setUrl] = useState<string>('')
 
   useEffect(() => {
-    try {
-      setUrl(window.location.href)
-    } catch (e) {
-      setUrl('')
+    const update = () => setUrl(window.location.href)
+    // initial
+    update()
+    // update on client-side navigation
+    router.events.on('routeChangeComplete', update)
+    return () => {
+      router.events.off('routeChangeComplete', update)
     }
-  }, [])
+  }, [router.events])
 
   // Render nothing on server / until client sets the URL to avoid hydration mismatch
   if (!url) return null
