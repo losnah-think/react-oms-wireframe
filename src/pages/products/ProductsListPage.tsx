@@ -54,6 +54,10 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false)
   const [isOptionBatchModalOpen, setIsOptionBatchModalOpen] = useState(false)
   const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false)
+  const [localClassifications, setLocalClassifications] = useState<any[]>([])
+  const [newCategoryName, setNewCategoryName] = useState('')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingName, setEditingName] = useState('')
 
   useEffect(() => {
     let mounted = true
@@ -89,7 +93,9 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
       .then((r) => safeJson(r, []))
       .then((data) => {
         if (!mounted) return
-        setClassificationsData(Array.isArray(data) ? data : [])
+        const list = Array.isArray(data) ? data : []
+        setClassificationsData(list)
+        setLocalClassifications(list)
       })
       .catch(() => {})
     return () => {
@@ -213,13 +219,9 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
             </p>
           </div>
           <Stack direction="row" gap={3}>
-            <Button variant="outline" onClick={() => onNavigate?.('products-import')} className="border-gray-300">
+            <Button variant="outline" onClick={() => onNavigate?.('products-import')} className="px-8 py-3 rounded-lg border-2 text-blue-600 hover:bg-blue-50">
               상품 가져오기
             </Button>
-            <Button variant="primary" onClick={() => onNavigate?.('products-add')} className="px-6">
-              신규 상품 등록
-            </Button>
-            <TableExportButton data={exportData} fileName={`products-list.xlsx`} />
           </Stack>
         </Stack>
       </div>
@@ -476,11 +478,90 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
       {/* Category manager modal (opened from filter area) */}
       {isCategoryManagerOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-40">
-          <div className="bg-white p-6 rounded shadow-lg w-1/3">
-            <h3 className="text-lg font-bold mb-4">상품분류 관리 (목업)</h3>
-            <p className="text-sm text-gray-600 mb-4">분류 추가/삭제를 시뮬레이션합니다.</p>
-            <div className="flex justify-end gap-2">
-              <button className="px-3 py-1 border rounded" onClick={() => setIsCategoryManagerOpen(false)}>닫기</button>
+          <div className="bg-white p-6 rounded shadow-lg w-2/3 max-w-3xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold">상품분류 관리</h3>
+              <div className="flex gap-2">
+                <button className="px-3 py-1 border rounded text-sm" onClick={() => {
+                  // export CSV
+                  const csv = ['id,name', ...localClassifications.map((c: any) => `${c.id},"${(c.name || '').replace(/"/g, '""')}"`)].join('\n')
+                  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url
+                  a.download = `classifications-${new Date().toISOString().slice(0,10)}.csv`
+                  a.click()
+                  URL.revokeObjectURL(url)
+                }}>엑셀다운로드</button>
+                <button className="px-3 py-1 border rounded text-sm" onClick={() => { setIsCategoryManagerOpen(false) }}>닫기</button>
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <div className="flex gap-2">
+                <input type="text" className="flex-1 px-3 py-2 border rounded" placeholder="새 분류명 입력" value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} />
+                <button className="px-4 py-2 bg-blue-600 text-white rounded" onClick={() => {
+                  if (!newCategoryName.trim()) { setToastMessage('분류명을 입력하세요.'); return }
+                  const id = `c-${Date.now()}`
+                  const item = { id, name: newCategoryName.trim() }
+                  setLocalClassifications((prev) => [...prev, item])
+                  setClassificationsData((prev) => [...prev, item])
+                  setNewCategoryName('')
+                  setToastMessage('분류가 추가되었습니다.')
+                }}>추가</button>
+              </div>
+            </div>
+
+            <div className="overflow-auto max-h-64 border rounded">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-2 text-left">#</th>
+                    <th className="px-4 py-2 text-left">분류명</th>
+                    <th className="px-4 py-2 text-left">수정</th>
+                    <th className="px-4 py-2 text-left">삭제</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {localClassifications.map((c: any, i: number) => (
+                    <tr key={c.id} className="border-t">
+                      <td className="px-4 py-2">{i+1}</td>
+                      <td className="px-4 py-2">
+                        {editingId === c.id ? (
+                          <input className="w-full px-2 py-1 border rounded" value={editingName} onChange={(e) => setEditingName(e.target.value)} />
+                        ) : (
+                          <span>{c.name}</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2">
+                        {editingId === c.id ? (
+                          <div className="flex gap-2">
+                            <button className="px-2 py-1 bg-green-600 text-white rounded text-sm" onClick={() => {
+                              if (!editingName.trim()) { setToastMessage('분류명을 입력하세요.'); return }
+                              setLocalClassifications((prev) => prev.map((x: any) => x.id === c.id ? { ...x, name: editingName.trim() } : x))
+                              setClassificationsData((prev) => prev.map((x: any) => x.id === c.id ? { ...x, name: editingName.trim() } : x))
+                              setEditingId(null)
+                              setEditingName('')
+                              setToastMessage('분류명이 수정되었습니다.')
+                            }}>저장</button>
+                            <button className="px-2 py-1 border rounded text-sm" onClick={() => { setEditingId(null); setEditingName('') }}>취소</button>
+                          </div>
+                        ) : (
+                          <button className="px-2 py-1 border rounded text-sm" onClick={() => { setEditingId(c.id); setEditingName(c.name) }}>수정</button>
+                        )}
+                      </td>
+                      <td className="px-4 py-2">
+                        <button className="px-2 py-1 bg-red-50 border border-red-300 text-red-700 rounded text-sm" onClick={() => {
+                          if (!confirm('정말 삭제하시겠습니까?')) return
+                          setLocalClassifications((prev) => prev.filter((x: any) => x.id !== c.id))
+                          setClassificationsData((prev) => prev.filter((x: any) => x.id !== c.id))
+                          setToastMessage('분류가 삭제되었습니다.')
+                        }}>삭제</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
