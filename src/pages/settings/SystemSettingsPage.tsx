@@ -1,3 +1,5 @@
+import React from 'react'
+
 export default function SystemSettingsPage() {
   return (
     <div className="p-6">
