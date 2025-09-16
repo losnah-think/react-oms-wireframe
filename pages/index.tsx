@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react';
 import LoginPage from './settings/integration-admin/login'
 import Header from '../src/components/layout/Header';
 import Sidebar from '../src/components/layout/Sidebar';
+import Breadcrumbs from '../src/components/Breadcrumbs';
 
 // Dashboard
 import Dashboard from '../src/pages/dashboard/Dashboard';
@@ -41,7 +42,10 @@ import ProductYearsPage from '../src/pages/settings/ProductYearsPage';
 export default function Home(props: any) {
   // If no session, render the login UI inline at '/'
   const sessionExists = !!props.session
-  if (!sessionExists) return <LoginPage />
+  // During development we don't want the login UI to show inline by default.
+  // Honor NEXT_PUBLIC_HIDE_LOGIN=1 to hide login in dev as well.
+  const hideLogin = process.env.NEXT_PUBLIC_HIDE_LOGIN === '1' || process.env.NODE_ENV !== 'production'
+  if (!sessionExists && !hideLogin) return <LoginPage />
 
   const initialPage = props.initialPage ?? 'dashboard'
   const [currentPage, setCurrentPage] = useState(initialPage);
@@ -234,6 +238,12 @@ export default function Home(props: any) {
           onToggleCollapse={toggleSidebar}
         />
         <main className="flex-1">
+          {/* Breadcrumbs shown inside content area (after Header and Sidebar). Hide on login page. */}
+          {!( !sessionExists && (process.env.NEXT_PUBLIC_HIDE_LOGIN === '1' || process.env.NODE_ENV !== 'production')) && (
+            <div className="px-4 py-3">
+              <Breadcrumbs />
+            </div>
+          )}
           {renderCurrentPage()}
         </main>
       </div>

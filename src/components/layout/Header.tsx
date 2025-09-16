@@ -67,7 +67,51 @@ const Header: React.FC = () => {
             {status === 'loading' ? (
               <div className="w-20 h-6 bg-gray-100 rounded animate-pulse" aria-hidden="true" />
             ) : status === 'unauthenticated' ? (
-              <button onClick={() => signIn(undefined, { callbackUrl: '/' })} className="text-sm text-primary-600 hover:underline">Sign in</button>
+              // Hide the Sign in button in production when explicitly disabled.
+              // In development we show a dev quick-login button if dev creds are provided.
+              (process.env.NEXT_PUBLIC_HIDE_LOGIN === '1' && process.env.NODE_ENV === 'production') ? (
+                <span className="text-sm text-gray-500">Signed out</span>
+              ) : (
+                <div className="flex items-center space-x-3">
+                  {/* Normal Sign in control (visible unless hidden) */}
+                  <button onClick={() => signIn(undefined, { callbackUrl: '/' })} className="text-sm text-primary-600 hover:underline">Sign in</button>
+                  {/* Dev-only quick login button: enabled when in dev or when NEXT_PUBLIC_ENABLE_DEV_LOGIN=1 */}
+                  {((process.env.NEXT_PUBLIC_ENABLE_DEV_LOGIN === '1') || process.env.NODE_ENV !== 'production') && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          const email = process.env.NEXT_PUBLIC_DEV_ADMIN_EMAIL
+                          const password = process.env.NEXT_PUBLIC_DEV_ADMIN_PASSWORD
+                          if (!email || !password) {
+                            // eslint-disable-next-line no-alert
+                            alert('Dev admin credentials not configured. Set NEXT_PUBLIC_DEV_ADMIN_EMAIL and NEXT_PUBLIC_DEV_ADMIN_PASSWORD in .env.local')
+                            return
+                          }
+                          const res: any = await signIn('credentials', { redirect: false, email, password, callbackUrl: '/' })
+                          // signIn may return an object with error or ok depending on version
+                          if (!res || (res && !res.error)) {
+                            window.location.href = '/'
+                          } else {
+                            // eslint-disable-next-line no-console
+                            console.error('Dev sign-in failed', res)
+                            // eslint-disable-next-line no-alert
+                            alert('Dev sign-in failed. Check console for details.')
+                          }
+                        } catch (e) {
+                          // eslint-disable-next-line no-console
+                          console.error('Dev sign-in error', e)
+                          // eslint-disable-next-line no-alert
+                          alert('Dev sign-in error; see console')
+                        }
+                      }}
+                      className="text-sm px-2 py-1 border rounded bg-gray-100 text-gray-800"
+                    >
+                      Use Dev Admin
+                    </button>
+                  )}
+                </div>
+              )
             ) : (
               <div className="relative inline-block text-left">
                 <button className="inline-flex items-center space-x-2 focus:outline-none" aria-haspopup="true" aria-expanded={open} onClick={() => setOpen(s => !s)}>
