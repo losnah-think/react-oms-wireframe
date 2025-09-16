@@ -47,6 +47,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
   const [selectedCategory, setSelectedCategory] = useState('전체')
   const [selectedBrand, setSelectedBrand] = useState('전체')
   const [sortBy, setSortBy] = useState('newest')
+  const [showFilters, setShowFilters] = useState(true)
   const [selectedIds, setSelectedIds] = useState<Record<string, boolean>>({})
   const [selectAll, setSelectAll] = useState(false)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
@@ -224,30 +225,47 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
       </div>
 
   <Card padding="lg" className="mb-6 shadow-sm">
-        <GridRow gutter={16}>
-          <GridCol span={8}>
-            <div className="relative">
-              <input type="text" placeholder="상품명, 상품코드로 검색..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-3 pr-4 py-3 border border-gray-300 rounded-lg" />
-            </div>
-          </GridCol>
-            <GridCol span={4}>
-            <HierarchicalSelect data={groupsData.length ? groupsData : classificationsData} value={selectedCategory === '전체' ? undefined : selectedCategory} placeholder="그룹(소속) 선택" onChange={(node) => setSelectedCategory(node ? node.name : '전체')} />
-          </GridCol>
-          <GridCol span={4}>
-            <select value={selectedBrand} onChange={(e) => setSelectedBrand(e.target.value)} className="w-full px-3 py-3 border border-gray-300 rounded-lg">
-              <option value="전체">전체 브랜드</option>
-              {(productFilterOptions.brands || []).map((b: any) => (
-                <option key={b.id} value={b.name}>{b.name}</option>
-              ))}
-            </select>
-          </GridCol>
-          <GridCol span={4}>
-            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="w-full px-3 py-3 border border-gray-300 rounded-lg">
-              <option value="newest">최신순</option>
-              <option value="oldest">오래된순</option>
-            </select>
-          </GridCol>
-        </GridRow>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <strong>필터</strong>
+            <div className="text-sm text-gray-500">필터를 접어 보기와 탐색을 단순화할 수 있습니다.</div>
+          </div>
+          <div>
+            <button className="px-2 py-1 border rounded text-sm" onClick={() => setShowFilters((s) => !s)}>{showFilters ? '필터 접기' : '필터 펼치기'}</button>
+          </div>
+        </div>
+        {showFilters && (
+          <GridRow gutter={16}>
+            <GridCol span={12}>
+              <div className="grid grid-cols-2 gap-4 items-center">
+                <div className="flex items-center gap-2">
+                  <label className="w-28 text-sm text-gray-700">카테고리</label>
+                  <HierarchicalSelect data={classificationsData.length ? classificationsData : groupsData} value={selectedCategory === '전체' ? undefined : selectedCategory} placeholder="카테고리 선택" onChange={(node) => setSelectedCategory(node ? node.name : '전체')} />
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="w-28 text-sm text-gray-700">브랜드</label>
+                  <select value={selectedBrand} onChange={(e) => setSelectedBrand(e.target.value)} className="w-full px-3 py-3 border border-gray-300 rounded-lg">
+                    <option value="전체">전체 브랜드</option>
+                    {(productFilterOptions.brands || []).map((b: any) => (
+                      <option key={b.id} value={b.name}>{b.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="w-28 text-sm text-gray-700">검색어</label>
+                  <input type="text" placeholder="상품명, 상품코드로 검색..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-3 pr-4 py-3 border border-gray-300 rounded-lg" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="w-28 text-sm text-gray-700">정렬</label>
+                  <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="w-full px-3 py-3 border border-gray-300 rounded-lg">
+                    <option value="newest">최신순</option>
+                    <option value="oldest">오래된순</option>
+                  </select>
+                </div>
+              </div>
+            </GridCol>
+          </GridRow>
+        )}
         <div className="mt-4">
           <GridRow gutter={12}>
             <GridCol span={6}>
@@ -361,7 +379,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
               <tr>
                 <th className="px-6 py-4"><input type="checkbox" checked={selectAll} onChange={toggleSelectAll} /></th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700">상품정보</th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700">분류/브랜드</th>
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700">카테고리/브랜드</th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700">재고</th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700">가격</th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700">등록일</th>
@@ -406,7 +424,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
                     </div>
                   </td>
                   <td className="px-6 py-6">
-                    <div className="text-sm">{p.group || p.classification || categoryNames[p.category_id] || '미입력'}</div>
+                    <div className="text-sm">{p.classification || p.group || categoryNames[p.category_id] || '미입력'}</div>
                     {p.brand ? <div className="text-sm text-gray-600 mt-1">{p.brand}</div> : null}
                     <div className="text-sm text-gray-600 mt-2">상품코드 | {p.code || '미입력'}</div>
                     <div className="text-sm text-gray-600 mt-1">배송비정책 | {p.shipping_policy || '미지정'}</div>
