@@ -278,6 +278,29 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
         </div>
       </Card>
 
+      {/* Action toolbar (Excel, batch edit, option batch edit, delete, sort) */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-4">
+          <div className="text-sm text-gray-600">총 <span className="font-bold text-blue-600">{filteredProducts.length}</span> 건</div>
+          <div className="text-sm text-gray-400">(전체 {products.length}개)</div>
+          <div className="ml-2">
+            <TableExportButton data={exportData} fileName={`products-list.xlsx`} />
+          </div>
+          <button className="px-3 py-1 bg-white border rounded text-sm" onClick={() => { /* TODO: batch edit action */ }}>상품 일괄수정</button>
+          <button className="px-3 py-1 bg-white border rounded text-sm" onClick={() => { /* TODO: option batch edit */ }}>옵션 일괄수정</button>
+        </div>
+        <div className="flex items-center gap-3">
+          <button className="px-3 py-1 bg-red-50 border border-red-300 text-red-700 rounded text-sm" onClick={() => { /* TODO: delete selected */ }}>선택삭제</button>
+          <select className="px-2 py-1 border rounded text-sm">
+            <option>정렬방법</option>
+            <option value="newest">최신순</option>
+            <option value="oldest">오래된순</option>
+            <option value="price-asc">가격↑</option>
+            <option value="price-desc">가격↓</option>
+          </select>
+        </div>
+      </div>
+
       <Card padding="none" className="overflow-hidden shadow-sm">
         <div className="overflow-auto">
           {loading && (
