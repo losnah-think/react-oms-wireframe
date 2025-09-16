@@ -374,6 +374,8 @@ export interface ProductAdditionalInfo {
   productSeason?: string;
   // 상세 물류 정보 (추가 정보에서 관리)
   detailedLogistics: DetailedLogisticsInfo;
+  // 간단 메모들
+  memos?: string[];
   // 옵션 관리 (백로그)
   options?: ProductOption[];
 }

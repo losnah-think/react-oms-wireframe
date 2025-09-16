@@ -19,14 +19,16 @@ export const formatPrice = (price: number): string => {
   }).format(price);
 };
 
-export const formatDate = (date: string | Date): string => {
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
-  return dateObj.toLocaleDateString('ko-KR', {
+export const formatDate = (date?: string | Date | null): string => {
+  if (!date) return '-'
+  const dateObj = typeof date === 'string' ? new Date(date) : date
+  if (Number.isNaN((dateObj as Date).getTime())) return '-'
+  return (dateObj as Date).toLocaleDateString('ko-KR', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit'
-  });
-};
+  })
+}
 
 export const getStockStatus = (stockQuantity: number): { label: string; color: 'success' | 'warning' | 'danger' } => {
   if (stockQuantity === 0) {
