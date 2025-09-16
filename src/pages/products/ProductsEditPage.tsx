@@ -107,6 +107,21 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
     return {
       basicInfo: basic,
       additionalInfo: {
+        launchDiscount: p.launchDiscount ?? p.launch_discount ?? null,
+        colors: p.colors || (p.options?.colors) || [],
+        sizes: p.sizes || (p.options?.sizes) || [],
+        washing: p.washing || p.care_instructions || '',
+        caution: p.caution || p.warning || '',
+        material: p.material || p.fabric || '',
+        manufacturer: p.manufacturer || p.brand_manufacturer || '',
+        countryOfManufacture: p.country_of_manufacture || p.manufacture_country || '',
+        warranty: p.warranty || p.quality_guarantee || '',
+        firstStockDate: p.first_stock_date ? new Date(p.first_stock_date) : (p.first_stock_date_raw ? new Date(p.first_stock_date_raw) : undefined),
+        remarks: p.remarks || p.note || '',
+        leadTime: p.leadTime ?? p.lead_time ?? p.lead_days ?? null,
+        extra1: p.extra1 || '',
+        extra2: p.extra2 || '',
+        extra3: p.extra3 || '',
         productDesigner: p.designer || '',
         publishDate: p.publish_date ? new Date(p.publish_date) : undefined,
         productSeason: p.product_season || p.productSeason || '',
@@ -677,6 +692,66 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
                   />
+                </GridCol>
+                <GridCol span={6}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">런칭 할인(%)</label>
+                  <input type="number" className="w-full px-3 py-2 border border-gray-300 rounded-md" value={formData.additionalInfo?.launchDiscount ?? ''} onChange={(e) => updateField('additionalInfo.launchDiscount', e.target.value ? Number(e.target.value) : null)} />
+                </GridCol>
+                <GridCol span={6}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">색상 (콤마로 구분)</label>
+                  <input className="w-full px-3 py-2 border border-gray-300 rounded-md" value={(formData.additionalInfo?.colors || []).join(',')} onChange={(e) => updateField('additionalInfo.colors', e.target.value.split(',').map((s: string) => s.trim()))} />
+                </GridCol>
+                <GridCol span={6}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">사이즈 (콤마로 구분)</label>
+                  <input className="w-full px-3 py-2 border border-gray-300 rounded-md" value={(formData.additionalInfo?.sizes || []).join(',')} onChange={(e) => updateField('additionalInfo.sizes', e.target.value.split(',').map((s: string) => s.trim()))} />
+                </GridCol>
+                <GridCol span={6}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">세탁</label>
+                  <input className="w-full px-3 py-2 border border-gray-300 rounded-md" value={formData.additionalInfo?.washing || ''} onChange={(e) => updateField('additionalInfo.washing', e.target.value)} />
+                </GridCol>
+                <GridCol span={6}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">주의</label>
+                  <input className="w-full px-3 py-2 border border-gray-300 rounded-md" value={formData.additionalInfo?.caution || ''} onChange={(e) => updateField('additionalInfo.caution', e.target.value)} />
+                </GridCol>
+                <GridCol span={6}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">소재</label>
+                  <input className="w-full px-3 py-2 border border-gray-300 rounded-md" value={formData.additionalInfo?.material || ''} onChange={(e) => updateField('additionalInfo.material', e.target.value)} />
+                </GridCol>
+                <GridCol span={6}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">제조사</label>
+                  <input className="w-full px-3 py-2 border border-gray-300 rounded-md" value={formData.additionalInfo?.manufacturer || ''} onChange={(e) => updateField('additionalInfo.manufacturer', e.target.value)} />
+                </GridCol>
+                <GridCol span={6}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">제조국</label>
+                  <input className="w-full px-3 py-2 border border-gray-300 rounded-md" value={formData.additionalInfo?.countryOfManufacture || ''} onChange={(e) => updateField('additionalInfo.countryOfManufacture', e.target.value)} />
+                </GridCol>
+                <GridCol span={6}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">품질보증</label>
+                  <input className="w-full px-3 py-2 border border-gray-300 rounded-md" value={formData.additionalInfo?.warranty || ''} onChange={(e) => updateField('additionalInfo.warranty', e.target.value)} />
+                </GridCol>
+                <GridCol span={6}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">최초입고일</label>
+                  <input type="date" className="w-full px-3 py-2 border border-gray-300 rounded-md" value={formData.additionalInfo?.firstStockDate ? new Date(formData.additionalInfo.firstStockDate).toISOString().slice(0,10) : ''} onChange={(e) => updateField('additionalInfo.firstStockDate', e.target.value ? new Date(e.target.value) : undefined)} />
+                </GridCol>
+                <GridCol span={6}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">비고</label>
+                  <input className="w-full px-3 py-2 border border-gray-300 rounded-md" value={formData.additionalInfo?.remarks || ''} onChange={(e) => updateField('additionalInfo.remarks', e.target.value)} />
+                </GridCol>
+                <GridCol span={6}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">리드타임(일)</label>
+                  <input type="number" className="w-full px-3 py-2 border border-gray-300 rounded-md" value={formData.additionalInfo?.leadTime ?? ''} onChange={(e) => updateField('additionalInfo.leadTime', e.target.value ? Number(e.target.value) : null)} />
+                </GridCol>
+                <GridCol span={6}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">추가정보1</label>
+                  <input className="w-full px-3 py-2 border border-gray-300 rounded-md" value={formData.additionalInfo?.extra1 || ''} onChange={(e) => updateField('additionalInfo.extra1', e.target.value)} />
+                </GridCol>
+                <GridCol span={6}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">추가정보2</label>
+                  <input className="w-full px-3 py-2 border border-gray-300 rounded-md" value={formData.additionalInfo?.extra2 || ''} onChange={(e) => updateField('additionalInfo.extra2', e.target.value)} />
+                </GridCol>
+                <GridCol span={6}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">추가정보3</label>
+                  <input className="w-full px-3 py-2 border border-gray-300 rounded-md" value={formData.additionalInfo?.extra3 || ''} onChange={(e) => updateField('additionalInfo.extra3', e.target.value)} />
                 </GridCol>
                 <GridCol span={6}>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
