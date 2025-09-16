@@ -472,12 +472,12 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
                   />
                 </GridCol>
-                <GridCol span={6}>
+                <GridCol span={12}>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     상품 설명
                   </label>
-                  <input
-                    type="text"
+                  <textarea
+                    rows={6}
                     value={formData.basicInfo?.description || ""}
                     onChange={(e) =>
                       updateField("basicInfo.description", e.target.value)
@@ -765,16 +765,14 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
           </Card>
           <Card className="mb-6">
             <h2 className="text-lg font-bold mb-2">상품 메모</h2>
-            <div className="space-y-2">
-              {(formData.additionalInfo?.memos || []).map((m: string, idx: number) => (
-                <div key={idx} className="flex items-center gap-2">
-                  <input
-                    className="flex-1 px-2 py-1 border rounded"
-                    value={m}
-                    onChange={(e) => updateField(`additionalInfo.memos.${idx}`, e.target.value)}
-                  />
-                </div>
-              ))}
+            <div>
+              <textarea
+                rows={6}
+                value={(Array.isArray(formData.additionalInfo?.memos) ? formData.additionalInfo.memos.join('\n') : formData.additionalInfo?.memos) || ''}
+                onChange={(e) => updateField('additionalInfo.memos', e.target.value.split('\n'))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              />
+              <div className="text-xs text-gray-500 mt-2">메모는 개행으로 구분됩니다. (기존 15개 메모 필드를 단일 메모 박스로 합쳤습니다)</div>
             </div>
           </Card>
           <Card>
