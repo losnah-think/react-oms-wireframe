@@ -7,58 +7,45 @@ const OrderList: React.FC = () => {
   const [loading] = React.useState(false);
   const [error] = React.useState<string | null>(null);
 
-  // Mock data - useMemo로 래핑하여 의존성 문제 해결
-  const mockOrders = React.useMemo(
-    (): Order[] => [
-      new Order({
-        id: "ORD-001",
-        customerId: "CUST-001",
-        customerName: "김철수",
-        status: OrderStatus.PENDING,
-        totalAmount: 50000,
-        items: [
-          {
-            id: "ITEM-001-001",
-            orderId: "ORD-001",
-            productId: "1",
-            productName: "베이직 티셔츠",
-            quantity: 2,
-            unitPrice: 25000,
-            totalPrice: 50000,
-          },
-        ],
-      }),
-      new Order({
-        id: "ORD-002",
-        customerId: "CUST-002",
-        customerName: "이영희",
-        status: OrderStatus.CONFIRMED,
-        totalAmount: 45000,
-        items: [
-          {
-            id: "ITEM-002-001",
-            orderId: "ORD-002",
-            productId: "2",
-            productName: "청바지",
-            quantity: 1,
-            unitPrice: 45000,
-            totalPrice: 45000,
-          },
-        ],
-      }),
-    ],
-    [],
-  );
+  const [orders, setOrders] = React.useState<Order[]>([]);
+
+  React.useEffect(() => {
+    let mounted = true;
+    fetch('/api/orders?limit=50')
+      .then((r) => r.json())
+      .then((data) => {
+        if (!mounted) return;
+        const mapped: Order[] = (data.orders || []).map((o: any) => new Order({
+          id: o.id,
+          customerId: o.customer_id,
+          customerName: o.customer_name || o.customerName || '',
+          status: o.status as OrderStatus,
+          totalAmount: o.total_amount || o.totalAmount || 0,
+          items: (o.items || []).map((it: any) => ({
+            id: it.id,
+            orderId: it.order_id || o.id,
+            productId: it.product_id,
+            productName: it.product_name || it.productName,
+            quantity: it.quantity,
+            unitPrice: it.unit_price || it.unitPrice,
+            totalPrice: it.total_price || it.totalPrice,
+          })),
+        }))
+        setOrders(mapped)
+      })
+      .catch((e) => console.error(e));
+    return () => { mounted = false }
+  }, [])
 
   const filteredOrders = React.useMemo(() => {
-    return mockOrders.filter((order) => {
+    return orders.filter((order) => {
       const matchesStatus = !statusFilter || order.status === statusFilter;
       const matchesSearch =
         order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.id.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesStatus && matchesSearch;
     });
-  }, [statusFilter, searchTerm, mockOrders]);
+  }, [statusFilter, searchTerm, orders]);
 
   if (loading) {
     return (
@@ -105,7 +92,7 @@ const OrderList: React.FC = () => {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">주문 관리</h1>
-          <p className="text-gray-600">전체 {mockOrders.length}개 주문</p>
+          <p className="text-gray-600">전체 {orders.length}개 주문</p>
         </div>
       </div>
 

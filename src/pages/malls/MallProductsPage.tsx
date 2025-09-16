@@ -4,7 +4,7 @@ import MallProductManager from '../../components/malls/MallProductManager'
 import EditProductModal from '../../components/malls/EditProductModal'
 import MallExtraInfoManager from '../../components/malls/MallExtraInfoManager'
 import MallCategoryMapping from '../../components/malls/MallCategoryMapping'
-import mockClassifications from '../../data/mockClassifications'
+// classifications are loaded via API in effects below
 import TableExportButton from '../../components/common/TableExportButton'
 
 type Mall = { id: string; name: string; status: 'active' | 'inactive'; totalProducts: number }
@@ -151,16 +151,24 @@ const MallProductsPage: React.FC = () => {
 
   // build path -> id map for classifications
   useEffect(() => {
-    const p2i: Record<string,string> = {}
-    const walk = (nodes: any[], parents: string[] = []) => {
-      nodes.forEach(n => {
-        const path = parents.concat(n.name).join(' > ')
-        p2i[path] = n.id
-        if (n.children) walk(n.children, parents.concat(n.name))
+    let mounted = true
+    fetch('/api/meta/classifications')
+      .then(r => r.ok ? r.json().then(b => b.classifications || []) : Promise.resolve([]))
+      .then((data: any[]) => {
+        if (!mounted) return
+        const p2i: Record<string,string> = {}
+        const walk = (nodes: any[], parents: string[] = []) => {
+          nodes.forEach(n => {
+            const path = parents.concat(n.name).join(' > ')
+            p2i[path] = n.id
+            if (n.children) walk(n.children, parents.concat(n.name))
+          })
+        }
+        walk(data || [])
+        setPathToId(p2i)
       })
-    }
-    walk(mockClassifications as any)
-    setPathToId(p2i)
+      .catch(() => {})
+    return () => { mounted = false }
   }, [])
 
   const applyOverridesToProduct = (product: MallProduct) => {
@@ -404,10 +412,10 @@ const MallProductsPage: React.FC = () => {
         {showExtraInfoModal && selectedMall && (
           <MallExtraInfoManager mallId={selectedMall} onClose={()=>setShowExtraInfoModal(false)} onApply={(v)=>setExtraInfo(v)} />
         )}
-        {showCategoryMapModal && selectedMall && (
+          {showCategoryMapModal && selectedMall && (
           <MallCategoryMapping
             mallId={selectedMall}
-            internalCategories={Array.from(new Set((function flatten(t:any[], parents:string[] = []){ const out:string[]=[]; t.forEach(n=>{ const path = parents.concat(n.name); out.push(path.join(' > ')); if(n.children) out.push(...(flatten(n.children, path))); }); return out; })(mockClassifications)))}
+            internalCategories={Array.from(new Set((function flatten(t:any[], parents:string[] = []){ const out:string[]=[]; t.forEach(n=>{ const path = parents.concat(n.name); out.push(path.join(' > ')); if(n.children) out.push(...(flatten(n.children, path))); }); return out; })(/* loaded via /api/meta/classifications and stored in localStorage */ JSON.parse(window.localStorage.getItem('productClassificationsTree') || '[]'))))}
             products={products}
             onClose={()=>setShowCategoryMapModal(false)}
             onApply={(m)=>setCategoryMappings(m)}

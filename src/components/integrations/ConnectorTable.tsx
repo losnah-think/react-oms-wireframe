@@ -1,6 +1,5 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { mockCafe24Orders } from '../../data/mockCafe24Orders';
 import { Cafe24Order } from '../../lib/types/cafe24';
 
 type ConnectorTableProps = {
@@ -9,9 +8,18 @@ type ConnectorTableProps = {
 };
 export default function ConnectorTable({ onDetail, channel }: ConnectorTableProps) {
   const [orders, setOrders] = useState<Cafe24Order[]>([]);
-
   useEffect(() => {
-    setOrders(mockCafe24Orders);
+    let mounted = true
+    fetch('/api/integrations/cafe24/orders')
+      .then((r) => r.json())
+      .then((body) => {
+        if (!mounted) return
+        setOrders(body.orders || [])
+      })
+      .catch(() => {
+        // leave empty
+      })
+    return () => { mounted = false }
   }, []);
   // compute summary stats
   const orderCount = orders.length;

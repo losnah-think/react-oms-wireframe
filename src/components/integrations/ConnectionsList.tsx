@@ -4,7 +4,19 @@ import IntegrationCard from "./IntegrationCard";
 import SecretModal from "./SecretModal";
 import RegisterIntegrationForm from "./RegisterIntegrationForm";
 import IntegrationIntervalsModal from "./IntegrationIntervalsModal";
-import { mockIntegrations, Integration } from "../../data/mockIntegrations";
+
+// Minimal Integration type expected by this component
+type Integration = {
+  id: string;
+  platform?: string;
+  storeName?: string;
+  storeDomain?: string;
+  status?: string;
+  lastSync?: string;
+  ordersCount?: number;
+  itemsCount?: number;
+  secrets?: { key: string; value: string }[];
+}
 
 export default function ConnectionsList({
   platform,
@@ -44,20 +56,43 @@ export default function ConnectionsList({
     } catch (e) {}
   };
 
-  const list: Integration[] =
-    platform && platform !== "all"
-      ? mockIntegrations.filter((i) => i.platform === platform)
-      : mockIntegrations;
+  const [list, setList] = React.useState<Integration[]>([]);
+
+  React.useEffect(() => {
+    let mounted = true;
+    async function load() {
+      try {
+        const res = await fetch('/api/integrations/connected-shops');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const shops = await res.json();
+        // map shops -> Integration shape expected by cards
+        const mapped: Integration[] = (shops || []).map((s: any) => ({
+          id: s.id,
+          platform: String(s.platform || 'unknown'),
+          storeName: s.name || s.id,
+          storeDomain: s.credentials?.domain || undefined,
+          status: s.credentials ? 'connected' : 'disconnected',
+          lastSync: undefined,
+          ordersCount: 0,
+          itemsCount: 0,
+          secrets: s.credentials ? Object.keys(s.credentials).map((k: string) => ({ key: k, value: String(s.credentials[k]) })) : undefined,
+        }));
+        if (mounted) setList(platform && platform !== 'all' ? mapped.filter(m => m.platform === platform) : mapped);
+      } catch (e) {
+        console.error('Failed to load integrations', e);
+      }
+    }
+    load();
+    return () => { mounted = false };
+  }, [platform]);
 
   // Group when 'all', otherwise single group
-  const grouped: Record<string, Integration[]> = list.reduce(
-    (acc, cur) => {
-      acc[cur.platform] = acc[cur.platform] || [];
-      acc[cur.platform].push(cur);
-      return acc;
-    },
-    {} as Record<string, Integration[]>,
-  );
+  const grouped: Record<string, Integration[]> = list.reduce((acc, cur) => {
+    const key = cur.platform || 'unknown'
+    acc[key] = acc[key] || [];
+    acc[key].push(cur as Integration);
+    return acc;
+  }, {} as Record<string, Integration[]>);
 
   return (
     <div>
@@ -75,7 +110,7 @@ export default function ConnectionsList({
               {grouped[platformKey].map((i) => (
                 <IntegrationCard
                   key={i.id}
-                  integration={i}
+                  integration={i as any}
                   onOpenSecret={(sArr) => setShowSecret(sArr)}
                   onOpenDetail={(integration) =>
                     onSelectIntegration?.(integration)

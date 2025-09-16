@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Container, Card } from "../../design-system";
 import ConnectionsList from "../../components/integrations/ConnectionsList";
-import { Integration } from "../../data/mockIntegrations";
 import RegisterIntegrationForm from "../../components/integrations/RegisterIntegrationForm";
 
 export default function IntegrationsPage({
@@ -12,7 +11,7 @@ export default function IntegrationsPage({
   const [channel, setChannel] = useState<string>("all");
   const [showCredentials, setShowCredentials] = useState<boolean>(false);
   const [selectedIntegration, setSelectedIntegration] =
-    useState<Integration | null>(null);
+    useState<any | null>(null);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [collectionInterval, setCollectionInterval] = useState<string>("15m");
   const [intervalsByChannel, setIntervalsByChannel] = useState<

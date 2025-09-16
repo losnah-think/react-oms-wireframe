@@ -9,7 +9,7 @@ const fileArgIndex = argv.indexOf('--file');
 const dryRun = argv.includes('--dry-run');
 const inputFile = fileArgIndex >= 0 && argv[fileArgIndex + 1] ? argv[fileArgIndex + 1] : null;
 
-async function main() {
+(async function main() {
   console.log('Cellmate import scaffold running');
 
   // Example: replace this with actual fetch from cafe24 API or read from file
@@ -41,9 +41,7 @@ async function main() {
     if (dryRun) console.log('[dry-run] upsert simulated for', s.product_no || s.name);
     else console.log('Upserted', p.id, p.productName);
   }
-}
-
-main().catch(err => {
+})().catch(err => {
   console.error(err);
   process.exit(1);
 });

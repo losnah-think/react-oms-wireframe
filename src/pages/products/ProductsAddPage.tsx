@@ -1,7 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { mockBrands } from "../../data/mockBrands";
-import { mockCategories } from "../../data/mockCategories";
-import { mockProductFilterOptions } from "../../data/mockProductFilters";
 import {
   Button,
   Input,
@@ -120,17 +117,13 @@ const initialFormData: ProductFormData = {
     touchedFields: new Set(),
   },
 };
-
-const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
-  onNavigate,
-  onSave,
-  productId,
-}) => {
+const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate, onSave, productId }) => {
   const [formData, setFormData] = useState<ProductFormData>(initialFormData);
   const [collapsedSections, setCollapsedSections] = useState<{
     [k: string]: boolean;
   }>({ additionalInfo: true, logistics: true, policies: true });
   const [saving, setSaving] = useState(false);
+  const [productFilterOptions, setProductFilterOptions] = useState<any>({ brands: [], categories: [], suppliers: [], status: [] });
 
   // 필드 업데이트 함수
   const updateField = (path: string, value: any) => {
@@ -146,114 +139,120 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
     });
   };
 
+  // variants / options helpers
+  const addOptionGroup = () => {
+    setFormData(prev => {
+      const copy = JSON.parse(JSON.stringify(prev))
+      copy.additionalInfo.options = copy.additionalInfo.options || []
+      copy.additionalInfo.options.push({ id: `opt-${Date.now()}`, name: '옵션 그룹', type: 'other', values: [], isRequired: false })
+      return copy
+    })
+  }
+
+  const removeOptionGroup = (id: string) => {
+    setFormData(prev => {
+      const copy = JSON.parse(JSON.stringify(prev))
+      copy.additionalInfo.options = (copy.additionalInfo.options || []).filter((o: any) => o.id !== id)
+      return copy
+    })
+  }
+
+  const addOptionValue = (groupId: string) => {
+    setFormData(prev => {
+      const copy = JSON.parse(JSON.stringify(prev))
+      const g = (copy.additionalInfo.options || []).find((o: any) => o.id === groupId)
+      if (!g) return copy
+      g.values = g.values || []
+      g.values.push({ id: `val-${Date.now()}`, value: '새값', additionalPrice: 0, stock: 0, isActive: true })
+      return copy
+    })
+  }
+
+  const updateOptionValue = (groupId: string, valueId: string, patch: any) => {
+    setFormData(prev => {
+      const copy = JSON.parse(JSON.stringify(prev))
+      const g = (copy.additionalInfo.options || []).find((o: any) => o.id === groupId)
+      if (!g) return copy
+      const v = (g.values || []).find((vv: any) => vv.id === valueId)
+      if (!v) return copy
+      Object.assign(v, patch)
+      return copy
+    })
+  }
+
+  const removeOptionValue = (groupId: string, valueId: string) => {
+    setFormData(prev => {
+      const copy = JSON.parse(JSON.stringify(prev))
+      const g = (copy.additionalInfo.options || []).find((o: any) => o.id === groupId)
+      if (!g) return copy
+      g.values = (g.values || []).filter((vv: any) => vv.id !== valueId)
+      return copy
+    })
+  }
+
+  // Persist variants to server
+  const saveVariants = async () => {
+    if (!productId) { alert('편집 모드에서만 Variants를 저장할 수 있습니다.'); return }
+    try {
+      const payload = (formData.additionalInfo.options || []).flatMap((g: any) => (g.values || []).map((v: any) => ({
+        id: v.id && String(v.id).startsWith('val-') ? undefined : v.id,
+        sku: v.sku || undefined,
+        price: v.additionalPrice || undefined,
+        stock: v.stock || undefined,
+        option_values: { [g.name || g.id]: v.value }
+      })))
+      const res = await fetch(`/api/products/${productId}/variants`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body?.error || 'failed')
+      }
+      const body = await res.json()
+      alert('Variants 저장 완료')
+      // refresh product data
+      const fres = await fetch(`/api/products/${productId}`)
+      if (fres.ok) {
+        const fb = await fres.json()
+        const { mapDbProductToForm } = await import('src/lib/productMappers')
+        setFormData(mapDbProductToForm(fb.product))
+      }
+    } catch (e: any) {
+      console.error('saveVariants error', e)
+      alert('Variants 저장 실패: ' + (e?.message || String(e)))
+    }
+  }
+
   // 기존 상품 데이터 로딩 (수정 모드)
   useEffect(() => {
-    if (productId) {
-      // 실제 API 대신 mock 데이터 사용
-      const mockProduct: ProductFormData = {
-        basicInfo: {
-          productName: "기존 상품명",
-          englishProductName: "Existing Product",
-          productCode: "PRD000001",
-          productCategory: "의류",
-          brandId: "brand-1",
-          supplierId: "supplier-1",
-          codes: { internal: "PRD000001", cafe24: "C24000001", channels: [] },
-          categoryId: "cat-1",
-          pricing: {
-            sellingPrice: 29900,
-            consumerPrice: 39900,
-            supplyPrice: 25410,
-            commissionRate: 15,
-            isSupplyPriceCalculated: true,
-            calculationMethod: "commission",
-          },
-          originalCost: 20000,
-          representativeSellingPrice: 29900,
-          representativeSupplyPrice: 25410,
-          marketPrice: 35000,
-          consumerPrice: 39900,
-          foreignCurrencyPrice: 25,
-          stock: 100,
-          safeStock: 10,
-          isOutOfStock: false,
-          isSelling: true,
-          isSoldout: false,
-          description: "기존 상품 설명",
-          representativeImage: "",
-          descriptionImages: [],
-          thumbnailUrl: "",
-          images: [],
-          width: 20,
-          height: 15,
-          depth: 5,
-          weight: 300,
-          volume: 1500,
-          hsCode: "123456",
-          origin: "KR",
-          isTaxExempt: false,
-          showProductNameOnInvoice: true,
-          productDesigner: "홍길동",
-          productRegistrant: "관리자",
-          productYear: "2025",
-          productSeason: "FW",
-          externalProductId: "EXT-001",
-          externalUrl: "https://example.com/product/EXT-001",
-          active: true,
-          tags: [{ id: "tag-1", name: "신상품", category: "general" }],
-          logistics: {
-            width: 20,
-            height: 15,
-            depth: 5,
-            weight: 300,
-            packagingUnit: "ea",
-            packagingQuantity: 1,
-            isFragile: false,
-            isLiquid: false,
-          },
-          policies: {
-            showProductNameOnInvoice: true,
-            preventConsolidation: false,
-            shippingPolicyId: undefined,
-            giftPolicyId: undefined,
-            isSampleIncluded: false,
-            isReturnable: true,
-            isExchangeable: true,
-            returnPeriodDays: 14,
-          },
-        },
-        additionalInfo: {
-          productDesigner: "홍길동",
-          publishDate: new Date("2025-09-01"),
-          detailedLogistics: {
-            width: 20,
-            height: 15,
-            depth: 5,
-            weight: 300,
-            packagingUnit: "ea",
-            packagingQuantity: 1,
-            isFragile: false,
-            isLiquid: false,
-            packageWidth: undefined,
-            packageHeight: undefined,
-            packageDepth: undefined,
-            packageWeight: undefined,
-            countryOfOrigin: "KR",
-            hsCode: "123456",
-            storageConditions: "",
-            shelfLife: undefined,
-          },
-        },
-        validation: {
-          errors: {},
-          warnings: {},
-          isValid: true,
-          touchedFields: new Set(),
-        },
-      };
-      setFormData(mockProduct);
-    }
+    if (!productId) return
+    let mounted = true
+    ;(async () => {
+      try {
+        const res = await fetch(`/api/products/${productId}`)
+        if (!res.ok) return
+        const body = await res.json()
+        if (!mounted) return
+        const p = body.product
+        if (!p) return
+        // use mapper helper
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const { mapDbProductToForm } = await import('src/lib/productMappers')
+        const mapped = mapDbProductToForm(p)
+        setFormData(mapped)
+      } catch (err) {
+        // ignore
+      }
+    })()
+    return () => { mounted = false }
   }, [productId]);
+
+  useEffect(() => {
+    let mounted = true
+    fetch('/api/meta/product-filters')
+      .then(res => res.json())
+      .then((data) => { if (!mounted) return; setProductFilterOptions(data || { brands: [], categories: [], suppliers: [], status: [] }) })
+      .catch(() => {})
+    return () => { mounted = false }
+  }, [])
 
   // 공급가 자동계산
   useEffect(() => {
@@ -354,7 +353,7 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
                   >
                     <option value="">카테고리 선택</option>
-                    {mockCategories.map((cat) => (
+                    {(productFilterOptions.categories || []).map((cat: any) => (
                       <option key={cat.id} value={cat.id}>
                         {cat.name}
                       </option>
@@ -373,7 +372,7 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
                   >
                     <option value="">브랜드 선택</option>
-                    {mockBrands.map((brand) => (
+                    {(productFilterOptions.brands || []).map((brand: any) => (
                       <option key={brand.id} value={brand.id}>
                         {brand.name}
                       </option>
@@ -392,7 +391,7 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
                   >
                     <option value="">공급사 선택</option>
-                    {mockProductFilterOptions.suppliers.map((supplier) => (
+                    {(productFilterOptions.suppliers || []).map((supplier: any) => (
                       <option key={supplier.id} value={supplier.id}>
                         {supplier.name}
                       </option>
@@ -939,6 +938,52 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
                   </span>
                 </li>
               </ul>
+            </Card>
+            <Card className="mt-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-bold mb-2">Variants / Options</h2>
+                <div className="flex items-center gap-2">
+                  <button type="button" className="text-sm text-blue-600" onClick={addOptionGroup}>+ 그룹</button>
+                  <button type="button" className="text-sm text-green-600" onClick={saveVariants}>Variants 저장</button>
+                </div>
+              </div>
+              <div className="text-sm text-gray-700">
+                {formData.additionalInfo.options && formData.additionalInfo.options.length > 0 ? (
+                  <div className="space-y-2">
+                    {formData.additionalInfo.options.map((opt: any) => (
+                      <div key={opt.id} className="border rounded p-2 bg-gray-50">
+                        <div className="flex justify-between items-center">
+                          <div className="font-semibold">{opt.name} ({(opt.values||[]).length})</div>
+                          <div>
+                            <button type="button" className="text-xs text-green-600 mr-2" onClick={() => addOptionValue(opt.id)}>값+</button>
+                            <button type="button" className="text-xs text-red-600" onClick={() => removeOptionGroup(opt.id)}>그룹-</button>
+                          </div>
+                        </div>
+                        <div className="mt-2 space-y-1">
+                          {(opt.values||[]).map((v: any) => (
+                            <div key={v.id} className="p-1 bg-white rounded flex gap-2 items-center">
+                              <input className="px-2 py-1 border rounded w-28" value={v.value} onChange={(e) => updateOptionValue(opt.id, v.id, { value: e.target.value })} />
+                              <input className="px-2 py-1 border rounded w-20" type="number" value={v.additionalPrice ?? 0} onChange={(e) => updateOptionValue(opt.id, v.id, { additionalPrice: Number(e.target.value) })} />
+                              <input className="px-2 py-1 border rounded w-20" type="number" value={v.stock ?? 0} onChange={(e) => updateOptionValue(opt.id, v.id, { stock: Number(e.target.value) })} />
+                              <button className="text-sm text-red-600" onClick={() => removeOptionValue(opt.id, v.id)}>삭제</button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-gray-500">Variants 없음</div>
+                )}
+              </div>
+            </Card>
+            <Card className="mt-4">
+              <h2 className="text-lg font-bold mb-2">External Mall Info</h2>
+              <div className="text-sm text-gray-700 space-y-1">
+                <div>External SKU: {formData.basicInfo.externalProductId || '-'}</div>
+                <div>External URL: {formData.basicInfo.externalUrl ? (<a className="text-blue-600" href={formData.basicInfo.externalUrl} target="_blank" rel="noreferrer">링크</a>) : '-'}</div>
+                <div>Channels: {(formData.basicInfo.codes.channels || []).length}</div>
+              </div>
             </Card>
           </aside>
         </div>

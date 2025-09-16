@@ -38,9 +38,10 @@ describe('Sidebar - click all entries (real component)', () => {
       const parentWrapper = parentBtn.parentElement; // outer div that should contain children when expanded
       if (!parentWrapper) throw new Error('Parent wrapper not found');
 
-      for (const childLabel of menuStructure[parentLabel]) {
-        const childBtn = within(parentWrapper).getByText((content) => typeof content === 'string' && content.includes(childLabel));
-        fireEvent.click(childBtn);
+      // Use data-testid prefix matching to collect child buttons reliably
+      const childButtons = Array.from(parentWrapper.querySelectorAll(`[data-testid^="menu-${parentId}-"]`));
+      for (const btn of childButtons) {
+        fireEvent.click(btn as Element);
         clickCount++;
       }
     }

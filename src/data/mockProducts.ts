@@ -37,8 +37,17 @@ function generateVariants(productId: number, i: number) {
     supply_price: 9000 + i*100 + v*500,
     code: `VAR${productId}-${v+1}`,
     barcode1: `8800000${productId}${v+1}`,
+    barcode2: `9900000${productId}${v+1}`,
+    barcode3: `7700000${productId}${v+1}`,
     is_selling: true,
     is_soldout: false,
+    is_stock_linked: true,
+    width_cm: 10 + v,
+    height_cm: 20 + v,
+    depth_cm: 2 + v,
+    weight_g: 500 + v*50,
+    volume_cc: (10 + v) * (20 + v) * (2 + v),
+    warehouse_location: `W-${(v%3)+1}`,
     created_at: generateDate(i),
     updated_at: generateDate(i)
   }));
@@ -60,6 +69,20 @@ export const mockProducts = Array.from({length: 100}, (_, i) => {
     selling_price: 10000 + i*100, // int
     supply_price: 9000 + i*100, // int
     cost_price: 8000 + i*100, // int
+    hs_code: `${1000 + i}`,
+    origin_country: i % 3 === 0 ? 'KR' : i % 3 === 1 ? 'CN' : 'VN',
+    images: [
+      `https://picsum.photos/seed/${productId}/800/600`,
+      `https://picsum.photos/seed/${productId}-1/800/600`,
+      `https://picsum.photos/seed/${productId}-2/800/600`
+    ],
+    invoice_display_name: i % 2 === 0,
+    retail_price: 12000 + i*100,
+    tags: [`tag${(i%5)+1}`, `tag${(i%7)+1}`],
+    memos: Array.from({length: 5}, (_, m) => `메모${m+1} for ${productId}`),
+    box_qty: 1 + (i % 5),
+    composition: i % 2 === 0 ? 'Cotton 80%, Polyester 20%' : 'Polyester 100%',
+    season: i % 4 === 0 ? 'SS' : i % 4 === 1 ? 'FW' : 'ALL',
     supplier_id: i % 20 + 1, // bigint
     category_id: mockCategories[i % mockCategories.length].id, // bigint
     description: `상품${i+1} 설명입니다.`, // text

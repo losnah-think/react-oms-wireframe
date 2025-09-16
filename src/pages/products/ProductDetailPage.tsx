@@ -7,7 +7,7 @@ import {
   Stack,
   Modal,
 } from "../../design-system";
-import { mockProducts } from "../../data/mockProducts";
+import { useEffect } from 'react'
 import {
   formatDate,
   formatPrice,
@@ -33,10 +33,44 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   const [showDescriptionModal, setShowDescriptionModal] = useState(false);
   const [editingDescription, setEditingDescription] = useState("");
 
-  // 상품 데이터 찾기
-  const product = useMemo(() => {
-    return mockProducts.find((p) => String(p.id) === String(productId));
-  }, [productId]);
+  const [product, setProduct] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [classificationNames, setClassificationNames] = useState<Record<string,string>>({});
+
+  useEffect(() => {
+    let mounted = true;
+    setLoading(true);
+    fetch(`/api/products/${productId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!mounted) return
+        setProduct(data.product || null)
+      })
+      .catch((e) => console.error(e))
+      .finally(() => { if (mounted) setLoading(false) })
+    return () => { mounted = false }
+  }, [productId])
+
+  // load classification names for display
+  useEffect(() => {
+    let mounted = true
+    fetch('/api/meta/classifications')
+      .then(r => r.json())
+      .then((body) => {
+        if (!mounted) return
+        const map: Record<string,string> = {}
+        const walk = (nodes: any[]) => {
+          nodes.forEach((n: any) => {
+            map[n.id] = n.name
+            if (n.children) walk(n.children)
+          })
+        }
+        walk(body.classifications || [])
+        setClassificationNames(map)
+      })
+      .catch(() => {})
+    return () => { mounted = false }
+  }, [])
 
   const handleBack = () => {
     if (onNavigate) {
@@ -46,6 +80,14 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
       window.location.href = "/products";
     }
   };
+
+  if (loading) {
+    return (
+      <Container maxWidth="full" padding="lg">
+        <div className="text-center py-12">로딩 중...</div>
+      </Container>
+    )
+  }
 
   if (!product) {
     return (
@@ -116,11 +158,13 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               {product.name}
             </h1>
             <div className="flex items-center space-x-4 text-gray-600 mb-4">
-              {/* 판매상태는 옵션에서만 표시, 상품에는 없음 */}
+              <span>상품일련번호: {product.id}</span>
+              <span>•</span>
               <span>상품코드: {product.code}</span>
               <span>•</span>
-              <span>브랜드: {product.brand}</span>
-              <span>공급사: {product.supplier_id}</span>
+              <span>브랜드: {product.brand} ({product.brand_id})</span>
+              <span>•</span>
+              <span>공급사ID: {product.supplier_id}</span>
             </div>
             <div className="grid grid-cols-2 gap-6 py-4">
               <div>
@@ -139,8 +183,8 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 <div className="text-sm text-gray-500 mb-1">총 재고</div>
                 <div className="text-xl font-bold text-blue-600">
                   {product.variants
-                    ? product.variants
-                        .reduce((sum, v) => sum + (v.stock || 0), 0)
+                    ? (product.variants as any[])
+                        .reduce((sum: number, v: any) => sum + (v.stock || 0), 0)
                         .toLocaleString()
                     : 0}
                 </div>
@@ -153,7 +197,17 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               </div>
             </div>
             <div className="flex flex-wrap gap-2 mt-2">
-              {/* 태그 필드는 mockProducts에 없으므로 미표시 */}
+              {product.tags && product.tags.map((t: string) => (
+                  <Badge key={t} variant="neutral">{t}</Badge>
+                ))}
+            </div>
+            <div className="mt-4 text-sm text-gray-600">
+              <div>HS Code: {product.hs_code}</div>
+              <div>원산지: {product.origin_country}</div>
+              <div>박스당수량: {product.box_qty}</div>
+              <div>재고연동: {product.variants && product.variants[0] && product.variants[0].is_stock_linked ? '연동' : '미연동'}</div>
+              <div>분류: {classificationNames[product.classification_id] || product.classification || '미지정'}</div>
+              <div>외부몰 데이터: {product.externalMall?.platform || product.externalMall?.platformName || '없음'}</div>
             </div>
           </div>
         </div>
@@ -172,10 +226,19 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 코드
               </th>
               <th className="px-4 py-2 text-left text-xs font-bold text-gray-700">
-                바코드
+                바코드1
+              </th>
+              <th className="px-4 py-2 text-left text-xs font-bold text-gray-700">
+                바코드2
+              </th>
+              <th className="px-4 py-2 text-left text-xs font-bold text-gray-700">
+                바코드3
               </th>
               <th className="px-4 py-2 text-right text-xs font-bold text-gray-700">
                 판매가
+              </th>
+              <th className="px-4 py-2 text-right text-xs font-bold text-gray-700">
+                원가
               </th>
               <th className="px-4 py-2 text-right text-xs font-bold text-gray-700">
                 공급가
@@ -183,14 +246,17 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               <th className="px-4 py-2 text-right text-xs font-bold text-gray-700">
                 재고
               </th>
+              <th className="px-4 py-2 text-left text-xs font-bold text-gray-700">
+                위치
+              </th>
               <th className="px-4 py-2 text-center text-xs font-bold text-gray-700">
                 상태
               </th>
             </tr>
           </thead>
           <tbody>
-            {product.variants &&
-              product.variants.map((variant) => (
+              {product.variants &&
+              (product.variants as any[]).map((variant: any) => (
                 <tr
                   key={variant.id}
                   className="bg-white border-b border-gray-100"
@@ -202,14 +268,26 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                   <td className="px-4 py-3 text-gray-700">
                     {variant.barcode1}
                   </td>
+                  <td className="px-4 py-3 text-gray-700">
+                    {variant.barcode2 || '-'}
+                  </td>
+                  <td className="px-4 py-3 text-gray-700">
+                    {variant.barcode3 || '-'}
+                  </td>
                   <td className="px-4 py-3 text-right text-green-700 font-bold">
                     {formatPrice(variant.selling_price)}
+                  </td>
+                  <td className="px-4 py-3 text-right text-gray-700">
+                    {formatPrice(variant.cost_price)}
                   </td>
                   <td className="px-4 py-3 text-right text-blue-700 font-bold">
                     {formatPrice(variant.supply_price)}
                   </td>
                   <td className="px-4 py-3 text-right text-gray-700">
                     {variant.stock}개
+                  </td>
+                  <td className="px-4 py-3 text-left text-gray-700">
+                    {variant.warehouse_location || '-'}
                   </td>
                   <td className="px-4 py-3 text-center">
                     {variant.is_selling && (
@@ -232,6 +310,35 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               ))}
           </tbody>
         </table>
+      </Card>
+
+      {/* 추가 상세 정보: 이미지, 메모, 사이즈/무게 */}
+      <Card padding="lg" className="mb-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-4">추가 정보</h2>
+        <div className="grid grid-cols-3 gap-4">
+          {product.images && product.images.map((src: string, idx: number) => (
+            <div key={idx} className="w-full h-48 bg-gray-100 rounded overflow-hidden">
+              <img src={src} className="w-full h-full object-cover" alt={`image-${idx}`} />
+            </div>
+          ))}
+        </div>
+        <div className="mt-4">
+          <div className="text-sm text-gray-600 mb-2">메모</div>
+          <ul className="list-disc pl-5 text-sm text-gray-700">
+            {product.memos && product.memos.map((m: string, idx: number) => (
+              <li key={idx}>{m}</li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="mt-4 grid grid-cols-3 gap-4 text-sm text-gray-700">
+          <div>가로(cm): {product.variants && product.variants[0] && product.variants[0].width_cm}</div>
+          <div>세로(cm): {product.variants && product.variants[0] && product.variants[0].height_cm}</div>
+          <div>높이(cm): {product.variants && product.variants[0] && product.variants[0].depth_cm}</div>
+          <div>무게(g): {product.variants && product.variants[0] && product.variants[0].weight_g}</div>
+          <div>부피(cc): {product.variants && product.variants[0] && product.variants[0].volume_cc}</div>
+          <div>원산지: {product.origin_country}</div>
+        </div>
       </Card>
 
       {/* 상품 상세 설명 */}

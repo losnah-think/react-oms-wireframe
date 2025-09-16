@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Container,
   Card,
@@ -9,9 +9,6 @@ import {
   GridCol,
 } from "../../design-system";
 import TableExportButton from "../../components/common/TableExportButton";
-import { mockProducts } from "../../data/mockProducts";
-import { mockProductFilterOptions } from "../../data/mockProductFilters";
-import mockClassifications from '../../data/mockClassifications';
 import HierarchicalSelect from '../../components/common/HierarchicalSelect';
 import { formatPrice, getStockStatus } from "../../utils/productUtils";
 
@@ -37,17 +34,43 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 15;
 
-  // 내부 분류 이름 매핑
-  const classificationNames: { [key: string]: string } = {};
-  mockClassifications.forEach((c) => {
-    classificationNames[c.id] = c.name;
-  });
+  // internal classification names and raw classifications will be loaded from API
+  const [classificationNames, setClassificationNames] = React.useState<{[k:string]: string}>({});
+  const [classificationsData, setClassificationsData] = React.useState<any[]>([]);
+  useEffect(() => {
+    let mounted = true;
+    fetch('/api/meta/classifications')
+      .then(res => res.json())
+      .then((data) => {
+        if (!mounted) return
+        const idNameMap: any = {}
+        const walk = (nodes: any[]) => {
+          nodes.forEach((n: any) => {
+            idNameMap[n.id] = n.name
+            if (n.children) walk(n.children)
+          })
+        }
+        walk(data || [])
+        setClassificationNames(idNameMap)
+        setClassificationsData(data || [])
+      }).catch(e => console.error(e))
+    return () => { mounted = false }
+  }, [])
 
-  // 외부 카테고리 이름 매핑 (기존 필터 옵션)
-  const categoryNames: { [key: string]: string } = {};
-  mockProductFilterOptions.categories.forEach((cur) => {
-    categoryNames[cur.id] = cur.name;
-  });
+  // external category names loaded from meta API
+  const [categoryNames, setCategoryNames] = React.useState<{[k:string]: string}>({});
+  useEffect(() => {
+    let mounted = true;
+    fetch('/api/meta/filters')
+      .then(res => res.json())
+      .then((data) => {
+        if (!mounted) return
+  const map: any = {};
+  (data.categories || []).forEach((c: any) => map[c.id] = c.name)
+        setCategoryNames(map)
+      }).catch(e => console.error(e))
+    return () => { mounted = false }
+  }, [])
 
   // 정렬 옵션 정의
   const sortOptions = [
@@ -61,20 +84,41 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
     { value: "stock_low", label: "재고 적은순" },
   ];
 
+  const [products, setProducts] = React.useState<any[]>([]);
+  const [productFilterOptions, setProductFilterOptions] = React.useState<any>({ brands: [], status: [] });
+
+  useEffect(() => {
+    let mounted = true;
+    fetch('/api/products?limit=1000')
+      .then(res => res.json())
+      .then((data) => { if (mounted) setProducts(data.products || []) })
+      .catch(e => console.error(e))
+    return () => { mounted = false }
+  }, [])
+
+  useEffect(() => {
+    let mounted = true;
+    fetch('/api/meta/product-filters')
+      .then(res => res.json())
+      .then((data) => { if (!mounted) return; setProductFilterOptions(data || { brands: [], status: [] }) })
+      .catch(e => console.error(e))
+    return () => { mounted = false }
+  }, [])
+
   // 필터링된 상품 목록
   const filteredProducts = useMemo(() => {
-    let filtered = mockProducts.filter((product) => {
+    let filtered = products.filter((product: any) => {
       // 검색어 필터
       if (
         searchTerm &&
-        !product.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        !product.code.toLowerCase().includes(searchTerm.toLowerCase())
+        !String(product.name || '').toLowerCase().includes(searchTerm.toLowerCase()) &&
+        !String(product.sku || product.code || '').toLowerCase().includes(searchTerm.toLowerCase())
       ) {
         return false;
       }
       // 내부 분류 필터 (classification 우선)
       if (selectedCategory !== "전체") {
-        const prodClass = product.classification || categoryNames[product.category_id];
+        const prodClass = product.classification || categoryNames[product.category_id] || classificationNames[product.classification_id];
         if (prodClass !== selectedCategory) return false;
       }
       // 브랜드 필터
@@ -100,21 +144,17 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
         case "name_desc":
           return b.name.localeCompare(a.name);
         case "price_high":
-          return b.selling_price - a.selling_price;
+          return (b.selling_price || 0) - (a.selling_price || 0);
         case "price_low":
-          return a.selling_price - b.selling_price;
-        case "stock_high": {
-          const aStock =
-            a.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0;
-          const bStock =
-            b.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0;
+          return (a.selling_price || 0) - (b.selling_price || 0);
+                case "stock_high": {
+          const aStock = (a.variants || []).reduce((sum: number, v: any) => sum + (v.stock || 0), 0) || 0;
+          const bStock = (b.variants || []).reduce((sum: number, v: any) => sum + (v.stock || 0), 0) || 0;
           return bStock - aStock;
         }
         case "stock_low": {
-          const aStock =
-            a.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0;
-          const bStock =
-            b.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0;
+          const aStock = (a.variants || []).reduce((sum: number, v: any) => sum + (v.stock || 0), 0) || 0;
+          const bStock = (b.variants || []).reduce((sum: number, v: any) => sum + (v.stock || 0), 0) || 0;
           return aStock - bStock;
         }
         default:
@@ -243,7 +283,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
               </span>
               개 상품
               <span className="text-gray-400 ml-2">
-                (전체 {mockProducts.length}개)
+                (전체 {products.length}개)
               </span>
             </p>
           </div>
@@ -289,7 +329,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
               신규 상품 등록
             </Button>
             <TableExportButton
-              data={filteredProducts.map((p) => ({
+              data={filteredProducts.map((p: any) => ({
                 id: p.id,
                 code: p.code,
                 name: p.name,
@@ -336,7 +376,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
           {/* 카테고리 필터 */}
           <GridCol span={4}>
             <HierarchicalSelect
-              data={mockClassifications as any}
+              data={classificationsData as any}
               value={selectedCategory === '전체' ? undefined : selectedCategory}
               placeholder="분류 선택"
               onChange={(node) => setSelectedCategory(node ? node.name : '전체')}
@@ -351,7 +391,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
               className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
             >
               <option value="전체">전체 브랜드</option>
-              {mockProductFilterOptions.brands.map((brand) => (
+              {productFilterOptions.brands.map((brand: any) => (
                 <option key={brand.id} value={brand.name}>
                   {brand.name}
                 </option>
@@ -367,7 +407,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
               className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
             >
               <option value="all">전체 상태</option>
-              {mockProductFilterOptions.status.map((status) => (
+              {productFilterOptions.status.map((status: any) => (
                 <option key={status} value={status}>
                   {status}
                 </option>
@@ -689,7 +729,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
                               {stockStatus.status}
                             </div>
                             <div className="text-sm text-gray-600">
-                              {stockStatus.total ? (
+                                  {stockStatus.total ? (
                                 <div>
                                   <div>
                                     {stockStatus.count}/{stockStatus.total} 옵션
@@ -719,7 +759,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
                                 <div>
                                   총{" "}
                                   {product.variants?.reduce(
-                                    (sum, v) => sum + (v.stock || 0),
+                                    (sum: number, v: any) => sum + (v.stock || 0),
                                     0,
                                   ) || 0}
                                   개
