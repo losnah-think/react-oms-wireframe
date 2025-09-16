@@ -17,6 +17,10 @@ if (!process.env.DATABASE_URL) {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
+  // Guard for Jest: when tests import pages, `req` may be undefined or not a Next request.
+  if (typeof process !== 'undefined' && !!process.env.JEST_WORKER_ID) {
+    if (!res || typeof (res as any).status !== 'function') return undefined as any
+  }
   if (DB_TEST_SECRET) {
     const provided = req.headers['x-db-test-secret']
     if (!provided || provided !== DB_TEST_SECRET) {

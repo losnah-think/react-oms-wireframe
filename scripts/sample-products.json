@@ -1,0 +1,21 @@
+[
+  {
+    "id": "p-1001",
+    "code": "PRD-20250916-1001",
+    "name": "테스트 상품 A",
+    "brand_id": "b-1",
+    "supplier_id": 5,
+    "selling_price": 25000,
+    "supply_price": 20000,
+    "cost_price": 15000,
+    "hs_code": "6109",
+    "origin_country": "KR",
+    "images": ["https://picsum.photos/seed/1001/800/600"],
+    "tags": ["new","summer"],
+    "memos": ["첫번째 메모","두번째 메모"],
+    "variants": [
+      {"id": "v1","variant_name": "Color=Red;Size=M","code":"VAR-1001-1","barcode1":"88000010011","barcode2":"88000010012","barcode3":"88000010013","stock":10,"selling_price":25000,"supply_price":20000,"cost_price":15000,"warehouse_location":"W-1","width_cm":10,"height_cm":20,"depth_cm":2,"weight_g":500},
+      {"id": "v2","variant_name": "Color=Blue;Size=L","code":"VAR-1001-2","barcode1":"88000010021","stock":5,"selling_price":25000,"supply_price":20000,"cost_price":15000,"warehouse_location":"W-2"}
+    ]
+  }
+]

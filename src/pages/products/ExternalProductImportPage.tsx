@@ -218,13 +218,42 @@ const ExternalProductImportPage: React.FC = () => {
       if (current >= 90) {
         clearInterval(interval);
         try {
-          if (mallId === 'cafe24') {
-            // call server-side API to fetch cafe24 products
-            const resp = await fetch('/api/integrations/cafe24/products');
-            if (resp.ok) {
-              const body = await resp.json();
-              const products = body.products || [];
-              setImportedSamples((p) => ({ ...p, [mallId]: products }));
+            if (mallId === 'cafe24') {
+              // call server-side API to fetch cafe24 products
+              try {
+                const resp = await fetch('/api/integrations/cafe24/products');
+                if (resp.ok) {
+                  const body = await resp.json();
+                  const products = body.products || [];
+                  setImportedSamples((p) => ({ ...p, [mallId]: products }));
+                  setImportStats((s) => ({
+                    ...s,
+                    [mallId]: {
+                      totalProducts: products.length,
+                      successCount: products.length,
+                      failureCount: 0,
+                      lastImportDate: new Date().toLocaleString(),
+                    },
+                  }));
+                } else {
+                  const txt = await resp.text().catch(() => '')
+                  throw new Error(`API returned ${resp.status}: ${txt}`)
+                }
+              } catch (err) {
+                // API failed — surface error to user
+                console.error(err)
+                alert(`가져오기 실패: ${(err && (err as any).message) || err}`)
+                setImportProgress((prev) => ({ ...prev, [mallId]: 0 }));
+                return
+              }
+          } else {
+            // For non-cafe24 platforms, call platform-specific API endpoint
+            try {
+              const resp = await fetch(`/api/integrations/${mallId}/products`)
+              if (!resp.ok) throw new Error(`API ${mallId} returned ${resp.status}`)
+              const body = await resp.json()
+              const products = body.products || []
+              setImportedSamples((p) => ({ ...p, [mallId]: products }))
               setImportStats((s) => ({
                 ...s,
                 [mallId]: {
@@ -233,34 +262,13 @@ const ExternalProductImportPage: React.FC = () => {
                   failureCount: 0,
                   lastImportDate: new Date().toLocaleString(),
                 },
-              }));
-            } else {
-              // fallback to mock
-              const samples = generateMockProducts(mallId);
-              setImportedSamples((p) => ({ ...p, [mallId]: samples }));
-              setImportStats((s) => ({
-                ...s,
-                [mallId]: {
-                  totalProducts: samples.length,
-                  successCount: samples.length,
-                  failureCount: 0,
-                  lastImportDate: new Date().toLocaleString(),
-                },
-              }));
+              }))
+            } catch (err) {
+              console.error(err)
+              alert(`가져오기 실패: ${(err && (err as any).message) || err}`)
+              setImportProgress((prev) => ({ ...prev, [mallId]: 0 }))
+              return
             }
-          } else {
-            // non-cafe24: use local mock samples
-            const samples = generateMockProducts(mallId);
-            setImportedSamples((p) => ({ ...p, [mallId]: samples }));
-            setImportStats((s) => ({
-              ...s,
-              [mallId]: {
-                totalProducts: samples.length,
-                successCount: samples.length,
-                failureCount: 0,
-                lastImportDate: new Date().toLocaleString(),
-              },
-            }));
           }
           alert(`${mall.name} 상품 가져오기가 완료되었습니다.`);
           setImportProgress((prev) => ({ ...prev, [mallId]: 0 }));
@@ -272,24 +280,7 @@ const ExternalProductImportPage: React.FC = () => {
     }, 200);
   };
 
-  // Generate lightweight mock products that roughly map to Cafe24 product properties
-  function generateMockProducts(mallId: string): ExternalProduct[] {
-    const count = 8;
-    const now = new Date().toISOString();
-    const items: ExternalProduct[] = [];
-    for (let i = 1; i <= count; i++) {
-      items.push({
-        product_no: `${mallId.toUpperCase()}-${1000 + i}`,
-        name: `${shoppingMalls.find((m) => m.id === mallId)?.name} 샘플 상품 ${i}`,
-        price: Math.round(10000 + Math.random() * 90000),
-        inventory: Math.floor(Math.random() * 200),
-        selling: Math.random() > 0.1,
-        last_update: now,
-        options: { color: i % 2 === 0 ? 'Black' : 'White' },
-      });
-    }
-    return items;
-  }
+  // Note: mock generator removed — UI relies on server API endpoints.
 
   const handleSync = (mallId: string) => {
     const mall = shoppingMalls.find((m) => m.id === mallId);

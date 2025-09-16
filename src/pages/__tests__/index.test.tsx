@@ -19,7 +19,8 @@ import Home from "../../../pages/index";
 
 describe("Pages - Home", () => {
   it("renders header and sidebar", () => {
-    render(React.createElement(Home));
+    // Render Home with session=true so it renders the main SPA layout
+    render(React.createElement(Home, { session: true }));
     expect(screen.getByText("Header Mock")).toBeInTheDocument();
     expect(screen.getByText("Sidebar Mock")).toBeInTheDocument();
   });

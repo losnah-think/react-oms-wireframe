@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Container, Card, Button, Stack } from "../../design-system";
-import { mockOrders } from "../../data/mockOrders";
+// import { mockOrders } from "../../data/mockOrders";
 import {
   filterOrders,
   sortOrders,
@@ -33,27 +33,27 @@ const OrderListPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  // mockOrders를 Order[] 타입에 맞게 변환
-  const orders: Order[] = (mockOrders || []).map((order) => ({
-    orderNumber: order.order_code || "",
-    customerName: order.orderer || "",
-    items: [
-      {
-        productId: order.product_id ?? 0,
-        productName: order.product_name || "",
-        variantId: order.variant_id ?? 0,
-        variantName: order.variant_name || "",
-        quantity: order.ordered_qty || 0,
-        price: order.payment_amount || 0,
-      },
-    ],
-    totalAmount: order.payment_amount || 0,
-  status: (order.status as OrderStatus) || OrderStatus.PENDING,
-    createdAt: order.created_at || new Date().toISOString(),
-    paymentMethod: order.payment_method || "",
-    paymentStatus: order.payment_status || "",
-    // ...order // 기타 필드 유지 (status 중복 제거)
-  }));
+  const [orders, setOrders] = useState<Order[]>([]);
+  useEffect(() => {
+    let mounted = true;
+    fetch('/api/orders?limit=1000')
+      .then(r => r.json())
+      .then(data => {
+        if (!mounted) return
+        const mapped: Order[] = (data.orders || []).map((order: any) => ({
+          orderNumber: order.order_no || '',
+          customerName: order.customer_name || '',
+          items: order.items || [],
+          totalAmount: order.total_amount || 0,
+          status: (order.status as OrderStatus) || OrderStatus.PENDING,
+          createdAt: order.created_at || new Date().toISOString(),
+          paymentMethod: order.payment_method || '',
+          paymentStatus: order.payment_status || '',
+        }));
+        setOrders(mapped)
+      }).catch(e => console.error(e))
+    return () => { mounted = false }
+  }, [])
 
   // 필터링 및 정렬된 주문 목록
   const filteredAndSortedOrders = useMemo(() => {

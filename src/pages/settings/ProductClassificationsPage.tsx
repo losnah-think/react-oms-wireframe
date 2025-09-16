@@ -1,8 +1,12 @@
 import React from 'react';
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState, useEffect } from 'react';
 import { Container, Card } from '../../design-system';
 import HierarchicalSelect, { TreeNode as HNode } from '../../components/common/HierarchicalSelect';
-import mockClassifications from '../../data/mockClassifications';
+
+// fetch classifications from API with fallback
+function loadTreeFromApi(): Promise<any[]> {
+  return fetch('/api/meta/classifications').then(r => r.ok ? r.json().then(b => b.classifications || []) : Promise.resolve([])).catch(() => Promise.resolve([]))
+}
 
 type TreeNode = { id: string; name: string; slug?: string; children?: TreeNode[] };
 
@@ -14,7 +18,8 @@ function loadTree(): TreeNode[] {
     const raw = window.localStorage.getItem(STORAGE_KEY)
     if (raw) return JSON.parse(raw)
   } catch (e) {}
-  return mockClassifications as any
+  // when localStorage is empty, return empty array — we prefer API as source-of-truth
+  return []
 }
 
 function saveTree(tree: TreeNode[]) {
@@ -192,8 +197,18 @@ export default function ProductClassificationsPage() {
   const [deleteTarget, setDeleteTarget] = React.useState<{ id: string; name: string; paths: string[] } | null>(null)
 
   React.useEffect(() => {
-    const t = loadTree()
-    setTree(t)
+    let mounted = true
+    loadTreeFromApi().then((apiTree) => {
+      if (!mounted) return
+      if (apiTree && apiTree.length > 0) {
+        setTree(apiTree as TreeNode[])
+        try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(apiTree)) } catch (e) {}
+      } else {
+        const t = loadTree()
+        setTree(t)
+      }
+    }).catch(() => { const t = loadTree(); setTree(t) })
+    return () => { mounted = false }
   }, [])
 
   const persist = (next: TreeNode[]) => { setTree(next); saveTree(next) }

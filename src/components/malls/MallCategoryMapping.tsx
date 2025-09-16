@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import mockClassifications from '../../data/mockClassifications'
+// classifications will be loaded from /api/meta/classifications or localStorage fallback
 import TableExportButton from '../../components/common/TableExportButton'
 import PresetSelect from '../../components/common/PresetSelect'
 
@@ -40,53 +40,80 @@ const MallCategoryMapping: React.FC<{
 
   // build classification maps and migrate mappings to id-keys
   useEffect(() => {
-    const tree = (function load() {
+    let mounted = true
+    ;(async function load() {
+      try {
+        const resp = await fetch('/api/meta/classifications')
+        if (resp.ok) {
+          const body = await resp.json()
+          if (!mounted) return
+          const tree = body.classifications || []
+          setClassTree(tree)
+          try { window.localStorage.setItem('productClassificationsTree', JSON.stringify(tree)) } catch (e) {}
+          return
+        }
+      } catch (e) {
+        // ignore
+      }
       try {
         const raw = window.localStorage.getItem('productClassificationsTree')
-        if (raw) return JSON.parse(raw)
+        if (raw) { setClassTree(JSON.parse(raw)); return }
       } catch (e) {}
-      return mockClassifications as any
+      setClassTree([])
     })()
-    setClassTree(tree)
-
-    const p2i: Record<string,string> = {}
-    const i2p: Record<string,string> = {}
-    const walk = (nodes: any[], parents: string[] = []) => {
-      nodes.forEach(n => {
-        const path = parents.concat(n.name).join(' > ')
-        p2i[path] = n.id
-        i2p[n.id] = path
-        if (n.children) walk(n.children, parents.concat(n.name))
-      })
-    }
-    walk(tree)
-    setPathToId(p2i)
-    setIdToPath(i2p)
-
-    // migrate stored mappings for this mall: convert path keys to id keys when possible
-    const all = readMappings()
-    const rawMap = all[mallId] || {}
-    const migrated: Mapping = {}
-    Object.keys(rawMap).forEach((k) => {
-      const v = rawMap[k]
-      if (i2p[k]) {
-        // already an id
-        migrated[k] = v
-      } else if (p2i[k]) {
-        // key is a path -> convert to id
-        migrated[p2i[k]] = v
-      } else {
-        // try trimmed match
-        const trimmed = String(k).trim()
-        if (p2i[trimmed]) migrated[p2i[trimmed]] = v
-        else migrated[k] = v
-      }
-    })
-    // extract presets from migrated values
-    const vals = Array.from(new Set(Object.values(migrated).map(String).filter(Boolean)))
-    setPresets(vals)
-    setMap(migrated)
+    return () => { mounted = false }
   }, [mallId])
+
+  // compute classification maps and migrate stored mappings when classTree changes
+  useEffect(() => {
+    const computeMaps = (nodes: any[]) => {
+      const p2i: Record<string,string> = {}
+      const i2p: Record<string,string> = {}
+      const walk = (ns: any[], parents: string[] = []) => {
+        ns.forEach((n: any) => {
+          const path = parents.concat(n.name).join(' > ')
+          p2i[path] = n.id
+          i2p[n.id] = path
+          if (n.children) walk(n.children, parents.concat(n.name))
+        })
+      }
+      walk(nodes)
+      setPathToId(p2i)
+      setIdToPath(i2p)
+
+      // migrate stored mappings for this mall: convert path keys to id keys when possible
+      const all = readMappings()
+      const rawMap = all[mallId] || {}
+      const migrated: Mapping = {}
+      Object.keys(rawMap).forEach((k) => {
+        const v = rawMap[k]
+        if (i2p[k]) {
+          // already an id
+          migrated[k] = v
+        } else if (p2i[k]) {
+          // key is a path -> convert to id
+          migrated[p2i[k]] = v
+        } else {
+          // try trimmed match
+          const trimmed = String(k).trim()
+          if (p2i[trimmed]) migrated[p2i[trimmed]] = v
+          else migrated[k] = v
+        }
+      })
+      // extract presets from migrated values
+      const vals = Array.from(new Set(Object.values(migrated).map(String).filter(Boolean)))
+      setPresets(vals)
+      setMap(migrated)
+    }
+
+    try {
+      const fromLs = window.localStorage.getItem('productClassificationsTree')
+      const loaded = fromLs ? JSON.parse(fromLs as string) : (classTree.length ? classTree : [])
+      computeMaps(loaded)
+    } catch (e) {
+      computeMaps(classTree.length ? classTree : [])
+    }
+  }, [classTree, mallId])
 
   const exportData = React.useMemo(() => {
     const out: any[] = []

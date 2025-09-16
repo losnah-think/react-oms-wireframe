@@ -1,6 +1,5 @@
 "use client";
 import React, { useState } from 'react';
-import { mockCafe24Orders } from '../../data/mockCafe24Orders';
 
 function normalizeCafe24(orders: any[]) {
   // 간단한 normalize 예시
@@ -25,8 +24,14 @@ export default function TestPreview({ channel }: TestPreviewProps) {
     const channelLabel = channel ? `채널: ${channel}` : '';
 
   const runTest = () => {
-    setRaw(mockCafe24Orders);
-    setNormalized(normalizeCafe24(mockCafe24Orders));
+    fetch('/api/integrations/cafe24/orders')
+      .then(r => r.json())
+      .then(body => {
+        const rawOrders = body.orders || []
+        setRaw(rawOrders)
+        setNormalized(normalizeCafe24(rawOrders))
+      })
+      .catch(() => alert('테스트 데이터를 불러오지 못했습니다'))
   };
 
   return (

@@ -1,5 +1,11 @@
-import React from 'react';
-import { mockProductFilterOptions } from '../../data/mockProductFilters';
+import React, { useEffect, useState } from 'react';
+
+// will fetch filter options from API
+type FilterOptions = {
+  categories: any[]
+  brands: any[]
+  status: string[]
+}
 
 type FilterState = {
   searchTerm: string;
@@ -27,6 +33,19 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
   onToggleFilters,
   onResetFilters
 }) => {
+  const [options, setOptions] = useState<FilterOptions>({ categories: [], brands: [], status: [] })
+
+  useEffect(() => {
+    let mounted = true
+    fetch('/api/meta/product-filters')
+      .then(r => r.json())
+      .then(body => {
+        if (!mounted) return
+        setOptions(body.filters || { categories: [], brands: [], status: [] })
+      })
+      .catch(() => {})
+    return () => { mounted = false }
+  }, [])
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
       {/* 검색바 */}
@@ -64,7 +83,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
                 onChange={(e) => onFilterChange({ selectedCategory: e.target.value })}
                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                {mockProductFilterOptions.categories.map((category: any) => (
+                {options.categories.map((category: any) => (
                   <option key={category.id} value={category.name}>{category.name}</option>
                 ))}
               </select>
@@ -78,7 +97,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
                 onChange={(e) => onFilterChange({ selectedBrand: e.target.value })}
                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                {mockProductFilterOptions.brands.map((brand: any) => (
+                {options.brands.map((brand: any) => (
                   <option key={brand.id} value={brand.name}>{brand.name}</option>
                 ))}
               </select>
@@ -92,7 +111,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
                 onChange={(e) => onFilterChange({ selectedStatus: e.target.value })}
                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                {mockProductFilterOptions.status.map((status: any) => (
+                {options.status.map((status: any) => (
                   <option key={status} value={status}>{status}</option>
                 ))}
               </select>

@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { mockBrands } from "../../data/mockBrands";
-import { mockCategories } from "../../data/mockCategories";
 import {
   Container,
   Card,
@@ -48,6 +46,7 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
     [k: string]: boolean;
   }>({ additionalInfo: true, logistics: true, policies: true });
   const [saving, setSaving] = useState(false);
+  const [productFilterOptions, setProductFilterOptions] = useState<any>({ brands: [], categories: [] });
 
   // Field update function
 
@@ -111,6 +110,15 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
       });
     }
   }, [productId]);
+
+  useEffect(() => {
+    let mounted = true
+    fetch('/api/meta/product-filters')
+      .then(res => res.json())
+      .then((data) => { if (!mounted) return; setProductFilterOptions(data || { brands: [], categories: [] }) })
+      .catch(() => {})
+    return () => { mounted = false }
+  }, [])
 
   const updateField = (path: string, value: any) => {
     const keys = path.split(".");
@@ -187,7 +195,7 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
                   >
                     <option value="">카테고리 선택</option>
-                    {mockCategories.map((cat) => (
+                    {(productFilterOptions.categories || []).map((cat: any) => (
                       <option key={cat.id} value={cat.id}>
                         {cat.name}
                       </option>
@@ -206,7 +214,7 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
                   >
                     <option value="">브랜드 선택</option>
-                    {mockBrands.map((brand) => (
+                    {(productFilterOptions.brands || []).map((brand: any) => (
                       <option key={brand.id} value={brand.id}>
                         {brand.name}
                       </option>

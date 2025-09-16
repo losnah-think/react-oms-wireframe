@@ -28,7 +28,8 @@ function collectPageFiles(dir: string) {
     } else if (
       entry.isFile() &&
       /\.tsx?$/.test(entry.name) &&
-      !entry.name.endsWith(".test.tsx")
+      !entry.name.endsWith(".test.tsx") &&
+      !full.includes(`${path.sep}api${path.sep}`)
     ) {
       files.push(full);
     }

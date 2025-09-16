@@ -1,5 +1,4 @@
-import React from 'react';
-import { orderStatusOptions, paymentMethodOptions, paymentStatusOptions } from '../../data/mockOrders';
+import React, { useEffect, useState } from 'react';
 
 interface OrderFiltersProps {
   search: string;
@@ -16,6 +15,8 @@ interface OrderFiltersProps {
   setEndDate: (endDate: string) => void;
 }
 
+type Options = { orderStatusOptions: any[]; paymentMethodOptions?: any[]; paymentStatusOptions?: any[] }
+
 const OrderFilters: React.FC<OrderFiltersProps> = ({
   search,
   setSearch,
@@ -30,6 +31,15 @@ const OrderFilters: React.FC<OrderFiltersProps> = ({
   endDate,
   setEndDate
 }) => {
+  const [options, setOptions] = useState<Options>({ orderStatusOptions: [] })
+  useEffect(() => {
+    let mounted = true
+    fetch('/api/meta/order-status')
+      .then(r => r.json())
+      .then(b => { if (!mounted) return; setOptions(b) })
+      .catch(() => {})
+    return () => { mounted = false }
+  }, [])
   return (
     <div className="bg-white p-6 rounded-lg shadow mb-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
@@ -57,7 +67,7 @@ const OrderFilters: React.FC<OrderFiltersProps> = ({
             onChange={(e) => setStatus(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            {orderStatusOptions.map((option) => (
+            {options.orderStatusOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
@@ -75,7 +85,7 @@ const OrderFilters: React.FC<OrderFiltersProps> = ({
             onChange={(e) => setPaymentMethod(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            {paymentMethodOptions.map((option) => (
+            {(options.paymentMethodOptions || []).map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
@@ -93,7 +103,7 @@ const OrderFilters: React.FC<OrderFiltersProps> = ({
             onChange={(e) => setPaymentStatus(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            {paymentStatusOptions.map((option) => (
+            {(options.paymentStatusOptions || []).map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>

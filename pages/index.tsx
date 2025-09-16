@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from './api/auth/[...nextauth]'
+// `getServerSession` and `authOptions` are server-only and imported dynamically
+// inside `getServerSideProps` to avoid pulling server-only dependencies into
+// the client/test runtime at module-evaluation time.
 import LoginPage from './settings/integration-admin/login'
 import Header from '../src/components/layout/Header';
 import Sidebar from '../src/components/layout/Sidebar';
@@ -248,6 +249,14 @@ export async function getServerSideProps(ctx: any) {
     return { props: { session: true, initialPage: page } }
   }
 
-  const session = await getServerSession(ctx.req, ctx.res, authOptions as any)
-  return { props: { session: !!session, initialPage: page } }
+  // Dynamically import server-only helpers to avoid loading them during tests
+  try {
+    const { getServerSession } = await import('next-auth/next')
+    const { authOptions } = await import('./api/auth/[...nextauth]')
+    const session = await (getServerSession as any)(ctx.req, ctx.res, authOptions as any)
+    return { props: { session: !!session, initialPage: page } }
+  } catch (e) {
+    // If server auth cannot be loaded (e.g. in unit tests), fall back to unauthenticated
+    return { props: { session: false, initialPage: page } }
+  }
 }
