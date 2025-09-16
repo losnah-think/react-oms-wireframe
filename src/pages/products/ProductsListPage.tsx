@@ -47,6 +47,12 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
   const [selectedCategory, setSelectedCategory] = useState('전체')
   const [selectedBrand, setSelectedBrand] = useState('전체')
   const [sortBy, setSortBy] = useState('newest')
+  const [selectedIds, setSelectedIds] = useState<Record<string, boolean>>({})
+  const [selectAll, setSelectAll] = useState(false)
+  const [toastMessage, setToastMessage] = useState<string | null>(null)
+  const [isBatchModalOpen, setIsBatchModalOpen] = useState(false)
+  const [isOptionBatchModalOpen, setIsOptionBatchModalOpen] = useState(false)
+  const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -161,6 +167,40 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
     createdAt: p.created_at,
   }))
 
+  const selectedCount = Object.values(selectedIds).filter(Boolean).length
+
+  const toggleRow = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = { ...prev, [id]: !prev[id] }
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    const willSelect = !selectAll
+    setSelectAll(willSelect)
+    if (willSelect) {
+      const selMap = {} as Record<string, boolean>
+      ;(filteredProducts || []).forEach((p: any) => { selMap[p.id] = true })
+      setSelectedIds(selMap)
+    } else {
+      setSelectedIds({})
+    }
+  }
+
+  const handleDeleteSelected = async () => {
+    const ids = Object.keys(selectedIds).filter((k) => selectedIds[k])
+    if (ids.length === 0) { setToastMessage('삭제할 상품을 선택하세요.'); return }
+    // For mock/demo: remove locally and show toast
+    setProducts((prev) => prev.filter((p: any) => !ids.includes(String(p.id))))
+    setSelectedIds({})
+    setSelectAll(false)
+    setToastMessage(`${ids.length}개 상품을 삭제했습니다. (모의삭제)`)
+  }
+
+  const openBatchEdit = () => { setIsBatchModalOpen(true) }
+  const openOptionBatchEdit = () => { setIsOptionBatchModalOpen(true) }
+
   return (
     <Container maxWidth="full" padding="md" className="bg-gray-50 min-h-screen">
       <div className="mb-6">
@@ -238,7 +278,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
 
           <GridRow gutter={12} className="mt-3">
             <GridCol span={6}>
-              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3">
                 <label className="text-sm">분류</label>
                 <select className="px-2 py-1 border rounded text-sm">
                   <option>전체상품분류</option>
@@ -248,7 +288,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
                   <option>전체</option>
                   <option>재고관리</option>
                 </select>
-                <button className="px-2 py-1 border rounded text-sm">상품분류 관리</button>
+                <button className="px-2 py-1 border rounded text-sm" onClick={() => setIsCategoryManagerOpen(true)}>상품분류 관리</button>
               </div>
             </GridCol>
             <GridCol span={6}>
@@ -280,17 +320,17 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
 
       {/* Action toolbar (Excel, batch edit, option batch edit, delete, sort) */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-4">
+    <div className="flex items-center gap-4">
           <div className="text-sm text-gray-600">총 <span className="font-bold text-blue-600">{filteredProducts.length}</span> 건</div>
           <div className="text-sm text-gray-400">(전체 {products.length}개)</div>
           <div className="ml-2">
             <TableExportButton data={exportData} fileName={`products-list.xlsx`} />
           </div>
-          <button className="px-3 py-1 bg-white border rounded text-sm" onClick={() => { /* TODO: batch edit action */ }}>상품 일괄수정</button>
-          <button className="px-3 py-1 bg-white border rounded text-sm" onClick={() => { /* TODO: option batch edit */ }}>옵션 일괄수정</button>
+          <button className="px-3 py-1 bg-white border rounded text-sm" onClick={openBatchEdit}>상품 일괄수정</button>
+          <button className="px-3 py-1 bg-white border rounded text-sm" onClick={openOptionBatchEdit}>옵션 일괄수정</button>
         </div>
         <div className="flex items-center gap-3">
-          <button className="px-3 py-1 bg-red-50 border border-red-300 text-red-700 rounded text-sm" onClick={() => { /* TODO: delete selected */ }}>선택삭제</button>
+          <button className="px-3 py-1 bg-red-50 border border-red-300 text-red-700 rounded text-sm" onClick={handleDeleteSelected}>선택삭제</button>
           <select className="px-2 py-1 border rounded text-sm">
             <option>정렬방법</option>
             <option value="newest">최신순</option>
@@ -319,6 +359,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
           <table className="min-w-full">
             <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
               <tr>
+                <th className="px-6 py-4"><input type="checkbox" checked={selectAll} onChange={toggleSelectAll} /></th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700">상품정보</th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700">분류/브랜드</th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700">재고</th>
@@ -330,6 +371,9 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredProducts.map((p, idx) => (
                 <tr key={p.id} className="hover:bg-gray-50" onClick={() => onNavigate?.('products-detail', p.id)} style={{ cursor: 'pointer' }}>
+                  <td className="px-4 py-6" onClick={(e) => e.stopPropagation()}>
+                    <input type="checkbox" checked={!!selectedIds[p.id]} onChange={() => toggleRow(String(p.id))} />
+                  </td>
                   <td className="px-6 py-6">
                     <div className="flex items-start gap-4">
                       <div className="w-20 h-16 bg-gray-100 rounded overflow-hidden flex-shrink-0">
@@ -362,7 +406,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
                     </div>
                   </td>
                   <td className="px-6 py-6">
-                    <div className="text-sm">{p.classification || categoryNames[p.category_id] || '미입력'}</div>
+                    <div className="text-sm">{p.group || p.classification || categoryNames[p.category_id] || '미입력'}</div>
                     {p.brand ? <div className="text-sm text-gray-600 mt-1">{p.brand}</div> : null}
                     <div className="text-sm text-gray-600 mt-2">상품코드 | {p.code || '미입력'}</div>
                     <div className="text-sm text-gray-600 mt-1">배송비정책 | {p.shipping_policy || '미지정'}</div>
@@ -382,6 +426,49 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
           </table>
         </div>
       </Card>
+
+      {/* Batch edit modal (mock) */}
+      {isBatchModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-40">
+          <div className="bg-white p-6 rounded shadow-lg w-1/2">
+            <h3 className="text-lg font-bold mb-4">상품 일괄수정 (목업)</h3>
+            <p className="text-sm text-gray-600 mb-4">선택된 상품 수: {selectedCount}</p>
+            <div className="flex justify-end gap-2">
+              <button className="px-3 py-1 border rounded" onClick={() => setIsBatchModalOpen(false)}>취소</button>
+              <button className="px-3 py-1 bg-blue-600 text-white rounded" onClick={() => { setIsBatchModalOpen(false); setToastMessage('일괄수정(목업)이 완료되었습니다.'); }}>적용</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Option batch edit modal (mock) */}
+      {isOptionBatchModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-40">
+          <div className="bg-white p-6 rounded shadow-lg w-1/2">
+            <h3 className="text-lg font-bold mb-4">옵션 일괄수정 (목업)</h3>
+            <p className="text-sm text-gray-600 mb-4">선택된 상품 수: {selectedCount}</p>
+            <div className="flex justify-end gap-2">
+              <button className="px-3 py-1 border rounded" onClick={() => setIsOptionBatchModalOpen(false)}>취소</button>
+              <button className="px-3 py-1 bg-blue-600 text-white rounded" onClick={() => { setIsOptionBatchModalOpen(false); setToastMessage('옵션 일괄수정(목업)이 완료되었습니다.'); }}>적용</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Category manager modal (opened from filter area) */}
+      {isCategoryManagerOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-40">
+          <div className="bg-white p-6 rounded shadow-lg w-1/3">
+            <h3 className="text-lg font-bold mb-4">상품분류 관리 (목업)</h3>
+            <p className="text-sm text-gray-600 mb-4">분류 추가/삭제를 시뮬레이션합니다.</p>
+            <div className="flex justify-end gap-2">
+              <button className="px-3 py-1 border rounded" onClick={() => setIsCategoryManagerOpen(false)}>닫기</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toastMessage && <div className="fixed right-6 bottom-6 z-50"><div className="bg-black text-white px-4 py-2 rounded shadow-lg text-sm">{toastMessage}</div></div>}
     </Container>
   )
 }
