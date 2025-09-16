@@ -234,6 +234,21 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
   return (
     <>
     <Container>
+      <div className="flex items-center justify-between mb-4">
+        <div className="text-sm text-gray-700">홈 / 상품 / 상품 수정</div>
+        <div className="flex items-center gap-2">
+          <button className="px-3 py-1 border rounded bg-white text-sm" onClick={() => { if (examples[0]) loadExampleById(examples[0].id) }} disabled={!examples[0]}>
+            {examples[0] ? (examples[0].name || '예제 1') : '예제1'}
+          </button>
+          <button className="px-3 py-1 border rounded bg-white text-sm" onClick={() => { if (examples[1]) loadExampleById(examples[1].id) }} disabled={!examples[1]}>
+            {examples[1] ? (examples[1].name || '예제 2') : '예제2'}
+          </button>
+          <button className="px-3 py-1 border rounded bg-white text-sm" onClick={() => { if (examples[2]) loadExampleById(examples[2].id) }} disabled={!examples[2]}>
+            {examples[2] ? (examples[2].name || '예제 3') : '예제3'}
+          </button>
+        </div>
+      </div>
+
       <div className="flex gap-8">
         <div className="flex-1">
           {/* 기본 정보 Card */}
@@ -661,6 +676,49 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
                   />
                 </GridCol>
               </GridRow>
+              {/* Option editor table */}
+              <div className="mt-4">
+                <h3 className="text-sm font-semibold mb-2">옵션 편집</h3>
+                {(formData.additionalInfo?.options || []).map((group: any, gIdx: number) => (
+                  <div key={group.id || gIdx} className="mb-4">
+                    <div className="text-sm font-medium mb-2">옵션 그룹: {group.name || `그룹 ${gIdx + 1}`}</div>
+                    <div className="overflow-auto border rounded">
+                      <table className="w-full text-sm">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-3 py-2 text-left">옵션값</th>
+                            <th className="px-3 py-2 text-left">바코드</th>
+                            <th className="px-3 py-2 text-left">원가</th>
+                            <th className="px-3 py-2 text-left">판매가</th>
+                            <th className="px-3 py-2 text-left">마진</th>
+                            <th className="px-3 py-2 text-left">재고</th>
+                            <th className="px-3 py-2 text-left">판매여부</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(group.values || []).map((v: any, idx: number) => (
+                            <tr key={v.id || idx} className="border-t">
+                              <td className="px-3 py-2">{v.value}</td>
+                              <td className="px-3 py-2"><input className="px-2 py-1 border rounded w-40" value={v.barcodeNumber || ''} onChange={(e) => updateField(`additionalInfo.options.${gIdx}.values.${idx}.barcodeNumber`, e.target.value)} /></td>
+                              <td className="px-3 py-2"><input type="number" step="0.01" className="px-2 py-1 border rounded w-28" value={v.costPrice ?? v.cost_price ?? 0} onChange={(e) => updateField(`additionalInfo.options.${gIdx}.values.${idx}.costPrice`, Number(Number(e.target.value).toFixed(2)))} /></td>
+                              <td className="px-3 py-2"><input type="number" step="0.01" className="px-2 py-1 border rounded w-28" value={v.price ?? v.sellingPrice ?? 0} onChange={(e) => updateField(`additionalInfo.options.${gIdx}.values.${idx}.price`, Number(Number(e.target.value).toFixed(2)))} /></td>
+                              <td className="px-3 py-2">
+                                {(() => {
+                                  const cp = Number(v.costPrice ?? v.cost_price ?? 0)
+                                  const sp = Number(v.price ?? v.sellingPrice ?? 0)
+                                  return (sp - cp).toFixed(2)
+                                })()}
+                              </td>
+                              <td className="px-3 py-2"><input type="number" className="px-2 py-1 border rounded w-20" value={v.stock ?? 0} onChange={(e) => updateField(`additionalInfo.options.${gIdx}.values.${idx}.stock`, Number(e.target.value))} /></td>
+                              <td className="px-3 py-2"><input type="checkbox" checked={v.isActive ?? true} onChange={(e) => updateField(`additionalInfo.options.${gIdx}.values.${idx}.isActive`, e.target.checked)} /></td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </Card>
           <Stack direction="row" gap={4} justify="end" className="pt-6">
@@ -746,6 +804,48 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
                 활성화:{" "}
                 <span className="font-semibold">
                   {formData.basicInfo?.active ? "활성" : "비활성"}
+                </span>
+              </li>
+              <li>
+                첫 옵션 판매가: {" "}
+                <span className="font-semibold">
+                  {(() => {
+                    // find first active variant across option groups
+                    const options = formData.additionalInfo?.options || []
+                    let fv: any = null
+                    for (let g of options) {
+                      if (Array.isArray(g.values) && g.values.length > 0) {
+                        const found = g.values.find((v: any) => v.isActive !== false)
+                        if (found) { fv = found; break }
+                      }
+                    }
+                    if (!fv) return '-'
+                    const base = Number(formData.basicInfo?.pricing?.sellingPrice ?? 0)
+                    const add = Number(fv.additionalPrice ?? fv.price ?? fv.sellingPrice ?? 0)
+                    const sp = base + add
+                    return `${sp.toFixed(2)}원`
+                  })()}
+                </span>
+              </li>
+              <li>
+                첫 옵션 마진: {" "}
+                <span className="font-semibold">
+                  {(() => {
+                    const options = formData.additionalInfo?.options || []
+                    let fv: any = null
+                    for (let g of options) {
+                      if (Array.isArray(g.values) && g.values.length > 0) {
+                        const found = g.values.find((v: any) => v.isActive !== false)
+                        if (found) { fv = found; break }
+                      }
+                    }
+                    if (!fv) return '-'
+                    const base = Number(formData.basicInfo?.pricing?.sellingPrice ?? 0)
+                    const add = Number(fv.additionalPrice ?? fv.price ?? fv.sellingPrice ?? 0)
+                    const sp = base + add
+                    const cp = Number(fv.costPrice ?? fv.cost_price ?? 0)
+                    return `${(sp - cp).toFixed(2)}원`
+                  })()}
                 </span>
               </li>
             </ul>
