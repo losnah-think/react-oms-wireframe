@@ -51,6 +51,7 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
   const [groupsData, setGroupsData] = useState<any[]>([])
   const [saving, setSaving] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null)
+  const [showAdvanced, setShowAdvanced] = useState(false)
 
   // Field update function
 
@@ -204,6 +205,15 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
                   </button>
                 </div>
               </div>
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <button className="px-3 py-1 border rounded text-sm mr-2" onClick={() => setShowAdvanced((s) => !s)}>{showAdvanced ? '고급항목 숨기기' : '고급항목 표시'}</button>
+                </div>
+                <div>
+                  <button className="px-3 py-1 bg-blue-600 text-white rounded text-sm" onClick={handleSave} disabled={saving}>{saving ? '저장중...' : '저장'}</button>
+                </div>
+              </div>
+
               <GridRow gutter={16}>
                 <GridCol span={6}>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -251,39 +261,47 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     그룹(소속)
                   </label>
-                  <select
-                    value={formData.basicInfo?.categoryId || ""}
-                    onChange={(e) =>
-                      updateField("basicInfo.categoryId", e.target.value)
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  >
-                    <option value="">카테고리 선택</option>
-                    {(productFilterOptions.categories || []).map((cat: any) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
+                  {!showAdvanced ? (
+                    <div className="px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-sm">{formData.basicInfo?.categoryId || '미지정'}</div>
+                  ) : (
+                    <select
+                      value={formData.basicInfo?.categoryId || ""}
+                      onChange={(e) =>
+                        updateField("basicInfo.categoryId", e.target.value)
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    >
+                      <option value="">카테고리 선택</option>
+                      {(productFilterOptions.categories || []).map((cat: any) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </GridCol>
                 <GridCol span={6}>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     브랜드
                   </label>
-                  <select
-                    value={formData.basicInfo?.brandId || ""}
-                    onChange={(e) =>
-                      updateField("basicInfo.brandId", e.target.value)
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  >
-                    <option value="">브랜드 선택</option>
-                    {(productFilterOptions.brands || []).map((brand: any) => (
-                      <option key={brand.id} value={brand.id}>
-                        {brand.name}
-                      </option>
-                    ))}
-                  </select>
+                  {!showAdvanced ? (
+                    <div className="px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-sm">{formData.basicInfo?.brandId || '미지정'}</div>
+                  ) : (
+                    <select
+                      value={formData.basicInfo?.brandId || ""}
+                      onChange={(e) =>
+                        updateField("basicInfo.brandId", e.target.value)
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    >
+                      <option value="">브랜드 선택</option>
+                      {(productFilterOptions.brands || []).map((brand: any) => (
+                        <option key={brand.id} value={brand.id}>
+                          {brand.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </GridCol>
                 <GridCol span={6}>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
