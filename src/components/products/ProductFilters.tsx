@@ -38,10 +38,14 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
   useEffect(() => {
     let mounted = true
     fetch('/api/meta/product-filters')
-      .then(r => r.json())
-      .then(body => {
+      .then((r) => {
+        if (!r.ok) return Promise.resolve({ filters: { categories: [], brands: [], status: [] } })
+        return r.json().catch(() => ({ filters: { categories: [], brands: [], status: [] } }))
+      })
+      .then((body) => {
         if (!mounted) return
-        setOptions(body.filters || { categories: [], brands: [], status: [] })
+        const filters = body && body.filters ? body.filters : { categories: [], brands: [], status: [] }
+        setOptions(filters)
       })
       .catch(() => {})
     return () => { mounted = false }
