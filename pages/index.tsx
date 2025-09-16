@@ -42,10 +42,11 @@ import ProductYearsPage from '../src/pages/settings/ProductYearsPage';
 export default function Home(props: any) {
   // If no session, render the login UI inline at '/'
   const sessionExists = !!props.session
+  // If mocks are enabled in production, show the app even without a session so the mock UI renders.
+  const useMocksInProd = process.env.NEXT_PUBLIC_USE_MOCKS === '1'
   // During development we don't want the login UI to show inline by default.
-  // Honor NEXT_PUBLIC_HIDE_LOGIN=1 to hide login in dev as well.
   const hideLogin = process.env.NEXT_PUBLIC_HIDE_LOGIN === '1' || process.env.NODE_ENV !== 'production'
-  if (!sessionExists && !hideLogin) return <LoginPage />
+  if (!sessionExists && !hideLogin && !useMocksInProd) return <LoginPage />
 
   const initialPage = props.initialPage ?? 'dashboard'
   const [currentPage, setCurrentPage] = useState(initialPage);
