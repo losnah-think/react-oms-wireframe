@@ -52,88 +52,135 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
   const [saving, setSaving] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null)
   const [showAdvanced, setShowAdvanced] = useState(false)
-
+  const [examples, setExamples] = useState<any[]>([])
+  const [loadingExampleId, setLoadingExampleId] = useState<string | number | null>(null)
   // Field update function
+
+  // Map mock product to the formData shape used by this page
+  const mapMockToForm = (p: any) => {
+    const basic = {
+      id: p.id,
+      createdBy: p.registrant || 'api',
+      createdAt: p.created_at ? new Date(p.created_at) : new Date(),
+      modifiedBy: p.registrant || 'api',
+      modifiedAt: p.created_at ? new Date(p.created_at) : new Date(),
+      productName: p.name || '',
+      englishProductName: p.name_en || '',
+      productCode: p.code || '',
+      categoryId: p.classification_id || p.classification || '',
+      brandId: p.brand || p.brandId || '',
+      supplierId: p.supplier || p.supplier_name || '',
+      active: true,
+      isSelling: p.is_soldout ? false : (p.is_selling !== undefined ? p.is_selling : true),
+      isOutOfStock: !!p.is_soldout,
+      pricing: {
+        sellingPrice: p.selling_price ?? p.sellingPrice ?? null,
+        consumerPrice: p.market_price ?? p.consumer_price ?? null,
+        supplyPrice: p.supply_price ?? p.supplyPrice ?? null,
+        commissionRate: p.brand_commission_rate ?? 0,
+      },
+      thumbnailUrl: p.main_image || p.thumbnail || '',
+      description: p.description || p.product_description || '',
+      stock: (Array.isArray(p.variants) ? p.variants.reduce((s: number, v: any) => s + (v.stock || 0), 0) : p.stock) || 0,
+      pricingRaw: p,
+    }
+
+    const memos = [] as string[]
+    for (let i = 1; i <= 15; i++) {
+      const key = `memo${i}`
+      memos.push(p[key] || '')
+    }
+
+    const options = [] as any[]
+    if (Array.isArray(p.variants) && p.variants.length > 0) {
+      options.push({ id: 'imported-options', name: '기본옵션', values: p.variants.map((v: any) => ({
+        id: v.id || `val-${Math.random().toString(36).slice(2,8)}`,
+        sku: v.sku || v.option_code || v.optionCode || '',
+        value: v.option_name || v.name || `${v.color || ''} ${v.size || ''}`.trim(),
+        barcodeNumber: v.barcode || v.barcodeNumber || '',
+        additionalPrice: 0,
+        stock: v.stock ?? 0,
+        isActive: v.is_selling !== undefined ? v.is_selling : true,
+      })) })
+    }
+
+    return {
+      basicInfo: basic,
+      additionalInfo: {
+        productDesigner: p.designer || '',
+        publishDate: p.publish_date ? new Date(p.publish_date) : undefined,
+        productSeason: p.product_season || p.productSeason || '',
+        detailedLogistics: {
+          packageWidth: p.dimensions?.width_cm || p.dimensions?.width || 0,
+          packageHeight: p.dimensions?.height_cm || p.dimensions?.height || 0,
+          packageDepth: p.dimensions?.depth_cm || p.dimensions?.depth || 0,
+          packageWeight: p.weight_g || p.weight || 0,
+          countryOfOrigin: p.origin || p.origin_code || p.manufacture_country || '',
+          hsCode: p.hs_code || p.hsCode || '',
+          storageConditions: p.storageConditions || '',
+          shelfLife: p.shelf_life || p.shelfLife || 0,
+        },
+        memos,
+        options,
+      },
+      validation: {
+        errors: {},
+        warnings: {},
+        isValid: true,
+        touchedFields: new Set(),
+      }
+    }
+  }
+
+  // Load available mock examples for manual selection (three cases)
+  useEffect(() => {
+    let mounted = true
+    fetch('/api/products/mock-details')
+      .then((r) => r.json().catch(() => ({ products: [] })))
+      .then((data) => {
+        if (!mounted) return
+        const list = (data && data.products) ? data.products : []
+        setExamples(list)
+      })
+      .catch(() => {})
+    return () => { mounted = false }
+  }, [])
+
+  const loadExampleById = (id: string | number) => {
+    const p = examples.find((x) => x.id === id)
+    if (!p) return
+    setLoadingExampleId(id)
+    const mapped = mapMockToForm(p)
+    setFormData(mapped)
+    setLoadingExampleId(null)
+    setToastMessage(`${p.name || '예시'} 데이터를 로드했습니다.`)
+  }
 
   // Load product data (mock for now)
   useEffect(() => {
     if (productId) {
-      // TODO: Replace with real API call
-      setFormData({
-        basicInfo: {
-          createdBy: 'api_test',
-          createdAt: new Date('2024-07-18T18:15:00'),
-          modifiedBy: 'api_test',
-          modifiedAt: new Date('2024-07-18T18:15:00'),
-          productName: "기존 상품명",
-          englishProductName: "Existing Product",
-          productCode: "PRD000001",
-          categoryId: "cat-1",
-          brandId: "brand-1",
-          supplierId: "supplier-1",
-          active: true,
-          isSelling: true,
-          isOutOfStock: false,
-          logistics: {
-            width: 20,
-            height: 15,
-            depth: 5,
-            weight: 300,
-            packagingUnit: "ea",
-            packagingQuantity: 1,
-            isFragile: false,
-            isLiquid: false,
-          },
-          policies: {
-            showProductNameOnInvoice: true,
-            preventConsolidation: false,
-            shippingPolicyId: undefined,
-            giftPolicyId: undefined,
-            isSampleIncluded: false,
-            isReturnable: true,
-            isExchangeable: true,
-            returnPeriodDays: 14,
-          },
-        },
-        additionalInfo: {
-          productDesigner: "홍길동",
-          publishDate: new Date("2025-09-01"),
-          productSeason: "FW",
-          detailedLogistics: {
-            packageWidth: 20,
-            packageHeight: 15,
-            packageDepth: 5,
-            packageWeight: 300,
-            countryOfOrigin: "KR",
-            hsCode: "123456",
-            storageConditions: "",
-            shelfLife: 365,
-          },
-          // 15 memo slots
-          memos: Array.from({ length: 15 }).map((_, i) => `상품메모${i + 1}`),
-          // example options / variants
-          options: [
-            {
-              id: 'opt-1',
-              name: '색상/사이즈',
-              values: [
-                { id: 'val-1', sku: '15623320001', value: '화이트,L(66-88)', barcodeNumber: '15623320001', additionalPrice: 0, stock: 500, isActive: true },
-                { id: 'val-2', sku: '15623320002', value: '화이트,XL(99-120)', barcodeNumber: '15623320002', additionalPrice: 0, stock: 500, isActive: true },
-                { id: 'val-3', sku: '15623320003', value: '블랙,L(66-88)', barcodeNumber: '15623320003', additionalPrice: 0, stock: 500, isActive: true },
-                { id: 'val-4', sku: '15623320004', value: '블랙,XL(99-120)', barcodeNumber: '15623320004', additionalPrice: 0, stock: 500, isActive: true },
-              ],
-            },
-          ],
-        },
-        validation: {
-          errors: {},
-          warnings: {},
-          isValid: true,
-          touchedFields: new Set(),
-        },
-      });
+      // try to fetch the product from mock-details (by id), else fallback to a minimal default
+      fetch('/api/products/mock-details')
+        .then((r) => r.json().catch(() => ({ products: [] })))
+        .then((data) => {
+          const list = (data && data.products) ? data.products : []
+          const p = list.find((x: any) => String(x.id) === String(productId)) || list[0]
+          if (p) {
+            setFormData(mapMockToForm(p))
+          } else {
+            setFormData({
+              basicInfo: {},
+              additionalInfo: {},
+              validation: { errors: {}, warnings: {}, isValid: true, touchedFields: new Set() }
+            })
+          }
+        })
+        .catch(() => {
+          setFormData({ basicInfo: {}, additionalInfo: {}, validation: { errors: {}, warnings: {}, isValid: true, touchedFields: new Set() } })
+        })
     }
-  }, [productId]);
+  }, [productId, examples])
+
 
   useEffect(() => {
     let mounted = true
