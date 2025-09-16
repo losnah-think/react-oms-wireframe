@@ -1,4 +1,5 @@
 "use client";
+import React from 'react'
 import '../src/App.css'
 import 'react-quill/dist/quill.snow.css'
 import type { AppProps } from 'next/app'

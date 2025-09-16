@@ -1,3 +1,4 @@
+import React from 'react'
 import Container from "../../design-system/components/Container";
 import Card from "../../design-system/components/Card";
 import ConnectorTable from "../../components/integrations/ConnectorTable";
@@ -28,12 +29,9 @@ export default function IntegrationPage() {
         </div>
         <AdminIntegrationLink />
       </Card>
-      {/* top-right fixed button removed — button moved to title card */}
       <Card>
         <ConnectorTable />
       </Card>
-
-      {/* Add-shop modal moved to `IntegrationsPage` (RegisterIntegrationForm) */}
     </Container>
   );
 }
