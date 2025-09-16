@@ -1,9 +1,0 @@
-roles:
-  admin:
-    description: Full access, can manage integrations, secrets, users, and deployments.
-  operator:
-    description: Day-to-day operations: import products, view integrations.
-  client:
-    description: Merchant account: view own products and request imports.
-  engineer:
-    description: Technical role: view logs, assist with integrations.

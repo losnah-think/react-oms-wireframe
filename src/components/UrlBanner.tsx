@@ -9,7 +9,10 @@ export default function UrlBanner(){
   useEffect(() => {
     const update = () => {
       try {
-        const raw = router.asPath || window.location.pathname
+        // Prefer the real browser pathname when Next's router.asPath contains
+        // dynamic placeholders like '/[...slug]' or '/[id]'. Use window.location
+        // as the authoritative source for the visible URL.
+        const raw = (router.asPath && !/\[.+\]/.test(router.asPath)) ? router.asPath : window.location.pathname
         // remove query and hash
         const clean = raw.split('#')[0].split('?')[0]
         // remove trailing slash unless root
@@ -23,8 +26,11 @@ export default function UrlBanner(){
     update()
     // update on client-side navigation
     router.events.on('routeChangeComplete', update)
+    // also update when user navigates via browser back/forward
+    window.addEventListener('popstate', update)
     return () => {
       router.events.off('routeChangeComplete', update)
+      window.removeEventListener('popstate', update)
     }
   }, [router.events])
 

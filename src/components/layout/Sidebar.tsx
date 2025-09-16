@@ -38,7 +38,7 @@ const menuItems: MenuItem[] = [
     icon: 'archive',
     children: [
       { id: 'orders-list', label: '주문 목록', icon: 'list' },
-      // Order settings moved under '환경 설정'
+      { id: 'orders-settings', label: '주문 설정', icon: 'settings' }
     ]
   },
   {
@@ -59,7 +59,6 @@ const menuItems: MenuItem[] = [
     children: [
       { id: 'settings-integrations', label: '외부 연동 관리', icon: 'external-link' },
   { id: 'settings-barcodes', label: '바코드 관리', icon: 'barcode' },
-      { id: 'orders-settings', label: '주문 설정', icon: 'settings' },
       { id: 'settings-product-classifications', label: '상품 분류 관리', icon: 'copy' },
       { id: 'settings-brands', label: '브랜드 관리', icon: 'image' },
       { id: 'settings-product-years', label: '상품 연도 관리', icon: 'clock' },
@@ -70,6 +69,7 @@ const menuItems: MenuItem[] = [
 ];
 
 import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/router'
 
 const Sidebar: React.FC<SidebarProps> = ({ 
   currentPage, 
@@ -124,6 +124,27 @@ const Sidebar: React.FC<SidebarProps> = ({
     );
   };
 
+  const router = useRouter();
+
+  // Map internal menu ids to canonical URL paths
+  const idToPath: Record<string, string> = {
+    'products-list': '/products',
+    'products-csv': '/products/csv',
+    'products-import': '/products/import',
+    'orders-list': '/orders',
+    'orders-settings': '/orders/settings',
+    'malls': '/malls',
+    'malls-products': '/malls/products',
+    'malls-info': '/malls/info',
+    'category-mapping': '/categories/mapping',
+    'settings-integrations': '/settings/integrations',
+    'settings-barcodes': '/settings/barcodes',
+    'settings-product-classifications': '/settings/classifications',
+    'settings-brands': '/settings/brands',
+    'settings-product-years': '/settings/years',
+    'settings-product-seasons': '/settings/seasons'
+  };
+
   const isActive = (id: string) => {
     // 정확한 페이지 매칭
     if (currentPage === id) return true;
@@ -143,7 +164,25 @@ const Sidebar: React.FC<SidebarProps> = ({
       return;
     }
 
-    // For SPA leaf items, update app state only
+    // For leaf items, navigate to canonical path so browser URL updates
+    const targetPath = idToPath[item.id] ?? `/${item.id.replace(/_/g, '/').replace(/\s+/g, '-')}`;
+    // Use history API first so the browser address and history stack update immediately
+    try {
+      if (typeof window !== 'undefined' && window.history && window.history.pushState) {
+        window.history.pushState({}, '', targetPath);
+      }
+    } catch (err) {
+      // ignore
+    }
+
+    // Keep Next router in sync (shallow) but don't block UI; ignore errors
+    try {
+      router.push(router.pathname, targetPath, { shallow: true }).catch(() => {});
+    } catch (e) {
+      // ignore
+    }
+
+    // Also notify parent app state for backward compatibility
     onPageChange(item.id);
   };
 
