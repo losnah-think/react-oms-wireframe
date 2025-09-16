@@ -58,10 +58,13 @@ export interface ProductDetail {
   name: string;
   description?: string;
   price: number;
+  cost?: number;
+  barcode?: string;
   images?: string[];
   variants?: ProductVariant[];
   categories?: string[];
   brand?: string;
+  dimensions?: { width?: number; height?: number; depth?: number; weight?: number };
 }
 
 export interface MallInfo {

@@ -13,3 +13,97 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+// Draft product data model derived from `src/models/Product.ts`.
+// Fields are conservative (mostly optional) to avoid breaking existing data.
+model Product {
+  id                         String    @id @default(uuid())
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
+  productName                String
+  englishProductName         String?
+  productCode                String?   @unique
+  productCategory            String?
+  classification             String?
+  classificationId           String?
+  brandId                    String?
+  supplierId                 String?
+
+  originalCost               Float?    
+  representativeSellingPrice Float?    
+  representativeSupplyPrice  Float?
+  marketPrice                Float?
+  consumerPrice              Float?
+  foreignCurrencyPrice       Float?
+
+  stock                      Int       @default(0)
+  safeStock                  Int?
+  isOutOfStock               Boolean   @default(false)
+  isSelling                  Boolean   @default(true)
+  isSoldout                  Boolean   @default(false)
+
+  description                String?
+  representativeImage        String?
+  descriptionImages          String[]  @default([])
+
+  width                      Float?
+  height                     Float?
+  depth                      Float?
+  weight                     Float?
+  volume                     Float?
+
+  hsCode                     String?
+  origin                     String?
+  isTaxExempt                Boolean   @default(false)
+  showProductNameOnInvoice   Boolean   @default(false)
+  productDesigner            String?
+  productRegistrant          String?
+  productYear                String?
+  productSeason              String?
+
+  externalProductId          String?
+  externalUrl                String?
+
+  active                     Boolean   @default(true)
+
+  // Relations
+  variants                   ProductVariant[]
+
+  @@map("products")
+}
+
+model ProductVariant {
+  id           String   @id @default(uuid())
+  productId    String
+  sku          String?  @unique
+  optionValues Json?    // store option name->value mapping
+  stock        Int      @default(0)
+  price        Float?
+
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_variants")
+}
+
+model Supplier {
+  id      String   @id @default(uuid())
+  name    String
+  contact String?
+  email   String?
+  phone   String?
+  note    String?
+
+  @@map("suppliers")
+}
+
+model InventoryMovement {
+  id         String   @id @default(uuid())
+  productId  String
+  variantId  String?
+  quantity   Int
+  type       String   // e.g., 'adjustment','import','sale','transfer'
+  note       String?
+  createdAt  DateTime @default(now())
+
+  @@map("inventory_movements")
+}
