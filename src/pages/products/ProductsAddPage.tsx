@@ -8,7 +8,22 @@ import {
   GridRow,
   GridCol,
 } from "../../design-system";
+import { normalizeProductGroup } from '../../utils/groupUtils'
 import type { ProductFormData } from "../../types/multitenant";
+import Toast from '../../components/Toast'
+
+const safeJson = async (res: Response | undefined, fallback: any) => {
+  if (!res || !res.ok) return fallback
+  try {
+    const j = await res.json()
+    if (!j) return fallback
+    if (Array.isArray(j)) return { groups: j }
+    if (j.groups && Array.isArray(j.groups)) return { groups: j.groups }
+    return fallback
+  } catch {
+    return fallback
+  }
+}
 
 interface ProductsAddPageProps {
   onNavigate?: (page: string) => void;
@@ -46,7 +61,7 @@ const initialFormData: ProductFormData = {
     isSelling: false,
     isSoldout: false,
     description: "",
-    representativeImage: "",
+  representativeImage: "",
     descriptionImages: [],
     thumbnailUrl: "",
     images: [],
@@ -109,6 +124,7 @@ const initialFormData: ProductFormData = {
       storageConditions: "",
       shelfLife: undefined,
     },
+    memos: Array.from({ length: 15 }).map(() => ""),
   },
   validation: {
     errors: {},
@@ -123,7 +139,9 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate, onSave, p
     [k: string]: boolean;
   }>({ additionalInfo: true, logistics: true, policies: true });
   const [saving, setSaving] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null)
   const [productFilterOptions, setProductFilterOptions] = useState<any>({ brands: [], categories: [], suppliers: [], status: [] });
+  const [groupsData, setGroupsData] = useState<any[]>([])
 
   // 필드 업데이트 함수
   const updateField = (path: string, value: any) => {
@@ -192,7 +210,7 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate, onSave, p
 
   // Persist variants to server
   const saveVariants = async () => {
-    if (!productId) { alert('편집 모드에서만 Variants를 저장할 수 있습니다.'); return }
+    if (!productId) { setToastMessage('편집 모드에서만 Variants를 저장할 수 있습니다.'); return }
     try {
       const payload = (formData.additionalInfo.options || []).flatMap((g: any) => (g.values || []).map((v: any) => ({
         id: v.id && String(v.id).startsWith('val-') ? undefined : v.id,
@@ -254,6 +272,19 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate, onSave, p
     return () => { mounted = false }
   }, [])
 
+  useEffect(() => {
+    let mounted = true
+    fetch('/api/meta/groups')
+      .then((r) => safeJson(r, { groups: [] }))
+      .then((data) => {
+        if (!mounted) return
+        const groups = (data && data.groups) ? data.groups : []
+        setGroupsData(Array.isArray(groups) ? groups : [])
+      })
+      .catch(() => {})
+    return () => { mounted = false }
+  }, [])
+
   // 공급가 자동계산
   useEffect(() => {
     const selling = formData.basicInfo.pricing.sellingPrice || 0;
@@ -288,7 +319,41 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate, onSave, p
     onNavigate?.("products-list");
   };
 
+  const handleSaveAndContinue = async () => {
+    setSaving(true);
+    try {
+      // basic validation
+      if (!formData.basicInfo.productName || !formData.basicInfo.codes.internal) {
+        setToastMessage('필수 항목을 입력하세요.');
+        setSaving(false);
+        return;
+      }
+      await new Promise((r) => setTimeout(r, 700));
+  onSave?.(formData);
+  setToastMessage('상품이 저장되었습니다. 계속 등록하실 수 있습니다.');
+      // reset form but preserve commonly reused selectors (brand, supplier, category)
+      setFormData((prev) => {
+        const preserved = {
+          basicInfo: {
+            brandId: prev.basicInfo?.brandId || initialFormData.basicInfo.brandId,
+            supplierId: prev.basicInfo?.supplierId || initialFormData.basicInfo.supplierId,
+            categoryId: prev.basicInfo?.categoryId || initialFormData.basicInfo.categoryId,
+            codes: { ...initialFormData.basicInfo.codes },
+          },
+          additionalInfo: { ...initialFormData.additionalInfo },
+          validation: { ...initialFormData.validation },
+        } as ProductFormData
+        // ensure codes.internal is cleared
+        preserved.basicInfo.codes.internal = ''
+        return preserved
+      });
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
+    <>
     <Container maxWidth="full" className="py-8">
       <div className="max-w-5xl mx-auto">
         <h1 className="text-2xl font-bold mb-4">상품 등록</h1>
@@ -343,7 +408,7 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate, onSave, p
                 </GridCol>
                 <GridCol span={12}>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    카테고리
+                    그룹(소속)
                   </label>
                   <select
                     value={formData.basicInfo.categoryId}
@@ -873,7 +938,10 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate, onSave, p
                   취소
                 </Button>
                 <Button variant="primary" loading={saving} onClick={handleSave}>
-                  {saving ? "저장중..." : "상품 등록"}
+                  {saving ? "저장중..." : "물품등록"}
+                </Button>
+                <Button variant="outline" loading={saving} onClick={handleSaveAndContinue}>
+                  {saving ? "처리중..." : "등록후계속"}
                 </Button>
               </Stack>
             </div>
@@ -989,7 +1057,9 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate, onSave, p
         </div>
       </div>
     </Container>
-  );
+    {toastMessage && <Toast message={toastMessage} onClose={() => setToastMessage(null)} />}
+    </>
+  )
 };
 
 export default ProductsAddPage;

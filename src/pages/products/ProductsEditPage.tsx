@@ -7,6 +7,8 @@ import {
   GridRow,
   GridCol,
 } from "../../design-system";
+import { normalizeProductGroup } from '../../utils/groupUtils'
+import Toast from '../../components/Toast'
 
 interface ProductsEditPageProps {
   onNavigate?: (page: string) => void;
@@ -45,8 +47,10 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
   const [collapsedSections, setCollapsedSections] = useState<{
     [k: string]: boolean;
   }>({ additionalInfo: true, logistics: true, policies: true });
-  const [saving, setSaving] = useState(false);
   const [productFilterOptions, setProductFilterOptions] = useState<any>({ brands: [], categories: [] });
+  const [groupsData, setGroupsData] = useState<any[]>([])
+  const [saving, setSaving] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null)
 
   // Field update function
 
@@ -56,6 +60,10 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
       // TODO: Replace with real API call
       setFormData({
         basicInfo: {
+          createdBy: 'api_test',
+          createdAt: new Date('2024-07-18T18:15:00'),
+          modifiedBy: 'api_test',
+          modifiedAt: new Date('2024-07-18T18:15:00'),
           productName: "기존 상품명",
           englishProductName: "Existing Product",
           productCode: "PRD000001",
@@ -100,6 +108,21 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
             storageConditions: "",
             shelfLife: 365,
           },
+          // 15 memo slots
+          memos: Array.from({ length: 15 }).map((_, i) => `상품메모${i + 1}`),
+          // example options / variants
+          options: [
+            {
+              id: 'opt-1',
+              name: '색상/사이즈',
+              values: [
+                { id: 'val-1', sku: '15623320001', value: '화이트,L(66-88)', barcodeNumber: '15623320001', additionalPrice: 0, stock: 500, isActive: true },
+                { id: 'val-2', sku: '15623320002', value: '화이트,XL(99-120)', barcodeNumber: '15623320002', additionalPrice: 0, stock: 500, isActive: true },
+                { id: 'val-3', sku: '15623320003', value: '블랙,L(66-88)', barcodeNumber: '15623320003', additionalPrice: 0, stock: 500, isActive: true },
+                { id: 'val-4', sku: '15623320004', value: '블랙,XL(99-120)', barcodeNumber: '15623320004', additionalPrice: 0, stock: 500, isActive: true },
+              ],
+            },
+          ],
         },
         validation: {
           errors: {},
@@ -120,6 +143,15 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
     return () => { mounted = false }
   }, [])
 
+  useEffect(() => {
+    let mounted = true
+    fetch('/api/meta/groups')
+      .then((r) => r.json().catch(() => ({ groups: [] })))
+      .then((data) => { if (!mounted) return; setGroupsData((data && data.groups) ? data.groups : []) })
+      .catch(() => {})
+    return () => { mounted = false }
+  }, [])
+
   const updateField = (path: string, value: any) => {
     const keys = path.split(".");
     setFormData((prev: any) => {
@@ -133,13 +165,45 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
     });
   };
 
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      // simulate save
+      await new Promise((r) => setTimeout(r, 700));
+      setToastMessage('수정이 저장되었습니다.');
+      onNavigate && onNavigate('products-list');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const updateCreatedAtToToday = () => {
+    const now = new Date();
+    updateField('basicInfo.createdAt', now);
+    updateField('basicInfo.modifiedAt', now);
+  }
+
   return (
+    <>
     <Container>
       <div className="flex gap-8">
         <div className="flex-1">
           {/* 기본 정보 Card */}
           <Card className="mb-6">
             <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-sm text-gray-600">
+                  <div><strong>등록아이디</strong> {formData.basicInfo?.createdBy || '-'}</div>
+                  <div><strong>등록일자</strong> {formData.basicInfo?.createdAt ? new Date(formData.basicInfo.createdAt).toLocaleString() : '-'}</div>
+                  <div className="mt-2"><strong>최종수정아이디</strong> {formData.basicInfo?.modifiedBy || '-'}</div>
+                  <div><strong>최종수정일자</strong> {formData.basicInfo?.modifiedAt ? new Date(formData.basicInfo.modifiedAt).toLocaleString() : '-'}</div>
+                </div>
+                <div>
+                  <button type="button" className="px-3 py-1 border rounded bg-white text-sm" onClick={updateCreatedAtToToday}>
+                    상품등록일자 오늘로 갱신
+                  </button>
+                </div>
+              </div>
               <GridRow gutter={16}>
                 <GridCol span={6}>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -185,7 +249,7 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
                 </GridCol>
                 <GridCol span={6}>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    카테고리
+                    그룹(소속)
                   </label>
                   <select
                     value={formData.basicInfo?.categoryId || ""}
@@ -511,7 +575,7 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
             >
               취소
             </Button>
-            <Button variant="primary" onClick={() => setSaving(true)}>
+            <Button variant="primary" onClick={handleSave} loading={saving}>
               수정 완료
             </Button>
           </Stack>
@@ -544,6 +608,20 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
               <div className="text-sm text-gray-500">
                 {formData.basicInfo?.brandId || "브랜드 미입력"}
               </div>
+            </div>
+          </Card>
+          <Card className="mb-6">
+            <h2 className="text-lg font-bold mb-2">상품 메모</h2>
+            <div className="space-y-2">
+              {(formData.additionalInfo?.memos || []).map((m: string, idx: number) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <input
+                    className="flex-1 px-2 py-1 border rounded"
+                    value={m}
+                    onChange={(e) => updateField(`additionalInfo.memos.${idx}`, e.target.value)}
+                  />
+                </div>
+              ))}
             </div>
           </Card>
           <Card>
@@ -580,6 +658,8 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
         </div>
       </div>
     </Container>
+    {toastMessage && <Toast message={toastMessage} onClose={() => setToastMessage(null)} />}
+    </>
   );
 };
 

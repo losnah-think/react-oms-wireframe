@@ -1,8 +1,9 @@
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { Container, Card, Button, Stack, GridRow, GridCol } from '../../design-system'
 import TableExportButton from '../../components/common/TableExportButton'
 import HierarchicalSelect from '../../components/common/HierarchicalSelect'
 import { formatPrice } from '../../utils/productUtils'
+import { normalizeProductGroup } from '../../utils/groupUtils'
 
 interface ProductsListPageProps {
   onNavigate?: (page: string, productId?: string) => void
@@ -22,26 +23,34 @@ const safeJson = async (res: Response | undefined, fallback: any) => {
 }
 
 const normalizeProducts = (list: any[]): any[] =>
-  (Array.isArray(list) ? list : []).map((p: any) => ({
-    ...p,
-    code: p.code || p.sku || '',
-    selling_price: p.selling_price ?? p.price ?? 0,
-    variants: Array.isArray(p.variants) ? p.variants : [],
-  }))
+  (Array.isArray(list) ? list : []).map((p: any) => {
+    const base = {
+      ...p,
+      code: p.code || p.sku || '',
+      selling_price: p.selling_price ?? p.price ?? 0,
+      variants: Array.isArray(p.variants) ? p.variants : [],
+    }
+    return normalizeProductGroup(base)
+  })
 
 const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
   const [products, setProducts] = useState<any[]>([])
   const [productFilterOptions, setProductFilterOptions] = useState<any>({ brands: [], status: [] })
   const [classificationsData, setClassificationsData] = useState<any[]>([])
+  const [groupsData, setGroupsData] = useState<any[]>([])
   const [categoryNames, setCategoryNames] = useState<Record<string, string>>({})
 
   const [searchTerm, setSearchTerm] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [debounced, setDebounced] = useState(searchTerm)
+  const debounceRef = useRef<number | null>(null)
   const [selectedCategory, setSelectedCategory] = useState('전체')
   const [selectedBrand, setSelectedBrand] = useState('전체')
   const [sortBy, setSortBy] = useState('newest')
 
   useEffect(() => {
     let mounted = true
+    setLoading(true)
     fetch('/api/products?limit=1000')
       .then((r) => safeJson(r, { products: [] }))
       .then((data) => {
@@ -49,9 +58,8 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
         setProducts(normalizeProducts(Array.isArray(data.products) ? data.products : []))
       })
       .catch(() => {})
-    return () => {
-      mounted = false
-    }
+      .finally(() => { if (mounted) setLoading(false) })
+    return () => { mounted = false }
   }, [])
 
   useEffect(() => {
@@ -84,6 +92,19 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
 
   useEffect(() => {
     let mounted = true
+    fetch('/api/meta/groups')
+      .then((r) => safeJson(r, { groups: [] }))
+      .then((data) => {
+        if (!mounted) return
+        const groups = (data && data.groups) ? data.groups : []
+        setGroupsData(Array.isArray(groups) ? groups : [])
+      })
+      .catch(() => {})
+    return () => { mounted = false }
+  }, [])
+
+  useEffect(() => {
+    let mounted = true
     fetch('/api/meta/filters')
       .then((r) => safeJson(r, { categories: [] }))
       .then((data) => {
@@ -102,15 +123,15 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
 
   const filteredProducts = useMemo(() => {
     const list = products || []
+    const q = (debounced || '').trim().toLowerCase()
     return list
       .filter((p: any) => {
-        if (searchTerm) {
-          const s = searchTerm.toLowerCase()
-          if (!String(p.name || '').toLowerCase().includes(s) && !String(p.code || p.sku || '').toLowerCase().includes(s)) return false
+        if (q) {
+          if (!String(p.name || '').toLowerCase().includes(q) && !String(p.code || p.sku || '').toLowerCase().includes(q)) return false
         }
         if (selectedCategory !== '전체') {
-          const prodClass = p.classification || categoryNames[p.category_id]
-          if (prodClass !== selectedCategory) return false
+          const prodGroup = p.group || p.classification || categoryNames[p.category_id]
+          if (prodGroup !== selectedCategory) return false
         }
         if (selectedBrand !== '전체' && p.brand !== selectedBrand) return false
         return true
@@ -121,6 +142,14 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
         return 0
       })
   }, [products, searchTerm, selectedCategory, selectedBrand, sortBy, categoryNames])
+
+  // debounce searchTerm -> debounced
+  useEffect(() => {
+    if (debounceRef.current) window.clearTimeout(debounceRef.current)
+    // @ts-ignore
+    debounceRef.current = window.setTimeout(() => setDebounced(searchTerm), 300)
+    return () => { if (debounceRef.current) window.clearTimeout(debounceRef.current) }
+  }, [searchTerm])
 
   const exportData = filteredProducts.map((p: any) => ({
     id: p.id,
@@ -154,15 +183,15 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
         </Stack>
       </div>
 
-      <Card padding="lg" className="mb-6 shadow-sm">
+  <Card padding="lg" className="mb-6 shadow-sm">
         <GridRow gutter={16}>
           <GridCol span={8}>
             <div className="relative">
               <input type="text" placeholder="상품명, 상품코드로 검색..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-3 pr-4 py-3 border border-gray-300 rounded-lg" />
             </div>
           </GridCol>
-          <GridCol span={4}>
-            <HierarchicalSelect data={classificationsData} value={selectedCategory === '전체' ? undefined : selectedCategory} placeholder="분류 선택" onChange={(node) => setSelectedCategory(node ? node.name : '전체')} />
+            <GridCol span={4}>
+            <HierarchicalSelect data={groupsData.length ? groupsData : classificationsData} value={selectedCategory === '전체' ? undefined : selectedCategory} placeholder="그룹(소속) 선택" onChange={(node) => setSelectedCategory(node ? node.name : '전체')} />
           </GridCol>
           <GridCol span={4}>
             <select value={selectedBrand} onChange={(e) => setSelectedBrand(e.target.value)} className="w-full px-3 py-3 border border-gray-300 rounded-lg">
@@ -179,10 +208,91 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
             </select>
           </GridCol>
         </GridRow>
+        <div className="mt-4">
+          <GridRow gutter={12}>
+            <GridCol span={6}>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600">상품등록일자</label>
+                <select className="px-2 py-1 border rounded bg-white text-sm">
+                  <option>전체</option>
+                  <option>오늘</option>
+                  <option>일주일</option>
+                  <option>한달</option>
+                  <option>임의기간</option>
+                </select>
+                <input type="date" className="ml-2 px-2 py-1 border rounded text-sm" />
+                <span className="text-sm text-gray-400">~</span>
+                <input type="date" className="px-2 py-1 border rounded text-sm" />
+              </div>
+            </GridCol>
+            <GridCol span={6}>
+              <div className="flex items-center gap-2">
+                <button className="px-2 py-1 border rounded text-sm">전체공급처추가</button>
+                <button className="px-2 py-1 border rounded text-sm">전체공급처삭제</button>
+                <select className="px-2 py-1 border rounded text-sm">
+                  <option>공급처선택</option>
+                </select>
+              </div>
+            </GridCol>
+          </GridRow>
+
+          <GridRow gutter={12} className="mt-3">
+            <GridCol span={6}>
+              <div className="flex items-center gap-3">
+                <label className="text-sm">분류</label>
+                <select className="px-2 py-1 border rounded text-sm">
+                  <option>전체상품분류</option>
+                </select>
+                <label className="text-sm">재고관리여부</label>
+                <select className="px-2 py-1 border rounded text-sm">
+                  <option>전체</option>
+                  <option>재고관리</option>
+                </select>
+                <button className="px-2 py-1 border rounded text-sm">상품분류 관리</button>
+              </div>
+            </GridCol>
+            <GridCol span={6}>
+              <div className="flex items-center gap-3">
+                <select className="px-2 py-1 border rounded text-sm">
+                  <option>전체상품디자이너</option>
+                </select>
+                <select className="px-2 py-1 border rounded text-sm">
+                  <option>전체상품등록자</option>
+                </select>
+                <label className="text-sm"><input type="checkbox" className="mr-1"/> 배송비정책있는것만표시</label>
+                <label className="text-sm"><input type="checkbox" className="mr-1"/> 간단하게보기</label>
+              </div>
+            </GridCol>
+          </GridRow>
+
+          <GridRow className="mt-3">
+            <GridCol span={8}>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600">키워드</label>
+                <input type="text" placeholder="통합검색" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-1/2 pl-3 pr-4 py-2 border border-gray-300 rounded-lg" />
+                <div className="text-sm text-gray-400">Tip</div>
+                <Button variant="primary" onClick={() => {}} className="px-4">검색</Button>
+              </div>
+            </GridCol>
+          </GridRow>
+        </div>
       </Card>
 
       <Card padding="none" className="overflow-hidden shadow-sm">
         <div className="overflow-auto">
+          {loading && (
+            <div className="p-6 text-center">로딩 중... 잠시만 기다려주세요.</div>
+          )}
+          {!loading && filteredProducts.length === 0 && (
+            <div className="p-12 text-center">
+              <div className="text-lg font-bold mb-2">조건에 맞는 상품이 없습니다.</div>
+              <div className="text-gray-600 mb-4">새 상품을 등록하거나 가져오기를 통해 데이터를 추가하세요.</div>
+              <div className="flex justify-center gap-3">
+                <Button variant="primary" onClick={() => onNavigate?.('products-add')}>신규 상품 등록</Button>
+                <Button variant="outline" onClick={() => onNavigate?.('products-import')}>상품 가져오기</Button>
+              </div>
+            </div>
+          )}
           <table className="min-w-full">
             <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
               <tr>
@@ -195,16 +305,48 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredProducts.map((p) => (
+              {filteredProducts.map((p, idx) => (
                 <tr key={p.id} className="hover:bg-gray-50" onClick={() => onNavigate?.('products-detail', p.id)} style={{ cursor: 'pointer' }}>
                   <td className="px-6 py-6">
-                    <div className="font-bold">{p.name || '-'}</div>
-                    <div className="text-sm text-gray-600">{p.code || '-'}</div>
+                    <div className="flex items-start gap-4">
+                      <div className="w-20 h-16 bg-gray-100 rounded overflow-hidden flex-shrink-0">
+                        <img
+                          src={Array.isArray(p.images) && p.images[0] ? p.images[0] : 'https://via.placeholder.com/160x120?text=No+Image'}
+                          alt={p.name || 'thumbnail'}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="text-sm text-gray-400">#{String(p.id || '').padStart(3, '0')}</div>
+                            <div className="font-bold">{p.name || '-'}</div>
+                            <div className="text-sm text-gray-600">{p.code || '-'}</div>
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {(p.is_stock_managed || (Array.isArray(p.variants) && p.variants.length > 0)) && <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-800 text-xs">재고관리</span>}
+                            {p.is_selling === false ? <span className="ml-2 px-2 py-0.5 rounded bg-gray-100 text-gray-700 text-xs">판매중지</span> : <span className="ml-2 px-2 py-0.5 rounded bg-green-100 text-green-800 text-xs">판매중</span>}
+                            {p.is_soldout && <span className="ml-2 px-2 py-0.5 rounded bg-red-100 text-red-800 text-xs">품절</span>}
+                          </div>
+                        </div>
+
+                        <div className="mt-2 text-sm text-gray-600">
+                          <div>사입상품명 | {p.purchase_name || '미입력'}</div>
+                          <div className="mt-1">판매 | {formatPrice(p.selling_price ?? p.price ?? 0)} &nbsp; 원가 | {formatPrice(p.cost_price ?? 0)}</div>
+                          <div className="mt-1">공급처 | {p.supplier_name || '자사'} &nbsp; | &nbsp; (--)</div>
+                        </div>
+                      </div>
+                    </div>
                   </td>
-                  <td className="px-6 py-6">{p.classification || categoryNames[p.category_id] || '-'}{p.brand ? <div className="text-sm">{p.brand}</div> : null}</td>
+                  <td className="px-6 py-6">
+                    <div className="text-sm">{p.classification || categoryNames[p.category_id] || '미입력'}</div>
+                    {p.brand ? <div className="text-sm text-gray-600 mt-1">{p.brand}</div> : null}
+                    <div className="text-sm text-gray-600 mt-2">상품코드 | {p.code || '미입력'}</div>
+                    <div className="text-sm text-gray-600 mt-1">배송비정책 | {p.shipping_policy || '미지정'}</div>
+                  </td>
                   <td className="px-6 py-6">{Array.isArray(p.variants) ? p.variants.reduce((s: number, v: any) => s + (v.stock || 0), 0) : p.stock || 0}</td>
                   <td className="px-6 py-6">{formatPrice(p.selling_price ?? p.price ?? 0)}</td>
-                  <td className="px-6 py-6">{p.created_at ? new Date(p.created_at).toLocaleDateString('ko-KR') : '-'}</td>
+                  <td className="px-6 py-6">{p.created_at ? `${new Date(p.created_at).toLocaleDateString('ko-KR')} ${new Date(p.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}` : '-'}</td>
                   <td className="px-6 py-6">
                     <div className="flex gap-2">
                       <Button variant="outline" size="small" onClick={(e) => { e.stopPropagation(); onNavigate?.('products-detail', p.id); }}>상세</Button>

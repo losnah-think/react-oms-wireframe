@@ -88,10 +88,16 @@ export async function listProducts(limit = 100, offset = 0): Promise<ProductSumm
 export async function getProduct(id: string) {
   if (!supabaseAdmin) {
     try {
+      console.debug('[lib/products] supabaseAdmin not configured — using mock fallback')
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { mockProducts } = require('../data/mockproducts')
       const found = (mockProducts || []).find((p: any) => String(p.id) === String(id))
-      return found || null
+      if (found) return found
+
+      // If not found in mock data, generate a lightweight placeholder so UI can render
+      const pid = Number(id) || Date.now()
+      const placeholder = makePlaceholderProduct(String(pid))
+      return placeholder
     } catch (e) {
       return null
     }
@@ -105,6 +111,36 @@ export async function getProduct(id: string) {
     .maybeSingle()
   if (error) throw error
   return data
+}
+
+export function makePlaceholderProduct(id: string) {
+  const pid = Number(id) || Date.now()
+  return {
+    id: pid,
+    code: `PRD-PLACEHOLDER-${pid}`,
+    name: `샘플 상품 (${pid})`,
+    selling_price: 19900,
+    supply_price: 14900,
+    cost_price: 12900,
+    images: [
+      'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=600&fit=crop'
+    ],
+    variants: [
+      { id: `v-${pid}-1`, code: `V-${pid}-1`, variant_name: '기본 옵션', selling_price: 19900, cost_price: 12900, supply_price: 14900, stock: 25, is_selling: true, is_soldout: false },
+    ],
+    description: '데모 환경: 실제 데이터가 없습니다.',
+    created_at: new Date().toISOString(),
+    tags: ['데모', '샘플'],
+    brand: '샘플 브랜드',
+    brand_id: null,
+    supplier_id: null,
+    memos: ['샘플 메모 1', '샘플 메모 2'],
+    classification_id: 'demo-cat-1',
+    hs_code: '0000.00',
+    origin_country: 'KR',
+    box_qty: 1,
+    externalMall: null,
+  }
 }
 
 export type ProductVariantUpsert = {
