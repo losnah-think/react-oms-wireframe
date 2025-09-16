@@ -365,15 +365,33 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
                 </GridCol>
                 <GridCol span={6}>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
+                    원가 (원)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.basicInfo?.pricing?.costPrice ?? 0}
+                    onChange={(e) =>
+                      updateField(
+                        "basicInfo.pricing.costPrice",
+                        Number(Number(e.target.value).toFixed(2)),
+                      )
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  />
+                </GridCol>
+                <GridCol span={6}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     판매가
                   </label>
                   <input
                     type="number"
+                    step="0.01"
                     value={formData.basicInfo?.pricing?.sellingPrice || 0}
                     onChange={(e) =>
                       updateField(
                         "basicInfo.pricing.sellingPrice",
-                        Number(e.target.value),
+                        Number(Number(e.target.value).toFixed(2)),
                       )
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
@@ -385,11 +403,12 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
                   </label>
                   <input
                     type="number"
+                    step="0.01"
                     value={formData.basicInfo?.pricing?.consumerPrice || 0}
                     onChange={(e) =>
                       updateField(
                         "basicInfo.pricing.consumerPrice",
-                        Number(e.target.value),
+                        Number(Number(e.target.value).toFixed(2)),
                       )
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
@@ -397,19 +416,30 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
                 </GridCol>
                 <GridCol span={6}>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    공급가
+                    공급가 (대표공급가)
                   </label>
                   <input
                     type="number"
+                    step="0.01"
                     value={formData.basicInfo?.pricing?.supplyPrice || 0}
                     onChange={(e) =>
                       updateField(
                         "basicInfo.pricing.supplyPrice",
-                        Number(e.target.value),
+                        Number(Number(e.target.value).toFixed(2)),
                       )
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
                   />
+                </GridCol>
+                <GridCol span={6}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    마진금액 (자동)
+                  </label>
+                  <div className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-sm">{(() => {
+                    const sp = Number(formData.basicInfo?.pricing?.sellingPrice || 0)
+                    const cp = Number(formData.basicInfo?.pricing?.costPrice || 0)
+                    return (sp - cp).toFixed(2)
+                  })()}</div>
                 </GridCol>
                 <GridCol span={6}>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
