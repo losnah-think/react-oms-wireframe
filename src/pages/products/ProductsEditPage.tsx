@@ -231,6 +231,52 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
     updateField('basicInfo.modifiedAt', now);
   }
 
+  // Option group and option CRUD helpers
+  const addOptionGroup = (name?: string) => {
+    const group = { id: `g-${Math.random().toString(36).slice(2,8)}`, name: name || '새 옵션 그룹', values: [] }
+    setFormData((prev: any) => ({ ...prev, additionalInfo: { ...(prev.additionalInfo || {}), options: [...(prev.additionalInfo?.options || []), group] } }))
+  }
+
+  const removeOptionGroup = (gIdx: number) => {
+    setFormData((prev: any) => {
+      const copy = JSON.parse(JSON.stringify(prev))
+      copy.additionalInfo.options = (copy.additionalInfo.options || []).filter((_: any, i: number) => i !== gIdx)
+      return copy
+    })
+  }
+
+  const addOptionValue = (gIdx: number, value?: string) => {
+    setFormData((prev: any) => {
+      const copy = JSON.parse(JSON.stringify(prev))
+      const group = copy.additionalInfo.options[gIdx] = copy.additionalInfo.options[gIdx] || { id: `g-${gIdx}`, name: `옵션 ${gIdx+1}`, values: [] }
+      group.values.push({ id: `v-${Math.random().toString(36).slice(2,8)}`, value: value || '새값', barcodeNumber: '', costPrice: 0, price: 0, stock: 0, isActive: true })
+      return copy
+    })
+  }
+
+  const removeOptionValue = (gIdx: number, vIdx: number) => {
+    setFormData((prev: any) => {
+      const copy = JSON.parse(JSON.stringify(prev))
+      const group = copy.additionalInfo.options[gIdx]
+      if (!group) return copy
+      group.values = (group.values || []).filter((_: any, i: number) => i !== vIdx)
+      return copy
+    })
+  }
+
+  const copyOptionValue = (gIdx: number, vIdx: number) => {
+    setFormData((prev: any) => {
+      const copy = JSON.parse(JSON.stringify(prev))
+      const group = copy.additionalInfo.options[gIdx]
+      if (!group) return copy
+      const v = group.values[vIdx]
+      if (!v) return copy
+      const nv = JSON.parse(JSON.stringify(v)); nv.id = `v-${Math.random().toString(36).slice(2,8)}`
+      group.values.splice(vIdx+1, 0, nv)
+      return copy
+    })
+  }
+
   return (
     <>
     <Container>
@@ -678,10 +724,21 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
               </GridRow>
               {/* Option editor table */}
               <div className="mt-4">
-                <h3 className="text-sm font-semibold mb-2">옵션 편집</h3>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-semibold">옵션 편집</h3>
+                  <div className="flex items-center gap-2">
+                    <button className="px-2 py-1 border rounded text-sm" onClick={() => addOptionGroup()}>옵션 그룹 추가</button>
+                  </div>
+                </div>
                 {(formData.additionalInfo?.options || []).map((group: any, gIdx: number) => (
                   <div key={group.id || gIdx} className="mb-4">
-                    <div className="text-sm font-medium mb-2">옵션 그룹: {group.name || `그룹 ${gIdx + 1}`}</div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-sm font-medium">옵션 그룹: {group.name || `그룹 ${gIdx + 1}`}</div>
+                      <div className="flex items-center gap-2">
+                        <button className="px-2 py-1 border rounded text-sm" onClick={() => addOptionValue(gIdx)}>옵션 추가</button>
+                        <button className="px-2 py-1 border rounded text-sm" onClick={() => removeOptionGroup(gIdx)}>그룹 삭제</button>
+                      </div>
+                    </div>
                     <div className="overflow-auto border rounded">
                       <table className="w-full text-sm">
                         <thead className="bg-gray-50">
@@ -710,7 +767,11 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
                                 })()}
                               </td>
                               <td className="px-3 py-2"><input type="number" className="px-2 py-1 border rounded w-20" value={v.stock ?? 0} onChange={(e) => updateField(`additionalInfo.options.${gIdx}.values.${idx}.stock`, Number(e.target.value))} /></td>
-                              <td className="px-3 py-2"><input type="checkbox" checked={v.isActive ?? true} onChange={(e) => updateField(`additionalInfo.options.${gIdx}.values.${idx}.isActive`, e.target.checked)} /></td>
+                              <td className="px-3 py-2 flex items-center gap-2">
+                                <input type="checkbox" checked={v.isActive ?? true} onChange={(e) => updateField(`additionalInfo.options.${gIdx}.values.${idx}.isActive`, e.target.checked)} />
+                                <button className="px-2 py-1 border rounded text-xs" onClick={() => copyOptionValue(gIdx, idx)}>복사</button>
+                                <button className="px-2 py-1 border rounded text-xs" onClick={() => removeOptionValue(gIdx, idx)}>삭제</button>
+                              </td>
                             </tr>
                           ))}
                         </tbody>
