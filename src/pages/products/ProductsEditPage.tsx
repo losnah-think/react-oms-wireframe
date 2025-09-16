@@ -277,6 +277,56 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
     })
   }
 
+  // Inline edit group name
+  const updateOptionGroupName = (gIdx: number, name: string) => {
+    updateField(`additionalInfo.options.${gIdx}.name`, name)
+  }
+
+  // Reorder helpers
+  const moveOptionValue = (gIdx: number, fromIdx: number, toIdx: number) => {
+    setFormData((prev: any) => {
+      const copy = JSON.parse(JSON.stringify(prev))
+      const group = copy.additionalInfo.options[gIdx]
+      if (!group) return copy
+      const vals = group.values || []
+      if (fromIdx < 0 || fromIdx >= vals.length || toIdx < 0 || toIdx >= vals.length) return copy
+      const [item] = vals.splice(fromIdx, 1)
+      vals.splice(toIdx, 0, item)
+      group.values = vals
+      return copy
+    })
+  }
+
+  // Batch edit modal state
+  const [batchModalOpen, setBatchModalOpen] = useState(false)
+  const [batchGroupIdx, setBatchGroupIdx] = useState<number | null>(null)
+  const [batchValues, setBatchValues] = useState({ costPrice: '', price: '', stock: '', isActive: '' })
+
+  const openBatchModal = (gIdx: number) => {
+    setBatchGroupIdx(gIdx)
+    setBatchValues({ costPrice: '', price: '', stock: '', isActive: '' })
+    setBatchModalOpen(true)
+  }
+
+  const applyBatchEdit = () => {
+    if (batchGroupIdx === null) return
+    setFormData((prev: any) => {
+      const copy = JSON.parse(JSON.stringify(prev))
+      const group = copy.additionalInfo.options[batchGroupIdx]
+      if (!group) return copy
+      group.values = (group.values || []).map((v: any) => {
+        const nv = { ...v }
+        if (batchValues.costPrice !== '') nv.costPrice = Number(batchValues.costPrice)
+        if (batchValues.price !== '') nv.price = Number(batchValues.price)
+        if (batchValues.stock !== '') nv.stock = Number(batchValues.stock)
+        if (batchValues.isActive !== '') nv.isActive = batchValues.isActive === 'true'
+        return nv
+      })
+      return copy
+    })
+    setBatchModalOpen(false)
+  }
+
   return (
     <>
     <Container>
@@ -732,9 +782,13 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
                 </div>
                 {(formData.additionalInfo?.options || []).map((group: any, gIdx: number) => (
                   <div key={group.id || gIdx} className="mb-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="text-sm font-medium">옵션 그룹: {group.name || `그룹 ${gIdx + 1}`}</div>
+                    <div className="flex items-center justify-between mb-2 gap-2">
                       <div className="flex items-center gap-2">
+                        <div className="text-sm font-medium">옵션 그룹:</div>
+                        <input className="px-2 py-1 border rounded text-sm" value={group.name || `그룹 ${gIdx + 1}`} onChange={(e) => updateOptionGroupName(gIdx, e.target.value)} />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button className="px-2 py-1 border rounded text-sm" onClick={() => openBatchModal(gIdx)}>일괄편집</button>
                         <button className="px-2 py-1 border rounded text-sm" onClick={() => addOptionValue(gIdx)}>옵션 추가</button>
                         <button className="px-2 py-1 border rounded text-sm" onClick={() => removeOptionGroup(gIdx)}>그룹 삭제</button>
                       </div>
@@ -769,6 +823,10 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
                               <td className="px-3 py-2"><input type="number" className="px-2 py-1 border rounded w-20" value={v.stock ?? 0} onChange={(e) => updateField(`additionalInfo.options.${gIdx}.values.${idx}.stock`, Number(e.target.value))} /></td>
                               <td className="px-3 py-2 flex items-center gap-2">
                                 <input type="checkbox" checked={v.isActive ?? true} onChange={(e) => updateField(`additionalInfo.options.${gIdx}.values.${idx}.isActive`, e.target.checked)} />
+                                <div className="flex items-center gap-1">
+                                  <button className="px-2 py-1 border rounded text-xs" onClick={() => moveOptionValue(gIdx, idx, Math.max(0, idx - 1))}>▲</button>
+                                  <button className="px-2 py-1 border rounded text-xs" onClick={() => moveOptionValue(gIdx, idx, idx + 1)}>▼</button>
+                                </div>
                                 <button className="px-2 py-1 border rounded text-xs" onClick={() => copyOptionValue(gIdx, idx)}>복사</button>
                                 <button className="px-2 py-1 border rounded text-xs" onClick={() => removeOptionValue(gIdx, idx)}>삭제</button>
                               </td>
@@ -913,6 +971,40 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
       </div>
     </Container>
     {toastMessage && <Toast message={toastMessage} onClose={() => setToastMessage(null)} />}
+
+    {batchModalOpen && (
+      <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+        <div className="bg-white rounded p-6 w-96">
+          <h3 className="font-semibold mb-3">일괄 편집: 그룹 {batchGroupIdx !== null ? (formData.additionalInfo?.options?.[batchGroupIdx]?.name || batchGroupIdx + 1) : ''}</h3>
+          <div className="space-y-2">
+            <div>
+              <label className="block text-xs text-gray-600">원가</label>
+              <input className="w-full px-2 py-1 border rounded" value={batchValues.costPrice} onChange={(e) => setBatchValues((s) => ({ ...s, costPrice: e.target.value }))} />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-600">판매가</label>
+              <input className="w-full px-2 py-1 border rounded" value={batchValues.price} onChange={(e) => setBatchValues((s) => ({ ...s, price: e.target.value }))} />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-600">재고</label>
+              <input className="w-full px-2 py-1 border rounded" value={batchValues.stock} onChange={(e) => setBatchValues((s) => ({ ...s, stock: e.target.value }))} />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-600">판매여부</label>
+              <select className="w-full px-2 py-1 border rounded" value={batchValues.isActive} onChange={(e) => setBatchValues((s) => ({ ...s, isActive: e.target.value }))}>
+                <option value="">변경 없음</option>
+                <option value="true">판매</option>
+                <option value="false">미판매</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <button className="px-3 py-1 border rounded" onClick={() => setBatchModalOpen(false)}>취소</button>
+            <button className="px-3 py-1 bg-blue-600 text-white rounded" onClick={applyBatchEdit}>적용</button>
+          </div>
+        </div>
+      </div>
+    )}
     </>
   );
 };
