@@ -1,4 +1,13 @@
-import supabaseAdmin from './supabaseClient'
+// Supabase admin client is optional for demo/static deploys. When not present,
+// fall back to local mock data so pages (e.g. product detail) still render.
+let supabaseAdmin: any = null
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const client = require('./supabaseClient')
+  supabaseAdmin = client?.default || client
+} catch (e) {
+  supabaseAdmin = null
+}
 
 function tryRequireMock() {
   try {
@@ -49,6 +58,23 @@ export type ProductSummary = {
 }
 
 export async function listProducts(limit = 100, offset = 0): Promise<ProductSummary[]> {
+  if (!supabaseAdmin) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { mockProducts } = require('../data/mockproducts')
+      return (mockProducts || []).slice(offset, offset + limit).map((p: any) => ({
+        id: String(p.id),
+        name: p.name,
+        sku: p.code || p.sku,
+        price: p.selling_price,
+        stock: (p.variants || []).reduce((s: number, v: any) => s + (v.stock || 0), 0),
+        shop_id: p.shop_id
+      }))
+    } catch (e) {
+      return []
+    }
+  }
+
   const { data, error } = await supabaseAdmin
     .from('products')
     .select('id, name, sku, price, stock, shop_id')
@@ -60,6 +86,17 @@ export async function listProducts(limit = 100, offset = 0): Promise<ProductSumm
 }
 
 export async function getProduct(id: string) {
+  if (!supabaseAdmin) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { mockProducts } = require('../data/mockproducts')
+      const found = (mockProducts || []).find((p: any) => String(p.id) === String(id))
+      return found || null
+    } catch (e) {
+      return null
+    }
+  }
+
   const { data, error } = await supabaseAdmin
     .from('products')
     .select('*')
