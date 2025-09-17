@@ -79,7 +79,40 @@ export default function BarcodeSettingsPage() {
       </Head>
 
         <div className="max-w-screen-xl mx-auto">
-        <h1 className="text-2xl font-semibold mb-4">Barcode Management</h1>
+        <h1 className="text-2xl font-semibold mb-4">바코드 관리</h1>
+        <div className="flex items-center justify-between mb-4">
+          <div />
+          <div className="flex items-center gap-2">
+            <button onClick={() => {
+              const raw = localStorage.getItem('barcode_templates_v1')
+              const blob = new Blob([raw || '[]'], { type: 'application/json' })
+              const url = URL.createObjectURL(blob)
+              const a = document.createElement('a')
+              a.href = url
+              a.download = `barcode-templates-${new Date().toISOString().slice(0,10)}.json`
+              a.click()
+              URL.revokeObjectURL(url)
+            }} className="px-3 py-2 border rounded text-sm">내보내기</button>
+            <label className="px-3 py-2 border rounded text-sm cursor-pointer bg-white">
+              가져오기
+              <input type="file" accept="application/json" onChange={(e) => {
+                const f = e.target.files && e.target.files[0]
+                if (!f) return
+                const reader = new FileReader()
+                reader.onload = (ev) => {
+                  try {
+                    const parsed = JSON.parse(String(ev.target?.result || '[]'))
+                    if (Array.isArray(parsed)) {
+                      localStorage.setItem('barcode_templates_v1', JSON.stringify(parsed))
+                      window.location.reload()
+                    } else alert('올바른 포맷의 파일이 아닙니다')
+                  } catch (err) { alert('파일 파싱 실패') }
+                }
+                reader.readAsText(f)
+              }} style={{ display: 'none' }} />
+            </label>
+          </div>
+        </div>
         <div className="grid grid-cols-12 gap-4">
           <div className="col-span-3 bg-white p-4 rounded shadow">
             <BarcodeBuilder.Sidebar />
