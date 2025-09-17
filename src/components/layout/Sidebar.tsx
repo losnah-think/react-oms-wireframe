@@ -235,9 +235,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             onClick={() => handleItemClick(item)}
             title={item.label}
           >
-            {item.icon ? getIconComponent(item.icon, 16, active) : (
-              <span className="text-lg">{item.label.charAt(0)}</span>
-            )}
+            {getIconComponent(item.icon ?? 'document', 16, active)}
           </div>
         </div>
       )
@@ -262,11 +260,9 @@ const Sidebar: React.FC<SidebarProps> = ({
           `}
         >
           <div className="flex items-center">
-            {item.icon && (
-              <div className={`flex items-center justify-center ${isCollapsed ? 'w-8 h-8 mx-auto' : (level === 0 ? 'w-4 h-4 mr-2' : 'w-3 h-3 mr-2')}`}>
-                {getIconComponent(item.icon, level === 0 ? 14 : 10, active)}
-              </div>
-            )}
+            <div className={`flex items-center justify-center ${isCollapsed ? 'w-8 h-8 mx-auto' : (level === 0 ? 'w-4 h-4 mr-2' : 'w-3 h-3 mr-2')}`}>
+              {getIconComponent(item.icon ?? 'document', level === 0 ? 14 : 10, active)}
+            </div>
             {!isCollapsed && <span>{item.label}</span>}
           </div>
           {hasChildren && !isCollapsed && (

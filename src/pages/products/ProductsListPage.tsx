@@ -889,14 +889,12 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
                   </td>
                   <td className={`${compactView ? 'px-3 py-2' : 'px-6 py-6'}`}>
                     <div className={`flex items-start ${compactView ? 'gap-2' : 'gap-4'}`}>
-                      <div className={`${compactView ? 'hidden' : 'w-20 h-16'} bg-gray-100 rounded overflow-hidden flex-shrink-0`}>
-                        {!compactView && (
-                          <img
-                            src={Array.isArray(p.images) && p.images[0] ? p.images[0] : 'https://via.placeholder.com/160x120?text=No+Image'}
-                            alt={p.name || 'thumbnail'}
-                            className="w-full h-full object-cover"
-                          />
-                        )}
+                      <div className={`${compactView ? 'w-12 h-10' : 'w-20 h-16'} bg-gray-100 rounded overflow-hidden flex-shrink-0`}>
+                        <img
+                          src={Array.isArray(p.images) && p.images[0] ? p.images[0] : 'https://via.placeholder.com/160x120?text=No+Image'}
+                          alt={p.name || 'thumbnail'}
+                          className={`w-full h-full object-cover`}
+                        />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
