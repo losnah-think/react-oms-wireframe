@@ -143,6 +143,34 @@ const Sidebar: React.FC<SidebarProps> = ({
     );
   };
 
+  const [trashedCount, setTrashedCount] = React.useState<number>(() => {
+    try {
+      const raw = typeof window !== 'undefined' ? localStorage.getItem('trashed_products_v1') : null
+      if (!raw) return 0
+      const arr = JSON.parse(raw)
+      return Array.isArray(arr) ? arr.length : 0
+    } catch (e) { return 0 }
+  })
+
+  // update trashed count when trash changes
+  React.useEffect(() => {
+    const onTrashed = () => {
+      try {
+        const raw = localStorage.getItem('trashed_products_v1')
+        const arr = raw ? JSON.parse(raw) : []
+        setTrashedCount(Array.isArray(arr) ? arr.length : 0)
+      } catch (e) { setTrashedCount(0) }
+    }
+    window.addEventListener('trashed:updated', onTrashed)
+    // also listen to storage events (other tabs)
+    const onStorage = (ev: StorageEvent) => { if (ev.key === 'trashed_products_v1') onTrashed() }
+    window.addEventListener('storage', onStorage)
+    return () => {
+      window.removeEventListener('trashed:updated', onTrashed)
+      window.removeEventListener('storage', onStorage)
+    }
+  }, [])
+
   const router = useRouter();
 
   // Map internal menu ids to canonical URL paths
@@ -265,7 +293,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <div className={`flex items-center justify-center ${isCollapsed ? 'w-8 h-8 mx-auto' : (level === 0 ? 'w-4 h-4 mr-2' : 'w-3 h-3 mr-2')}`}>
               {getIconComponent(item.icon ?? 'document', level === 0 ? 14 : 10, active)}
             </div>
-            {!isCollapsed && <span>{item.label}</span>}
+            {!isCollapsed && <span className="flex items-center gap-2">{item.label}{item.id === 'products-trash' && trashedCount > 0 && <span className="inline-flex items-center justify-center text-xs px-2 py-0.5 bg-red-50 text-red-700 rounded-full border border-red-100">{trashedCount}</span>}</span>}
           </div>
           {hasChildren && !isCollapsed && (
             <span className="ml-auto text-xs">

@@ -237,11 +237,86 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
       .then((r) => safeJson(r, { products: [] }))
       .then((data) => {
         if (!mounted) return
-        setProducts(normalizeProducts(Array.isArray(data.products) ? data.products : []))
+        try {
+          let fetched = normalizeProducts(Array.isArray(data.products) ? data.products : [])
+          // merge any locally-restored products (products_local_v1)
+          try {
+            const rawLocal = localStorage.getItem('products_local_v1')
+            if (rawLocal) {
+              const local = normalizeProducts(JSON.parse(rawLocal))
+              const map: Record<string, any> = {}
+              fetched.forEach((p: any) => { map[String(p.id)] = p })
+              local.forEach((p: any) => { map[String(p.id)] = p })
+              fetched = Object.values(map)
+            }
+          } catch (err) {}
+
+          // remove any trashed items from the visible list
+          try {
+            const rawTrashed = localStorage.getItem('trashed_products_v1')
+            if (rawTrashed) {
+              const trashed = JSON.parse(rawTrashed)
+              const tset = new Set((trashed || []).map((t: any) => String(t.id)))
+              fetched = fetched.filter((p: any) => !tset.has(String(p.id)))
+            }
+          } catch (err) {}
+
+          setProducts(fetched)
+        } catch (err) {
+          setProducts(normalizeProducts(Array.isArray(data.products) ? data.products : []))
+        }
       })
       .catch(() => {})
       .finally(() => { if (mounted) setLoading(false) })
     return () => { mounted = false }
+  }, [])
+
+  // listen for cross-window updates: when trash or products_local change
+  useEffect(() => {
+    const onProductsUpdated = () => {
+      try {
+        const raw = localStorage.getItem('products_local_v1')
+        if (!raw) return
+        const local = normalizeProducts(JSON.parse(raw))
+        setProducts((prev) => {
+          const map: Record<string, any> = {}
+          ;(prev || []).forEach((p: any) => { map[String(p.id)] = p })
+          ;(local || []).forEach((p: any) => { map[String(p.id)] = p })
+          // also ensure trashed items are excluded
+          try {
+            const rawTrashed = localStorage.getItem('trashed_products_v1')
+            if (rawTrashed) {
+              const trashed = JSON.parse(rawTrashed)
+              const tset = new Set((trashed || []).map((t: any) => String(t.id)))
+              Object.keys(map).forEach((k) => { if (tset.has(String(k))) delete map[k] })
+            }
+          } catch (e) {}
+          return Object.values(map)
+        })
+      } catch (e) {}
+    }
+
+    const onTrashedUpdated = () => {
+      try {
+        const rawTrashed = localStorage.getItem('trashed_products_v1')
+        const trashed = rawTrashed ? JSON.parse(rawTrashed) : []
+        const tset = new Set((trashed || []).map((t: any) => String(t.id)))
+        setProducts((prev) => (prev || []).filter((p: any) => !tset.has(String(p.id))))
+        // clear selections that no longer exist
+        setSelectedIds((prev) => {
+          const next: Record<string, boolean> = {}
+          Object.keys(prev || {}).forEach((k) => { if (!tset.has(String(k))) next[k] = prev[k] })
+          return next
+        })
+      } catch (e) {}
+    }
+
+    window.addEventListener('products:updated', onProductsUpdated)
+    window.addEventListener('trashed:updated', onTrashedUpdated)
+    return () => {
+      window.removeEventListener('products:updated', onProductsUpdated)
+      window.removeEventListener('trashed:updated', onTrashedUpdated)
+    }
   }, [])
 
   useEffect(() => {
