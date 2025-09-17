@@ -65,14 +65,8 @@ const MallsListPage: React.FC = () => {
       <div className="p-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">쇼핑몰 목록</h1>
         <div className="bg-white border border-gray-200 rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+          <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-medium text-gray-900">연동된 쇼핑몰</h2>
-            <div>
-              <div className="flex items-center gap-2">
-                <button className="px-3 py-2 border rounded" onClick={() => setGeneralOpen(true)}>기초 설정</button>
-                <button className="px-3 py-2 bg-primary-600 text-white rounded" onClick={() => setEditing({})}>쇼핑몰 추가</button>
-              </div>
-            </div>
           </div>
           <div className="p-6">
             <div className="space-y-4">
