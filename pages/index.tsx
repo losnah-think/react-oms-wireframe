@@ -35,7 +35,7 @@ import CategoryMappingPage from '../src/pages/malls/CategoryMappingPage';
 
 // Settings
 import BrandsPage from '../src/pages/settings/BrandsPage';
-import ProductClassificationsPage from '../src/pages/settings/ProductClassificationsPage';
+import ProductCategoryPage from '../src/pages/settings/ProductCategoryPage';
 import ProductSeasonsPage from '../src/pages/settings/ProductSeasonsPage';
 import ProductYearsPage from '../src/pages/settings/ProductYearsPage';
 
@@ -204,7 +204,7 @@ export default function Home(props: any) {
       
       // Settings
       case 'settings-product-classifications':
-        return <ProductClassificationsPage />;
+        return <ProductCategoryPage />;
       case 'settings-integrations':
         // render pages-based integrations index for SPA navigation
         // Dynamically import to avoid SSR issues

@@ -38,7 +38,6 @@ const menuItems: MenuItem[] = [
     icon: 'archive',
     children: [
       { id: 'orders-list', label: '주문 목록', icon: 'list' },
-      { id: 'orders-settings', label: '주문 설정', icon: 'settings' }
     ]
   },
   {
@@ -47,9 +46,9 @@ const menuItems: MenuItem[] = [
     icon: 'home',
     children: [
       { id: 'malls', label: '쇼핑몰 목록', icon: 'list' },
-  { id: 'malls-products', label: '쇼핑몰별 상품 관리', icon: 'box' },
-  { id: 'malls-info', label: '쇼핑몰별 부가 정보 관리', icon: 'info' },
-  { id: 'category-mapping', label: '카테고리 매핑', icon: 'copy' }
+      { id: 'malls-products', label: '쇼핑몰별 상품 관리', icon: 'box' },
+      { id: 'malls-info', label: '쇼핑몰별 부가 정보 관리', icon: 'info' },
+      { id: 'category-mapping', label: '카테고리 매핑', icon: 'copy' }
     ]
   },
   {
@@ -58,12 +57,13 @@ const menuItems: MenuItem[] = [
     icon: 'settings',
     children: [
       { id: 'settings-integrations', label: '외부 연동 관리', icon: 'external-link' },
-  { id: 'settings-barcodes', label: '바코드 관리', icon: 'barcode' },
-      { id: 'settings-product-classifications', label: '상품 분류 관리', icon: 'copy' },
+      { id: 'settings-barcodes', label: '바코드 관리', icon: 'barcode' },
+      { id: 'settings-product-category', label: '상품 카테고리 관리', icon: 'copy' },
+      { id: 'settings-product-groups', label: '상품 분류 관리', icon: 'copy' },
       { id: 'settings-brands', label: '브랜드 관리', icon: 'image' },
       { id: 'settings-product-years', label: '상품 연도 관리', icon: 'clock' },
       { id: 'settings-product-seasons', label: '상품 시즌 관리', icon: 'clock' },
-          
+      { id: 'orders-settings', label: '주문 설정', icon: 'settings' }
     ]
   }
 ];
@@ -139,7 +139,8 @@ const Sidebar: React.FC<SidebarProps> = ({
     'category-mapping': '/categories/mapping',
     'settings-integrations': '/settings/integrations',
     'settings-barcodes': '/settings/barcodes',
-    'settings-product-classifications': '/settings/classifications',
+    'settings-product-category': '/settings/category',
+    'settings-product-groups': '/settings/product-groups',
     'settings-brands': '/settings/brands',
     'settings-product-years': '/settings/years',
     'settings-product-seasons': '/settings/seasons'

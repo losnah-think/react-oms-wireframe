@@ -142,6 +142,7 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate, onSave, p
   const [toastMessage, setToastMessage] = useState<string | null>(null)
   const [productFilterOptions, setProductFilterOptions] = useState<any>({ brands: [], categories: [], suppliers: [], status: [] });
   const [groupsData, setGroupsData] = useState<any[]>([])
+  const [showAdvanced, setShowAdvanced] = useState(false)
 
   // 필드 업데이트 함수
   const updateField = (path: string, value: any) => {
@@ -285,6 +286,7 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate, onSave, p
     return () => { mounted = false }
   }, [])
 
+
   // 공급가 자동계산
   useEffect(() => {
     const selling = formData.basicInfo.pricing.sellingPrice || 0;
@@ -356,7 +358,13 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate, onSave, p
     <>
     <Container maxWidth="full" className="py-8">
       <div className="max-w-5xl mx-auto">
-        <h1 className="text-2xl font-bold mb-4">상품 등록</h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-bold">상품 등록</h1>
+          <div>
+            <button className="px-3 py-1 border rounded text-sm mr-2" onClick={() => setShowAdvanced((s) => !s)}>{showAdvanced ? '고급항목 숨기기' : '고급항목 표시'}</button>
+            <button className="px-3 py-1 bg-blue-600 text-white rounded text-sm" onClick={handleSaveAndContinue}>저장 후 계속</button>
+          </div>
+        </div>
         <div className="flex flex-col md:flex-row gap-6">
           {/* 메인 폼 영역 */}
           <form className="flex-1 space-y-6">
@@ -410,39 +418,47 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({ onNavigate, onSave, p
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     그룹(소속)
                   </label>
-                  <select
-                    value={formData.basicInfo.categoryId}
-                    onChange={(e) =>
-                      updateField("basicInfo.categoryId", e.target.value)
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  >
-                    <option value="">카테고리 선택</option>
-                    {(productFilterOptions.categories || []).map((cat: any) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
+                  {!showAdvanced ? (
+                    <div className="px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-sm">{formData.basicInfo.categoryId || '미지정'}</div>
+                  ) : (
+                    <select
+                      value={formData.basicInfo.categoryId}
+                      onChange={(e) =>
+                        updateField("basicInfo.categoryId", e.target.value)
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    >
+                      <option value="">카테고리 선택</option>
+                      {(productFilterOptions.categories || []).map((cat: any) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </GridCol>
                 <GridCol span={12}>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     브랜드
                   </label>
-                  <select
-                    value={formData.basicInfo.brandId || ""}
-                    onChange={(e) =>
-                      updateField("basicInfo.brandId", e.target.value)
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  >
-                    <option value="">브랜드 선택</option>
-                    {(productFilterOptions.brands || []).map((brand: any) => (
-                      <option key={brand.id} value={brand.id}>
-                        {brand.name}
-                      </option>
-                    ))}
-                  </select>
+                  {!showAdvanced ? (
+                    <div className="px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-sm">{formData.basicInfo.brandId || '미지정'}</div>
+                  ) : (
+                    <select
+                      value={formData.basicInfo.brandId}
+                      onChange={(e) =>
+                        updateField("basicInfo.brandId", e.target.value)
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    >
+                      <option value="">브랜드 선택</option>
+                      {(productFilterOptions.brands || []).map((brand: any) => (
+                        <option key={brand.id} value={brand.id}>
+                          {brand.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </GridCol>
                 <GridCol span={12}>
                   <label className="block text-sm font-medium text-gray-700 mb-1">

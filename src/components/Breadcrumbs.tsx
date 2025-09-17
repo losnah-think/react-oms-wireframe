@@ -34,11 +34,13 @@ export default function Breadcrumbs() {
         <span key={`${c.href}-${i}`}>
           {i > 0 && <span style={{ margin: '0 6px' }}>{'>'}</span>}
           {i < crumbs.length - 1 ? (
-            <Link href={c.href} legacyBehavior>
-              <a style={{ color: '#0366d6', textDecoration: 'none' }}>{c.name}</a>
+            <Link href={c.href} style={{ color: '#0366d6', textDecoration: 'none' }}>
+              {c.name}
             </Link>
           ) : (
-            <span style={{ color: '#333' }}>{c.name}</span>
+            <span style={{ color: '#333' }} aria-current="page">
+              {c.name}
+            </span>
           )}
         </span>
       ))}

@@ -216,87 +216,89 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
         </div>
       </Card>
 
-      {/* 상품 이미지 및 기본 정보 */}
+      {/* 상품 이미지 및 기본 정보 — TABLE VIEW */}
       <Card padding="lg" className="mb-6 shadow-sm">
-        <div className="flex gap-8 items-start">
-          <div className="w-80 h-80 bg-gray-100 rounded-lg overflow-hidden shadow-lg flex-shrink-0">
-            <img
-              src={Array.isArray(product.images) && product.images[0] ? product.images[0] : 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=600&fit=crop'}
-              alt={product.name}
-              className="w-full h-full object-cover"
-              onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=600&fit=crop' }}
-            />
-          </div>
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              {product.name}
-            </h1>
-            <div className="flex items-center space-x-4 text-gray-600 mb-4">
-              <span>상품일련번호: {product.id}</span>
-              <span>•</span>
-              <span>상품코드: {product.code}</span>
-              <span>•</span>
-              <span>브랜드: {product.brand} ({product.brand_id})</span>
-              <span>•</span>
-              <span>공급사ID: {product.supplier_id}</span>
-            </div>
-            <div className="grid grid-cols-2 gap-6 py-4">
-              <div>
-                <div className="text-sm text-gray-500 mb-1">판매가</div>
-                <div className="text-xl font-bold text-gray-900">
-                  {formatPrice(product.selling_price)}
-                </div>
-              </div>
-              <div>
-                <div className="text-sm text-gray-500 mb-1">마진률</div>
-                <div className="text-xl font-bold text-purple-600">
-                  {marginRate}%
-                </div>
-              </div>
-              <div>
-                <div className="text-sm text-gray-500 mb-1">총 재고</div>
-                <div className="text-xl font-bold text-blue-600">
-                  {product.variants
-                    ? (product.variants as any[])
-                        .reduce((sum: number, v: any) => sum + (v.stock || 0), 0)
-                        .toLocaleString()
-                    : 0}
-                </div>
-              </div>
-              <div>
-                <div className="text-sm text-gray-500 mb-1">등록일</div>
-                <div className="text-base text-gray-700">
-                  {formatDate(product.created_at)}
-                </div>
-              </div>
-            </div>
-            <div className="mt-4 text-sm text-gray-700 grid grid-cols-2 gap-4">
-              <div>공급처: <strong>{product?.supplier_name || '자사'}</strong></div>
-              <div>원산지: {product?.origin_country || '미지정'}</div>
-              <div>브랜드: {product?.brand || '선택안함'}</div>
-              <div>사입상품명: {product?.purchase_name || '미입력'}</div>
-              <div>판매가(대표): <strong>{formatPrice(product?.selling_price ?? 0)}</strong></div>
-              <div>원가: {formatPrice(product?.cost_price ?? 0)}</div>
-              <div>공급가: {formatPrice(product?.supply_price ?? 0)}</div>
-              <div>마진금액: {formatPrice((product?.selling_price ?? 0) - (product?.supply_price ?? 0))}</div>
-            </div>
-            <div className="mt-4 text-sm text-gray-600">
-              <div>배송비정책: {product?.shipping_policy || '미지정'}</div>
-            </div>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {product.tags && product.tags.map((t: string) => (
-                  <Badge key={t} variant="neutral">{t}</Badge>
-                ))}
-            </div>
-            <div className="mt-4 text-sm text-gray-600">
-              <div>HS Code: {product.hs_code}</div>
-              <div>원산지: {product.origin_country}</div>
-              <div>박스당수량: {product.box_qty}</div>
-              <div>재고연동: {product.variants && product.variants[0] && product.variants[0].is_stock_linked ? '연동' : '미연동'}</div>
-              <div>분류: {classificationNames[product.classification_id] || product.classification || '미지정'}</div>
-              <div>외부몰 데이터: {product.externalMall?.platform || product.externalMall?.platformName || '없음'}</div>
-            </div>
-          </div>
+        <div className="overflow-x-auto">
+          <table className="w-full table-fixed border-collapse">
+            <colgroup>
+              <col className="w-48" />
+              <col />
+            </colgroup>
+            <tbody>
+              <tr className="border-b">
+                <td className="px-4 py-3 text-sm text-gray-600 align-top">대표 이미지</td>
+                <td className="px-4 py-3">
+                  <div className="w-48 h-48 bg-gray-100 rounded overflow-hidden">
+                    <img
+                      src={Array.isArray(product.images) && product.images[0] ? product.images[0] : 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=600&fit=crop'}
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=600&fit=crop' }}
+                    />
+                  </div>
+                </td>
+              </tr>
+
+              <tr className="border-b">
+                <td className="px-4 py-3 text-sm text-gray-600">상품명</td>
+                <td className="px-4 py-3 font-semibold text-gray-900">{product.name}</td>
+              </tr>
+
+              <tr className="border-b">
+                <td className="px-4 py-3 text-sm text-gray-600">기본 정보</td>
+                <td className="px-4 py-3 text-gray-700">
+                  <div className="flex flex-wrap gap-3 text-sm">
+                    <div>상품ID: {product.id}</div>
+                    <div>코드: {product.code}</div>
+                    <div>브랜드: {product.brand || '-'}</div>
+                    <div>공급사ID: {product.supplier_id || '-'}</div>
+                  </div>
+                </td>
+              </tr>
+
+              <tr className="border-b">
+                <td className="px-4 py-3 text-sm text-gray-600">가격 / 재고</td>
+                <td className="px-4 py-3 text-gray-700">
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div>판매가: <strong>{formatPrice(product.selling_price)}</strong></div>
+                    <div>원가: {formatPrice(product.cost_price)}</div>
+                    <div>공급가: {formatPrice(product.supply_price)}</div>
+                    <div>총재고: <strong>{product.variants ? (product.variants as any[]).reduce((s:number,v:any)=>s+(v.stock||0),0).toLocaleString() : '0'}</strong></div>
+                    <div>마진률: <strong>{marginRate}%</strong></div>
+                    <div>등록일: {formatDate(product.created_at)}</div>
+                  </div>
+                </td>
+              </tr>
+
+              <tr className="border-b">
+                <td className="px-4 py-3 text-sm text-gray-600">추가 속성</td>
+                <td className="px-4 py-3 text-gray-700 grid grid-cols-2 gap-2 text-sm">
+                  <div>공급처: <strong>{product?.supplier_name || '자사'}</strong></div>
+                  <div>원산지: {product?.origin_country || '미지정'}</div>
+                  <div>사입상품명: {product?.purchase_name || '미입력'}</div>
+                  <div>배송비정책: {product?.shipping_policy || '미지정'}</div>
+                  <div>HS Code: {product.hs_code || '-'}</div>
+                  <div>박스당수량: {product.box_qty || '-'}</div>
+                  <div>재고연동: {product.variants && product.variants[0] && product.variants[0].is_stock_linked ? '연동' : '미연동'}</div>
+                  <div>분류: {classificationNames[product.classification_id] || product.classification || '미지정'}</div>
+                  <div>외부몰 데이터: {product.externalMall?.platform || product.externalMall?.platformName || '없음'}</div>
+                </td>
+              </tr>
+
+              <tr className="border-b">
+                <td className="px-4 py-3 text-sm text-gray-600 align-top">태그</td>
+                <td className="px-4 py-3">
+                  <div className="flex flex-wrap gap-2">
+                    {product.tags && product.tags.map((t: string) => (
+                      <Badge key={t} variant="neutral">{t}</Badge>
+                    ))}
+                  </div>
+                </td>
+              </tr>
+
+              {/* 상세 설명은 아래의 상세 설명 카드에서 보여줍니다 (중복 제거) */}
+            </tbody>
+          </table>
         </div>
       </Card>
 

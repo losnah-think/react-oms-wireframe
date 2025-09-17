@@ -6,7 +6,20 @@ const sampleProducts = Array.from({ length: 20 }).map((_, i) => {
   const category = ['Clothing', 'Electronics', 'Home', 'Sports'][i % 4]
   const colors = ['red', 'blue', 'green', 'black']
   const sizes = ['S', 'M', 'L', 'XL']
-  const images = [`/images/demo-${(i % 6) + 1}.jpg`, `/images/demo-${(i % 6) + 2}.jpg`]
+  // Use Unsplash images for nicer demo thumbnails (stable queries)
+  const unsplashSeeds = [
+    'fashion,clothing',
+    'electronics,gadget',
+    'furniture,home',
+    'sports,fitness',
+    'beauty,cosmetics',
+    'accessories,bag'
+  ]
+  const seed = unsplashSeeds[i % unsplashSeeds.length]
+  const images = [
+    `https://source.unsplash.com/collection/190727/400x300?${encodeURIComponent(seed)}&sig=${i}`,
+    `https://source.unsplash.com/collection/190727/400x300?${encodeURIComponent(seed)}&sig=${i + 10}`
+  ]
   const variants = [
     {
       id: `v-${id}-1`,
@@ -23,6 +36,10 @@ const sampleProducts = Array.from({ length: 20 }).map((_, i) => {
       attributes: { color: colors[(i + 1) % colors.length], size: sizes[(i + 1) % sizes.length] }
     }
   ]
+  // ~66% of items will have a shipping policy value for testing the filter
+  const hasShippingPolicy = i % 3 !== 0
+  const suppliers = ['자사', '공급처A', '공급처B', '공급처C']
+  const supplier_name = suppliers[i % suppliers.length]
   return {
     id: String(id),
     name: `Demo ${brand} ${category} ${i + 1}`,
@@ -35,7 +52,9 @@ const sampleProducts = Array.from({ length: 20 }).map((_, i) => {
     description: `This is a demo ${category.toLowerCase()} product from ${brand}. Great for testing UI rendering.`,
     inventory: variants.reduce((s, v) => s + v.stock, 0),
     weight_g: 500 + (i * 10),
-    variants
+    variants,
+    shipping_policy: hasShippingPolicy ? (i % 2 === 0 ? '무료배송' : '착불') : '',
+    supplier_name
   }
 })
 
@@ -45,5 +64,8 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
   const { limit = 1000 } = req.query
   const l = typeof limit === 'string' ? parseInt(limit, 10) : Number(limit || 1000)
+  res.setHeader('Cache-Control', 'no-store')
+  res.setHeader('Pragma', 'no-cache')
+  res.setHeader('Expires', '0')
   res.status(200).json(sampleProducts.slice(0, l))
 }

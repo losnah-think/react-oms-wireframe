@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { Container, Card, Button, Badge, Stack } from "../../design-system";
 
 interface ShoppingMallIntegration {
@@ -37,6 +37,7 @@ const ExternalProductImportPage: React.FC = () => {
   const [importProgress, setImportProgress] = useState<Record<string, number>>(
     {},
   );
+  const [activeTab, setActiveTab] = useState<'overview'|'integrations'|'history'|'errors'>('overview')
 
   const shoppingMalls: ShoppingMallIntegration[] = [
     {
@@ -143,6 +144,69 @@ const ExternalProductImportPage: React.FC = () => {
     autoRegisterCategory: false,
     optionNameApply: false,
   });
+
+  const [showFilters, setShowFilters] = useState<boolean>(false);
+
+  const activeFilters = useMemo(() => {
+    const items: { key: string; label: string }[] = [];
+    if (filters.seller && filters.seller !== 'all') {
+      const m = shoppingMalls.find((mm) => mm.id === filters.seller);
+      items.push({ key: 'seller', label: `판매처: ${m ? m.name : filters.seller}` });
+    }
+    if (filters.dateFrom || filters.dateTo) {
+      items.push({ key: 'period', label: `기간: ${filters.dateFrom || '시작'} ~ ${filters.dateTo || '종료'}` });
+    }
+    if (filters.costModified) items.push({ key: 'costModified', label: filters.costModified === 'modified' ? '원가 수정됨' : '원가 미수정' });
+    if (filters.display) items.push({ key: 'display', label: filters.display === 'displayed' ? '진열됨' : '진열안함' });
+    if (filters.selling) items.push({ key: 'selling', label: filters.selling === 'selling' ? '판매중' : '미판매' });
+    if (filters.productName) items.push({ key: 'productName', label: `상품명: ${filters.productName}` });
+    if (filters.autoRegisterCategory) items.push({ key: 'autoRegisterCategory', label: '자동분류 등록' });
+    if (filters.optionNameApply) items.push({ key: 'optionNameApply', label: '옵션명 적용' });
+    return items;
+  }, [filters, shoppingMalls]);
+
+  const clearFilter = useCallback((key: string) => {
+    setFilters((f) => {
+      switch (key) {
+        case 'seller':
+          return { ...f, seller: 'all' };
+        case 'period':
+          return { ...f, dateFrom: '', dateTo: '' };
+        case 'costModified':
+          return { ...f, costModified: '' };
+        case 'display':
+          return { ...f, display: '' };
+        case 'selling':
+          return { ...f, selling: '' };
+        case 'productName':
+          return { ...f, productName: '' };
+        case 'autoRegisterCategory':
+          return { ...f, autoRegisterCategory: false };
+        case 'optionNameApply':
+          return { ...f, optionNameApply: false };
+        default:
+          return f;
+      }
+    });
+  }, []);
+
+  const focusFilterField = useCallback((key: string) => {
+    setShowFilters(true);
+    setTimeout(() => {
+      if (key === 'seller') {
+        const el = document.querySelector('select') as HTMLSelectElement | null;
+        el?.focus();
+      }
+      if (key === 'productName') {
+        const el = document.querySelector('input[placeholder="상품명으로 검색"]') as HTMLInputElement | null;
+        el?.focus();
+      }
+      if (key === 'period') {
+        const el = document.querySelector('input[type="date"]') as HTMLInputElement | null;
+        el?.focus();
+      }
+    }, 120);
+  }, []);
 
   function formatDate(d: Date) {
     const y = d.getFullYear();
@@ -330,6 +394,40 @@ const ExternalProductImportPage: React.FC = () => {
 
       {/* 필터 패널 */}
       <Card padding="md" className="mb-6">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex gap-2 items-center">
+            {shoppingMalls.map((m) => (
+              <button
+                key={m.id}
+                onClick={() => setFilters((f) => ({ ...f, seller: m.id }))}
+                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors duration-150 ${filters.seller === m.id ? 'bg-blue-600 text-white shadow-sm' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+              >
+                {m.name}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="text-sm text-gray-600">필터</div>
+            <button onClick={() => setShowFilters((s) => !s)} className="px-3 py-1 border rounded-md">
+              {showFilters ? '접기' : '펼치기'}
+            </button>
+          </div>
+        </div>
+
+        {!showFilters && activeFilters.length > 0 && (
+          <div className="mb-3 flex flex-wrap gap-2">
+            {activeFilters.slice(0, 6).map((f) => (
+              <div key={f.key} className="inline-flex items-center bg-blue-50 text-blue-800 px-3 py-1 rounded-full text-sm shadow-sm">
+                <button onClick={() => focusFilterField(f.key)} className="mr-2 hover:underline focus:outline-none">{f.label}</button>
+                <button aria-label={`지우기 ${f.label}`} onClick={() => clearFilter(f.key)} className="text-blue-600 font-bold ml-2 px-1 hover:bg-blue-100 rounded-full">×</button>
+              </div>
+            ))}
+            {activeFilters.length > 6 && (
+              <div className="inline-flex items-center bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">+{activeFilters.length - 6}</div>
+            )}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="space-y-2">
             <label className="text-sm text-gray-700">판매처 선택</label>
@@ -352,13 +450,13 @@ const ExternalProductImportPage: React.FC = () => {
                 type="date"
                 value={filters.dateFrom}
                 onChange={(e) => setFilters((f) => ({ ...f, dateFrom: e.target.value }))}
-                className="border rounded px-2 py-2 w-full"
+                className="border rounded px-2 py-1.5 w-full"
               />
               <input
                 type="date"
                 value={filters.dateTo}
                 onChange={(e) => setFilters((f) => ({ ...f, dateTo: e.target.value }))}
-                className="border rounded px-2 py-2 w-full"
+                className="border rounded px-2 py-1.5 w-full"
               />
             </div>
             <div className="flex gap-2 mt-2 flex-wrap">
@@ -366,7 +464,7 @@ const ExternalProductImportPage: React.FC = () => {
                 <Button
                   key={p}
                   onClick={() => applyPreset(p)}
-                  className="text-sm px-3 py-1 border rounded bg-gray-50 hover:bg-gray-100"
+                  className="text-sm px-2.5 py-1 border rounded bg-gray-50 hover:bg-gray-100"
                 >
                   {p}
                 </Button>
@@ -438,348 +536,169 @@ const ExternalProductImportPage: React.FC = () => {
 
       {/* 전체 현황 대시보드 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Card
-          padding="md"
-          className="bg-gradient-to-r from-blue-500 to-blue-600 text-white"
-        >
+        {/* Tabs */}
+        <div className="mb-6">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-blue-100 text-sm">연결된 쇼핑몰</p>
-              <p className="text-3xl font-bold">
-                {shoppingMalls.filter((m) => m.isConnected).length}
-              </p>
+            <div className="flex gap-2">
+              <button onClick={() => setActiveTab('overview')} className={`px-4 py-2 rounded ${activeTab==='overview' ? 'bg-blue-600 text-white' : 'bg-white border'}`}>개요</button>
+              <button onClick={() => setActiveTab('integrations')} className={`px-4 py-2 rounded ${activeTab==='integrations' ? 'bg-blue-600 text-white' : 'bg-white border'}`}>연결된 쇼핑몰</button>
+              <button onClick={() => setActiveTab('history')} className={`px-4 py-2 rounded ${activeTab==='history' ? 'bg-blue-600 text-white' : 'bg-white border'}`}>가져오기 기록</button>
+              <button onClick={() => setActiveTab('errors')} className={`px-4 py-2 rounded ${activeTab==='errors' ? 'bg-blue-600 text-white' : 'bg-white border'}`}>오류 상품</button>
             </div>
-            <div className="text-4xl"></div>
+            <div className="text-sm text-gray-600">선택된 탭: {activeTab}</div>
           </div>
-        </Card>
+        </div>
 
-        <Card
-          padding="md"
-          className="bg-gradient-to-r from-green-500 to-green-600 text-white"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-green-100 text-sm">총 상품 수</p>
-              <p className="text-3xl font-bold">
-                {shoppingMalls
-                  .reduce((sum, mall) => sum + mall.productCount, 0)
-                  .toLocaleString()}
-              </p>
+        {/* Tab content */}
+        {activeTab === 'overview' && (
+          <Card padding="md" className="mb-6">
+            <h2 className="text-lg font-bold mb-2">가져오기 개요</h2>
+            <p className="text-sm text-gray-600 mb-4">여기서는 전체 쇼핑몰 통계와 최근 가져오기 상태를 빠르게 확인할 수 있습니다.</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card padding="md" className="bg-white border">
+                <div className="text-sm text-gray-600">총 연결 쇼핑몰</div>
+                <div className="text-2xl font-bold">{shoppingMalls.filter(m=>m.isConnected).length}</div>
+              </Card>
+              <Card padding="md" className="bg-white border">
+                <div className="text-sm text-gray-600">총 상품 수</div>
+                <div className="text-2xl font-bold">{shoppingMalls.reduce((s, m) => s + m.productCount, 0).toLocaleString()}</div>
+              </Card>
+              <Card padding="md" className="bg-white border">
+                <div className="text-sm text-gray-600">최근 가져온 상품</div>
+                <div className="text-2xl font-bold">{Object.values(importStats).reduce((s, st) => s + (st?.successCount||0), 0)}</div>
+              </Card>
             </div>
-            <div className="text-4xl"></div>
-          </div>
-        </Card>
+          </Card>
+  )}
 
-        <Card
-          padding="md"
-          className="bg-gradient-to-r from-purple-500 to-purple-600 text-white"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-purple-100 text-sm">오늘 가져온 상품</p>
-              <p className="text-3xl font-bold">127</p>
-            </div>
-            <div className="text-4xl"></div>
-          </div>
-        </Card>
-
-        <Card
-          padding="md"
-          className="bg-gradient-to-r from-orange-500 to-orange-600 text-white"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-orange-100 text-sm">동기화 대기</p>
-              <p className="text-3xl font-bold">23</p>
-            </div>
-            <div className="text-4xl"></div>
-          </div>
-        </Card>
-      </div>
-
-      {/* 쇼핑몰별 아코디언 */}
-      <div className="space-y-4">
-        {shoppingMalls.map((mall) => (
-          <div
-            key={mall.id}
-            className="bg-white border border-gray-200 rounded-lg overflow-hidden"
-          >
-            {/* 아코디언 헤더 */}
-            <div
-              onClick={() => toggleAccordion(mall.id)}
-              className="flex items-center justify-between p-6 cursor-pointer hover:bg-gray-50 transition-colors"
-            >
-              <div className="flex items-center space-x-4">
-                <div className="text-4xl">{mall.icon}</div>
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-1">
-                    <h3 className="text-xl font-semibold text-gray-900">
-                      {mall.name}
-                    </h3>
-                    {getStatusBadge(mall.status)}
-                  </div>
-                  <p className="text-gray-600 text-sm">{mall.description}</p>
-                  {mall.isConnected && (
-                    <p className="text-gray-500 text-xs mt-1">
-                      상품 {mall.productCount.toLocaleString()}개 | 마지막
-                      동기화: {mall.lastSync}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-3">
-                {/* 접힌 상태에서도 보이는 빠른 작업 버튼들 */}
-                {mall.isConnected ? (
-                  <>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleImport(mall.id);
-                      }}
-                      disabled={importProgress[mall.id] > 0}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {importProgress[mall.id] > 0
-                        ? `${importProgress[mall.id]}%`
-                        : "상품 가져오기"}
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSync(mall.id);
-                      }}
-                      className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-                    >
-                      동기화
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleConnect(mall.id);
-                    }}
-                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                  >
-                    연결하기
-                  </button>
-                )}
-
-                <div className="text-2xl text-gray-400">
-                  {expandedMall === mall.id ? "−" : "+"}
-                </div>
-              </div>
-            </div>
-
-            {/* 아코디언 콘텐츠 */}
-            {expandedMall === mall.id && (
-              <div className="border-t border-gray-200 p-6 bg-gray-50">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* 기능 및 설정 */}
-                  <div>
-                    <h4 className="text-lg font-medium text-gray-900 mb-4">
-                      기능 및 설정
-                    </h4>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
-                        <div>
-                          <h5 className="font-medium text-gray-900">
-                            실시간 동기화
-                          </h5>
-                          <p className="text-sm text-gray-600">
-                            자동으로 상품 정보를 동기화합니다
-                          </p>
-                        </div>
-                        <div className="flex items-center">
-                          <input
-                            type="checkbox"
-                            defaultChecked={mall.isConnected}
-                            className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                          />
-                        </div>
-
-                      {importedSamples[mall.id] && importedSamples[mall.id].length > 0 && (
-                        <div className="mt-4 bg-white rounded-lg border p-4">
-                          <h5 className="font-medium text-gray-900 mb-2">가져온 상품 미리보기</h5>
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-sm text-left">
-                              <thead>
-                                <tr>
-                                  <th className="px-2 py-1">상품번호</th>
-                                  <th className="px-2 py-1">상품명</th>
-                                  <th className="px-2 py-1">가격</th>
-                                  <th className="px-2 py-1">재고</th>
-                                  <th className="px-2 py-1">상태</th>
-                                  <th className="px-2 py-1">마지막 업데이트</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {importedSamples[mall.id].slice(0, 5).map((p, idx) => (
-                                  <tr key={idx} className="border-t">
-                                    <td className="px-2 py-2 text-gray-700">{p.product_no}</td>
-                                    <td className="px-2 py-2 text-gray-800">{p.name}</td>
-                                    <td className="px-2 py-2 text-gray-700">{p.price.toLocaleString()}원</td>
-                                    <td className="px-2 py-2 text-gray-700">{p.inventory}</td>
-                                    <td className="px-2 py-2 text-gray-700">{p.selling ? '판매중' : '판매중단'}</td>
-                                    <td className="px-2 py-2 text-gray-600">{p.last_update}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
+        {activeTab === 'integrations' && (
+          <Card padding="md" className="mb-6">
+            <h2 className="text-lg font-bold mb-2">연결된 쇼핑몰</h2>
+            <div className="space-y-4">
+              {shoppingMalls.map((mall) => (
+                <div key={mall.id} className="bg-white border rounded-lg overflow-hidden">
+                  <div className="p-4 flex items-center justify-between cursor-pointer" onClick={() => toggleAccordion(mall.id)}>
+                    <div>
+                      <div className="text-lg font-medium">{mall.name} {getStatusBadge(mall.status)}</div>
+                      <div className="text-sm text-gray-600">{mall.description}</div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="text-sm text-gray-500">상품 {mall.productCount.toLocaleString()}</div>
+                      <Button onClick={(e) => { e.stopPropagation(); handleImport(mall.id); }} className="px-3 py-2 bg-blue-600 text-white">가져오기</Button>
+                      {mall.isConnected ? (
+                        <Button onClick={(e) => { e.stopPropagation(); handleSync(mall.id); }} className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">동기화</Button>
+                      ) : (
+                        <Button onClick={(e) => { e.stopPropagation(); handleConnect(mall.id); }} className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">연결하기</Button>
                       )}
-
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
-                        <div>
-                          <h5 className="font-medium text-gray-900">
-                            재고 관리
-                          </h5>
-                          <p className="text-sm text-gray-600">
-                            재고 수량을 자동으로 관리합니다
-                          </p>
-                        </div>
-                        <div className="flex items-center">
-                          <input
-                            type="checkbox"
-                            defaultChecked={true}
-                            className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
-                        <div>
-                          <h5 className="font-medium text-gray-900">
-                            가격 동기화
-                          </h5>
-                          <p className="text-sm text-gray-600">
-                            가격 변동사항을 자동 반영합니다
-                          </p>
-                        </div>
-                        <div className="flex items-center">
-                          <input
-                            type="checkbox"
-                            defaultChecked={mall.features.includes(
-                              "가격 동기화",
-                            )}
-                            className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                          />
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => handleSettings(mall.id)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-                      >
-                        상세 설정
-                      </button>
+                      <div className="text-2xl text-gray-400">{expandedMall === mall.id ? '−' : '+'}</div>
                     </div>
                   </div>
 
-                  {/* 가져오기 통계 및 작업 */}
-                  <div>
-                    <h4 className="text-lg font-medium text-gray-900 mb-4">
-                      가져오기 통계
-                    </h4>
-                    {mall.isConnected && importStats[mall.id] ? (
-                      <div className="space-y-4">
-                        <div className="bg-white rounded-lg border p-4">
-                          <div className="grid grid-cols-2 gap-4 text-center">
-                            <div>
-                              <div className="text-2xl font-bold text-green-600">
-                                {importStats[
-                                  mall.id
-                                ].successCount.toLocaleString()}
+                  {expandedMall === mall.id && (
+                    <div className="border-t border-gray-100 p-6 bg-gray-50">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div>
+                          <h4 className="text-lg font-medium text-gray-900 mb-4">기능 및 설정</h4>
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                              <div>
+                                <h5 className="font-medium text-gray-900">실시간 동기화</h5>
+                                <p className="text-sm text-gray-600">자동으로 상품 정보를 동기화합니다</p>
                               </div>
-                              <div className="text-sm text-gray-600">성공</div>
-                            </div>
-                            <div>
-                              <div className="text-2xl font-bold text-red-600">
-                                {importStats[mall.id].failureCount}
+                              <div className="flex items-center">
+                                <input type="checkbox" defaultChecked={mall.isConnected} className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500" />
                               </div>
-                              <div className="text-sm text-gray-600">실패</div>
                             </div>
-                          </div>
-                          <div className="mt-3 pt-3 border-t text-center">
-                            <div className="text-sm text-gray-600">
-                              마지막 가져오기:{" "}
-                              {importStats[mall.id].lastImportDate}
-                            </div>
+
+                            {importedSamples[mall.id] && importedSamples[mall.id].length > 0 && (
+                              <div className="mt-4 bg-white rounded-lg border p-4">
+                                <h5 className="font-medium text-gray-900 mb-2">가져온 상품 미리보기</h5>
+                                <div className="overflow-x-auto">
+                                  <table className="w-full text-sm text-left">
+                                    <thead>
+                                      <tr>
+                                        <th className="px-2 py-1">상품번호</th>
+                                        <th className="px-2 py-1">상품명</th>
+                                        <th className="px-2 py-1">가격</th>
+                                        <th className="px-2 py-1">재고</th>
+                                        <th className="px-2 py-1">상태</th>
+                                        <th className="px-2 py-1">마지막 업데이트</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {importedSamples[mall.id].slice(0, 5).map((p, idx) => (
+                                        <tr key={idx} className="border-t">
+                                          <td className="px-2 py-2 text-gray-700">{p.product_no}</td>
+                                          <td className="px-2 py-2 text-gray-800">{p.name}</td>
+                                          <td className="px-2 py-2 text-gray-700">{p.price.toLocaleString()}원</td>
+                                          <td className="px-2 py-2 text-gray-700">{p.inventory}</td>
+                                          <td className="px-2 py-2 text-gray-700">{p.selling ? '판매중' : '판매중단'}</td>
+                                          <td className="px-2 py-2 text-gray-600">{p.last_update}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
 
-                        <div className="space-y-2">
-                          <button
-                            onClick={() => handleImport(mall.id)}
-                            disabled={importProgress[mall.id] > 0}
-                            className="w-full px-4 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-                          >
-                            {importProgress[mall.id] > 0
-                              ? `상품 가져오는 중... ${importProgress[mall.id]}%`
-                              : "전체 상품 가져오기"}
-                          </button>
+                        <div>
+                          <h4 className="text-lg font-medium text-gray-900 mb-4">가져오기 통계</h4>
+                          {mall.isConnected && importStats[mall.id] ? (
+                            <div className="space-y-4">
+                              <div className="bg-white rounded-lg border p-4">
+                                <div className="grid grid-cols-2 gap-4 text-center">
+                                  <div>
+                                    <div className="text-2xl font-bold text-green-600">{importStats[mall.id].successCount.toLocaleString()}</div>
+                                    <div className="text-sm text-gray-600">성공</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-2xl font-bold text-red-600">{importStats[mall.id].failureCount}</div>
+                                    <div className="text-sm text-gray-600">실패</div>
+                                  </div>
+                                </div>
+                                <div className="mt-3 pt-3 border-t text-center">
+                                  <div className="text-sm text-gray-600">마지막 가져오기: {importStats[mall.id].lastImportDate}</div>
+                                </div>
+                              </div>
 
-                          <button
-                            onClick={() =>
-                              handleImport(`${mall.id}-incremental`)
-                            }
-                            className="w-full px-4 py-2 border border-blue-600 text-blue-600 rounded-md hover:bg-blue-50"
-                          >
-                            신규/변경 상품만 가져오기
-                          </button>
+                              <div className="space-y-2">
+                                <button onClick={() => handleImport(mall.id)} disabled={importProgress[mall.id] > 0} className="w-full px-4 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50">{importProgress[mall.id] > 0 ? `상품 가져오는 중... ${importProgress[mall.id]}%` : '전체 상품 가져오기'}</button>
 
-                          <button
-                            onClick={() => handleSync(mall.id)}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-                          >
-                            기존 상품 동기화
-                          </button>
+                                <button onClick={() => handleImport(`${mall.id}-incremental`)} className="w-full px-4 py-2 border border-blue-600 text-blue-600 rounded-md hover:bg-blue-50">신규/변경 상품만 가져오기</button>
+
+                                <button onClick={() => handleSync(mall.id)} className="w-full px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">기존 상품 동기화</button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="bg-white rounded-lg border p-6 text-center">
+                              <p className="text-gray-600 mb-4">{mall.isConnected ? '통계를 불러오는 중...' : '먼저 쇼핑몰을 연결해주세요'}</p>
+                              {!mall.isConnected && (
+                                <button onClick={() => handleConnect(mall.id)} className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">지금 연결하기</button>
+                              )}
+                            </div>
+                          )}
+
+                          <div className="mt-6 pt-6 border-t">
+                            <h4 className="text-lg font-medium text-gray-900 mb-3">지원 기능</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {mall.features.map((feature, index) => (
+                                <span key={index} className="inline-flex px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded-full">{feature}</span>
+                              ))}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    ) : (
-                      <div className="bg-white rounded-lg border p-6 text-center">
-                        <p className="text-gray-600 mb-4">
-                          {mall.isConnected
-                            ? "통계를 불러오는 중..."
-                            : "먼저 쇼핑몰을 연결해주세요"}
-                        </p>
-                        {!mall.isConnected && (
-                          <button
-                            onClick={() => handleConnect(mall.id)}
-                            className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                          >
-                            지금 연결하기
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
+              ))}
+            </div>
+          </Card>
+        )}
 
-                {/* 지원 기능 */}
-                <div className="mt-6 pt-6 border-t">
-                  <h4 className="text-lg font-medium text-gray-900 mb-3">
-                    지원 기능
-                  </h4>
-                  <div className="flex flex-wrap gap-2">
-                    {mall.features.map((feature, index) => (
-                      <span
-                        key={index}
-                        className="inline-flex px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded-full"
-                      >
-                        {feature}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
       </div>
 
       {/* 하단 작업 영역 */}

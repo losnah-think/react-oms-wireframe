@@ -246,7 +246,7 @@ export { GridContainer as Row, GridItem as Col };
 
 // CSS-in-JS styles for dynamic width calculations
 export const GridStyles = () => (
-  <style jsx global>{`
+  <style>{`
     /* Generate width classes for 24-grid system */
     ${Array.from({ length: 24 }, (_, i) => {
       const span = i + 1;

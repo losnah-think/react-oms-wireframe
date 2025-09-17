@@ -348,13 +348,13 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
       <div className="flex items-center justify-between mb-4">
         <div className="text-sm text-gray-700">홈 / 상품 / 상품 수정</div>
         <div className="flex items-center gap-2">
-          <button className="px-3 py-1 border rounded bg-white text-sm" onClick={() => { if (examples[0]) loadExampleById(examples[0].id) }} disabled={!examples[0]}>
+          <button aria-label="Load example 1" className="px-3 py-1 border rounded bg-white text-sm" onClick={() => { if (examples[0]) loadExampleById(examples[0].id) }} disabled={!examples[0]}>
             {examples[0] ? (examples[0].name || '예제 1') : '예제1'}
           </button>
-          <button className="px-3 py-1 border rounded bg-white text-sm" onClick={() => { if (examples[1]) loadExampleById(examples[1].id) }} disabled={!examples[1]}>
+          <button aria-label="Load example 2" className="px-3 py-1 border rounded bg-white text-sm" onClick={() => { if (examples[1]) loadExampleById(examples[1].id) }} disabled={!examples[1]}>
             {examples[1] ? (examples[1].name || '예제 2') : '예제2'}
           </button>
-          <button className="px-3 py-1 border rounded bg-white text-sm" onClick={() => { if (examples[2]) loadExampleById(examples[2].id) }} disabled={!examples[2]}>
+          <button aria-label="Load example 3" className="px-3 py-1 border rounded bg-white text-sm" onClick={() => { if (examples[2]) loadExampleById(examples[2].id) }} disabled={!examples[2]}>
             {examples[2] ? (examples[2].name || '예제 3') : '예제3'}
           </button>
         </div>
@@ -383,7 +383,7 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
                   <button className="px-3 py-1 border rounded text-sm mr-2" onClick={() => setShowAdvanced((s) => !s)}>{showAdvanced ? '고급항목 숨기기' : '고급항목 표시'}</button>
                 </div>
                 <div>
-                  <button className="px-3 py-1 bg-blue-600 text-white rounded text-sm" onClick={handleSave} disabled={saving}>{saving ? '저장중...' : '저장'}</button>
+                      <button aria-label="Save product" className="px-3 py-1 bg-blue-600 text-white rounded text-sm" onClick={handleSave} disabled={saving}>{saving ? '저장중...' : '저장'}</button>
                 </div>
               </div>
 
@@ -852,7 +852,7 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-sm font-semibold">옵션 편집</h3>
                   <div className="flex items-center gap-2">
-                    <button className="px-2 py-1 border rounded text-sm" onClick={() => addOptionGroup()}>옵션 그룹 추가</button>
+                    <button aria-label="Add option group" className="px-2 py-1 border rounded text-sm" onClick={() => addOptionGroup()}>옵션 그룹 추가</button>
                   </div>
                 </div>
                 {(formData.additionalInfo?.options || []).map((group: any, gIdx: number) => (
@@ -862,10 +862,10 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
                         <div className="text-sm font-medium">옵션 그룹:</div>
                         <input className="px-2 py-1 border rounded text-sm" value={group.name || `그룹 ${gIdx + 1}`} onChange={(e) => updateOptionGroupName(gIdx, e.target.value)} />
                       </div>
-                      <div className="flex items-center gap-2">
-                        <button className="px-2 py-1 border rounded text-sm" onClick={() => openBatchModal(gIdx)}>일괄편집</button>
-                        <button className="px-2 py-1 border rounded text-sm" onClick={() => addOptionValue(gIdx)}>옵션 추가</button>
-                        <button className="px-2 py-1 border rounded text-sm" onClick={() => removeOptionGroup(gIdx)}>그룹 삭제</button>
+                        <div className="flex items-center gap-2">
+                        <button aria-label={`Open batch edit for group ${gIdx+1}`} className="px-2 py-1 border rounded text-sm" onClick={() => openBatchModal(gIdx)}>일괄편집</button>
+                        <button aria-label={`Add option to group ${gIdx+1}`} className="px-2 py-1 border rounded text-sm" onClick={() => addOptionValue(gIdx)}>옵션 추가</button>
+                        <button aria-label={`Delete option group ${gIdx+1}`} className="px-2 py-1 border rounded text-sm" onClick={() => removeOptionGroup(gIdx)}>그룹 삭제</button>
                       </div>
                     </div>
                     <div className="overflow-auto border rounded">
@@ -899,11 +899,11 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
                               <td className="px-3 py-2 flex items-center gap-2">
                                 <input type="checkbox" checked={v.isActive ?? true} onChange={(e) => updateField(`additionalInfo.options.${gIdx}.values.${idx}.isActive`, e.target.checked)} />
                                 <div className="flex items-center gap-1">
-                                  <button className="px-2 py-1 border rounded text-xs" onClick={() => moveOptionValue(gIdx, idx, Math.max(0, idx - 1))}>▲</button>
-                                  <button className="px-2 py-1 border rounded text-xs" onClick={() => moveOptionValue(gIdx, idx, idx + 1)}>▼</button>
+                                  <button aria-label={`Move option ${idx+1} up`} className="px-2 py-1 border rounded text-xs" onClick={() => moveOptionValue(gIdx, idx, Math.max(0, idx - 1))}>▲</button>
+                                  <button aria-label={`Move option ${idx+1} down`} className="px-2 py-1 border rounded text-xs" onClick={() => moveOptionValue(gIdx, idx, idx + 1)}>▼</button>
                                 </div>
-                                <button className="px-2 py-1 border rounded text-xs" onClick={() => copyOptionValue(gIdx, idx)}>복사</button>
-                                <button className="px-2 py-1 border rounded text-xs" onClick={() => removeOptionValue(gIdx, idx)}>삭제</button>
+                                <button aria-label={`Copy option ${idx+1}`} className="px-2 py-1 border rounded text-xs" onClick={() => copyOptionValue(gIdx, idx)}>복사</button>
+                                <button aria-label={`Delete option ${idx+1}`} className="px-2 py-1 border rounded text-xs" onClick={() => removeOptionValue(gIdx, idx)}>삭제</button>
                               </td>
                             </tr>
                           ))}
@@ -1074,8 +1074,8 @@ const ProductsEditPage: React.FC<ProductsEditPageProps> = ({
             </div>
           </div>
           <div className="flex justify-end gap-2 mt-4">
-            <button className="px-3 py-1 border rounded" onClick={() => setBatchModalOpen(false)}>취소</button>
-            <button className="px-3 py-1 bg-blue-600 text-white rounded" onClick={applyBatchEdit}>적용</button>
+            <button aria-label="Cancel batch edit" className="px-3 py-1 border rounded" onClick={() => setBatchModalOpen(false)}>취소</button>
+            <button aria-label="Apply batch edit" className="px-3 py-1 bg-blue-600 text-white rounded" onClick={applyBatchEdit}>적용</button>
           </div>
         </div>
       </div>
