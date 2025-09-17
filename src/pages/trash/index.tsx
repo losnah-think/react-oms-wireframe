@@ -25,10 +25,19 @@ export default function TrashPage() {
     const toRestore = trashed.filter(t => ids.includes(String(t.id)))
     // For demo: emit event 'products:restored' to let product list pick them up, and remove from trash
     try {
-      // mock: store restored items back to 'products_restored_v1' so other components can read or just remove from trash
+      // merge restored items into products_local_v1 (client-side product cache)
+      const rawP = localStorage.getItem('products_local_v1')
+      const existingProducts = rawP ? JSON.parse(rawP) : []
+      // avoid duplicate ids
+      const existingIds = new Set(existingProducts.map((p: any) => String(p.id)))
+      const merged = [...existingProducts]
+      toRestore.forEach((t) => { if (!existingIds.has(String(t.id))) merged.push(t) })
+      localStorage.setItem('products_local_v1', JSON.stringify(merged))
+
       const remaining = trashed.filter(t => !ids.includes(String(t.id)))
       localStorage.setItem('trashed_products_v1', JSON.stringify(remaining))
-      // dispatch event so lists can update if they listen
+      // dispatch events so other components can update
+      try { window.dispatchEvent(new CustomEvent('products:updated')) } catch (e) {}
       try { window.dispatchEvent(new CustomEvent('trashed:updated')) } catch (e) {}
       setSelected({})
       setTrashed(remaining)
@@ -42,6 +51,7 @@ export default function TrashPage() {
     if (!confirm('선택 항목을 영구 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return
     const remaining = trashed.filter(t => !ids.includes(String(t.id)))
     localStorage.setItem('trashed_products_v1', JSON.stringify(remaining))
+    try { window.dispatchEvent(new CustomEvent('trashed:updated')) } catch (e) {}
     setSelected({})
     setTrashed(remaining)
     alert('선택 항목을 영구 삭제했습니다.')
@@ -50,6 +60,7 @@ export default function TrashPage() {
   const emptyTrash = () => {
     if (!confirm('휴지통을 비우면 모든 항목이 영구 삭제됩니다. 진행할까요?')) return
     localStorage.removeItem('trashed_products_v1')
+    try { window.dispatchEvent(new CustomEvent('trashed:updated')) } catch (e) {}
     setSelected({})
     setTrashed([])
     alert('휴지통이 비워졌습니다.')
@@ -89,8 +100,9 @@ export default function TrashPage() {
                   <td className="px-4 py-3">{t.deleted_at || '-'}</td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
-                      <Button variant="outline" onClick={() => { setSelected({}); try { const remaining = trashed.filter(x => x.id !== t.id); localStorage.setItem('trashed_products_v1', JSON.stringify(remaining)); setTrashed(remaining); alert('복원되었습니다.'); } catch (e) { alert('오류') } }}>복원</Button>
-                      <Button variant="danger" onClick={() => { if (!confirm('영구 삭제하시겠습니까?')) return; try { const remaining = trashed.filter(x => x.id !== t.id); localStorage.setItem('trashed_products_v1', JSON.stringify(remaining)); setTrashed(remaining); alert('영구 삭제되었습니다.'); } catch (e) { alert('오류') } }}>영구 삭제</Button>
+          <Button variant="outline" onClick={() => { setSelected({}); try { const remaining = trashed.filter(x => x.id !== t.id); // merge into products_local_v1
+            const rawP = localStorage.getItem('products_local_v1'); const existingProducts = rawP ? JSON.parse(rawP) : []; const existingIds = new Set(existingProducts.map((p:any)=>String(p.id))); if (!existingIds.has(String(t.id))) existingProducts.push(t); localStorage.setItem('products_local_v1', JSON.stringify(existingProducts)); localStorage.setItem('trashed_products_v1', JSON.stringify(remaining)); try { window.dispatchEvent(new CustomEvent('products:updated')) } catch(e){} try{window.dispatchEvent(new CustomEvent('trashed:updated'))}catch(e){} setTrashed(remaining); alert('복원되었습니다.'); } catch (e) { alert('오류') } }}>복원</Button>
+          <Button variant="danger" onClick={() => { if (!confirm('영구 삭제하시겠습니까?')) return; try { const remaining = trashed.filter(x => x.id !== t.id); localStorage.setItem('trashed_products_v1', JSON.stringify(remaining)); try { window.dispatchEvent(new CustomEvent('trashed:updated')) } catch(e){} setTrashed(remaining); alert('영구 삭제되었습니다.'); } catch (e) { alert('오류') } }}>영구 삭제</Button>
                     </div>
                   </td>
                 </tr>
