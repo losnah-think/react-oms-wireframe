@@ -305,6 +305,25 @@ export default function ProductCategoryPage() {
         </div>
 
         <div className="relative">
+          <div className="mb-4 flex items-center gap-2">
+            <input
+              aria-label="quick-add-category"
+              placeholder="새 카테고리 이름을 입력하고 Enter로 추가"
+              className="flex-1 px-3 py-2 border rounded"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  const v = (e.target as HTMLInputElement).value.trim()
+                  if (!v) return
+                  // create root category quickly
+                  const nb: TreeNode = { id: `c_${Date.now()}`, name: v }
+                  const next = appendChild(tree, null, nb)
+                  persist(next)
+                  ;(e.target as HTMLInputElement).value = ''
+                }
+              }}
+            />
+            <button className="px-3 py-2 border rounded" onClick={() => openAddRoot()}>루트 추가</button>
+          </div>
           {/* multi-level vertical guides to show depth columns */}
           {Array.from({ length: MAX_DEPTH }).map((_, idx) => (
             <div

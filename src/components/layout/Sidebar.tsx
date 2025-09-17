@@ -29,7 +29,8 @@ const menuItems: MenuItem[] = [
     children: [
       { id: 'products-list', label: '상품 목록', icon: 'list' },
       { id: 'products-csv', label: 'CSV 상품 등록', icon: 'upload' },
-      { id: 'products-import', label: '외부 쇼핑몰 상품 가져오기', icon: 'external-link' }
+      { id: 'products-import', label: '외부 쇼핑몰 상품 가져오기', icon: 'external-link' },
+      { id: 'products-bulk-edit', label: '상품/옵션 일괄 수정', icon: 'file' }
     ]
   },
   {
@@ -53,17 +54,34 @@ const menuItems: MenuItem[] = [
   },
   {
     id: 'settings',
-    label: '환경 설정',
+    label: '기초 관리',
     icon: 'settings',
     children: [
-      { id: 'settings-integrations', label: '외부 연동 관리', icon: 'external-link' },
-      { id: 'settings-barcodes', label: '바코드 관리', icon: 'barcode' },
-      { id: 'settings-product-category', label: '상품 카테고리 관리', icon: 'copy' },
-      { id: 'settings-product-groups', label: '상품 분류 관리', icon: 'copy' },
-      { id: 'settings-brands', label: '브랜드 관리', icon: 'image' },
-      { id: 'settings-product-years', label: '상품 연도 관리', icon: 'clock' },
-      { id: 'settings-product-seasons', label: '상품 시즌 관리', icon: 'clock' },
+      { id: 'settings-integrations', label: '외부 연동', icon: 'external-link' },
+      { id: 'settings-barcodes', label: '바코드', icon: 'barcode' },
+      { id: 'settings-product-classifications', label: '상품 카테고리', icon: 'copy' },
+      { id: 'settings-product-groups', label: '상품 분류', icon: 'copy' },
+      { id: 'settings-brands', label: '브랜드', icon: 'image' },
+      { id: 'settings-product-years', label: '연도', icon: 'clock' },
+      { id: 'settings-product-seasons', label: '시즌', icon: 'clock' },
       { id: 'orders-settings', label: '주문 설정', icon: 'settings' }
+    ]
+  }
+
+  // Promote vendors to top-level menu (moved out of settings)
+  ,
+  {
+    id: 'vendors',
+    label: '거래처 관리',
+    icon: 'users',
+    children: [
+      { id: 'vendors-sales', label: '판매처 관리', icon: 'user-plus' },
+      { id: 'vendors-delivery', label: '택배사 관리', icon: 'truck' },
+      { id: 'vendors-fixed-addresses', label: '판매처 고정주소 관리', icon: 'map-pin' },
+      { id: 'vendors-automation', label: '거래처 자동화', icon: 'settings' },
+      { id: 'vendors-suppliers', label: '공급처 관리', icon: 'truck' },
+      { id: 'vendors-supplier-orders', label: '공급처 발주 관리', icon: 'shopping-cart' },
+      { id: 'vendors-payments', label: '지불 관리', icon: 'credit-card' }
     ]
   }
 ];
@@ -130,7 +148,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   const idToPath: Record<string, string> = {
     'products-list': '/products',
     'products-csv': '/products/csv',
-    'products-import': '/products/import',
+  'products-import': '/products/import',
+  'products-bulk-edit': '/products/bulk-edit',
     'orders-list': '/orders',
     'orders-settings': '/orders/settings',
     'malls': '/malls',
@@ -139,12 +158,24 @@ const Sidebar: React.FC<SidebarProps> = ({
     'category-mapping': '/categories/mapping',
     'settings-integrations': '/settings/integrations',
     'settings-barcodes': '/settings/barcodes',
-    'settings-product-category': '/settings/category',
+    'settings-product-classifications': '/settings/product-classifications',
     'settings-product-groups': '/settings/product-groups',
     'settings-brands': '/settings/brands',
     'settings-product-years': '/settings/years',
     'settings-product-seasons': '/settings/seasons'
   };
+
+  // vendor related mappings
+  Object.assign(idToPath, {
+    'vendors': '/vendors',
+    'vendors-sales': '/vendors/sales',
+    'vendors-delivery': '/vendors/delivery-companies',
+    'vendors-fixed-addresses': '/vendors/fixed-addresses',
+    'vendors-automation': '/vendors/automation',
+    'vendors-suppliers': '/vendors/suppliers',
+    'vendors-supplier-orders': '/vendors/supplier-orders',
+    'vendors-payments': '/vendors/payments'
+  })
 
   const isActive = (id: string) => {
     // 정확한 페이지 매칭

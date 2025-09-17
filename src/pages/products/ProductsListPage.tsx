@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { Container, Card, Button, Stack, GridRow, GridCol } from '../../design-system'
 import TableExportButton from '../../components/common/TableExportButton'
 import HierarchicalSelect from '../../components/common/HierarchicalSelect'
+import Typeahead from '../../components/common/Typeahead'
 import { formatPrice } from '../../utils/productUtils'
 import { normalizeProductGroup } from '../../utils/groupUtils'
 
@@ -60,9 +61,15 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
   const [editingName, setEditingName] = useState('')
   const [suppliers, setSuppliers] = useState<any[]>([])
   const [selectedSuppliers, setSelectedSuppliers] = useState<string[]>([])
+  const [designers, setDesigners] = useState<any[]>([])
+  const [registrants, setRegistrants] = useState<any[]>([])
+  const [selectedDesigner, setSelectedDesigner] = useState<string>('')
+  const [selectedRegistrant, setSelectedRegistrant] = useState<string>('')
+  const [selectedSeason, setSelectedSeason] = useState<string>('전체')
   const [selectedGroups, setSelectedGroups] = useState<string[]>([])
   const [malls, setMalls] = useState<any[]>([])
   const [selectedMall, setSelectedMall] = useState<string>('')
+  const [generalSettings, setGeneralSettings] = useState<any>({})
   const [isSupplierManagerOpen, setIsSupplierManagerOpen] = useState(false)
   const [isSupplierDropdownOpen, setIsSupplierDropdownOpen] = useState(false)
   const [isGroupDropdownOpen, setIsGroupDropdownOpen] = useState(false)
@@ -84,6 +91,11 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
     setOnlyWithShippingPolicy(false)
     setSearchTerm('')
     setDebounced('')
+    setSelectedDesigner('')
+    setSelectedRegistrant('')
+    setSelectedSeason('전체')
+    setDateFrom('')
+    setDateTo('')
   }, [])
 
   // compute active filters summary for collapsed view (objects with keys)
@@ -91,6 +103,9 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
     const parts: Array<{ key: string; label: string }> = []
     if (selectedCategory && selectedCategory !== '전체') parts.push({ key: 'category', label: `카테고리: ${selectedCategory}` })
     if (selectedBrand && selectedBrand !== '전체') parts.push({ key: 'brand', label: `브랜드: ${selectedBrand}` })
+    if (selectedDesigner && selectedDesigner !== '') parts.push({ key: 'designer', label: `디자이너: ${selectedDesigner}` })
+    if (selectedRegistrant && selectedRegistrant !== '') parts.push({ key: 'registrant', label: `등록자: ${selectedRegistrant}` })
+    if (selectedSeason && selectedSeason !== '전체') parts.push({ key: 'season', label: `시즌: ${selectedSeason}` })
     if ((selectedSuppliers || []).length > 0) parts.push({ key: 'suppliers', label: `공급처: ${selectedSuppliers.length}` })
     if ((selectedGroups || []).length > 0) parts.push({ key: 'groups', label: `분류: ${selectedGroups.length}` })
     if (onlyWithShippingPolicy) parts.push({ key: 'shipping', label: '배송비정책 있음' })
@@ -134,6 +149,9 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
       case 'suppliers': setSelectedSuppliers([]); break
       case 'groups': setSelectedGroups([]); break
       case 'shipping': setOnlyWithShippingPolicy(false); break
+      case 'designer': setSelectedDesigner(''); break
+      case 'registrant': setSelectedRegistrant(''); break
+      case 'season': setSelectedSeason('전체'); break
       case 'compact': setCompactView(false); break
       case 'period': setDateFrom(''); setDateTo(''); break
       case 'search': clearSearch(); break
@@ -153,6 +171,9 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
       if (key === 'groups') el = document.querySelector('#filter-groups') as HTMLElement | null
       if (key === 'shipping') el = document.querySelector('[aria-label="배송비정책 있는 상품만 보기"]') as HTMLElement | null
       if (key === 'period') el = document.querySelector('input[aria-label="검색 시작일"]') as HTMLElement | null
+      if (key === 'designer') el = document.getElementById('filter-designer') as HTMLElement | null
+      if (key === 'registrant') el = document.getElementById('filter-registrant') as HTMLElement | null
+      if (key === 'season') el = document.getElementById('filter-season') as HTMLElement | null
       if (key === 'search') el = document.getElementById('product-search-input') as HTMLElement | null
       if (el && typeof el.focus === 'function') el.focus()
     }, 120)
@@ -281,6 +302,18 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
     return () => { mounted = false }
   }, [])
 
+  // load general settings (allowExternalSend, defaultMall)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('general_settings_v1')
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        setGeneralSettings(parsed)
+        if (parsed?.defaultMall) setSelectedMall(parsed.defaultMall)
+      }
+    } catch (e) {}
+  }, [])
+
   // prefer localStorage-managed product_groups (settings page) when available
   useEffect(() => {
     try {
@@ -315,6 +348,11 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
     const list = Array.isArray(products) ? products : []
     const s = Array.from(new Set(list.map((p: any) => p.supplier_name || '자사')))
     if (s.length) setSuppliers(s.map((x, i) => ({ id: `s-${i}`, name: x })))
+    // populate designers and registrants from product data (mocked fields)
+    const d = Array.from(new Set(list.map((p: any) => p.designer || p.designer_name).filter(Boolean)))
+    const r = Array.from(new Set(list.map((p: any) => p.registered_by || p.created_by || p.creator).filter(Boolean)))
+    if (d.length) setDesigners(d.map((x, i) => ({ id: `d-${i}`, name: x })))
+    if (r.length) setRegistrants(r.map((x, i) => ({ id: `r-${i}`, name: x })))
   }, [products])
 
   // persist selected groups
@@ -327,6 +365,21 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
     const q = (debounced || '').trim().toLowerCase()
     return list
       .filter((p: any) => {
+        // designer filter
+        if (selectedDesigner && selectedDesigner !== '') {
+          const pd = (p.designer || p.designer_name || '').toString()
+          if (!pd || pd !== selectedDesigner) return false
+        }
+        // registrant filter
+        if (selectedRegistrant && selectedRegistrant !== '') {
+          const pr = (p.registered_by || p.created_by || p.creator || '').toString()
+          if (!pr || pr !== selectedRegistrant) return false
+        }
+        // season filter
+        if (selectedSeason && selectedSeason !== '전체') {
+          const ps = (p.season || p.collection || p.collection_season || '').toString()
+          if (!ps || ps !== selectedSeason) return false
+        }
         if (q) {
           if (!String(p.name || '').toLowerCase().includes(q) && !String(p.code || p.sku || '').toLowerCase().includes(q)) return false
         }
@@ -428,6 +481,11 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
     if (!ids || ids.length === 0) { setToastMessage('전송할 상품을 선택하세요.'); return }
     const targetMall = mallId || selectedMall
     if (!targetMall) { setToastMessage('전송할 쇼핑몰을 선택하세요.'); return }
+    // enforce single mall selection when general setting enabled
+    if (generalSettings?.allowExternalSend) {
+      // if multiple ids but no single mall selected via dropdown, ensure mallId present
+      if (!targetMall) { setToastMessage('기초 설정에서 기본 쇼핑몰을 설정하거나, 단일 쇼핑몰을 선택하세요.'); return }
+    }
     try {
       setToastMessage('외부로 전송 중...')
       const resp = await fetch('/api/external/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids, mallId: targetMall }), cache: 'no-store' })
@@ -503,29 +561,30 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
           <fieldset className="space-y-4 mt-4" aria-label="추가 필터">
             <legend className="sr-only">추가 필터</legend>
             <GridRow gutter={12} className="mt-3">
-            <GridCol span={6}>
+              <GridCol span={4}>
                 <div className="flex items-center gap-3">
-                <label className="text-sm w-40">분류</label>
-                <select className="px-3 py-1.5 border border-gray-300 rounded-md text-sm">
-                  <option>전체상품분류</option>
-                </select>
-                <label className="text-sm">재고관리여부</label>
-                <select className="px-3 py-1.5 border border-gray-300 rounded-md text-sm">
-                  <option>전체</option>
-                  <option>재고관리</option>
-                </select>
+                  <label className="text-sm w-28">상품 등록일자</label>
+                  <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} aria-label="검색 시작일" className="px-3 py-1.5 border border-gray-300 rounded-md text-sm" />
+                  <span className="text-sm text-gray-500">~</span>
+                  <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} aria-label="검색 종료일" className="px-3 py-1.5 border border-gray-300 rounded-md text-sm" />
+                </div>
+              </GridCol>
+              <GridCol span={4}>
+                <div className="flex items-center gap-3">
+                  <label className="text-sm w-28">분류</label>
+                  <select className="px-3 py-1.5 border border-gray-300 rounded-md text-sm">
+                    <option>전체상품분류</option>
+                  </select>
                   <button className="px-3 py-1.5 border border-gray-300 rounded-md text-sm" onClick={() => setIsCategoryManagerOpen(true)}>상품분류 관리</button>
-              </div>
-            </GridCol>
-            <GridCol span={6}>
-              <div className="flex items-center gap-3">
-                <select className="px-3 py-1.5 border border-gray-300 rounded-md text-sm">
-                  <option>전체상품디자이너</option>
-                </select>
-                <select className="px-3 py-1.5 border border-gray-300 rounded-md text-sm">
-                  <option>전체상품등록자</option>
-                </select>
-                <div className="flex items-center gap-2">
+                </div>
+              </GridCol>
+              <GridCol span={4}>
+                <div className="flex items-center gap-3">
+                  <label className="text-sm w-28">재고관리</label>
+                  <select className="px-3 py-1.5 border border-gray-300 rounded-md text-sm">
+                    <option>전체</option>
+                    <option>재고관리</option>
+                  </select>
                   <div
                     role="switch"
                     tabIndex={0}
@@ -536,20 +595,9 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
                     className={`px-3 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 cursor-pointer ${onlyWithShippingPolicy ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}>
                     배송비정책 있는것만
                   </div>
-                  <div
-                    role="switch"
-                    tabIndex={0}
-                    aria-checked={compactView}
-                    aria-label="간단하게 보기 토글"
-                    onClick={() => setCompactView((s) => !s)}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCompactView((s) => !s) } }}
-                    className={`px-3 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 cursor-pointer ${compactView ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}>
-                    간단하게 보기
-                  </div>
                 </div>
-              </div>
-            </GridCol>
-          </GridRow>
+              </GridCol>
+            </GridRow>
 
             <GridRow className="mt-2">
               <GridCol span={6}>
@@ -599,7 +647,6 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
                 </div>
               </GridCol>
             </GridRow>
-
             {/* 카테고리 & 브랜드를 필터로 이동 */}
             <GridRow className="mt-2">
               <GridCol span={6}>
@@ -617,6 +664,32 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
                       <option key={b.id} value={b.name}>{b.name}</option>
                     ))}
                   </select>
+                </div>
+              </GridCol>
+            </GridRow>
+
+            <GridRow className="mt-2">
+              <GridCol span={6}>
+                <div className="flex items-center gap-3">
+                  <label className="text-sm w-40">디자이너</label>
+                  <div className="w-full">
+                    <Typeahead id="filter-designer" items={(designers || []).map((d: any) => ({ id: d.id, name: d.name }))} value={selectedDesigner} onChange={(v) => setSelectedDesigner(v)} onSelect={(it) => setSelectedDesigner(it.name)} placeholder="검색 가능" />
+                  </div>
+                  <label className="text-sm ml-4">시즌</label>
+                  <select id="filter-season" value={selectedSeason} onChange={(e) => setSelectedSeason(e.target.value)} className="px-3 py-1.5 border border-gray-300 rounded-md text-sm">
+                    <option value="전체">전체</option>
+                    <option value="SS">SS</option>
+                    <option value="FW">FW</option>
+                    <option value="AW">AW</option>
+                  </select>
+                </div>
+              </GridCol>
+              <GridCol span={6}>
+                <div className="flex items-center gap-3">
+                  <label className="text-sm w-40">등록자</label>
+                  <div className="w-full">
+                    <Typeahead id="filter-registrant" items={(registrants || []).map((r: any) => ({ id: r.id, name: r.name }))} value={selectedRegistrant} onChange={(v) => setSelectedRegistrant(v)} onSelect={(it) => setSelectedRegistrant(it.name)} placeholder="검색 가능" />
+                  </div>
                 </div>
               </GridCol>
             </GridRow>
@@ -686,9 +759,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
           <div className="flex items-start gap-4">
             <label className="w-40 text-sm text-gray-700 pt-2">통합검색</label>
             <div className="flex items-center gap-3 w-80" role="group" aria-label="기간 검색">
-              <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-36 px-3 py-1.5 border border-gray-300 rounded-md text-sm" aria-label="검색 시작일" />
-              <span className="text-sm text-gray-500">~</span>
-              <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-36 px-3 py-1.5 border border-gray-300 rounded-md text-sm" aria-label="검색 종료일" />
+              <div className="text-sm text-gray-500">기간 필터는 상단 필터 영역에서 설정하세요.</div>
             </div>
             <div className="relative flex-1">
               <input
@@ -767,8 +838,9 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
               {(malls || []).map((m: any) => (<option key={m.id} value={m.id}>{m.name}</option>))}
             </select>
           </div>
-          <button aria-label="상품 일괄수정" className="px-3 py-1 bg-white border rounded text-sm" onClick={openBatchEdit}>상품 일괄수정</button>
-          <button aria-label="옵션 일괄수정" className="px-3 py-1 bg-white border rounded text-sm" onClick={openOptionBatchEdit}>옵션 일괄수정</button>
+          <button aria-label="상품 일괄수정" className="px-3 py-1 bg-white border rounded text-sm" onClick={() => { if (onNavigate) onNavigate('products-bulk-edit'); else window.location.href = '/products/bulk-edit?tab=product' }}>상품 일괄수정</button>
+          <button aria-label="파일 업로드 일괄수정" className="px-3 py-1 bg-white border rounded text-sm" onClick={() => { if (onNavigate) onNavigate('products-bulk-edit'); else window.location.href = '/products/bulk-edit?tab=product' }}>파일 업로드 일괄수정</button>
+          <button aria-label="옵션 일괄수정" className="px-3 py-1 bg-white border rounded text-sm" onClick={() => { if (onNavigate) onNavigate('products-bulk-edit'); else window.location.href = '/products/bulk-edit?tab=option' }}>옵션 일괄수정</button>
           <button aria-label="선택 외부 송신" className="px-3 py-1 bg-white border rounded text-sm" onClick={() => handleExternalSend(Object.keys(selectedIds).filter(k => selectedIds[k]), selectedMall)}>선택 외부 송신</button>
         </div>
         <div className="flex items-center gap-3">

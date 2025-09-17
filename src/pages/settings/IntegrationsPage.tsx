@@ -54,6 +54,22 @@ export default function IntegrationsPage({
     alert(`${target} 주문 수집 테스트를 실행합니다. (mock)`);
   };
 
+  // When a new shop/integration is registered, add to malls list (mock behavior)
+  const handleIntegrationRegistered = (integration: any) => {
+    try {
+      const raw = window.localStorage.getItem('malls_v1')
+      const prev = raw ? JSON.parse(raw) : []
+      const nid = `m_${Date.now()}`
+      const entry = { id: nid, name: integration.name || `통합샵 ${nid}`, status: '연동됨', orders: 0 }
+      const next = [entry, ...prev]
+      window.localStorage.setItem('malls_v1', JSON.stringify(next))
+      window.dispatchEvent(new CustomEvent('malls:updated'))
+      alert('샵이 추가되었습니다. 쇼핑몰 목록에서 확인하세요. (mock)')
+    } catch (e) {
+      console.warn('integration register mock failed', e)
+    }
+  }
+
   return (
     <Container maxWidth="full">
       <Card className="mb-6 p-4">
@@ -120,7 +136,7 @@ export default function IntegrationsPage({
       </div>
 
       {showRegisterModal && (
-        <RegisterIntegrationForm onClose={() => setShowRegisterModal(false)} />
+    <RegisterIntegrationForm onClose={() => setShowRegisterModal(false)} onRegistered={(integration) => { handleIntegrationRegistered(integration); setShowRegisterModal(false); }} />
       )}
     </Container>
   );

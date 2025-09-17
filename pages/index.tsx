@@ -36,6 +36,7 @@ import CategoryMappingPage from '../src/pages/malls/CategoryMappingPage';
 // Settings
 import BrandsPage from '../src/pages/settings/BrandsPage';
 import ProductCategoryPage from '../src/pages/settings/ProductCategoryPage';
+import ProductGroupPage from '../src/pages/settings/ProductGroupPage';
 import ProductSeasonsPage from '../src/pages/settings/ProductSeasonsPage';
 import ProductYearsPage from '../src/pages/settings/ProductYearsPage';
 
@@ -44,8 +45,9 @@ export default function Home(props: any) {
   const sessionExists = !!props.session
   // If mocks are enabled in production, show the app even without a session so the mock UI renders.
   const useMocksInProd = process.env.NEXT_PUBLIC_USE_MOCKS === '1'
-  // During development we don't want the login UI to show inline by default.
-  const hideLogin = process.env.NEXT_PUBLIC_HIDE_LOGIN === '1' || process.env.NODE_ENV !== 'production'
+  // Hide login inline unless explicitly enabled in production.
+  // For local/dev use, prefer explicit opt-in via `NEXT_PUBLIC_HIDE_LOGIN=1`.
+  const hideLogin = process.env.NEXT_PUBLIC_HIDE_LOGIN === '1'
   if (!sessionExists && !hideLogin && !useMocksInProd) return <LoginPage />
 
   const initialPage = props.initialPage ?? 'dashboard'
@@ -66,6 +68,9 @@ export default function Home(props: any) {
     'orders-list': '/orders',
     'orders-settings': '/orders/settings',
     'malls': '/malls'
+    , 'settings-product-classifications': '/settings/product-classifications'
+    , 'settings-product-groups': '/settings/product-groups'
+    , 'settings-product-category': '/settings/category'
   };
 
   const handleNavigate = (page: string, productId?: string) => {
@@ -104,7 +109,18 @@ export default function Home(props: any) {
     }
     if (parts[0] === 'orders') return { page: 'orders-list' };
     if (parts[0] === 'malls') return { page: 'malls' };
-    if (parts[0] === 'settings') return { page: 'settings-integrations' };
+    if (parts[0] === 'settings') {
+      // map known settings subpaths to SPA page ids
+      const sub = parts[1] ?? ''
+      if (sub === 'product-classifications' || sub === 'category' || sub === 'product-category') return { page: 'settings-product-classifications' }
+      if (sub === 'product-groups' || sub === 'product-group') return { page: 'settings-product-groups' }
+      if (sub === 'integrations') return { page: 'settings-integrations' }
+      if (sub === 'barcodes') return { page: 'settings-barcodes' }
+      if (sub === 'brands') return { page: 'settings-brands' }
+      if (sub === 'years') return { page: 'settings-product-years' }
+      if (sub === 'seasons') return { page: 'settings-product-seasons' }
+      return { page: 'settings-integrations' }
+    }
     // fallback to dashboard
     return { page: 'dashboard' };
   };
@@ -205,6 +221,8 @@ export default function Home(props: any) {
       // Settings
       case 'settings-product-classifications':
         return <ProductCategoryPage />;
+      case 'settings-product-groups':
+        return <ProductGroupPage />;
       case 'settings-integrations':
         // render pages-based integrations index for SPA navigation
         // Dynamically import to avoid SSR issues
@@ -256,7 +274,8 @@ export default function Home(props: any) {
 export async function getServerSideProps(ctx: any) {
   // In dev we allow using a query param to preview pages without login
   const page = ctx.query?.page ?? null
-  if (process.env.NEXT_PUBLIC_DEV_NO_AUTH === '1' || process.env.NODE_ENV !== 'production') {
+  // Only short-circuit server-side auth when explicitly requested via env var.
+  if (process.env.NEXT_PUBLIC_DEV_NO_AUTH === '1') {
     return { props: { session: true, initialPage: page } }
   }
 

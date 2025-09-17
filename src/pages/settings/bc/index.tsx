@@ -11,6 +11,7 @@ import { mockWarehouses } from '../../../data/mockWarehouses'
 import QRImage from '../../../components/barcodes/QRImage'
 import { useSession } from 'next-auth/react'
 import { shouldSkipAuth } from '../../../lib/devAuth'
+import GeneralSettingsModal from '../../../components/settings/GeneralSettingsModal'
 
 export default function BarcodeSettingsPage() {
   const sess = useSession()
@@ -22,6 +23,15 @@ export default function BarcodeSettingsPage() {
   const [previewOpen, setPreviewOpen] = useState(false)
   const { formats, createFormat, updateFormat, removeFormat, generateNextForFormat } = useCodeFormats()
   const [selectedFormatId, setSelectedFormatId] = useState<string | null>(null)
+  const [generalOpen, setGeneralOpen] = useState(false)
+  const [generalSettings, setGeneralSettings] = useState<any>(() => {
+    try {
+      if (typeof window === 'undefined') return {}
+      const raw = localStorage.getItem('general_settings_v1')
+      if (raw) return JSON.parse(raw)
+    } catch (e) {}
+    return {}
+  })
 
   const selectedTemplate = useMemo<BarcodeTemplate | null>(() => {
     return templates.find((t: BarcodeTemplate) => t.id === selectedId) ?? null
@@ -132,15 +142,24 @@ export default function BarcodeSettingsPage() {
             <div className="mt-4">
               <h4 className="font-medium">Actions</h4>
               <div className="mt-2 space-y-2">
-                <button onClick={() => handleGeneratePdf()} className="px-3 py-2 bg-primary-600 text-white rounded">Generate PDF</button>
-                <button onClick={() => handleExportPng()} className="px-3 py-2 border rounded">Export PNG</button>
-                <button onClick={() => setPreviewOpen(true)} className="px-3 py-2 border rounded">Preview Label</button>
+                <div className="flex items-center space-x-2">
+                  <button onClick={() => handleGeneratePdf()} className="px-3 py-2 bg-primary-600 text-white rounded">Generate PDF</button>
+                  <button onClick={() => handleExportPng()} className="px-3 py-2 border rounded">Export PNG</button>
+                  <button onClick={() => setPreviewOpen(true)} className="px-3 py-2 border rounded">Preview Label</button>
+                  <button onClick={() => setGeneralOpen(true)} className="px-3 py-2 border rounded">기초 설정</button>
+                </div>
               </div>
             </div>
           </div>
         </div>
     </div>
       <PreviewModal open={previewOpen} onClose={() => setPreviewOpen(false)} template={selectedTemplate} />
+      <GeneralSettingsModal
+        open={generalOpen}
+        initial={generalSettings}
+        onClose={() => setGeneralOpen(false)}
+        onSave={(p) => { setGeneralSettings(p); try { localStorage.setItem('general_settings_v1', JSON.stringify(p)) } catch (e) {} }}
+      />
     </>
   )
 }
