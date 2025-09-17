@@ -470,11 +470,31 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
   const handleDeleteSelected = async () => {
     const ids = Object.keys(selectedIds).filter((k) => selectedIds[k])
     if (ids.length === 0) { setToastMessage('삭제할 상품을 선택하세요.'); return }
-    // For mock/demo: remove locally and show toast
+    // Soft-delete: move to trashed_products_v1 in localStorage
+    try {
+      const raw = localStorage.getItem('trashed_products_v1')
+      const existing = raw ? JSON.parse(raw) : []
+      const toMove = products.filter((p: any) => ids.includes(String(p.id)))
+      const nextTrashed = [...existing, ...toMove]
+      localStorage.setItem('trashed_products_v1', JSON.stringify(nextTrashed))
+    } catch (e) {}
     setProducts((prev) => prev.filter((p: any) => !ids.includes(String(p.id))))
     setSelectedIds({})
     setSelectAll(false)
-    setToastMessage(`${ids.length}개 상품을 삭제했습니다. (모의삭제)`)
+    setToastMessage(`${ids.length}개 상품을 휴지통으로 이동했습니다.`)
+  }
+
+  const softDeleteOne = (id: string) => {
+    const toMove = products.find((p: any) => String(p.id) === String(id))
+    if (!toMove) { setToastMessage('상품을 찾을 수 없습니다.'); return }
+    try {
+      const raw = localStorage.getItem('trashed_products_v1')
+      const existing = raw ? JSON.parse(raw) : []
+      existing.push(toMove)
+      localStorage.setItem('trashed_products_v1', JSON.stringify(existing))
+    } catch (e) {}
+    setProducts((prev) => prev.filter((p: any) => String(p.id) !== String(id)))
+    setToastMessage('상품이 휴지통으로 이동했습니다.')
   }
 
   const handleExternalSend = async (ids: string[], mallId?: string) => {
@@ -934,6 +954,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
                       <Button variant="outline" size="small" onClick={(e) => { e.stopPropagation(); onNavigate?.('products-detail', p.id); }}>상세</Button>
                       <Button variant="primary" size="small" onClick={(e) => { e.stopPropagation(); onNavigate?.('products-edit', p.id); }}>수정</Button>
                       <Button variant="ghost" size="small" onClick={(e) => { e.stopPropagation(); handleExternalSend([String(p.id)], selectedMall) }}>외부 송신</Button>
+                      <Button variant="danger" size="small" onClick={(e) => { e.stopPropagation(); if (!confirm('정말 이 상품을 휴지통으로 이동하시겠습니까?')) return; softDeleteOne(String(p.id)); }}>삭제</Button>
                     </div>
                   </td>
                 </tr>

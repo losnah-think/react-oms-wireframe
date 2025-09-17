@@ -197,6 +197,18 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             상품 설명 수정
           </Button>
           <Button variant="primary" onClick={() => onNavigate?.('products-edit', product.id)}>수정</Button>
+          <Button variant="danger" onClick={() => {
+            if (!confirm('정말 이 상품을 휴지통으로 이동하시겠습니까?')) return
+            try {
+              const raw = localStorage.getItem('trashed_products_v1')
+              const existing = raw ? JSON.parse(raw) : []
+              existing.push(product)
+              localStorage.setItem('trashed_products_v1', JSON.stringify(existing))
+            } catch (e) {}
+            // navigate back to products list and show toast via onNavigate
+            if (onNavigate) onNavigate('products-list')
+            else window.location.href = '/products'
+          }}>삭제</Button>
         </Stack>
       </div>
 
