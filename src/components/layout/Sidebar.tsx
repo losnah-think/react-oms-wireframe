@@ -53,7 +53,7 @@ const menuItems: MenuItem[] = [
   {
     id: "shopping-mall",
     label: "쇼핑몰·거래처 관리",
-    icon: "home",
+    icon: "layers",
     children: [
       { id: "malls", label: "쇼핑몰 목록", icon: "list" },
       { id: "malls-products", label: "쇼핑몰별 상품 관리", icon: "box" },
@@ -110,33 +110,15 @@ const menuItems: MenuItem[] = [
       { id: "barcodes-options", label: "옵션 바코드 관리", icon: "list" },
     ],
   },
-  // Promote vendors to top-level menu (moved out of settings)
-  {
-    id: "vendors",
-    label: "거래처 관리",
-    icon: "users",
-    children: [
-      { id: "vendors-sales", label: "판매처 관리", icon: "user-plus" },
-      { id: "vendors-delivery", label: "택배사 관리", icon: "truck" },
-      {
-        id: "vendors-fixed-addresses",
-        label: "판매처 고정주소 관리",
-        icon: "map-pin",
-      },
-      { id: "vendors-automation", label: "거래처 자동화", icon: "settings" },
-      { id: "vendors-suppliers", label: "공급처 관리", icon: "truck" },
-      {
-        id: "vendors-supplier-orders",
-        label: "공급처 발주 관리",
-        icon: "shopping-cart",
-      },
-      { id: "vendors-payments", label: "지불 관리", icon: "credit-card" },
-    ],
-  },
+  // vendors moved into shopping-mall section above
 ];
 
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
+import {
+  getTrashedCounts,
+  getFirstExistingArray,
+} from "../../lib/localStorageUtils";
 
 const Sidebar: React.FC<SidebarProps> = ({
   currentPage,
@@ -204,20 +186,8 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const [trashedCount, setTrashedCount] = React.useState<number>(() => {
     try {
-      const prodRaw =
-        typeof window !== "undefined"
-          ? localStorage.getItem("trashed_products_v1")
-          : null;
-      const prodArr = prodRaw ? JSON.parse(prodRaw) : [];
-      const supRaw =
-        typeof window !== "undefined"
-          ? localStorage.getItem("trashed_suppliers_v1")
-          : null;
-      const supArr = supRaw ? JSON.parse(supRaw) : [];
-      const total =
-        (Array.isArray(prodArr) ? prodArr.length : 0) +
-        (Array.isArray(supArr) ? supArr.length : 0);
-      return total;
+      const counts = getTrashedCounts();
+      return (counts.products || 0) + (counts.suppliers || 0);
     } catch (e) {
       return 0;
     }
@@ -227,14 +197,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   React.useEffect(() => {
     const onTrashed = () => {
       try {
-        const prodRaw = localStorage.getItem("trashed_products_v1");
-        const prodArr = prodRaw ? JSON.parse(prodRaw) : [];
-        const supRaw = localStorage.getItem("trashed_suppliers_v1");
-        const supArr = supRaw ? JSON.parse(supRaw) : [];
-        const total =
-          (Array.isArray(prodArr) ? prodArr.length : 0) +
-          (Array.isArray(supArr) ? supArr.length : 0);
-        setTrashedCount(total);
+        const counts = getTrashedCounts();
+        setTrashedCount((counts.products || 0) + (counts.suppliers || 0));
       } catch (e) {
         setTrashedCount(0);
       }
@@ -486,7 +450,18 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         {hasChildren && (isExpanded || forceExpandAll) && !isCollapsed && (
           <div className={level === 0 ? "ml-2" : "ml-2"}>
-            {item.children?.map((child) => renderMenuItem(child, level + 1))}
+            {item.children?.map((child, idx) => (
+              <React.Fragment key={child.id}>
+                {child.id.startsWith("vendors-") &&
+                  (idx === 0 ||
+                    !item.children![idx - 1].id.startsWith("vendors-")) && (
+                    <div className="mt-2 mb-1 px-4 text-xs text-gray-500">
+                      거래처
+                    </div>
+                  )}
+                {renderMenuItem(child, level + 1)}
+              </React.Fragment>
+            ))}
           </div>
         )}
       </div>
