@@ -28,10 +28,11 @@ const menuItems: MenuItem[] = [
     icon: 'box',
     children: [
       { id: 'products-list', label: '상품 목록', icon: 'list' },
-  { id: 'products-trash', label: '휴지통', icon: 'trash' },
       { id: 'products-csv', label: 'CSV 상품 등록', icon: 'upload' },
       { id: 'products-import', label: '외부 쇼핑몰 상품 가져오기', icon: 'external-link' },
-      { id: 'products-bulk-edit', label: '상품/옵션 일괄 수정', icon: 'file' }
+      { id: 'products-registration-history', label: '차수별 상품등록내역', icon: 'clock' }, 
+      { id: 'products-bulk-edit', label: '상품/옵션 일괄 수정', icon: 'file' },
+      { id: 'products-trash', label: '휴지통', icon: 'trash' },
     ]
   },
   {
@@ -59,13 +60,24 @@ const menuItems: MenuItem[] = [
     icon: 'settings',
     children: [
       { id: 'settings-integrations', label: '외부 연동', icon: 'external-link' },
-      { id: 'settings-barcodes', label: '바코드', icon: 'barcode' },
+  { id: 'settings-barcodes', label: '바코드', icon: 'barcode' },
       { id: 'settings-product-classifications', label: '상품 카테고리', icon: 'copy' },
       { id: 'settings-product-groups', label: '상품 분류', icon: 'copy' },
       { id: 'settings-brands', label: '브랜드', icon: 'image' },
       { id: 'settings-product-years', label: '연도', icon: 'clock' },
       { id: 'settings-product-seasons', label: '시즌', icon: 'clock' },
       { id: 'orders-settings', label: '주문 설정', icon: 'settings' }
+    ]
+  }
+
+  ,
+  {
+    id: 'barcodes',
+    label: '바코드 관리',
+    icon: 'barcode',
+    children: [
+      { id: 'barcodes-products', label: '상품 바코드 관리', icon: 'list' },
+      { id: 'barcodes-options', label: '옵션 바코드 관리', icon: 'list' }
     ]
   }
 
@@ -145,10 +157,12 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const [trashedCount, setTrashedCount] = React.useState<number>(() => {
     try {
-      const raw = typeof window !== 'undefined' ? localStorage.getItem('trashed_products_v1') : null
-      if (!raw) return 0
-      const arr = JSON.parse(raw)
-      return Array.isArray(arr) ? arr.length : 0
+      const prodRaw = typeof window !== 'undefined' ? localStorage.getItem('trashed_products_v1') : null
+      const prodArr = prodRaw ? JSON.parse(prodRaw) : []
+      const supRaw = typeof window !== 'undefined' ? localStorage.getItem('trashed_suppliers_v1') : null
+      const supArr = supRaw ? JSON.parse(supRaw) : []
+      const total = (Array.isArray(prodArr) ? prodArr.length : 0) + (Array.isArray(supArr) ? supArr.length : 0)
+      return total
     } catch (e) { return 0 }
   })
 
@@ -156,14 +170,17 @@ const Sidebar: React.FC<SidebarProps> = ({
   React.useEffect(() => {
     const onTrashed = () => {
       try {
-        const raw = localStorage.getItem('trashed_products_v1')
-        const arr = raw ? JSON.parse(raw) : []
-        setTrashedCount(Array.isArray(arr) ? arr.length : 0)
+        const prodRaw = localStorage.getItem('trashed_products_v1')
+        const prodArr = prodRaw ? JSON.parse(prodRaw) : []
+        const supRaw = localStorage.getItem('trashed_suppliers_v1')
+        const supArr = supRaw ? JSON.parse(supRaw) : []
+        const total = (Array.isArray(prodArr) ? prodArr.length : 0) + (Array.isArray(supArr) ? supArr.length : 0)
+        setTrashedCount(total)
       } catch (e) { setTrashedCount(0) }
     }
     window.addEventListener('trashed:updated', onTrashed)
     // also listen to storage events (other tabs)
-    const onStorage = (ev: StorageEvent) => { if (ev.key === 'trashed_products_v1') onTrashed() }
+    const onStorage = (ev: StorageEvent) => { if (ev.key === 'trashed_products_v1' || ev.key === 'trashed_suppliers_v1') onTrashed() }
     window.addEventListener('storage', onStorage)
     return () => {
       window.removeEventListener('trashed:updated', onTrashed)
@@ -175,11 +192,13 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   // Map internal menu ids to canonical URL paths
   const idToPath: Record<string, string> = {
-    'products-list': '/products',
-    'products-trash': '/trash',
+  'products-list': '/products',
+  'products-trash': '/products/trash',
+    'trash': '/trash',
     'products-csv': '/products/csv',
   'products-import': '/products/import',
   'products-bulk-edit': '/products/bulk-edit',
+  'products-registration-history': '/products/registration-history',
     'orders-list': '/orders',
     'orders-settings': '/orders/settings',
     'malls': '/malls',
@@ -195,6 +214,15 @@ const Sidebar: React.FC<SidebarProps> = ({
     'settings-product-seasons': '/settings/seasons'
   };
 
+  // Additional legacy or alternate mappings (helpful after wrapper cleanup)
+  Object.assign(idToPath, {
+    'settings-integration': '/settings/integration',
+    'settings-users': '/settings/users',
+    'settings-categories': '/settings/categories',
+    'settings-bc': '/settings/bc',
+    'settings-orders': '/settings/orders',
+  })
+
   // vendor related mappings
   Object.assign(idToPath, {
     'vendors': '/vendors',
@@ -205,6 +233,13 @@ const Sidebar: React.FC<SidebarProps> = ({
     'vendors-suppliers': '/vendors/suppliers',
     'vendors-supplier-orders': '/vendors/supplier-orders',
     'vendors-payments': '/vendors/payments'
+  })
+
+  // barcodes mappings
+  Object.assign(idToPath, {
+    'barcodes': '/barcodes',
+    'barcodes-products': '/barcodes/product',
+    'barcodes-options': '/barcodes/option'
   })
 
   const isActive = (id: string) => {
@@ -227,7 +262,20 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
 
     // For leaf items, navigate to canonical path so browser URL updates
-    const targetPath = idToPath[item.id] ?? `/${item.id.replace(/_/g, '/').replace(/\s+/g, '-')}`;
+    // Build fallback target path from id when no explicit mapping exists.
+    // Handle patterns like 'settings-product-classifications' -> '/settings/product-classifications'
+    const fallbackFromId = () => {
+      if (item.id.includes('-')) {
+        const parts = item.id.split('-')
+        // If first part is a known top-level key like 'settings' or 'products', join accordingly
+        if (['settings','products','orders','vendors','malls','categories'].includes(parts[0])) {
+          return '/' + parts.join('/')
+        }
+        return '/' + parts.join('-')
+      }
+      return '/' + item.id
+    }
+    const targetPath = idToPath[item.id] ?? fallbackFromId();
     // Use history API first so the browser address and history stack update immediately
     try {
       if (typeof window !== 'undefined' && window.history && window.history.pushState) {
@@ -237,11 +285,17 @@ const Sidebar: React.FC<SidebarProps> = ({
       // ignore
     }
 
-    // Keep Next router in sync (shallow) but don't block UI; ignore errors
+    // Prefer Next router navigation; fallback to full navigation if router fails
     try {
-      router.push(router.pathname, targetPath, { shallow: true }).catch(() => {});
+      if (router && typeof router.push === 'function') {
+        router.push(targetPath).catch(() => {
+          try { window.location.assign(targetPath) } catch (_) { /* ignore */ }
+        })
+      } else {
+        try { window.location.assign(targetPath) } catch (_) { /* ignore */ }
+      }
     } catch (e) {
-      // ignore
+      try { window.location.assign(targetPath) } catch (_) { /* ignore */ }
     }
 
     // Also notify parent app state for backward compatibility
@@ -293,7 +347,24 @@ const Sidebar: React.FC<SidebarProps> = ({
             <div className={`flex items-center justify-center ${isCollapsed ? 'w-8 h-8 mx-auto' : (level === 0 ? 'w-4 h-4 mr-2' : 'w-3 h-3 mr-2')}`}>
               {getIconComponent(item.icon ?? 'document', level === 0 ? 14 : 10, active)}
             </div>
-            {!isCollapsed && <span className="flex items-center gap-2">{item.label}{item.id === 'products-trash' && trashedCount > 0 && <span className="inline-flex items-center justify-center text-xs px-2 py-0.5 bg-red-50 text-red-700 rounded-full border border-red-100">{trashedCount}</span>}</span>}
+            {!isCollapsed && (
+              <span className="flex items-center gap-2">
+                {item.label}
+                {/* Show combined trashed count on the parent 'products' menu */}
+                {level === 0 && item.id === 'products' && trashedCount > 0 && (
+                  <span className="inline-flex items-center justify-center text-xs px-2 py-0.5 bg-red-50 text-red-700 rounded-full border border-red-100">{trashedCount}</span>
+                )}
+                {/* Keep product-only badge on the specific 'products-trash' child */}
+                {item.id === 'products-trash' && (() => {
+                  try {
+                    const raw = typeof window !== 'undefined' ? localStorage.getItem('trashed_products_v1') : null
+                    const arr = raw ? JSON.parse(raw) : []
+                    const count = Array.isArray(arr) ? arr.length : 0
+                    return count > 0 ? <span className="inline-flex items-center justify-center text-xs px-2 py-0.5 bg-red-50 text-red-700 rounded-full border border-red-100">{count}</span> : null
+                  } catch (e) { return null }
+                })()}
+              </span>
+            )}
           </div>
           {hasChildren && !isCollapsed && (
             <span className="ml-auto text-xs">
