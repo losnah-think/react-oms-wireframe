@@ -1155,3 +1155,6 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 };
 
 export default ProductDetailPage;
+
+(ProductDetailPage as any).pageTip =
+  "상품 상세: 이미지는 클릭하여 확인하세요. HTML 상세 설명은 데모용으로 렌더링됩니다.";

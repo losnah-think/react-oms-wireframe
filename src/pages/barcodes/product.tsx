@@ -987,3 +987,6 @@ function escapeHtml(s: string) {
 
 export default ProductBarcodesPage;
 // (moved implementation to this file)
+
+(ProductBarcodesPage as any).pageTip =
+  "바코드 관리: 미발급 항목을 필터로 확인하고 자동발급/CSV 기능을 활용하세요.";

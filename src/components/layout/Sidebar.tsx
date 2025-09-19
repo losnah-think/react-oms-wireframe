@@ -193,7 +193,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   'products-list': '/products',
   'products-add': '/products/add',
   'products-trash': '/products/trash',
-    'trash': '/trash',
     'products-csv': '/products/csv',
   'products-import': '/products/import',
   'products-bulk-edit': '/products/bulk-edit',
