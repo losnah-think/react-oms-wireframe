@@ -52,22 +52,21 @@ const menuItems: MenuItem[] = [
   },
   {
     id: "shopping-mall",
-    label: "쇼핑몰·거래처 관리",
+    label: "판매처 관리",
     icon: "layers",
     children: [
-      { id: "malls", label: "쇼핑몰 목록", icon: "list" },
-      { id: "malls-products", label: "쇼핑몰별 상품 관리", icon: "box" },
-      { id: "malls-info", label: "쇼핑몰별 부가 정보 관리", icon: "info" },
-      { id: "category-mapping", label: "카테고리 매핑", icon: "copy" },
-      // vendors merged into this section
       { id: "vendors-sales", label: "판매처 관리", icon: "user-plus" },
-      { id: "vendors-delivery", label: "택배사 관리", icon: "truck" },
       {
         id: "vendors-fixed-addresses",
         label: "판매처 고정주소 관리",
         icon: "map-pin",
       },
-      { id: "vendors-automation", label: "거래처 자동화", icon: "settings" },
+      { id: "vendors-products", label: "판매처별 상품 관리", icon: "box" },
+      { id: "vendors-info", label: "판매처별 부가 정보", icon: "info" },
+      { id: "vendors-category-mapping", label: "판매처별 카테고리 매핑", icon: "copy" },
+      // vendors merged into this section
+      { id: "vendors-delivery", label: "택배사 관리", icon: "truck" },
+      { id: "vendors-automation", label: "판매처 자동화", icon: "settings" },
       { id: "vendors-suppliers", label: "공급처 관리", icon: "truck" },
       {
         id: "vendors-supplier-orders",
@@ -219,6 +218,11 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   // Map internal menu ids to canonical URL paths
   const idToPath: Record<string, string> = {
+    // top-level fallbacks so LNB icons and external callers have canonical targets
+    products: "/products",
+    orders: "/orders",
+    "shopping-mall": "/malls",
+    settings: "/settings",
     "products-list": "/products",
     "products-add": "/products/add",
     "products-trash": "/products/trash",
@@ -230,9 +234,12 @@ const Sidebar: React.FC<SidebarProps> = ({
     "orders-list": "/orders",
     "orders-settings": "/orders/settings",
     malls: "/malls",
-    "malls-products": "/malls/products",
-    "malls-info": "/malls/info",
-    "category-mapping": "/categories/mapping",
+  "malls-products": "/malls/products",
+  "malls-info": "/malls/info",
+  "category-mapping": "/categories/mapping",
+  "vendors-products": "/vendors/vendor-products",
+  "vendors-info": "/vendors/vendor-info",
+  "vendors-category-mapping": "/vendors/vendor-category-mapping",
     "settings-integrations": "/settings/integrations",
     "settings-product-classifications": "/settings/product-classifications",
     "settings-product-groups": "/settings/product-groups",
@@ -253,7 +260,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   // vendor related mappings
   Object.assign(idToPath, {
-    vendors: "/shopping-mall/vendors",
+  vendors: "/vendors",
     "vendors-sales": "/shopping-mall/vendors/sales",
     "vendors-delivery": "/shopping-mall/vendors/delivery-companies",
     "vendors-fixed-addresses": "/shopping-mall/vendors/fixed-addresses",
@@ -436,13 +443,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           <div className={level === 0 ? "ml-2" : "ml-2"}>
             {item.children?.map((child, idx) => (
               <React.Fragment key={child.id}>
-                {child.id.startsWith("vendors-") &&
-                  (idx === 0 ||
-                    !item.children![idx - 1].id.startsWith("vendors-")) && (
-                    <div className="mt-2 mb-1 px-4 text-xs text-gray-500">
-                      거래처
-                    </div>
-                  )}
+                { /* removed vendor subtitle divider '거래처' per request */ }
                 {renderMenuItem(child, level + 1)}
               </React.Fragment>
             ))}
@@ -457,7 +458,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside
       aria-label="Main sidebar"
-      className={`${isCollapsed ? "w-16 p-2" : "w-60 p-4"} bg-white border-r border-gray-200 h-screen overflow-y-auto transition-all duration-300 ease-in-out flex flex-col sidebar ${isCollapsed ? "collapsed" : ""}`}
+      className={`${isCollapsed ? "w-16 p-2" : "w-60 p-4"} bg-white border-r border-gray-200 sticky top-0 h-screen overflow-y-auto transition-all duration-300 ease-in-out flex flex-col sidebar ${isCollapsed ? "collapsed" : ""}`}
     >
       {/* 접기/펼치기 버튼 */}
       {onToggleCollapse && (

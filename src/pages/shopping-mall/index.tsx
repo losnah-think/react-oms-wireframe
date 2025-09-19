@@ -1,14 +1,14 @@
 import React from "react";
 import { Container } from "../../design-system";
 import MallsListPage from "../malls/MallsListPage";
-import VendorsIndex from "../shopping-mall/vendors/index";
+import VendorsIndex from "./vendors/index";
 
-export default function VendorsRoot() {
+export default function ShoppingMallIndex() {
   return (
     <Container maxWidth="full">
       <div className="p-6">
-  <h1 className="text-2xl font-bold mb-4">Vendors</h1>
-  <p className="text-gray-600 mb-6">쇼핑몰과 판매처를 관리합니다.</p>
+  <h1 className="text-2xl font-bold mb-4">판매처 관리</h1>
+  <p className="text-gray-600 mb-6">쇼핑몰과 판매처를 하나의 관리 화면에서 확인하고 이동하세요.</p>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white border rounded-lg p-4">
@@ -26,3 +26,4 @@ export default function VendorsRoot() {
   );
 }
 
+export { default as VendorsIndexPage } from "./vendors/index";

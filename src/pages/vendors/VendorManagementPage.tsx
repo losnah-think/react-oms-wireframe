@@ -99,7 +99,7 @@ const VendorManagementPage: React.FC = () => {
   };
 
   const handleSaveVendor = () => {
-    alert("거래처 정보가 저장되었습니다.");
+  alert("판매처 정보가 저장되었습니다.");
     setIsModalOpen(false);
   };
 
@@ -119,7 +119,7 @@ const VendorManagementPage: React.FC = () => {
     <Container maxWidth="full">
       <div className="p-6 max-w-7xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">거래처 관리</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">판매처 관리</h1>
           <p className="text-gray-600">
             판매처와 공급처 정보를 통합 관리합니다.
           </p>
@@ -174,7 +174,7 @@ const VendorManagementPage: React.FC = () => {
           </div>
         </div>
 
-        {/* 거래처 목록 */}
+  {/* 판매처 목록 */}
         <div className="bg-white border rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -325,7 +325,7 @@ const VendorManagementPage: React.FC = () => {
                       type="text"
                       defaultValue={selectedVendor?.name || ""}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="거래처명을 입력하세요"
+                      placeholder="판매처명을 입력하세요"
                     />
                   </div>
                   <div>

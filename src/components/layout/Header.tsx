@@ -40,19 +40,7 @@ const Header: React.FC = () => {
           </Link>
         </div>
 
-        {/* Search Bar */}
-        <div className="flex-1 max-w-lg mx-8">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="주문, 상품, 고객 검색..."
-              className="w-full px-4 py-2 pl-10 pr-4 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            />
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Icon name="search" size={16} />
-            </div>
-          </div>
-        </div>
+        {/* Search Bar removed per request */}
 
         {/* User Actions */}
         <div className="flex items-center space-x-4">
