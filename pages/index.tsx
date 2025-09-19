@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useRouter } from 'next/router';
 // `getServerSession` and `authOptions` are server-only and imported dynamically
 // inside `getServerSideProps` to avoid pulling server-only dependencies into
 // the client/test runtime at module-evaluation time.
@@ -47,13 +48,13 @@ export default function Home(props: any) {
   // Hide login inline unless explicitly enabled in production.
   // For local/dev use, prefer explicit opt-in via `NEXT_PUBLIC_HIDE_LOGIN=1`.
   const hideLogin = process.env.NEXT_PUBLIC_HIDE_LOGIN === "1";
-  if (!sessionExists && !hideLogin && !useMocksInProd) return <LoginPage />;
-
   const initialPage = props.initialPage ?? "dashboard";
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [selectedProductId, setSelectedProductId] = useState<string>("");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const router = require("next/router").useRouter();
+  const router = useRouter();
+
+  const showLoginInline = !sessionExists && !hideLogin && !useMocksInProd;
 
   const idToPath: Record<string, string> = {
     dashboard: "/",
@@ -292,17 +293,23 @@ export default function Home(props: any) {
 
   return (
     <>
-      {/* Breadcrumbs shown inside content area (after Header and Sidebar). Hide on login page. */}
-      {!(
-        !sessionExists &&
-        (process.env.NEXT_PUBLIC_HIDE_LOGIN === "1" ||
-          process.env.NODE_ENV !== "production")
-      ) && (
-        <div className="px-4 py-3">
-          <Breadcrumbs />
-        </div>
+      {/* If login UI should be shown inline, render only the login page. Otherwise render Breadcrumbs + page. */}
+      {showLoginInline ? (
+        <LoginPage />
+      ) : (
+        <>
+          {!(
+            !sessionExists &&
+            (process.env.NEXT_PUBLIC_HIDE_LOGIN === "1" ||
+              process.env.NODE_ENV !== "production")
+          ) && (
+            <div className="px-4 py-3">
+              <Breadcrumbs />
+            </div>
+          )}
+          {renderCurrentPage()}
+        </>
       )}
-      {renderCurrentPage()}
     </>
   );
 }

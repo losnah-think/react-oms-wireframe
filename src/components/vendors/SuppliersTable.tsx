@@ -1,5 +1,5 @@
 import React from 'react'
-import EntityTable from '../../common/entity/EntityTable'
+import EntityTable from '../common/entity/EntityTable'
 
 export default function SuppliersTable({ items = [], onOpen = (id:string)=>{}, onDelete = (id:string)=>{} }:{ items?: any[], onOpen?: (id:string)=>void, onDelete?: (id:string)=>void }){
   const columns = [

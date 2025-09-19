@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Icon from '../../design-system/components/Icon';
+import Link from 'next/link';
 import { signOut, signIn, useSession } from 'next-auth/react'
 import { useRouter } from 'next/router'
 
@@ -33,10 +34,10 @@ const Header: React.FC = () => {
       <div className="flex items-center justify-between px-6 py-4">
         {/* Logo and Title */}
         <div className="flex items-center space-x-4">
-          <a href="/" className="flex items-center space-x-3" aria-label="Go to home">
+          <Link href="/" className="flex items-center space-x-3" aria-label="Go to home">
             <img src="/icons/FULGO-truck.svg" alt="FULGO" className="w-12 h-auto" />
             <span className="text-xl font-bold text-gray-900">FULGO</span>
-          </a>
+          </Link>
         </div>
 
         {/* Search Bar */}
@@ -123,7 +124,7 @@ const Header: React.FC = () => {
                 {open && (
                   <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
                     <div className="py-1" role="none">
-                      <a href="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">My Page</a>
+                      <Link href="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">My Page</Link>
                       <button onClick={() => signOut({ callbackUrl: '/login' })} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Sign out</button>
                     </div>
                   </div>

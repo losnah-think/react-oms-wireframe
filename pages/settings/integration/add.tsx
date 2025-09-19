@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import Link from 'next/link';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../../src/pages/api/auth/[...nextauth]";
 import Container from "../../../src/design-system/components/Container";
@@ -74,12 +75,7 @@ export default function AddShopPage() {
             >
               등록
             </button>
-            <a
-              href="/settings/integration"
-              className="ml-2 px-3 py-1 bg-gray-200 rounded"
-            >
-              취소
-            </a>
+            <Link href="/settings/integration" className="ml-2 px-3 py-1 bg-gray-200 rounded">취소</Link>
           </div>
         </div>
       </Card>

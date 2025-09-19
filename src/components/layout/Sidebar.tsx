@@ -131,8 +131,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [expandedItems, setExpandedItems] = React.useState<string[]>(
     () => initialExpanded ?? ["products"],
   );
-  const sessObj: any = (useSession && (useSession() as any)) || {};
-  const session = sessObj.data;
+  const { data: session } = useSession();
 
   // filter menu items by role: clients see only products
   const role = (session as any)?.user?.role || "operator";
@@ -254,14 +253,14 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   // vendor related mappings
   Object.assign(idToPath, {
-    vendors: "/vendors",
-    "vendors-sales": "/vendors/sales",
-    "vendors-delivery": "/vendors/delivery-companies",
-    "vendors-fixed-addresses": "/vendors/fixed-addresses",
-    "vendors-automation": "/vendors/automation",
-    "vendors-suppliers": "/vendors/suppliers",
-    "vendors-supplier-orders": "/vendors/supplier-orders",
-    "vendors-payments": "/vendors/payments",
+    vendors: "/shopping-mall/vendors",
+    "vendors-sales": "/shopping-mall/vendors/sales",
+    "vendors-delivery": "/shopping-mall/vendors/delivery-companies",
+    "vendors-fixed-addresses": "/shopping-mall/vendors/fixed-addresses",
+    "vendors-automation": "/shopping-mall/vendors/automation",
+    "vendors-suppliers": "/shopping-mall/vendors/suppliers",
+    "vendors-supplier-orders": "/shopping-mall/vendors/supplier-orders",
+    "vendors-payments": "/shopping-mall/vendors/payments",
   });
 
   // barcodes mappings
@@ -422,24 +421,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                   </span>
                 )}
                 {/* Keep product-only badge on the specific 'products-trash' child */}
-                {item.id === "products-trash" &&
-                  (() => {
-                    try {
-                      const raw =
-                        typeof window !== "undefined"
-                          ? localStorage.getItem("trashed_products_v1")
-                          : null;
-                      const arr = raw ? JSON.parse(raw) : [];
-                      const count = Array.isArray(arr) ? arr.length : 0;
-                      return count > 0 ? (
-                        <span className="inline-flex items-center justify-center text-xs px-2 py-0.5 bg-red-50 text-red-700 rounded-full border border-red-100">
-                          {count}
-                        </span>
-                      ) : null;
-                    } catch (e) {
-                      return null;
-                    }
-                  })()}
+                {item.id === "products-trash" && (
+                  <ProductsTrashCount />
+                )}
               </span>
             )}
           </div>
@@ -524,3 +508,37 @@ const Sidebar: React.FC<SidebarProps> = ({
 };
 
 export default Sidebar;
+
+function ProductsTrashCount() {
+  const [count, setCount] = React.useState<number>(0);
+
+  React.useEffect(() => {
+    try {
+      const raw = typeof window !== "undefined" ? localStorage.getItem("trashed_products_v1") : null;
+      const arr = raw ? JSON.parse(raw) : [];
+      setCount(Array.isArray(arr) ? arr.length : 0);
+    } catch (e) {
+      setCount(0);
+    }
+    const onStorage = (ev: StorageEvent) => {
+      if (ev.key === "trashed_products_v1") {
+        try {
+          const raw = localStorage.getItem("trashed_products_v1");
+          const arr = raw ? JSON.parse(raw) : [];
+          setCount(Array.isArray(arr) ? arr.length : 0);
+        } catch (e) {
+          setCount(0);
+        }
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  if (count === 0) return null;
+  return (
+    <span className="inline-flex items-center justify-center text-xs px-2 py-0.5 bg-red-50 text-red-700 rounded-full border border-red-100">
+      {count}
+    </span>
+  );
+}

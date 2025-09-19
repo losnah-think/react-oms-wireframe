@@ -87,4 +87,6 @@ export async function softDeleteSupplier(id: string) {
   }
 }
 
-export default { listSuppliers, getSupplier, createSupplier, updateSupplier, softDeleteSupplier }
+const mockSuppliersApi = { listSuppliers, getSupplier, createSupplier, updateSupplier, softDeleteSupplier };
+
+export default mockSuppliersApi;

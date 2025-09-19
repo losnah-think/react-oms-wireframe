@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import Link from 'next/link';
 import { Container, Card, Input, Button } from "../../design-system";
 import {
   fetchMockClassifications,
@@ -68,12 +69,12 @@ export default function IndividualRegistrationPage() {
                 <label className="block text-sm font-medium mb-1">
                   그룹(소속)
                 </label>
-                <a
+                <Link
                   className="text-sm text-blue-600 hover:underline"
                   href="/settings/product-classifications"
                 >
                   상품 분류 관리 열기
-                </a>
+                </Link>
               </div>
               <select
                 className="w-full rounded border p-2"

@@ -8,5 +8,6 @@ declare module 'bwip-js' {
     textxalign?: string
   }
   export function toCanvas(canvas: HTMLCanvasElement, opts: ToCanvasOptions): void
-  export default { toCanvas }
+  const bwip = { toCanvas: toCanvas };
+  export default bwip;
 }

@@ -186,7 +186,9 @@ export async function upsertProductFromExternal(ep: ExternalProduct, options?: {
   return { ...product, variant } as any;
 }
 
-export default { upsertProductFromExternal };
+const cellmateImporter = { upsertProductFromExternal };
+
+export default cellmateImporter;
 
 // CommonJS compatibility for scripts using `require()` (ts-node / node)
 // Only assign to module.exports when running in a CommonJS environment

@@ -99,6 +99,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
   const [recentQueries, setRecentQueries] = useState<string[]>([]);
+  const [highlightedSuggestionIndex, setHighlightedSuggestionIndex] = useState<number>(-1);
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
 
@@ -740,6 +741,14 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
     };
   }, [searchTerm]);
 
+  useEffect(() => {
+    if (isSuggestionsOpen && recentQueries.length > 0) {
+      setHighlightedSuggestionIndex(0);
+    } else {
+      setHighlightedSuggestionIndex(-1);
+    }
+  }, [isSuggestionsOpen, recentQueries]);
+
   const exportData = filteredProducts.map((p: any) => ({
     id: p.id,
     code: p.code,
@@ -1351,6 +1360,16 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
                     setIsSuggestionsOpen(false);
                     (e.target as HTMLInputElement).blur();
                   }
+                  if (e.key === "ArrowDown") {
+                    e.preventDefault();
+                    setHighlightedSuggestionIndex((prev) =>
+                      Math.min(prev + 1, recentQueries.length - 1),
+                    );
+                  }
+                  if (e.key === "ArrowUp") {
+                    e.preventDefault();
+                    setHighlightedSuggestionIndex((prev) => Math.max(prev - 1, 0));
+                  }
                 }}
                 className={`w-full pl-4 pr-24 py-2 border rounded-md ${isSearchFocused ? "ring-2 ring-blue-300 border-blue-400" : "border-gray-300"}`}
               />
@@ -1377,9 +1396,10 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
                   role="listbox"
                   className="absolute z-20 mt-1 w-full bg-white border rounded shadow"
                 >
-                  {recentQueries.map((q) => (
+                  {recentQueries.map((q, i) => (
                     <li
                       role="option"
+                      aria-selected={i === highlightedSuggestionIndex}
                       key={q}
                       className="px-3 py-2 hover:bg-gray-50 cursor-pointer"
                       onMouseDown={(e) => {

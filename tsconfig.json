@@ -31,5 +31,5 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "src/_vendors_backup", "src/**/_vendors_backup", "src/pages/_vendors_backup"]
 }

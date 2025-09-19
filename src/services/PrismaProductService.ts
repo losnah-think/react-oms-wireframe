@@ -51,4 +51,6 @@ export class PrismaProductService {
   }
 }
 
-export default new PrismaProductService();
+const prismaProductService = new PrismaProductService();
+
+export default prismaProductService;

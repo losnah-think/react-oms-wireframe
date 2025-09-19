@@ -7,7 +7,6 @@ export { default as OrderSettings } from "./orders/OrderSettings";
 
 export { default as ProductsListPage } from "./products/ProductsListPage";
 export { default as ProductsAddPage } from "./products/ProductsAddPage";
-export { default as ProductsEditPage } from "./products/ProductsEditPage";
 export { default as ProductDetailPage } from "./products/ProductDetailPage";
 export { default as ProductImportPage } from "./products/ProductImportPage";
 export { default as ExternalProductImportPage } from "./products/ExternalProductImportPage";
@@ -20,12 +19,12 @@ export { default as CategoryMappingPage } from "./malls/CategoryMappingPage";
 
 export { default as CategoriesManagementPage } from "./categories/CategoriesManagementPage";
 
-export { default as VendorManagementPage } from "./vendors/VendorManagementPage";
-export { default as VendorFixedAddressManagementPage } from "./vendors/VendorFixedAddressManagementPage";
-export { default as DeliveryCompanyManagementPage } from "./vendors/DeliveryCompanyManagementPage";
-export { default as ExpectedDeliveryListPage } from "./vendors/suppliers/ExpectedDeliveryListPage";
-export { default as OrderSlipListPage } from "./vendors/suppliers/OrderSlipListPage";
-export { default as SupplierOrderPage } from "./vendors/suppliers/SupplierOrderPage";
+export { default as VendorManagementPage } from "./shopping-mall/vendors/VendorManagementPage";
+export { default as VendorFixedAddressManagementPage } from "./shopping-mall/vendors/VendorFixedAddressManagementPage";
+export { default as DeliveryCompanyManagementPage } from "./shopping-mall/vendors/DeliveryCompanyManagementPage";
+export { default as ExpectedDeliveryListPage } from "./shopping-mall/vendors/suppliers/ExpectedDeliveryListPage";
+export { default as OrderSlipListPage } from "./shopping-mall/vendors/suppliers/OrderSlipListPage";
+export { default as SupplierOrderPage } from "./shopping-mall/vendors/suppliers/SupplierOrderPage";
 
 export { default as BrandsPage } from "./settings/BrandsPage";
 export { default as ProductCategoryPage } from "./settings/ProductCategoryPage";
