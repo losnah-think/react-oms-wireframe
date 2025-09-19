@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react';
 // `getServerSession` and `authOptions` are server-only and imported dynamically
 // inside `getServerSideProps` to avoid pulling server-only dependencies into
 // the client/test runtime at module-evaluation time.
-import LoginPage from './settings/integration-admin/login'
-import Header from '../src/components/layout/Header';
-import Sidebar from '../src/components/layout/Sidebar';
+import LoginPage from '../src/pages/settings/integration-admin/login'
 import Breadcrumbs from '../src/components/Breadcrumbs';
 
 // Dashboard
@@ -18,6 +16,8 @@ import ProductsEditPage from '../src/pages/products/ProductsEditPage';
 import ProductCsvUploadPage from '../src/pages/products/ProductCsvUploadPage';
 import ProductImportPage from '../src/pages/products/ProductImportPage';
 import ExternalProductImportPage from '../src/pages/products/ExternalProductImportPage';
+import RegistrationHistoryPage from '../src/pages/products/registration-history';
+import IndividualRegistrationPage from '../src/pages/products/individual-registration';
 
 // Orders
 import OrderList from '../src/pages/orders/OrderList';
@@ -96,11 +96,13 @@ export default function Home(props: any) {
   const parsePathToPage = (pathname: string): { page: string; id?: string } => {
     const parts = pathname.replace(/^\//, '').split('/').filter(Boolean);
     if (parts.length === 0) return { page: 'dashboard' };
-    if (parts[0] === 'products') {
+      if (parts[0] === 'products') {
       if (parts.length === 1) return { page: 'products-list' };
       // handle known product subpaths
       if (parts[1] === 'csv') return { page: 'products-csv' };
       if (parts[1] === 'import') return { page: 'products-import' };
+      if (parts[1] === 'registration-history') return { page: 'products-registration-history' };
+      if (parts[1] === 'individual-registration') return { page: 'products-individual-registration' };
       if (parts[1] === 'external-import') return { page: 'products-external-import' };
       if (parts[1] === 'add') return { page: 'products-add' };
       if (parts[1] === 'edit') return { page: 'products-edit' };
@@ -180,6 +182,10 @@ export default function Home(props: any) {
         return <ProductsListPage onNavigate={handleNavigate} />;
       case 'products-detail':
         return <ProductDetailPage productId={selectedProductId} onNavigate={handleNavigate} />;
+      case 'products-registration-history':
+        return <RegistrationHistoryPage />;
+      case 'products-individual-registration':
+        return <IndividualRegistrationPage />;
       case 'products-add':
         return <ProductsAddPage onNavigate={handleNavigate} />;
       case 'products-edit':
@@ -247,26 +253,15 @@ export default function Home(props: any) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      <div className="flex">
-        <Sidebar 
-          currentPage={currentPage} 
-          onPageChange={handleNavigate}
-          isCollapsed={sidebarCollapsed}
-          onToggleCollapse={toggleSidebar}
-        />
-        <main className="flex-1">
-          {/* Breadcrumbs shown inside content area (after Header and Sidebar). Hide on login page. */}
-          {!( !sessionExists && (process.env.NEXT_PUBLIC_HIDE_LOGIN === '1' || process.env.NODE_ENV !== 'production')) && (
-            <div className="px-4 py-3">
-              <Breadcrumbs />
-            </div>
-          )}
-          {renderCurrentPage()}
-        </main>
-      </div>
-    </div>
+    <>
+      {/* Breadcrumbs shown inside content area (after Header and Sidebar). Hide on login page. */}
+      {!( !sessionExists && (process.env.NEXT_PUBLIC_HIDE_LOGIN === '1' || process.env.NODE_ENV !== 'production')) && (
+        <div className="px-4 py-3">
+          <Breadcrumbs />
+        </div>
+      )}
+      {renderCurrentPage()}
+    </>
   );
 }
 // client-side session check replaces server-side redirect for smoother dev flow
@@ -284,9 +279,23 @@ export async function getServerSideProps(ctx: any) {
     const { getServerSession } = await import('next-auth/next')
     const { authOptions } = await import('./api/auth/[...nextauth]')
     const session = await (getServerSession as any)(ctx.req, ctx.res, authOptions as any)
+    // server-side env controls (mirror client-side behavior)
+    const useMocksInProd = process.env.NEXT_PUBLIC_USE_MOCKS === '1'
+    const hideLogin = process.env.NEXT_PUBLIC_HIDE_LOGIN === '1'
+
+    if (!session && !hideLogin && !useMocksInProd) {
+      // Redirect to the standalone login page so Header/LNB are not shown
+      return { redirect: { destination: '/login', permanent: false } }
+    }
+
     return { props: { session: !!session, initialPage: page } }
   } catch (e) {
-    // If server auth cannot be loaded (e.g. in unit tests), fall back to unauthenticated
-    return { props: { session: false, initialPage: page } }
+    // If server auth cannot be loaded (e.g. in unit tests), behave differently:
+    // - In tests, return unauthenticated props so unit tests can render pages without server runtime.
+    // - In dev/production, redirect to the standalone login page so Layout isn't shown around the login UI.
+    if (process.env.NODE_ENV === 'test') {
+      return { props: { session: false, initialPage: page } }
+    }
+    return { redirect: { destination: '/login', permanent: false } }
   }
 }
