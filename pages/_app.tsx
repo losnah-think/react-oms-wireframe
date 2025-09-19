@@ -8,7 +8,6 @@ import { SessionProvider } from "next-auth/react";
 import { ToastProvider } from "../src/components/ui/Toast";
 import UrlBanner from "../src/components/UrlBanner";
 import Layout from "../src/components/layout/Layout";
-import PageTip from "../src/components/PageTip";
 import { useRouter } from "next/router";
 
 export default function App({ Component, pageProps }: AppProps) {
@@ -32,8 +31,7 @@ export default function App({ Component, pageProps }: AppProps) {
           Skip to content
         </a>
         <GridStyles />
-        {/* Per-page tip banner: Component.pageTip overrides routeTips mapping */}
-        <RouteTip PageComponent={Component as any} />
+        {/* Tip banner removed per user request */}
         {disableLayout ? (
           <main id="main-content">
             <Component {...pageProps} />
@@ -50,44 +48,4 @@ export default function App({ Component, pageProps }: AppProps) {
   );
 }
 
-type PageComponentType = React.ComponentType & {
-  pageTip?: string;
-  pageTipId?: string;
-};
-
-function RouteTip({ PageComponent }: { PageComponent?: PageComponentType }) {
-  const router = useRouter();
-  const route = router.pathname || "";
-  const routeTips: Record<string, { text: string; id?: string }> = {
-    "/": { text: "환영합니다 — 왼쪽 메뉴로 모듈을 빠르게 이동하세요." },
-    "/barcodes/product": {
-      text: "바코드 페이지: 여러 행 선택 후 CSV로 내보내기하세요.",
-    },
-    "/products": { text: "상품목록: 내보내기 전에 필터로 결과를 좁히세요." },
-    "/settings": { text: "설정: 전체 계정에 영향을 줍니다. 주의하세요." },
-  };
-
-  // per-component override
-  const compTip = PageComponent && (PageComponent.pageTip || "");
-  const compTipId = PageComponent && (PageComponent.pageTipId || "");
-  if (compTip) {
-    return (
-      <div className="px-6">
-        <PageTip text={compTip} id={compTipId || route} />
-      </div>
-    );
-  }
-
-  // pick exact path or fall back to prefix match
-  const exact = routeTips[route];
-  const prefix = Object.keys(routeTips).find(
-    (k) => k !== route && route.startsWith(k),
-  );
-  const match = exact || (prefix ? routeTips[prefix] : undefined);
-  if (!match) return null;
-  return (
-    <div className="px-6">
-      <PageTip text={match.text} id={match.id || route} />
-    </div>
-  );
-}
+// Tip functionality removed

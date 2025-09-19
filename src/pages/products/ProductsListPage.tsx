@@ -2353,6 +2353,3 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
 };
 
 export default ProductsListPage;
-
-(ProductsListPage as any).pageTip =
-  "상품 목록: 필터를 사용해 결과를 좁힌 후 내보내기 또는 일괄 편집을 사용하세요.";
