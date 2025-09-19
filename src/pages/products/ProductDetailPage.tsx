@@ -44,6 +44,8 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showDescriptionModal, setShowDescriptionModal] = useState(false);
   const [editingDescription, setEditingDescription] = useState("");
+  // editing: true = form editable, false = read-only
+  const [editing, setEditing] = useState<boolean>(true);
   const [toast, setToast] = useState<string | null>(null)
 
   const [product, setProduct] = useState<any | null>(null);
@@ -197,6 +199,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             상품 설명 수정
           </Button>
           <Button variant="primary" onClick={() => onNavigate?.('products-edit', product.id)}>수정</Button>
+          <Button variant="primary" onClick={() => setEditing((s) => !s)}>{editing ? '잠금' : '수정'}</Button>
           <Button variant="danger" onClick={() => {
             if (!confirm('정말 이 상품을 휴지통으로 이동하시겠습니까?')) return
             try {
@@ -253,7 +256,11 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
               <tr className="border-b">
                 <td className="px-4 py-3 text-sm text-gray-600">상품명</td>
-                <td className="px-4 py-3 font-semibold text-gray-900">{product.name}</td>
+                <td className="px-4 py-3 font-semibold text-gray-900">{editing ? (
+                  <input className="w-full px-2 py-1 border rounded" value={product.name || ''} onChange={(e) => setProduct((p:any) => ({ ...(p||{}), name: e.target.value }))} />
+                ) : (
+                  product.name
+                )}</td>
               </tr>
 
               <tr className="border-b">
@@ -261,8 +268,12 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 <td className="px-4 py-3 text-gray-700">
                   <div className="flex flex-wrap gap-3 text-sm">
                     <div>상품ID: {product.id}</div>
-                    <div>코드: {product.code}</div>
-                    <div>브랜드: {product.brand || '-'}</div>
+                    <div>코드: {editing ? (
+                      <input className="px-2 py-1 border rounded" value={product.code || ''} onChange={(e) => setProduct((p:any) => ({ ...(p||{}), code: e.target.value }))} />
+                    ) : (product.code)}</div>
+                    <div>브랜드: {editing ? (
+                      <input className="px-2 py-1 border rounded" value={product.brand || ''} onChange={(e) => setProduct((p:any) => ({ ...(p||{}), brand: e.target.value }))} />
+                    ) : (product.brand || '-')}</div>
                     <div>공급사ID: {product.supplier_id || '-'}</div>
                   </div>
                 </td>
@@ -272,9 +283,9 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 <td className="px-4 py-3 text-sm text-gray-600">가격 / 재고</td>
                 <td className="px-4 py-3 text-gray-700">
                   <div className="grid grid-cols-3 gap-4 text-sm">
-                    <div>판매가: <strong>{formatPrice(product.selling_price)}</strong></div>
-                    <div>원가: {formatPrice(product.cost_price)}</div>
-                    <div>공급가: {formatPrice(product.supply_price)}</div>
+                    <div>판매가: <strong>{editing ? (<input className="px-2 py-1 border rounded text-right" value={String(product.selling_price || 0)} onChange={(e) => setProduct((p:any) => ({ ...(p||{}), selling_price: Number(e.target.value || 0) }))} />) : (formatPrice(product.selling_price))}</strong></div>
+                    <div>원가: {editing ? (<input className="px-2 py-1 border rounded text-right" value={String(product.cost_price || 0)} onChange={(e) => setProduct((p:any) => ({ ...(p||{}), cost_price: Number(e.target.value || 0) }))} />) : (formatPrice(product.cost_price))}</div>
+                    <div>공급가: {editing ? (<input className="px-2 py-1 border rounded text-right" value={String(product.supply_price || 0)} onChange={(e) => setProduct((p:any) => ({ ...(p||{}), supply_price: Number(e.target.value || 0) }))} />) : (formatPrice(product.supply_price))}</div>
                     <div>총재고: <strong>{product.variants ? (product.variants as any[]).reduce((s:number,v:any)=>s+(v.stock||0),0).toLocaleString() : '0'}</strong></div>
                     <div>마진률: <strong>{marginRate}%</strong></div>
                     <div>등록일: {formatDate(product.created_at)}</div>
@@ -301,9 +312,13 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 <td className="px-4 py-3 text-sm text-gray-600 align-top">태그</td>
                 <td className="px-4 py-3">
                   <div className="flex flex-wrap gap-2">
-                    {product.tags && product.tags.map((t: string) => (
-                      <Badge key={t} variant="neutral">{t}</Badge>
-                    ))}
+                    {editing ? (
+                      <input className="px-2 py-1 border rounded w-full" value={(product.tags || []).join(', ')} onChange={(e) => setProduct((p:any) => ({ ...(p||{}), tags: e.target.value.split(',').map((s:string)=>s.trim()).filter(Boolean) }))} />
+                    ) : (
+                      product.tags && product.tags.map((t: string) => (
+                        <Badge key={t} variant="neutral">{t}</Badge>
+                      ))
+                    )}
                   </div>
                 </td>
               </tr>
@@ -356,18 +371,21 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             </tr>
           </thead>
           <tbody>
-              {product.variants && (product.variants as any[]).map((variant: any) => (
-                <tr key={variant.id} className="bg-white border-b border-gray-100">
-                  <td className="px-4 py-3 font-semibold text-gray-900">{variant.variant_name}</td>
-                  <td className="px-4 py-3 text-gray-700">{variant.code}</td>
-                  <td className="px-4 py-3 text-gray-700">{variant.barcode1}</td>
-                  <td className="px-4 py-3 text-gray-700">{variant.barcode2 || '-'}</td>
-                  <td className="px-4 py-3 text-gray-700">{variant.barcode3 || '-'}</td>
-                  <td className="px-4 py-3 text-right text-green-700 font-bold">{formatPrice(variant.selling_price)}</td>
-                  <td className="px-4 py-3 text-right text-gray-700">{formatPrice(variant.cost_price)}</td>
-                  <td className="px-4 py-3 text-right text-blue-700 font-bold">{formatPrice(variant.supply_price)}</td>
-                  <td className="px-4 py-3 text-right text-gray-700">{variant.stock}개</td>
-                  <td className="px-4 py-3 text-left text-gray-700">{variant.warehouse_location || '-'}</td>
+              {product.variants && (product.variants as any[]).map((variant: any, vIdx: number) => (
+                <tr key={variant.id || vIdx} className="bg-white border-b border-gray-100">
+                  <td className="px-4 py-3 font-semibold text-gray-900">{editing ? (
+                    <input className="w-full px-2 py-1 border rounded" value={variant.variant_name || ''} onChange={(e)=> setProduct((p:any)=>{ const copy = JSON.parse(JSON.stringify(p)); copy.variants[vIdx].variant_name = e.target.value; return copy })}
+                    />
+                  ) : (variant.variant_name)}</td>
+                  <td className="px-4 py-3 text-gray-700">{editing ? (<input className="px-2 py-1 border rounded" value={variant.code || ''} onChange={(e)=> setProduct((p:any)=>{ const copy = JSON.parse(JSON.stringify(p)); copy.variants[vIdx].code = e.target.value; return copy })} />) : variant.code}</td>
+                  <td className="px-4 py-3 text-gray-700">{editing ? (<input className="px-2 py-1 border rounded" value={variant.barcode1 || ''} onChange={(e)=> setProduct((p:any)=>{ const copy = JSON.parse(JSON.stringify(p)); copy.variants[vIdx].barcode1 = e.target.value; return copy })} />) : variant.barcode1}</td>
+                  <td className="px-4 py-3 text-gray-700">{editing ? (<input className="px-2 py-1 border rounded" value={variant.barcode2 || ''} onChange={(e)=> setProduct((p:any)=>{ const copy = JSON.parse(JSON.stringify(p)); copy.variants[vIdx].barcode2 = e.target.value; return copy })} />) : (variant.barcode2 || '-')}</td>
+                  <td className="px-4 py-3 text-gray-700">{editing ? (<input className="px-2 py-1 border rounded" value={variant.barcode3 || ''} onChange={(e)=> setProduct((p:any)=>{ const copy = JSON.parse(JSON.stringify(p)); copy.variants[vIdx].barcode3 = e.target.value; return copy })} />) : (variant.barcode3 || '-')}</td>
+                  <td className="px-4 py-3 text-right text-green-700 font-bold">{editing ? (<input className="w-24 px-2 py-1 border rounded text-right" value={String(variant.selling_price || 0)} onChange={(e)=> setProduct((p:any)=>{ const copy = JSON.parse(JSON.stringify(p)); copy.variants[vIdx].selling_price = Number(e.target.value || 0); return copy })} />) : formatPrice(variant.selling_price)}</td>
+                  <td className="px-4 py-3 text-right text-gray-700">{editing ? (<input className="w-24 px-2 py-1 border rounded text-right" value={String(variant.cost_price || 0)} onChange={(e)=> setProduct((p:any)=>{ const copy = JSON.parse(JSON.stringify(p)); copy.variants[vIdx].cost_price = Number(e.target.value || 0); return copy })} />) : formatPrice(variant.cost_price)}</td>
+                  <td className="px-4 py-3 text-right text-blue-700 font-bold">{editing ? (<input className="w-24 px-2 py-1 border rounded text-right" value={String(variant.supply_price || 0)} onChange={(e)=> setProduct((p:any)=>{ const copy = JSON.parse(JSON.stringify(p)); copy.variants[vIdx].supply_price = Number(e.target.value || 0); return copy })} />) : formatPrice(variant.supply_price)}</td>
+                  <td className="px-4 py-3 text-right text-gray-700">{editing ? (<input className="w-20 px-2 py-1 border rounded text-right" value={String(variant.stock || 0)} onChange={(e)=> setProduct((p:any)=>{ const copy = JSON.parse(JSON.stringify(p)); copy.variants[vIdx].stock = Number(e.target.value || 0); return copy })} />) : `${variant.stock}개`}</td>
+                  <td className="px-4 py-3 text-left text-gray-700">{editing ? (<input className="px-2 py-1 border rounded" value={variant.warehouse_location || ''} onChange={(e)=> setProduct((p:any)=>{ const copy = JSON.parse(JSON.stringify(p)); copy.variants[vIdx].warehouse_location = e.target.value; return copy })} />) : (variant.warehouse_location || '-')}</td>
                   <td className="px-4 py-3 text-center">
                     <div className="flex items-center gap-1 justify-center">
                       {variant.is_selling ? <span className="px-2 py-0.5 rounded bg-green-100 text-green-800 text-xs">판매중</span> : <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-600 text-xs">판매중지</span>}

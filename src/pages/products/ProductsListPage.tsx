@@ -978,7 +978,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredProducts.map((p, idx) => (
-                <tr key={p.id} className={`hover:bg-gray-50 ${compactView ? 'text-sm' : ''}`} onClick={() => onNavigate?.('products-detail', p.id)} style={{ cursor: 'pointer' }}>
+                <tr key={p.id} className={`hover:bg-gray-50 ${compactView ? 'text-sm' : ''}`}>
                   <td className={`${compactView ? 'px-3 py-2' : 'px-4 py-6'}`} onClick={(e) => e.stopPropagation()}>
                     <input type="checkbox" checked={!!selectedIds[p.id]} onChange={() => toggleRow(String(p.id))} />
                   </td>
@@ -1026,8 +1026,6 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
                   <td className={`${compactView ? 'px-3 py-2' : 'px-6 py-6'}`}>{p.created_at ? `${new Date(p.created_at).toLocaleDateString('ko-KR')} ${new Date(p.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}` : '-'}</td>
                   <td className={`${compactView ? 'px-3 py-2' : 'px-6 py-6'}`}>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="small" onClick={(e) => { e.stopPropagation(); onNavigate?.('products-detail', p.id); }}>상세</Button>
-                      <Button variant="primary" size="small" onClick={(e) => { e.stopPropagation(); onNavigate?.('products-edit', p.id); }}>수정</Button>
                       <Button variant="ghost" size="small" onClick={(e) => { e.stopPropagation(); handleExternalSend([String(p.id)], selectedMall) }}>외부 송신</Button>
                       <Button variant="danger" size="small" onClick={(e) => { e.stopPropagation(); if (!confirm('정말 이 상품을 휴지통으로 이동하시겠습니까?')) return; softDeleteOne(String(p.id)); }}>삭제</Button>
                     </div>

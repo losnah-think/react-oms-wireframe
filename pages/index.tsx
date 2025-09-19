@@ -12,7 +12,6 @@ import Dashboard from '../src/pages/dashboard/Dashboard';
 import ProductsListPage from '../src/pages/products/ProductsListPage';
 import ProductDetailPage from '../src/pages/products/ProductDetailPage';
 import ProductsAddPage from '../src/pages/products/ProductsAddPage';
-import ProductsEditPage from '../src/pages/products/ProductsEditPage';
 import ProductCsvUploadPage from '../src/pages/products/ProductCsvUploadPage';
 import ProductImportPage from '../src/pages/products/ProductImportPage';
 import ExternalProductImportPage from '../src/pages/products/ExternalProductImportPage';
@@ -61,7 +60,7 @@ export default function Home(props: any) {
     'products-list': '/products',
     'products': '/products',
     'products-add': '/products/add',
-    'products-edit': '/products/edit',
+  'products-edit': '/products',
     'products-csv': '/products/csv',
     'products-import': '/products/import',
     'products-detail': '/products', // will be suffixed with /:id when productId provided
@@ -81,7 +80,11 @@ export default function Home(props: any) {
     // Immediately update browser history (so Back/Forward work instantly)
     try {
       const basePath = idToPath[page] ?? `/${page.replace(/_/g, '/').replace(/\s+/g, '-')}`;
-      const target = page === 'products-detail' && productId ? `${basePath}/${productId}` : basePath;
+      let target = page === 'products-detail' && productId ? `${basePath}/${productId}` : basePath;
+      // if navigating to products-edit, route to the product detail URL so detail page can act as editor
+      if (page === 'products-edit' && productId) {
+        target = `/products/${productId}`;
+      }
       if (typeof window !== 'undefined' && window.history && window.history.pushState) {
         window.history.pushState({}, '', target);
       }
@@ -189,7 +192,7 @@ export default function Home(props: any) {
       case 'products-add':
         return <ProductsAddPage onNavigate={handleNavigate} />;
       case 'products-edit':
-        return <ProductsEditPage productId={selectedProductId} onNavigate={handleNavigate} />;
+        return <ProductDetailPage productId={selectedProductId} onNavigate={handleNavigate} />;
       case 'products-csv':
         return <ProductCsvUploadPage />;
       case 'products-import':
