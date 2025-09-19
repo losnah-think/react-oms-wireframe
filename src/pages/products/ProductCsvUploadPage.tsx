@@ -72,51 +72,56 @@ const ProductCsvUploadPage: React.FC = () => {
   const [selectedPlatform, setSelectedPlatform] = useState<string>("");
   const [showPlatformSelector, setShowPlatformSelector] =
     useState<boolean>(false);
-  const [fieldMapping, setFieldMapping] = useState<Record<string, string | null>>({});
+  const [fieldMapping, setFieldMapping] = useState<
+    Record<string, string | null>
+  >({});
   const [mappingValid, setMappingValid] = useState<boolean>(true);
   const [skipHeaderRows, setSkipHeaderRows] = useState<number>(0);
   const [handleImagesAsUrls, setHandleImagesAsUrls] = useState<boolean>(true);
-  const [message, setMessage] = useState<{ type: 'info' | 'success' | 'error'; text: string } | null>(null)
+  const [message, setMessage] = useState<{
+    type: "info" | "success" | "error";
+    text: string;
+  } | null>(null);
 
   // Lightweight RFC4180-style CSV parser supporting quoted fields and newlines
-  const parseCSV = (text: string, delimiter = ','): string[][] => {
-    const rows: string[][] = []
-    let cur = ''
-    let row: string[] = []
-    let inQuotes = false
+  const parseCSV = (text: string, delimiter = ","): string[][] => {
+    const rows: string[][] = [];
+    let cur = "";
+    let row: string[] = [];
+    let inQuotes = false;
     for (let i = 0; i < text.length; i++) {
-      const ch = text[i]
+      const ch = text[i];
       if (inQuotes) {
         if (ch === '"') {
           if (text[i + 1] === '"') {
-            cur += '"'
-            i++
+            cur += '"';
+            i++;
           } else {
-            inQuotes = false
+            inQuotes = false;
           }
         } else {
-          cur += ch
+          cur += ch;
         }
       } else {
         if (ch === '"') {
-          inQuotes = true
+          inQuotes = true;
         } else if (ch === delimiter) {
-          row.push(cur)
-          cur = ''
-        } else if (ch === '\r') {
+          row.push(cur);
+          cur = "";
+        } else if (ch === "\r") {
           // handle CRLF
-          if (text[i + 1] === '\n') i++
-          row.push(cur)
-          rows.push(row)
-          row = []
-          cur = ''
-        } else if (ch === '\n') {
-          row.push(cur)
-          rows.push(row)
-          row = []
-          cur = ''
+          if (text[i + 1] === "\n") i++;
+          row.push(cur);
+          rows.push(row);
+          row = [];
+          cur = "";
+        } else if (ch === "\n") {
+          row.push(cur);
+          rows.push(row);
+          row = [];
+          cur = "";
         } else {
-          cur += ch
+          cur += ch;
         }
       }
     }
@@ -124,18 +129,21 @@ const ProductCsvUploadPage: React.FC = () => {
     if (inQuotes) {
       // malformed CSV; still push what we have
     }
-    if (cur !== '' || row.length > 0) {
-      row.push(cur)
-      rows.push(row)
+    if (cur !== "" || row.length > 0) {
+      row.push(cur);
+      rows.push(row);
     }
     // trim cells
-    return rows.map(r => r.map(c => c.trim()))
-  }
+    return rows.map((r) => r.map((c) => c.trim()));
+  };
 
-  const showMessage = (text: string, type: 'info' | 'success' | 'error' = 'info') => {
-    setMessage({ type, text })
-    window.setTimeout(() => setMessage(null), 4000)
-  }
+  const showMessage = (
+    text: string,
+    type: "info" | "success" | "error" = "info",
+  ) => {
+    setMessage({ type, text });
+    window.setTimeout(() => setMessage(null), 4000);
+  };
   const [uploadHistory, setUploadHistory] = useState<UploadHistory[]>([]);
   const [showHistory, setShowHistory] = useState<boolean>(false);
 
@@ -349,13 +357,13 @@ const ProductCsvUploadPage: React.FC = () => {
     if (!file) return;
 
     if (file.type !== "text/csv" && !file.name.endsWith(".csv")) {
-      showMessage("CSV 파일만 업로드 가능합니다.", 'error')
+      showMessage("CSV 파일만 업로드 가능합니다.", "error");
       return;
     }
 
     if (file.size > 50 * 1024 * 1024) {
       // 50MB 제한
-      showMessage("파일 크기는 50MB 이하여야 합니다.", 'error')
+      showMessage("파일 크기는 50MB 이하여야 합니다.", "error");
       return;
     }
 
@@ -368,16 +376,18 @@ const ProductCsvUploadPage: React.FC = () => {
     const reader = new FileReader();
     reader.onload = (e) => {
       const text = e.target?.result as string;
-      const rows = parseCSV(text)
+      const rows = parseCSV(text);
 
       if (!rows || rows.length < 2) {
-        showMessage("올바른 CSV 파일이 아닙니다.", 'error')
-        setIsAnalyzing(false)
-        return
+        showMessage("올바른 CSV 파일이 아닙니다.", "error");
+        setIsAnalyzing(false);
+        return;
       }
 
-      const headers = (rows[0] || []).map(h => String(h).replace(/['"]/g, ''))
-      const dataRows = rows.slice(1, 6)
+      const headers = (rows[0] || []).map((h) =>
+        String(h).replace(/['"]/g, ""),
+      );
+      const dataRows = rows.slice(1, 6);
 
       // 플랫폼 자동 감지
       setTimeout(() => {
@@ -410,20 +420,24 @@ const ProductCsvUploadPage: React.FC = () => {
 
   // initialize field mapping when platform selected or file analyzed
   useEffect(() => {
-  const plat = (detectedPlatform ?? platforms.find(p => p.id === selectedPlatform)) || null
-    if (!plat || !fileAnalysis) return
-    const headers = fileAnalysis.headers || []
-    const mapping: Record<string, string | null> = {}
+    const plat =
+      (detectedPlatform ?? platforms.find((p) => p.id === selectedPlatform)) ||
+      null;
+    if (!plat || !fileAnalysis) return;
+    const headers = fileAnalysis.headers || [];
+    const mapping: Record<string, string | null> = {};
     plat.requiredFields.forEach((rf) => {
       // try auto-match by looking for header that includes keyword (case-insensitive)
-      const found = headers.find(h => h.toLowerCase().includes(rf.toLowerCase()))
-      mapping[rf] = found ?? null
-    })
-    setFieldMapping(mapping)
+      const found = headers.find((h) =>
+        h.toLowerCase().includes(rf.toLowerCase()),
+      );
+      mapping[rf] = found ?? null;
+    });
+    setFieldMapping(mapping);
     // validate
-    const allMapped = plat.requiredFields.every(rf => !!mapping[rf])
-    setMappingValid(allMapped)
-  }, [detectedPlatform, selectedPlatform, fileAnalysis])
+    const allMapped = plat.requiredFields.every((rf) => !!mapping[rf]);
+    setMappingValid(allMapped);
+  }, [detectedPlatform, selectedPlatform, fileAnalysis]);
 
   const handlePlatformSelect = (platformId: string) => {
     const platform = platforms.find((p) => p.id === platformId);
@@ -438,8 +452,18 @@ const ProductCsvUploadPage: React.FC = () => {
   const handleUpload = async () => {
     if (!uploadedFile) return;
     // validate mapping if required
-    if (detectedPlatform && detectedPlatform.requiredFields && detectedPlatform.requiredFields.length > 0) {
-      if (!mappingValid) { showMessage('필수 필드 매핑이 완료되어야 업로드할 수 있습니다.', 'error'); return }
+    if (
+      detectedPlatform &&
+      detectedPlatform.requiredFields &&
+      detectedPlatform.requiredFields.length > 0
+    ) {
+      if (!mappingValid) {
+        showMessage(
+          "필수 필드 매핑이 완료되어야 업로드할 수 있습니다.",
+          "error",
+        );
+        return;
+      }
     }
 
     setIsUploading(true);
@@ -826,15 +850,23 @@ const ProductCsvUploadPage: React.FC = () => {
           <h3 className="text-lg font-semibold mb-2">CSV 업로드 도움말</h3>
           <ul className="list-disc pl-5 text-sm text-gray-600 space-y-1">
             <li>지원 형식은 UTF-8 인코딩의 CSV입니다.</li>
-            <li>필수 필드(플랫폼별)를 반드시 매핑하세요. 매핑이 없으면 업로드할 수 없습니다.</li>
+            <li>
+              필수 필드(플랫폼별)를 반드시 매핑하세요. 매핑이 없으면 업로드할 수
+              없습니다.
+            </li>
             <li>이미지 필드는 URL을 사용할 경우 업로드 옵션을 체크하세요.</li>
-            <li>복잡한 CSV(따옴표 포함, 개행 포함)는 자동 파서가 처리하지만 이상이 있으면 템플릿을 이용하세요.</li>
+            <li>
+              복잡한 CSV(따옴표 포함, 개행 포함)는 자동 파서가 처리하지만 이상이
+              있으면 템플릿을 이용하세요.
+            </li>
           </ul>
         </div>
 
         {/* inline toast */}
         {message && (
-          <div className={`fixed right-6 bottom-6 z-50 px-4 py-3 rounded shadow-lg ${message.type === 'error' ? 'bg-red-600 text-white' : message.type === 'success' ? 'bg-green-600 text-white' : 'bg-blue-600 text-white'}`}>
+          <div
+            className={`fixed right-6 bottom-6 z-50 px-4 py-3 rounded shadow-lg ${message.type === "error" ? "bg-red-600 text-white" : message.type === "success" ? "bg-green-600 text-white" : "bg-blue-600 text-white"}`}
+          >
             {message.text}
           </div>
         )}
@@ -927,30 +959,38 @@ const ProductCsvUploadPage: React.FC = () => {
         {/* 플랫폼별 필드 매핑 및 옵션 (MakeShop 전용 섹션 포함) */}
         {fileAnalysis && detectedPlatform && (
           <div className="bg-white border rounded-lg p-6 mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">4-1. 필드 매핑 & 옵션</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              4-1. 필드 매핑 & 옵션
+            </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
-                <div className="text-sm text-gray-600 mb-2">필수 필드 자동 매핑 (수동 조정 가능)</div>
+                <div className="text-sm text-gray-600 mb-2">
+                  필수 필드 자동 매핑 (수동 조정 가능)
+                </div>
                 <div className="space-y-2">
                   {detectedPlatform.requiredFields.map((rf) => (
                     <div key={rf} className="flex items-center gap-2">
                       <div className="w-36 text-sm text-gray-700">{rf}</div>
                       <select
-                        value={fieldMapping[rf] ?? ''}
+                        value={fieldMapping[rf] ?? ""}
                         onChange={(e) => {
-                          const val = e.target.value || null
-                          setFieldMapping(prev => {
-                            const next = { ...prev, [rf]: val }
-                            setMappingValid(Object.values(next).every(v => !!v))
-                            return next
-                          })
+                          const val = e.target.value || null;
+                          setFieldMapping((prev) => {
+                            const next = { ...prev, [rf]: val };
+                            setMappingValid(
+                              Object.values(next).every((v) => !!v),
+                            );
+                            return next;
+                          });
                         }}
                         className="flex-1 border rounded px-2 py-1 text-sm"
                       >
                         <option value="">(매칭 헤더 선택)</option>
                         {fileAnalysis.headers.map((h) => (
-                          <option key={h} value={h}>{h}</option>
+                          <option key={h} value={h}>
+                            {h}
+                          </option>
                         ))}
                       </select>
                     </div>
@@ -962,63 +1002,125 @@ const ProductCsvUploadPage: React.FC = () => {
                 <div className="text-sm text-gray-600 mb-2">업로드 옵션</div>
                 <div className="space-y-2">
                   <label className="flex items-center gap-2">
-                    <input type="checkbox" checked={handleImagesAsUrls} onChange={(e) => setHandleImagesAsUrls(e.target.checked)} />
+                    <input
+                      type="checkbox"
+                      checked={handleImagesAsUrls}
+                      onChange={(e) => setHandleImagesAsUrls(e.target.checked)}
+                    />
                     <span className="text-sm">이미지 필드 URL로 처리</span>
                   </label>
                   <label className="flex items-center gap-2">
                     <span className="text-sm">헤더로 처리할 행 수</span>
-                    <input type="number" min={0} value={skipHeaderRows} onChange={(e)=>setSkipHeaderRows(Number(e.target.value))} className="w-20 border rounded px-2 py-1 text-sm" />
+                    <input
+                      type="number"
+                      min={0}
+                      value={skipHeaderRows}
+                      onChange={(e) =>
+                        setSkipHeaderRows(Number(e.target.value))
+                      }
+                      className="w-20 border rounded px-2 py-1 text-sm"
+                    />
                   </label>
                   <div className="pt-2 flex items-center gap-2">
-                    <button className="px-4 py-2 bg-gray-100 rounded border" onClick={() => {
-                      // download template for MakeShop
-                      let tpl = ''
-                      if (detectedPlatform.id === 'makeshop') {
-                        const headers = [...detectedPlatform.requiredFields, '상품코드(옵션용)', '이미지1', '이미지2', '재고']
-                        tpl = headers.join(',') + '\n' + headers.map(() => '샘플값').join(',')
-                      } else {
-                        tpl = `${detectedPlatform.name} 템플릿,헤더,예시\nexample,1,2`
-                      }
-                      const blob = new Blob([tpl], { type: 'text/csv;charset=utf-8;' })
-                      const url = URL.createObjectURL(blob)
-                      const a = document.createElement('a')
-                      a.href = url
-                      a.download = `${detectedPlatform.id}_template.csv`
-                      document.body.appendChild(a)
-                      a.click()
-                      a.remove()
-                      URL.revokeObjectURL(url)
-                    }}>템플릿 다운로드</button>
+                    <button
+                      className="px-4 py-2 bg-gray-100 rounded border"
+                      onClick={() => {
+                        // download template for MakeShop
+                        let tpl = "";
+                        if (detectedPlatform.id === "makeshop") {
+                          const headers = [
+                            ...detectedPlatform.requiredFields,
+                            "상품코드(옵션용)",
+                            "이미지1",
+                            "이미지2",
+                            "재고",
+                          ];
+                          tpl =
+                            headers.join(",") +
+                            "\n" +
+                            headers.map(() => "샘플값").join(",");
+                        } else {
+                          tpl = `${detectedPlatform.name} 템플릿,헤더,예시\nexample,1,2`;
+                        }
+                        const blob = new Blob([tpl], {
+                          type: "text/csv;charset=utf-8;",
+                        });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = `${detectedPlatform.id}_template.csv`;
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        URL.revokeObjectURL(url);
+                      }}
+                    >
+                      템플릿 다운로드
+                    </button>
 
-                    <button className="px-4 py-2 bg-white rounded border" onClick={() => {
-                      // save mapping
-                      try {
-                        if (!fileAnalysis) return showMessage('파일 분석 정보가 필요합니다.', 'error')
-                        const key = `csv_mapping_${detectedPlatform.id}_${fileAnalysis.fileName}`
-                        localStorage.setItem(key, JSON.stringify(fieldMapping))
-                        showMessage('매핑을 저장했습니다.', 'success')
-                      } catch (e) { showMessage('저장에 실패했습니다.', 'error') }
-                    }}>매핑 저장</button>
+                    <button
+                      className="px-4 py-2 bg-white rounded border"
+                      onClick={() => {
+                        // save mapping
+                        try {
+                          if (!fileAnalysis)
+                            return showMessage(
+                              "파일 분석 정보가 필요합니다.",
+                              "error",
+                            );
+                          const key = `csv_mapping_${detectedPlatform.id}_${fileAnalysis.fileName}`;
+                          localStorage.setItem(
+                            key,
+                            JSON.stringify(fieldMapping),
+                          );
+                          showMessage("매핑을 저장했습니다.", "success");
+                        } catch (e) {
+                          showMessage("저장에 실패했습니다.", "error");
+                        }
+                      }}
+                    >
+                      매핑 저장
+                    </button>
 
-                    <button className="px-4 py-2 bg-white rounded border" onClick={() => {
-                      try {
-                        if (!fileAnalysis) return showMessage('파일 분석 정보가 필요합니다.', 'error')
-                        const key = `csv_mapping_${detectedPlatform.id}_${fileAnalysis.fileName}`
-                        const raw = localStorage.getItem(key)
-                        if (!raw) return showMessage('저장된 매핑이 없습니다.', 'info')
-                        const parsed = JSON.parse(raw)
-                        setFieldMapping(parsed)
-                        setMappingValid(Object.values(parsed).every((v: any) => !!v))
-                        showMessage('저장된 매핑을 불러왔습니다.', 'success')
-                      } catch (e) { showMessage('불러오기 실패', 'error') }
-                    }}>매핑 불러오기</button>
+                    <button
+                      className="px-4 py-2 bg-white rounded border"
+                      onClick={() => {
+                        try {
+                          if (!fileAnalysis)
+                            return showMessage(
+                              "파일 분석 정보가 필요합니다.",
+                              "error",
+                            );
+                          const key = `csv_mapping_${detectedPlatform.id}_${fileAnalysis.fileName}`;
+                          const raw = localStorage.getItem(key);
+                          if (!raw)
+                            return showMessage(
+                              "저장된 매핑이 없습니다.",
+                              "info",
+                            );
+                          const parsed = JSON.parse(raw);
+                          setFieldMapping(parsed);
+                          setMappingValid(
+                            Object.values(parsed).every((v: any) => !!v),
+                          );
+                          showMessage("저장된 매핑을 불러왔습니다.", "success");
+                        } catch (e) {
+                          showMessage("불러오기 실패", "error");
+                        }
+                      }}
+                    >
+                      매핑 불러오기
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
 
             {!mappingValid && (
-              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">필수 필드가 모두 매핑되지 않았습니다. 업로드 전에 필수 필드를 매핑해주세요.</div>
+              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+                필수 필드가 모두 매핑되지 않았습니다. 업로드 전에 필수 필드를
+                매핑해주세요.
+              </div>
             )}
           </div>
         )}

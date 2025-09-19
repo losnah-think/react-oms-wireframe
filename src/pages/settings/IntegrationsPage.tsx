@@ -10,8 +10,9 @@ export default function IntegrationsPage({
 }) {
   const [channel, setChannel] = useState<string>("all");
   const [showCredentials, setShowCredentials] = useState<boolean>(false);
-  const [selectedIntegration, setSelectedIntegration] =
-    useState<any | null>(null);
+  const [selectedIntegration, setSelectedIntegration] = useState<any | null>(
+    null,
+  );
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [collectionInterval, setCollectionInterval] = useState<string>("15m");
   const [intervalsByChannel, setIntervalsByChannel] = useState<
@@ -57,18 +58,23 @@ export default function IntegrationsPage({
   // When a new shop/integration is registered, add to malls list (mock behavior)
   const handleIntegrationRegistered = (integration: any) => {
     try {
-      const raw = window.localStorage.getItem('malls_v1')
-      const prev = raw ? JSON.parse(raw) : []
-      const nid = `m_${Date.now()}`
-      const entry = { id: nid, name: integration.name || `통합샵 ${nid}`, status: '연동됨', orders: 0 }
-      const next = [entry, ...prev]
-      window.localStorage.setItem('malls_v1', JSON.stringify(next))
-      window.dispatchEvent(new CustomEvent('malls:updated'))
-      alert('샵이 추가되었습니다. 쇼핑몰 목록에서 확인하세요. (mock)')
+      const raw = window.localStorage.getItem("malls_v1");
+      const prev = raw ? JSON.parse(raw) : [];
+      const nid = `m_${Date.now()}`;
+      const entry = {
+        id: nid,
+        name: integration.name || `통합샵 ${nid}`,
+        status: "연동됨",
+        orders: 0,
+      };
+      const next = [entry, ...prev];
+      window.localStorage.setItem("malls_v1", JSON.stringify(next));
+      window.dispatchEvent(new CustomEvent("malls:updated"));
+      alert("샵이 추가되었습니다. 쇼핑몰 목록에서 확인하세요. (mock)");
     } catch (e) {
-      console.warn('integration register mock failed', e)
+      console.warn("integration register mock failed", e);
     }
-  }
+  };
 
   return (
     <Container maxWidth="full">
@@ -136,7 +142,13 @@ export default function IntegrationsPage({
       </div>
 
       {showRegisterModal && (
-    <RegisterIntegrationForm onClose={() => setShowRegisterModal(false)} onRegistered={(integration) => { handleIntegrationRegistered(integration); setShowRegisterModal(false); }} />
+        <RegisterIntegrationForm
+          onClose={() => setShowRegisterModal(false)}
+          onRegistered={(integration) => {
+            handleIntegrationRegistered(integration);
+            setShowRegisterModal(false);
+          }}
+        />
       )}
     </Container>
   );

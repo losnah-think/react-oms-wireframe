@@ -1,13 +1,15 @@
 "use client";
-import React from 'react'
-import '../src/App.css'
-import 'react-quill/dist/quill.snow.css'
-import type { AppProps } from 'next/app'
-import { GridStyles } from '../src/design-system/components'
-import { SessionProvider } from 'next-auth/react'
-import { ToastProvider } from '../src/components/ui/Toast'
-import UrlBanner from '../src/components/UrlBanner'
-import Layout from '../src/components/layout/Layout'
+import React from "react";
+import "../src/App.css";
+import "react-quill/dist/quill.snow.css";
+import type { AppProps } from "next/app";
+import { GridStyles } from "../src/design-system/components";
+import { SessionProvider } from "next-auth/react";
+import { ToastProvider } from "../src/components/ui/Toast";
+import UrlBanner from "../src/components/UrlBanner";
+import Layout from "../src/components/layout/Layout";
+import PageTip from "../src/components/PageTip";
+import { useRouter } from "next/router";
 
 export default function App({ Component, pageProps }: AppProps) {
   // Keep pageProps intact so pages can read `pageProps.session` if they rely
@@ -15,17 +17,23 @@ export default function App({ Component, pageProps }: AppProps) {
   // Compute whether the page opts out of the global layout.
   // Only disable layout when the page explicitly sets `disableLayout = true`.
   // In production, also require `disableLayoutAllowed = true` on the component to permit layout opt-out.
-  const comp: any = Component as any
-  const pageRequestedNoLayout = comp && comp.disableLayout === true
-  const disableLayoutAllowed = (process.env.NODE_ENV !== 'production') || (comp && comp.disableLayoutAllowed === true)
-  const disableLayout = pageRequestedNoLayout && disableLayoutAllowed
+  const comp: any = Component as any;
+  const pageRequestedNoLayout = comp && comp.disableLayout === true;
+  const disableLayoutAllowed =
+    process.env.NODE_ENV !== "production" ||
+    (comp && comp.disableLayoutAllowed === true);
+  const disableLayout = pageRequestedNoLayout && disableLayoutAllowed;
 
   return (
     <SessionProvider session={(pageProps as any).session}>
       <ToastProvider>
         <UrlBanner />
-        <a href="#main-content" className="skip-link">Skip to content</a>
+        <a href="#main-content" className="skip-link">
+          Skip to content
+        </a>
         <GridStyles />
+        {/* Per-page tip banner: can be extended via `routeTips` */}
+        <RouteTip />
         {disableLayout ? (
           <main id="main-content">
             <Component {...pageProps} />
@@ -39,5 +47,32 @@ export default function App({ Component, pageProps }: AppProps) {
         )}
       </ToastProvider>
     </SessionProvider>
-  )
+  );
+}
+
+function RouteTip() {
+  const router = useRouter();
+  const route = router.pathname || "";
+  const routeTips: Record<string, string> = {
+    "/": "Welcome — use the left menu to navigate modules quickly.",
+    "/barcodes/product":
+      "Barcode page: select rows and use CSV export for bulk operations.",
+    "/products":
+      "Products list: use filters to narrow results before exporting.",
+    "/settings":
+      "Settings: changes affect the whole account — proceed carefully.",
+  };
+
+  // pick exact path or fall back to a simple startsWith match
+  const exact = routeTips[route];
+  const prefix = Object.keys(routeTips).find(
+    (k) => k !== route && route.startsWith(k),
+  );
+  const tip = exact || (prefix ? routeTips[prefix] : "");
+  if (!tip) return null;
+  return (
+    <div className="px-6">
+      <PageTip text={tip} />
+    </div>
+  );
 }

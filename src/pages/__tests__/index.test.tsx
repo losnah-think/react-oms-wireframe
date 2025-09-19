@@ -20,8 +20,12 @@ import Layout from "../../components/layout/Layout";
 
 describe("Pages - Home", () => {
   it("renders header and sidebar", () => {
-  // Render Home inside Layout with session=true so Header and Sidebar appear
-  render(React.createElement(Layout, { children: React.createElement(Home, { session: true }) }));
+    // Render Home inside Layout with session=true so Header and Sidebar appear
+    render(
+      React.createElement(Layout, {
+        children: React.createElement(Home, { session: true }),
+      }),
+    );
     expect(screen.getByText("Header Mock")).toBeInTheDocument();
     expect(screen.getByText("Sidebar Mock")).toBeInTheDocument();
   });

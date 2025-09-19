@@ -11,31 +11,36 @@ const OrderList: React.FC = () => {
 
   React.useEffect(() => {
     let mounted = true;
-    fetch('/api/orders?limit=50')
+    fetch("/api/orders?limit=50")
       .then((r) => r.json())
       .then((data) => {
         if (!mounted) return;
-        const mapped: Order[] = (data.orders || []).map((o: any) => new Order({
-          id: o.id,
-          customerId: o.customer_id,
-          customerName: o.customer_name || o.customerName || '',
-          status: o.status as OrderStatus,
-          totalAmount: o.total_amount || o.totalAmount || 0,
-          items: (o.items || []).map((it: any) => ({
-            id: it.id,
-            orderId: it.order_id || o.id,
-            productId: it.product_id,
-            productName: it.product_name || it.productName,
-            quantity: it.quantity,
-            unitPrice: it.unit_price || it.unitPrice,
-            totalPrice: it.total_price || it.totalPrice,
-          })),
-        }))
-        setOrders(mapped)
+        const mapped: Order[] = (data.orders || []).map(
+          (o: any) =>
+            new Order({
+              id: o.id,
+              customerId: o.customer_id,
+              customerName: o.customer_name || o.customerName || "",
+              status: o.status as OrderStatus,
+              totalAmount: o.total_amount || o.totalAmount || 0,
+              items: (o.items || []).map((it: any) => ({
+                id: it.id,
+                orderId: it.order_id || o.id,
+                productId: it.product_id,
+                productName: it.product_name || it.productName,
+                quantity: it.quantity,
+                unitPrice: it.unit_price || it.unitPrice,
+                totalPrice: it.total_price || it.totalPrice,
+              })),
+            }),
+        );
+        setOrders(mapped);
       })
       .catch((e) => console.error(e));
-    return () => { mounted = false }
-  }, [])
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const filteredOrders = React.useMemo(() => {
     return orders.filter((order) => {

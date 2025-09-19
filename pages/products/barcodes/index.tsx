@@ -1,2 +1,2 @@
-import BarcodesIndexPage from '../../../src/pages/barcodes/index'
-export default BarcodesIndexPage
+import BarcodesIndexPage from "../../../src/pages/barcodes/index";
+export default BarcodesIndexPage;

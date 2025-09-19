@@ -168,332 +168,332 @@ const VendorFixedAddressManagementPage: React.FC = () => {
   return (
     <Container maxWidth="full">
       <div className="p-6 max-w-7xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          판매처 고정주소 관리
-        </h1>
-        <p className="text-gray-600">
-          판매처별로 발송지, 반송지, 교환지 등 고정주소를 관리합니다.
-        </p>
-      </div>
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            판매처 고정주소 관리
+          </h1>
+          <p className="text-gray-600">
+            판매처별로 발송지, 반송지, 교환지 등 고정주소를 관리합니다.
+          </p>
+        </div>
 
-      {/* 필터 및 검색 */}
-      <div className="bg-white border rounded-lg p-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              판매처 선택
-            </label>
-            <select
-              value={selectedVendor}
-              onChange={(e) => setSelectedVendor(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">전체 판매처</option>
-              {mockVendors.map((vendor) => (
-                <option key={vendor.id} value={vendor.id}>
-                  {vendor.name}
-                </option>
-              ))}
-            </select>
+        {/* 필터 및 검색 */}
+        <div className="bg-white border rounded-lg p-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                판매처 선택
+              </label>
+              <select
+                value={selectedVendor}
+                onChange={(e) => setSelectedVendor(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">전체 판매처</option>
+                {mockVendors.map((vendor) => (
+                  <option key={vendor.id} value={vendor.id}>
+                    {vendor.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                주소 유형
+              </label>
+              <select
+                value={selectedAddressType}
+                onChange={(e) => setSelectedAddressType(e.target.value as any)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">전체 유형</option>
+                <option value="발송지">발송지</option>
+                <option value="반송지">반송지</option>
+                <option value="교환지">교환지</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                검색
+              </label>
+              <input
+                type="text"
+                placeholder="이름, 주소, 판매처명으로 검색..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-500">
+                총 {filteredAddresses.length}개의 주소
+              </span>
+              <button
+                onClick={handleAddAddress}
+                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 flex items-center gap-2"
+              >
+                <span>+</span>
+                신규 주소 등록
+              </button>
+            </div>
           </div>
+        </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              주소 유형
-            </label>
-            <select
-              value={selectedAddressType}
-              onChange={(e) => setSelectedAddressType(e.target.value as any)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">전체 유형</option>
-              <option value="발송지">발송지</option>
-              <option value="반송지">반송지</option>
-              <option value="교환지">교환지</option>
-            </select>
-          </div>
+        {/* 주소 목록 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {filteredAddresses.map((address) => (
+            <div key={address.id} className="bg-white border rounded-lg p-6">
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex items-center space-x-2">
+                  <span
+                    className={`inline-flex px-2 py-1 text-xs rounded-full ${getAddressTypeColor(address.addressType)}`}
+                  >
+                    {address.addressType}
+                  </span>
+                  {address.isDefault && (
+                    <span className="inline-flex px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">
+                      기본 주소
+                    </span>
+                  )}
+                  {getStatusBadge(address.status)}
+                </div>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => handleEditAddress(address)}
+                    className="text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    수정
+                  </button>
+                  {!address.isDefault && (
+                    <button
+                      onClick={() => handleSetDefault(address.id)}
+                      className="text-green-600 hover:text-green-800 text-sm"
+                    >
+                      기본설정
+                    </button>
+                  )}
+                  <button className="text-red-600 hover:text-red-800 text-sm">
+                    삭제
+                  </button>
+                </div>
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              검색
-            </label>
-            <input
-              type="text"
-              placeholder="이름, 주소, 판매처명으로 검색..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+              {/* 판매처 정보 */}
+              <div className="mb-3 pb-3 border-b border-gray-100">
+                <div className="text-sm text-gray-500">판매처</div>
+                <div className="font-medium text-gray-900">
+                  {address.vendorName}
+                </div>
+              </div>
 
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-500">
-              총 {filteredAddresses.length}개의 주소
-            </span>
+              {/* 연락처 정보 */}
+              <div className="mb-3">
+                <div className="text-sm text-gray-500">담당자</div>
+                <div className="font-medium text-gray-900">{address.name}</div>
+                <div className="text-sm text-gray-600">{address.phone}</div>
+              </div>
+
+              {/* 주소 정보 */}
+              <div className="mb-3">
+                <div className="text-sm text-gray-500">주소</div>
+                <div className="text-sm text-gray-600">({address.zipcode})</div>
+                <div className="text-gray-900">{address.address}</div>
+                {address.addressDetail && (
+                  <div className="text-gray-600">{address.addressDetail}</div>
+                )}
+              </div>
+
+              {/* 등록일 */}
+              <div className="text-xs text-gray-500 mt-4 pt-3 border-t border-gray-100">
+                등록일: {address.registrationDate}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {filteredAddresses.length === 0 && (
+          <div className="bg-white border rounded-lg p-12 text-center">
+            <div className="text-gray-400 text-4xl mb-4">📍</div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              등록된 고정주소가 없습니다
+            </h3>
+            <p className="text-gray-600 mb-4">
+              판매처의 발송지, 반송지, 교환지 주소를 등록해주세요.
+            </p>
             <button
               onClick={handleAddAddress}
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 flex items-center gap-2"
+              className="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
             >
-              <span>+</span>
               신규 주소 등록
             </button>
           </div>
-        </div>
-      </div>
+        )}
 
-      {/* 주소 목록 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {filteredAddresses.map((address) => (
-          <div key={address.id} className="bg-white border rounded-lg p-6">
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex items-center space-x-2">
-                <span
-                  className={`inline-flex px-2 py-1 text-xs rounded-full ${getAddressTypeColor(address.addressType)}`}
-                >
-                  {address.addressType}
-                </span>
-                {address.isDefault && (
-                  <span className="inline-flex px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">
-                    기본 주소
-                  </span>
-                )}
-                {getStatusBadge(address.status)}
-              </div>
-              <div className="flex space-x-2">
+        {/* 모달 */}
+        {isModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold">
+                  {selectedAddress ? "고정주소 수정" : "신규 고정주소 등록"}
+                </h2>
                 <button
-                  onClick={() => handleEditAddress(address)}
-                  className="text-blue-600 hover:text-blue-800 text-sm"
+                  onClick={() => setIsModalOpen(false)}
+                  className="text-gray-400 hover:text-gray-600"
                 >
-                  수정
-                </button>
-                {!address.isDefault && (
-                  <button
-                    onClick={() => handleSetDefault(address.id)}
-                    className="text-green-600 hover:text-green-800 text-sm"
-                  >
-                    기본설정
-                  </button>
-                )}
-                <button className="text-red-600 hover:text-red-800 text-sm">
-                  삭제
+                  ✕
                 </button>
               </div>
-            </div>
 
-            {/* 판매처 정보 */}
-            <div className="mb-3 pb-3 border-b border-gray-100">
-              <div className="text-sm text-gray-500">판매처</div>
-              <div className="font-medium text-gray-900">
-                {address.vendorName}
-              </div>
-            </div>
-
-            {/* 연락처 정보 */}
-            <div className="mb-3">
-              <div className="text-sm text-gray-500">담당자</div>
-              <div className="font-medium text-gray-900">{address.name}</div>
-              <div className="text-sm text-gray-600">{address.phone}</div>
-            </div>
-
-            {/* 주소 정보 */}
-            <div className="mb-3">
-              <div className="text-sm text-gray-500">주소</div>
-              <div className="text-sm text-gray-600">({address.zipcode})</div>
-              <div className="text-gray-900">{address.address}</div>
-              {address.addressDetail && (
-                <div className="text-gray-600">{address.addressDetail}</div>
-              )}
-            </div>
-
-            {/* 등록일 */}
-            <div className="text-xs text-gray-500 mt-4 pt-3 border-t border-gray-100">
-              등록일: {address.registrationDate}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {filteredAddresses.length === 0 && (
-        <div className="bg-white border rounded-lg p-12 text-center">
-          <div className="text-gray-400 text-4xl mb-4">📍</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            등록된 고정주소가 없습니다
-          </h3>
-          <p className="text-gray-600 mb-4">
-            판매처의 발송지, 반송지, 교환지 주소를 등록해주세요.
-          </p>
-          <button
-            onClick={handleAddAddress}
-            className="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-          >
-            신규 주소 등록
-          </button>
-        </div>
-      )}
-
-      {/* 모달 */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold">
-                {selectedAddress ? "고정주소 수정" : "신규 고정주소 등록"}
-              </h2>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    판매처 선택 *
-                  </label>
-                  <select
-                    defaultValue={selectedAddress?.vendorId || ""}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">판매처를 선택하세요</option>
-                    {mockVendors.map((vendor) => (
-                      <option key={vendor.id} value={vendor.id}>
-                        {vendor.name}
-                      </option>
-                    ))}
-                  </select>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      판매처 선택 *
+                    </label>
+                    <select
+                      defaultValue={selectedAddress?.vendorId || ""}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">판매처를 선택하세요</option>
+                      {mockVendors.map((vendor) => (
+                        <option key={vendor.id} value={vendor.id}>
+                          {vendor.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      주소 유형 *
+                    </label>
+                    <select
+                      defaultValue={selectedAddress?.addressType || ""}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">유형을 선택하세요</option>
+                      <option value="발송지">발송지</option>
+                      <option value="반송지">반송지</option>
+                      <option value="교환지">교환지</option>
+                    </select>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    주소 유형 *
-                  </label>
-                  <select
-                    defaultValue={selectedAddress?.addressType || ""}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">유형을 선택하세요</option>
-                    <option value="발송지">발송지</option>
-                    <option value="반송지">반송지</option>
-                    <option value="교환지">교환지</option>
-                  </select>
-                </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    담당자명 *
-                  </label>
-                  <input
-                    type="text"
-                    defaultValue={selectedAddress?.name || ""}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="담당자명을 입력하세요"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    연락처 *
-                  </label>
-                  <input
-                    type="text"
-                    defaultValue={selectedAddress?.phone || ""}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="02-1234-5678"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  우편번호 *
-                </label>
-                <div className="flex space-x-2">
-                  <input
-                    type="text"
-                    defaultValue={selectedAddress?.zipcode || ""}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="우편번호"
-                  />
-                  <button className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">
-                    우편번호 검색
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  기본주소 *
-                </label>
-                <input
-                  type="text"
-                  defaultValue={selectedAddress?.address || ""}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="기본주소를 입력하세요"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  상세주소
-                </label>
-                <input
-                  type="text"
-                  defaultValue={selectedAddress?.addressDetail || ""}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="상세주소를 입력하세요"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="flex items-center">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      담당자명 *
+                    </label>
                     <input
-                      type="checkbox"
-                      defaultChecked={selectedAddress?.isDefault || false}
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      type="text"
+                      defaultValue={selectedAddress?.name || ""}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="담당자명을 입력하세요"
                     />
-                    <span className="ml-2 text-sm text-gray-700">
-                      기본 주소로 설정
-                    </span>
-                  </label>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      연락처 *
+                    </label>
+                    <input
+                      type="text"
+                      defaultValue={selectedAddress?.phone || ""}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="02-1234-5678"
+                    />
+                  </div>
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    상태
+                    우편번호 *
                   </label>
-                  <select
-                    defaultValue={selectedAddress?.status || "active"}
+                  <div className="flex space-x-2">
+                    <input
+                      type="text"
+                      defaultValue={selectedAddress?.zipcode || ""}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="우편번호"
+                    />
+                    <button className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">
+                      우편번호 검색
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    기본주소 *
+                  </label>
+                  <input
+                    type="text"
+                    defaultValue={selectedAddress?.address || ""}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="active">활성</option>
-                    <option value="inactive">비활성</option>
-                  </select>
+                    placeholder="기본주소를 입력하세요"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    상세주소
+                  </label>
+                  <input
+                    type="text"
+                    defaultValue={selectedAddress?.addressDetail || ""}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="상세주소를 입력하세요"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        defaultChecked={selectedAddress?.isDefault || false}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">
+                        기본 주소로 설정
+                      </span>
+                    </label>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      상태
+                    </label>
+                    <select
+                      defaultValue={selectedAddress?.status || "active"}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="active">활성</option>
+                      <option value="inactive">비활성</option>
+                    </select>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="flex justify-end space-x-2 mt-6">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
-              >
-                취소
-              </button>
-              <button
-                onClick={handleSaveAddress}
-                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-              >
-                저장
-              </button>
+              <div className="flex justify-end space-x-2 mt-6">
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleSaveAddress}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                >
+                  저장
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
     </Container>
   );
 };

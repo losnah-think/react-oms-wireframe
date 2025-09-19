@@ -35,8 +35,12 @@ const CategoryMappingPage: React.FC = () => {
   const [selectedMall, setSelectedMall] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLevel, setSelectedLevel] = useState("all");
-  const [selectedInternalId, setSelectedInternalId] = useState<number | null>(null);
-  const [selectedMallCategoryId, setSelectedMallCategoryId] = useState<string | null>(null);
+  const [selectedInternalId, setSelectedInternalId] = useState<number | null>(
+    null,
+  );
+  const [selectedMallCategoryId, setSelectedMallCategoryId] = useState<
+    string | null
+  >(null);
 
   const malls: Mall[] = [
     { id: "naver", name: "네이버 스마트스토어", status: "active" },
@@ -217,11 +221,15 @@ const CategoryMappingPage: React.FC = () => {
   ) => {
     // prevent duplicates for same mall/internal/mallCategory
     const exists = mappings.some(
-      (m) => m.mallId === selectedMall && m.internalCategoryId === internalCategoryId && m.mallCategoryId === mallCategoryId && m.isActive,
+      (m) =>
+        m.mallId === selectedMall &&
+        m.internalCategoryId === internalCategoryId &&
+        m.mallCategoryId === mallCategoryId &&
+        m.isActive,
     );
     if (exists) {
-      alert('이미 동일한 매핑이 존재합니다.')
-      return
+      alert("이미 동일한 매핑이 존재합니다.");
+      return;
     }
 
     const newMapping: CategoryMapping = {
@@ -234,10 +242,10 @@ const CategoryMappingPage: React.FC = () => {
     };
 
     setMappings([...mappings, newMapping]);
-    alert('카테고리 매핑이 생성되었습니다.');
+    alert("카테고리 매핑이 생성되었습니다.");
     // clear selections
-    setSelectedInternalId(null)
-    setSelectedMallCategoryId(null)
+    setSelectedInternalId(null);
+    setSelectedMallCategoryId(null);
   };
 
   const handleDeleteMapping = (mappingId: number) => {
@@ -274,7 +282,10 @@ const CategoryMappingPage: React.FC = () => {
     internalCategoryId: m.internalCategoryId,
     internalCategoryPath: getInternalCategoryPath(m.internalCategoryId),
     mallCategoryId: m.mallCategoryId,
-    mallCategoryPath: getMallCategoryPath(currentMallCategories, m.mallCategoryId),
+    mallCategoryPath: getMallCategoryPath(
+      currentMallCategories,
+      m.mallCategoryId,
+    ),
     status: m.isActive ? "활성" : "비활성",
     createdAt: new Date(m.createdAt).toLocaleString("ko-KR"),
   }));
@@ -338,9 +349,13 @@ const CategoryMappingPage: React.FC = () => {
                 </h3>
                 <div className="flex items-center gap-3">
                   <div className="text-sm text-gray-600">
-                    매핑된 카테고리: {currentMappings.filter((m) => m.isActive).length}개
+                    매핑된 카테고리:{" "}
+                    {currentMappings.filter((m) => m.isActive).length}개
                   </div>
-                  <TableExportButton data={exportData} fileName={`${selectedMall || 'mappings'}-mappings.xlsx`} />
+                  <TableExportButton
+                    data={exportData}
+                    fileName={`${selectedMall || "mappings"}-mappings.xlsx`}
+                  />
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-4">
@@ -482,17 +497,19 @@ const CategoryMappingPage: React.FC = () => {
                     const isAlreadyMapped = currentMappings.some(
                       (m) => m.internalCategoryId === category.id && m.isActive,
                     );
-                    const isSelected = selectedInternalId === category.id
+                    const isSelected = selectedInternalId === category.id;
 
                     return (
                       <div
                         key={category.id}
-                        onClick={() => !isAlreadyMapped && setSelectedInternalId(category.id)}
+                        onClick={() =>
+                          !isAlreadyMapped && setSelectedInternalId(category.id)
+                        }
                         className={`p-3 border rounded-lg ${
                           isAlreadyMapped
                             ? "bg-gray-50 border-gray-200"
                             : "hover:bg-blue-50 border-gray-200 hover:border-blue-300 cursor-pointer"
-                        } ${isSelected ? 'ring-2 ring-blue-200 bg-blue-50' : ''}`}
+                        } ${isSelected ? "ring-2 ring-blue-200 bg-blue-50" : ""}`}
                       >
                         <div className="flex items-center justify-between">
                           <div>
@@ -529,12 +546,12 @@ const CategoryMappingPage: React.FC = () => {
 
                 <div className="space-y-2 max-h-96 overflow-y-auto">
                   {currentMallCategories.map((category) => {
-                    const isSel = selectedMallCategoryId === category.id
+                    const isSel = selectedMallCategoryId === category.id;
                     return (
                       <div
                         key={category.id}
                         onClick={() => setSelectedMallCategoryId(category.id)}
-                        className={`p-3 border rounded-lg ${isSel ? 'ring-2 ring-green-200 bg-green-50' : 'hover:bg-green-50 border-gray-200 hover:border-green-300 cursor-pointer'}`}
+                        className={`p-3 border rounded-lg ${isSel ? "ring-2 ring-green-200 bg-green-50" : "hover:bg-green-50 border-gray-200 hover:border-green-300 cursor-pointer"}`}
                       >
                         <div className="text-sm font-medium text-gray-900">
                           {getMallCategoryPath(
@@ -546,7 +563,7 @@ const CategoryMappingPage: React.FC = () => {
                           ID: {category.id} | 레벨: {category.level}
                         </div>
                       </div>
-                    )
+                    );
                   })}
                 </div>
 
@@ -579,12 +596,26 @@ const CategoryMappingPage: React.FC = () => {
             <div className="mt-4 flex items-center gap-4">
               <button
                 disabled={!selectedInternalId || !selectedMallCategoryId}
-                onClick={() => selectedInternalId && selectedMallCategoryId && handleCreateMapping(selectedInternalId, selectedMallCategoryId)}
-                className={`px-4 py-2 rounded ${selectedInternalId && selectedMallCategoryId ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-500 cursor-not-allowed'}`}
+                onClick={() =>
+                  selectedInternalId &&
+                  selectedMallCategoryId &&
+                  handleCreateMapping(
+                    selectedInternalId,
+                    selectedMallCategoryId,
+                  )
+                }
+                className={`px-4 py-2 rounded ${selectedInternalId && selectedMallCategoryId ? "bg-primary-600 text-white" : "bg-gray-200 text-gray-500 cursor-not-allowed"}`}
               >
                 매핑 생성
               </button>
-              <div className="text-sm text-gray-600">선택 내부: <span className="font-medium">{selectedInternalId ?? '-'}</span> / 선택 쇼핑몰: <span className="font-medium">{selectedMallCategoryId ?? '-'}</span></div>
+              <div className="text-sm text-gray-600">
+                선택 내부:{" "}
+                <span className="font-medium">{selectedInternalId ?? "-"}</span>{" "}
+                / 선택 쇼핑몰:{" "}
+                <span className="font-medium">
+                  {selectedMallCategoryId ?? "-"}
+                </span>
+              </div>
             </div>
 
             {/* 통계 */}

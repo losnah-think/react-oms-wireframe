@@ -1,2 +1,2 @@
-import ProductsListPage from '../../src/pages/products/ProductsListPage'
-export default ProductsListPage
+import ProductsListPage from "../../src/pages/products/ProductsListPage";
+export default ProductsListPage;

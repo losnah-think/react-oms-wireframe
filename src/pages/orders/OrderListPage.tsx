@@ -36,24 +36,27 @@ const OrderListPage: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   useEffect(() => {
     let mounted = true;
-    fetch('/api/orders?limit=1000')
-      .then(r => r.json())
-      .then(data => {
-        if (!mounted) return
+    fetch("/api/orders?limit=1000")
+      .then((r) => r.json())
+      .then((data) => {
+        if (!mounted) return;
         const mapped: Order[] = (data.orders || []).map((order: any) => ({
-          orderNumber: order.order_no || '',
-          customerName: order.customer_name || '',
+          orderNumber: order.order_no || "",
+          customerName: order.customer_name || "",
           items: order.items || [],
           totalAmount: order.total_amount || 0,
           status: (order.status as OrderStatus) || OrderStatus.PENDING,
           createdAt: order.created_at || new Date().toISOString(),
-          paymentMethod: order.payment_method || '',
-          paymentStatus: order.payment_status || '',
+          paymentMethod: order.payment_method || "",
+          paymentStatus: order.payment_status || "",
         }));
-        setOrders(mapped)
-      }).catch(e => console.error(e))
-    return () => { mounted = false }
-  }, [])
+        setOrders(mapped);
+      })
+      .catch((e) => console.error(e));
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // 필터링 및 정렬된 주문 목록
   const filteredAndSortedOrders = useMemo(() => {
@@ -93,7 +96,7 @@ const OrderListPage: React.FC = () => {
 
   // 통계 정보
   const stats = useMemo(
-    () => getOrderStats(filteredAndSortedOrders as any || []),
+    () => getOrderStats((filteredAndSortedOrders as any) || []),
     [filteredAndSortedOrders],
   );
 

@@ -1,5 +1,5 @@
-import React from 'react'
-import { Container } from '../../design-system'
+import React from "react";
+import { Container } from "../../design-system";
 
 export default function VendorsIndex() {
   return (
@@ -9,5 +9,5 @@ export default function VendorsIndex() {
         <p className="text-gray-600">하위 메뉴에서 항목을 선택하세요.</p>
       </div>
     </Container>
-  )
+  );
 }
