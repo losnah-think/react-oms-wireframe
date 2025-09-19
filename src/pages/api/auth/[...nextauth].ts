@@ -155,7 +155,7 @@ export const authOptions = {
       }
     }
   },
-  pages: { signIn: '/settings/integration-admin/login' }
+  pages: { signIn: '/login' }
 }
 
 export default NextAuth(authOptions as any)

@@ -53,6 +53,6 @@ export default function AddShopPage() {
 
 export async function getServerSideProps(ctx: any) {
   const session = await getServerSession(ctx.req, ctx.res, authOptions as any)
-  if (!session || (session as any).user?.role !== 'admin') return { redirect: { destination: '/settings/integration-admin/login', permanent: false } }
+  if (!session || (session as any).user?.role !== 'admin') return { redirect: { destination: '/login', permanent: false } }
   return { props: {} }
 }

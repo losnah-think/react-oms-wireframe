@@ -1,5 +1,22 @@
 import '@testing-library/jest-dom';
 
+// Provide a global fetch for tests (some components call fetch during render)
+try {
+	// node-fetch v3 is ESM; use dynamic import so it works with CommonJS test runner
+	(async () => {
+		try {
+			const nf = await import('node-fetch');
+			if (typeof (globalThis as any).fetch === 'undefined') {
+				(globalThis as any).fetch = nf.default || nf;
+			}
+		} catch (e) {
+			// if import fails, ignore and let tests run (some CI environments provide fetch)
+		}
+	})();
+} catch (e) {
+	// ignore if node-fetch isn't available in the test environment
+}
+
 // Mock next/image to a simple img component for tests
 jest.mock('next/image', () => ({
 	__esModule: true,

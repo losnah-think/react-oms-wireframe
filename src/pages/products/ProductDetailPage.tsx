@@ -231,7 +231,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
       {/* 상품 이미지 및 기본 정보 — TABLE VIEW */}
       <Card padding="lg" className="mb-6 shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full table-fixed border-collapse">
+          <table className="w-full table-fixed border-collapse min-w-0">
             <colgroup>
               <col className="w-48" />
               <col />
@@ -317,7 +317,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
       {/* 옵션 및 상세 정보 */}
       <Card padding="lg" className="mb-6">
         <h2 className="text-xl font-bold text-gray-900 mb-4">상품 옵션</h2>
-        <table className="min-w-full border border-gray-200 rounded-lg overflow-hidden">
+  <table className="min-w-full border border-gray-200 rounded-lg overflow-hidden min-w-0">
           <thead className="bg-gray-50">
             <tr>
               <th className="px-4 py-2 text-left text-xs font-bold text-gray-700">

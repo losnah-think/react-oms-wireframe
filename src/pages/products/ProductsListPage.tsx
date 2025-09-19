@@ -591,8 +591,8 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
     }
   }
 
-  const openBatchEdit = () => { setIsBatchModalOpen(true) }
-  const openOptionBatchEdit = () => { setIsOptionBatchModalOpen(true) }
+  const openBatchEdit = () => { if (onNavigate) onNavigate('products-bulk-edit'); else window.location.href = '/products/bulk-edit?tab=product' }
+  const openOptionBatchEdit = () => { if (onNavigate) onNavigate('products-bulk-edit'); else window.location.href = '/products/bulk-edit?tab=option' }
 
   // Batch edit form state
   const [batchForm, setBatchForm] = useState<{
@@ -964,7 +964,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
               </div>
             </div>
           )}
-          <table className="min-w-full">
+          <table className="min-w-full min-w-0">
             <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
               <tr>
                 <th className="px-6 py-4"><input type="checkbox" checked={selectAll} onChange={toggleSelectAll} /></th>
@@ -1237,7 +1237,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
             </div>
 
             <div className="overflow-auto max-h-64 border rounded">
-              <table className="w-full">
+              <table className="w-full min-w-0">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-4 py-2 text-left">#</th>
@@ -1317,7 +1317,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
             </div>
 
             <div className="overflow-auto max-h-64 border rounded">
-              <table className="w-full">
+              <table className="w-full min-w-0">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-4 py-2 text-left">#</th>

@@ -198,7 +198,7 @@ const ExternalProductImportPage: React.FC = () => {
         el?.focus();
       }
       if (key === 'productName') {
-        const el = document.querySelector('input[placeholder="상품명으로 검색"]') as HTMLInputElement | null;
+        const el = document.querySelector('input[placeholder^="상품명"]') as HTMLInputElement | null;
         el?.focus();
       }
       if (key === 'period') {
@@ -511,10 +511,10 @@ const ExternalProductImportPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div>
             <label className="text-sm text-gray-700">상품명</label>
-            <input value={filters.productName} onChange={(e) => setFilters((f) => ({ ...f, productName: e.target.value }))} className="w-full border rounded px-3 py-2" placeholder="상품명으로 검색" />
+            <input value={filters.productName} onChange={(e) => setFilters((f) => ({ ...f, productName: e.target.value }))} className="w-full border rounded px-3 py-2" placeholder="상품명" />
           </div>
 
           <div className="flex items-center gap-2">

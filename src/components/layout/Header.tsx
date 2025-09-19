@@ -74,7 +74,7 @@ const Header: React.FC = () => {
               ) : (
                 <div className="flex items-center space-x-3">
                   {/* Normal Sign in control (visible unless hidden) */}
-                  <button onClick={() => signIn(undefined, { callbackUrl: '/' })} className="text-sm text-primary-600 hover:underline">Sign in</button>
+                  <button onClick={() => { router.push('/login') }} className="text-sm text-primary-600 hover:underline">Sign in</button>
                   {/* Dev-only quick login button: enabled when in dev or when NEXT_PUBLIC_ENABLE_DEV_LOGIN=1 */}
                   {((process.env.NEXT_PUBLIC_ENABLE_DEV_LOGIN === '1') || process.env.NODE_ENV !== 'production') && (
                     <button
@@ -124,7 +124,7 @@ const Header: React.FC = () => {
                   <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
                     <div className="py-1" role="none">
                       <a href="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">My Page</a>
-                      <button onClick={() => signOut({ callbackUrl: '/settings/integration-admin/login' })} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Sign out</button>
+                      <button onClick={() => signOut({ callbackUrl: '/login' })} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Sign out</button>
                     </div>
                   </div>
                 )}

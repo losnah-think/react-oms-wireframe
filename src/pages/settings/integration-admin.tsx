@@ -30,6 +30,6 @@ export default function IntegrationAdminPage({}) {
 
 export async function getServerSideProps(ctx: any) {
   const session = await getServerSession(ctx.req, ctx.res, authOptions as any)
-  if (!session) return { redirect: { destination: '/settings/integration-admin/login', permanent: false } }
+  if (!session) return { redirect: { destination: '/login', permanent: false } }
   return { props: {} }
 }

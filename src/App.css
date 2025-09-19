@@ -86,6 +86,27 @@ main,
   transition: width 200ms ease, min-width 200ms ease;
   will-change: width;
 }
+
+/* Prevent undesirable automatic word breaks across the app
+   - keep text readable horizontally; allow horizontal scrolling when needed
+   - do not force nowrap on interactive controls or preformatted blocks
+*/
+html, body, .page-content, main {
+  word-break: keep-all;
+  overflow-wrap: normal;
+  hyphens: none;
+}
+
+/* NOTE: removed global `th, td { white-space: nowrap }` —
+  table cell wrapping should be controlled per-component to avoid
+  layout overlap on custom tables (see design-system Table component).
+*/
+
+/* Allow specific elements to wrap if they need to (exceptions) */
+pre, code, .allow-wrap {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
 .sidebar.collapsed {
   width: 4rem;
   min-width: 4rem;

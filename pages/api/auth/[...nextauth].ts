@@ -197,7 +197,7 @@ export const authOptions = {
       }
     }
   },
-  pages: { signIn: '/settings/integration-admin/login' }
+  pages: { signIn: '/login' }
 }
 
 // When developing locally we may want to skip NextAuth entirely and return a mock

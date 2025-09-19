@@ -61,12 +61,30 @@ export async function updateSupplier(id: string, payload: any) {
 }
 
 export async function softDeleteSupplier(id: string) {
-  // move to trashed_suppliers_v1 (simple implementation: remove from list)
-  const all = readAll()
-  const remaining = all.filter((s: any) => String(s.id) !== String(id))
-  writeAll(remaining)
-  try { window.dispatchEvent(new CustomEvent('supplier:deleted')) } catch (e) {}
-  return true
+  // move to trashed_suppliers_v1 and remove from main list
+  try {
+    const all = readAll()
+    const idx = all.findIndex((s: any) => String(s.id) === String(id))
+    if (idx === -1) return false
+    const [removed] = all.splice(idx, 1)
+    writeAll(all)
+
+    // append to trashed list
+    try {
+      const raw = localStorage.getItem('trashed_suppliers_v1')
+      const arr = raw ? JSON.parse(raw) : []
+      arr.unshift({ ...removed, deleted_at: new Date().toISOString() })
+      localStorage.setItem('trashed_suppliers_v1', JSON.stringify(arr))
+    } catch (e) {
+      // ignore localStorage write errors
+    }
+
+    try { window.dispatchEvent(new CustomEvent('supplier:deleted')) } catch (e) {}
+    try { window.dispatchEvent(new CustomEvent('trashed:updated')) } catch (e) {}
+    return true
+  } catch (e) {
+    return false
+  }
 }
 
 export default { listSuppliers, getSupplier, createSupplier, updateSupplier, softDeleteSupplier }

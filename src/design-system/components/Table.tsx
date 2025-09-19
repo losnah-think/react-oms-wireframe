@@ -147,7 +147,7 @@ const Table = <T extends Record<string, any>>({
   return (
     <div className={`bg-white rounded-lg ${bordered ? 'border border-gray-200' : ''} overflow-hidden ${className}`}>
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full min-w-max">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
               {expandable && (
@@ -168,7 +168,7 @@ const Table = <T extends Record<string, any>>({
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className={`${paddingClasses[size]} font-medium text-gray-900 ${
+                  className={`${paddingClasses[size]} font-medium text-gray-900 whitespace-nowrap ${
                     column.align === 'center' ? 'text-center' :
                     column.align === 'right' ? 'text-right' : 'text-left'
                   } ${column.sorter ? 'cursor-pointer hover:bg-gray-100' : ''}`}
@@ -176,7 +176,9 @@ const Table = <T extends Record<string, any>>({
                   onClick={() => column.sorter && handleSort(column.key)}
                 >
                   <div className="flex items-center gap-2">
-                    <span>{column.title}</span>
+                    <div className="min-w-0">
+                      <span className="whitespace-nowrap block truncate">{column.title}</span>
+                    </div>
                     {column.sorter && (
                       <div className="flex flex-col">
                         <svg
@@ -256,15 +258,17 @@ const Table = <T extends Record<string, any>>({
                     {columns.map((column) => (
                       <td
                         key={column.key}
-                        className={`${paddingClasses[size]} text-gray-900 ${
-                          column.align === 'center' ? 'text-center' :
-                          column.align === 'right' ? 'text-right' : 'text-left'
-                        }`}
+                          className={`${paddingClasses[size]} text-gray-900 ${
+                            column.align === 'center' ? 'text-center' :
+                            column.align === 'right' ? 'text-right' : 'text-left'
+                          }`}
                       >
-                        {column.render 
-                          ? column.render(record[column.key], record, index)
-                          : record[column.key]
-                        }
+                          <div className="min-w-0">
+                            {column.render 
+                              ? <div className="min-w-0">{column.render(record[column.key], record, index)}</div>
+                              : <div className="truncate">{String(record[column.key] ?? '')}</div>
+                            }
+                          </div>
                       </td>
                     ))}
                   </tr>

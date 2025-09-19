@@ -1,6 +1,7 @@
 "use client"
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Container, Card, Input, Button } from '../../design-system'
+import { fetchMockClassifications, Classification } from '../../data/product-classifications-mock'
 
 export default function IndividualRegistrationPage(){
   const [title, setTitle] = useState('')
@@ -8,6 +9,8 @@ export default function IndividualRegistrationPage(){
   const [price, setPrice] = useState<number | ''>('')
   const [stock, setStock] = useState<number | ''>('')
   const [images, setImages] = useState<File[]>([])
+  const [classifications, setClassifications] = useState<Classification[]>([])
+  const [groupId, setGroupId] = useState<string | ''>('')
 
   const onFile = (f?: File | null) => {
     if (!f) return
@@ -15,8 +18,17 @@ export default function IndividualRegistrationPage(){
   }
 
   const handleSave = () => {
-    alert('개별 상품 등록 (모의): ' + title)
+    alert('개별 상품 등록 (모의): ' + title + '\n그룹(소속): ' + (groupId || '미지정'))
   }
+
+  useEffect(() => {
+    let mounted = true
+    fetchMockClassifications().then(data => {
+      if (!mounted) return
+      setClassifications(data)
+    })
+    return () => { mounted = false }
+  }, [])
 
   return (
     <Container maxWidth="full" centered={false} padding="md">
@@ -30,6 +42,23 @@ export default function IndividualRegistrationPage(){
 
             <label className="block text-sm font-medium mt-4 mb-1">상품 코드 (SKU)</label>
             <Input value={sku} onChange={(e:any)=>setSku(e.target.value)} placeholder="SKU" />
+
+            <div className="mt-4">
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-medium mb-1">그룹(소속)</label>
+                <a className="text-sm text-blue-600 hover:underline" href="/settings/product-classifications">상품 분류 관리 열기</a>
+              </div>
+              <select
+                className="w-full rounded border p-2"
+                value={groupId}
+                onChange={(e) => setGroupId(e.target.value)}
+              >
+                <option value="">선택 안함</option>
+                {classifications.map(c => (
+                  <option key={c.id} value={c.id}>{c.parentId ? '— ' + c.name : c.name}</option>
+                ))}
+              </select>
+            </div>
 
             <div className="flex gap-4 mt-4">
               <div className="w-1/2">

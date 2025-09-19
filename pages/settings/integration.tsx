@@ -1,5 +1,2 @@
-import React from 'react';
-const IntegrationsPage = require('../../src/pages/settings/IntegrationsPage').default;
-export default function IntegrationPageWrapper() {
-  return <IntegrationsPage />;
-}
+const Integration = require('../../src/pages/settings/integration').default;
+export default Integration;
