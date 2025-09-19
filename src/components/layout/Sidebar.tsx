@@ -30,7 +30,8 @@ const menuItems: MenuItem[] = [
       { id: 'products-list', label: '상품 목록', icon: 'list' },
       { id: 'products-csv', label: 'CSV 상품 등록', icon: 'upload' },
       { id: 'products-import', label: '외부 쇼핑몰 상품 가져오기', icon: 'external-link' },
-      { id: 'products-registration-history', label: '차수별 상품등록내역', icon: 'clock' }, 
+  { id: 'products-registration-history', label: '차수별 상품등록내역', icon: 'clock' }, 
+  { id: 'products-individual-registration', label: '개별 상품 등록', icon: 'plus' },
       { id: 'products-bulk-edit', label: '상품/옵션 일괄 수정', icon: 'file' },
       { id: 'products-trash', label: '휴지통', icon: 'trash' },
     ]
@@ -199,6 +200,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   'products-import': '/products/import',
   'products-bulk-edit': '/products/bulk-edit',
   'products-registration-history': '/products/registration-history',
+  'products-individual-registration': '/products/individual-registration',
     'orders-list': '/orders',
     'orders-settings': '/orders/settings',
     'malls': '/malls',

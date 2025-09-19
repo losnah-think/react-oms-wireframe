@@ -54,7 +54,7 @@ export default function RegistrationHistoryPage(){
   const pageRows = filtered.slice((page-1)*perPage, page*perPage)
 
   return (
-    <Container>
+    <Container maxWidth="full" centered={false} padding="md">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">차수별 상품등록 내역</h1>
         <div className="flex gap-2 items-center">
@@ -90,13 +90,18 @@ export default function RegistrationHistoryPage(){
                   <td className="px-3 py-2 align-top">{r.source}</td>
                   <td className="px-3 py-2 align-top">
                     <div className="text-sm font-medium mb-1">총 {r.total}건</div>
-                    <div className="h-2 bg-gray-100 rounded overflow-hidden w-48">
-                      <div className="h-2 bg-blue-500" style={{ width: `${r.total? Math.round((r.success/r.total)*100):0}%` }} />
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 bg-gray-100 rounded overflow-hidden w-64">
+                        <div className="h-2 bg-blue-500" style={{ width: `${r.total? Math.round((r.success/r.total)*100):0}%` }} />
+                      </div>
+                      {r.failed > 0 && (
+                        <div className="text-xs text-white bg-red-500 rounded px-2 py-0.5">{r.failed}</div>
+                      )}
                     </div>
                     <div className="text-xs text-gray-600 mt-1">성공 {r.success} / 실패 {r.failed}</div>
                   </td>
                   <td className="px-3 py-2 align-top">
-                    <Button variant="secondary">리스트보기</Button>
+                    <Button variant="secondary" className="px-3 py-1 text-sm">리스트보기</Button>
                   </td>
                 </tr>
               ))}
