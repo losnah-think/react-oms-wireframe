@@ -12,9 +12,11 @@ import Layout from '../src/components/layout/Layout'
 export default function App({ Component, pageProps }: AppProps) {
   // Keep pageProps intact so pages can read `pageProps.session` if they rely
   // on server-calculated session flags (some pages use `props.session`).
-  // HOTFIX: force layout rendering so Header and LNB are visible in production deployments.
-  // If a page explicitly requires no layout, that can be re-enabled after root cause is found.
-  const disableLayout = false
+  // Compute whether the page opts out of the global layout.
+  const pageRequestedNoLayout = !!((Component as any).disableLayout || (pageProps as any).disableLayout)
+  // In production, require pages to explicitly opt-in to disabling the layout for safety.
+  const disableLayoutAllowed = process.env.NODE_ENV !== 'production' || !!(Component as any).disableLayoutAllowed
+  const disableLayout = pageRequestedNoLayout && disableLayoutAllowed
 
   return (
     <SessionProvider session={(pageProps as any).session}>
