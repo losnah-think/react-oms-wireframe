@@ -27,9 +27,10 @@ const menuItems: MenuItem[] = [
     label: '상품 관리',
     icon: 'box',
     children: [
-      { id: 'products-list', label: '상품 목록', icon: 'list' },
-      { id: 'products-csv', label: 'CSV 상품 등록', icon: 'upload' },
-      { id: 'products-import', label: '외부 쇼핑몰 상품 가져오기', icon: 'external-link' },
+  { id: 'products-list', label: '상품 목록', icon: 'list' },
+  { id: 'products-add', label: '상품 등록', icon: 'plus' },
+  { id: 'products-csv', label: 'CSV 상품 등록', icon: 'upload' },
+  { id: 'products-import', label: '외부 쇼핑몰 상품 가져오기', icon: 'external-link' },
   { id: 'products-registration-history', label: '차수별 상품등록내역', icon: 'clock' }, 
   { id: 'products-individual-registration', label: '개별 상품 등록', icon: 'plus' },
       { id: 'products-bulk-edit', label: '상품/옵션 일괄 수정', icon: 'file' },
@@ -194,6 +195,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   // Map internal menu ids to canonical URL paths
   const idToPath: Record<string, string> = {
   'products-list': '/products',
+  'products-add': '/products/add',
   'products-trash': '/products/trash',
     'trash': '/trash',
     'products-csv': '/products/csv',
