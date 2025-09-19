@@ -85,7 +85,40 @@ export const mockProducts = Array.from({length: 100}, (_, i) => {
     season: i % 4 === 0 ? 'SS' : i % 4 === 1 ? 'FW' : 'ALL',
     supplier_id: i % 20 + 1, // bigint
     category_id: mockCategories[i % mockCategories.length].id, // bigint
-    description: `상품${i+1} 설명입니다.`, // text
+    // Provide an HTML description so the detail page can render rich content
+    description: `
+      <h3>상품 ${i+1} 소개</h3>
+      <p>이 상품은 데모용 목업 데이터입니다. 주요 특징:</p>
+      <ul>
+        <li>브랜드: ${mockBrands[i % mockBrands.length].name}</li>
+        <li>카테고리: ${["의류", "전자제품", "잡화", "뷰티", "식품"][i % 5]}</li>
+      </ul>
+      <p><strong>상세 설명:</strong> 고급 소재 사용, 편안한 착용감.</p>
+      <h4>제품 사양</h4>
+      <table style="width:100%; border-collapse:collapse;">
+        <tr><th style="text-align:left; padding:6px; border:1px solid #e5e7eb">가로(cm)</th><td style="padding:6px; border:1px solid #e5e7eb">${30 + (i % 10)}</td></tr>
+        <tr><th style="text-align:left; padding:6px; border:1px solid #e5e7eb">세로(cm)</th><td style="padding:6px; border:1px solid #e5e7eb">${40 + (i % 8)}</td></tr>
+        <tr><th style="text-align:left; padding:6px; border:1px solid #e5e7eb">높이(cm)</th><td style="padding:6px; border:1px solid #e5e7eb">${5 + (i % 4)}</td></tr>
+        <tr><th style="text-align:left; padding:6px; border:1px solid #e5e7eb">무게(g)</th><td style="padding:6px; border:1px solid #e5e7eb">${800 + (i % 500)}</td></tr>
+      </table>
+      <h4>상품 이미지</h4>
+      <div>
+        <img src="https://picsum.photos/seed/${productId}/400/300" style="max-width:240px; margin-right:8px; border-radius:4px;" />
+        <img src="https://picsum.photos/seed/${productId}-1/400/300" style="max-width:240px; border-radius:4px;" />
+      </div>
+      <p style="margin-top:8px; font-size:0.95rem; color:#374151">외부 SKU: EXT-${productId} | 외부몰: ${i % 3 === 0 ? 'Café24' : i % 3 === 1 ? 'Shopify' : 'Naver Smart Store'}</p>
+    `, // html/text
+    // Product-level physical attributes (fallbacks; variants also have per-variant dimensions)
+    width_cm: 30 + (i % 10),
+    height_cm: 40 + (i % 8),
+    depth_cm: 5 + (i % 4),
+    weight_g: 800 + (i % 500),
+    volume_cc: (30 + (i % 10)) * (40 + (i % 8)) * (5 + (i % 4)),
+    externalMall: {
+      platform: i % 3 === 0 ? 'Café24' : i % 3 === 1 ? 'Shopify' : 'Naver Smart Store',
+      platformName: i % 3 === 0 ? 'cafe24_store' : i % 3 === 1 ? 'shopify_store' : 'naver_shop',
+      external_sku: `EXT-${productId}`
+    },
     is_dutyfree: i % 10 === 0, // tinyint(1)
     created_at: generateDate(i), // datetime
     updated_at: generateDate(i), // datetime

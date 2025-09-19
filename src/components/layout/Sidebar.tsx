@@ -60,8 +60,7 @@ const menuItems: MenuItem[] = [
     label: '기초 관리',
     icon: 'settings',
     children: [
-      { id: 'settings-integrations', label: '외부 연동', icon: 'external-link' },
-      { id: 'settings-barcodes', label: '바코드', icon: 'barcode' },
+  { id: 'settings-integrations', label: '외부 연동', icon: 'external-link' },
       { id: 'settings-product-groups', label: '상품 분류', icon: 'copy' },
       { id: 'settings-product-classifications', label: '상품 카테고리', icon: 'copy' },
       { id: 'settings-basic-metadata', label: '브랜드·연도·시즌', icon: 'layers' },
@@ -206,8 +205,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     'malls-products': '/malls/products',
     'malls-info': '/malls/info',
     'category-mapping': '/categories/mapping',
-    'settings-integrations': '/settings/integrations',
-    'settings-barcodes': '/settings/barcodes',
+  'settings-integrations': '/settings/integrations',
     'settings-product-classifications': '/settings/product-classifications',
     'settings-product-groups': '/settings/product-groups',
     'settings-basic-metadata': '/settings/basic-metadata',
@@ -387,7 +385,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   // No direct URL mapping — navigation is handled via SPA state (onPageChange)
 
   return (
-    <aside aria-label="Main sidebar" className={`${isCollapsed ? 'w-16 p-2' : 'w-64 p-4'} bg-white border-r border-gray-200 h-screen overflow-y-auto transition-all duration-300 ease-in-out flex flex-col sidebar ${isCollapsed ? 'collapsed' : ''}`}>
+    <aside aria-label="Main sidebar" className={`${isCollapsed ? 'w-16 p-2' : 'w-60 p-4'} bg-white border-r border-gray-200 h-screen overflow-y-auto transition-all duration-300 ease-in-out flex flex-col sidebar ${isCollapsed ? 'collapsed' : ''}`}>
       {/* 접기/펼치기 버튼 */}
       {onToggleCollapse && (
         <div className="p-2 border-b border-gray-200">

@@ -42,8 +42,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
   const productId = propProductId || fromRouter || fromSearch || fromPath || "1"
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [showDescriptionModal, setShowDescriptionModal] = useState(false);
-  const [editingDescription, setEditingDescription] = useState("");
+  const [settingsForm, setSettingsForm] = useState<any>(null)
   // editing: true = form editable, false = read-only
   const [editing, setEditing] = useState<boolean>(true);
   const [toast, setToast] = useState<string | null>(null)
@@ -146,7 +145,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
   if (loading) {
     return (
-      <Container maxWidth="full" padding="lg">
+      <Container maxWidth="6xl" padding="lg">
         <div className="text-center py-12">로딩 중...</div>
       </Container>
     )
@@ -154,7 +153,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
   if (!product) {
     return (
-      <Container maxWidth="full" padding="lg">
+      <Container maxWidth="6xl" padding="lg">
         <div className="text-center py-12">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
             상품을 찾을 수 없습니다
@@ -177,29 +176,44 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
   return (
     <>
-    <Container maxWidth="full" padding="lg" className="bg-gray-50 min-h-screen">
+    <Container maxWidth="6xl" padding="lg" className="bg-gray-50 min-h-screen">
       {/* 상단 액션 바 */}
       <div className="flex justify-between items-center mb-6">
         <Button variant="ghost" onClick={handleBack} className="text-blue-600">
           ← 목록으로
         </Button>
-  <Stack direction="row" gap={2}>
+          <Stack direction="row" gap={2}>
+          <Button
+            variant={editing ? 'outline' : 'primary'}
+            aria-pressed={!editing}
+            onClick={() => setEditing((s) => !s)}
+            className="font-medium"
+            title={editing ? '편집 잠금' : '편집 가능'}
+          >
+            {editing ? '잠금' : '수정'}
+          </Button>
           <Button
             variant="outline"
             className="border-blue-500 text-blue-600"
-            onClick={() => setShowSettingsModal(true)}
+            onClick={() => {
+              // prepare settings form from current product
+              setSettingsForm({
+                is_selling: !!product.is_selling,
+                is_soldout: !!product.is_soldout,
+                is_dutyfree: !!product.is_dutyfree,
+                origin_country: product.origin_country || '',
+                purchase_name: product.purchase_name || '',
+                shipping_policy: product.shipping_policy || '',
+                hs_code: product.hs_code || '',
+                box_qty: product.box_qty || '',
+                is_stock_linked: !!(product.variants && product.variants[0] && product.variants[0].is_stock_linked),
+                classification_id: product.classification_id || '',
+              })
+              setShowSettingsModal(true)
+            }}
           >
             상품 설정
           </Button>
-          <Button
-            variant="outline"
-            className="border-gray-500 text-gray-600"
-            onClick={() => setShowDescriptionModal(true)}
-          >
-            상품 설명 수정
-          </Button>
-          <Button variant="primary" onClick={() => onNavigate?.('products-edit', product.id)}>수정</Button>
-          <Button variant="primary" onClick={() => setEditing((s) => !s)}>{editing ? '잠금' : '수정'}</Button>
           <Button variant="danger" onClick={() => {
             if (!confirm('정말 이 상품을 휴지통으로 이동하시겠습니까?')) return
             try {
@@ -297,13 +311,13 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 <td className="px-4 py-3 text-sm text-gray-600">추가 속성</td>
                 <td className="px-4 py-3 text-gray-700 grid grid-cols-2 gap-2 text-sm">
                   <div>공급처: <strong>{product?.supplier_name || '자사'}</strong></div>
-                  <div>원산지: {product?.origin_country || '미지정'}</div>
-                  <div>사입상품명: {product?.purchase_name || '미입력'}</div>
-                  <div>배송비정책: {product?.shipping_policy || '미지정'}</div>
-                  <div>HS Code: {product.hs_code || '-'}</div>
-                  <div>박스당수량: {product.box_qty || '-'}</div>
-                  <div>재고연동: {product.variants && product.variants[0] && product.variants[0].is_stock_linked ? '연동' : '미연동'}</div>
-                  <div>분류: {classificationNames[product.classification_id] || product.classification || '미지정'}</div>
+                  <div>원산지: {editing ? (<input className="px-2 py-1 border rounded" value={product.origin_country || ''} onChange={(e)=> setProduct((p:any)=>({ ...(p||{}), origin_country: e.target.value }))} />) : (product?.origin_country || '미지정')}</div>
+                  <div>사입상품명: {editing ? (<input className="px-2 py-1 border rounded" value={product.purchase_name || ''} onChange={(e)=> setProduct((p:any)=>({ ...(p||{}), purchase_name: e.target.value }))} />) : (product?.purchase_name || '미입력')}</div>
+                  <div>배송비정책: {editing ? (<input className="px-2 py-1 border rounded" value={product.shipping_policy || ''} onChange={(e)=> setProduct((p:any)=>({ ...(p||{}), shipping_policy: e.target.value }))} />) : (product?.shipping_policy || '미지정')}</div>
+                  <div>HS Code: {editing ? (<input className="px-2 py-1 border rounded" value={product.hs_code || ''} onChange={(e)=> setProduct((p:any)=>({ ...(p||{}), hs_code: e.target.value }))} />) : (product.hs_code || '-')}</div>
+                  <div>박스당수량: {editing ? (<input className="px-2 py-1 border rounded w-24" value={product.box_qty || ''} onChange={(e)=> setProduct((p:any)=>({ ...(p||{}), box_qty: e.target.value }))} />) : (product.box_qty || '-')}</div>
+                  <div>재고연동: {editing ? (<select value={(product.variants && product.variants[0] && product.variants[0].is_stock_linked) ? '1' : '0'} onChange={(e)=> setProduct((p:any)=>({ ...(p||{}), variants: p?.variants ? p.variants.map((v:any,i:number)=> i===0?({...v, is_stock_linked: e.target.value==='1'}):v) : p?.variants }))} className="px-2 py-1 border rounded"><option value="1">연동</option><option value="0">미연동</option></select>) : (product.variants && product.variants[0] && product.variants[0].is_stock_linked ? '연동' : '미연동')}</div>
+                  <div>분류: {editing ? (<input className="px-2 py-1 border rounded" value={classificationNames[product.classification_id] || product.classification || ''} onChange={(e)=> setProduct((p:any)=>({ ...(p||{}), classification: e.target.value }))} />) : (classificationNames[product.classification_id] || product.classification || '미지정')}</div>
                   <div>외부몰 데이터: {product.externalMall?.platform || product.externalMall?.platformName || '없음'}</div>
                 </td>
               </tr>
@@ -332,8 +346,9 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
       {/* 옵션 및 상세 정보 */}
       <Card padding="lg" className="mb-6">
         <h2 className="text-xl font-bold text-gray-900 mb-4">상품 옵션</h2>
-  <table className="min-w-full border border-gray-200 rounded-lg overflow-hidden min-w-0">
-          <thead className="bg-gray-50">
+        <div className="overflow-x-auto">
+          <table className="min-w-full border border-gray-200 rounded-lg overflow-hidden min-w-0">
+            <thead className="bg-gray-50">
             <tr>
               <th className="px-4 py-2 text-left text-xs font-bold text-gray-700">
                 옵션명
@@ -396,7 +411,8 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 </tr>
               ))}
           </tbody>
-        </table>
+          </table>
+        </div>
       </Card>
 
       {/* 추가 상세 정보: 이미지, 메모, 사이즈/무게 */}
@@ -409,6 +425,15 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             </div>
           ))}
         </div>
+        <div className="mt-4 grid grid-cols-3 gap-4 text-sm text-gray-700">
+          <div>가로(cm): {product.width_cm || (product.variants && product.variants[0] && product.variants[0].width_cm) || '-'}</div>
+          <div>세로(cm): {product.height_cm || (product.variants && product.variants[0] && product.variants[0].height_cm) || '-'}</div>
+          <div>높이(cm): {product.depth_cm || (product.variants && product.variants[0] && product.variants[0].depth_cm) || '-'}</div>
+          <div>무게(g): {product.weight_g || (product.variants && product.variants[0] && product.variants[0].weight_g) || '-'}</div>
+          <div>부피(cc): {product.volume_cc || (product.variants && product.variants[0] && product.variants[0].volume_cc) || '-'}</div>
+          <div>원산지: {product.origin_country || '-'}</div>
+          <div>외부몰 데이터: {product.externalMall?.platform || product.externalMall?.platformName || '없음'}</div>
+        </div>
         <div className="mt-4">
           <div className="text-sm text-gray-600 mb-2">메모</div>
           <ul className="list-disc pl-5 text-sm text-gray-700">
@@ -419,12 +444,6 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
         </div>
 
         <div className="mt-4 grid grid-cols-3 gap-4 text-sm text-gray-700">
-          <div>가로(cm): {product.variants && product.variants[0] && product.variants[0].width_cm}</div>
-          <div>세로(cm): {product.variants && product.variants[0] && product.variants[0].height_cm}</div>
-          <div>높이(cm): {product.variants && product.variants[0] && product.variants[0].depth_cm}</div>
-          <div>무게(g): {product.variants && product.variants[0] && product.variants[0].weight_g}</div>
-          <div>부피(cc): {product.variants && product.variants[0] && product.variants[0].volume_cc}</div>
-          <div>원산지: {product.origin_country}</div>
         </div>
       </Card>
 
@@ -432,7 +451,8 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
       <Card padding="lg" className="mb-6">
         <h2 className="text-xl font-bold text-gray-900 mb-4">상품 상세 설명</h2>
         <div className="prose max-w-none text-lg text-gray-700">
-          {product.description}
+          {/* Render HTML description safely for mock/demo content. Basic sanitizer: remove <script> tags. */}
+          <div dangerouslySetInnerHTML={{ __html: String(product.description || '').replace(/<script[\s\S]*?>[\s\S]*?<\/[\s]*script>/gi, '') }} />
         </div>
       </Card>
 
@@ -458,9 +478,16 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               {/* 품절 상태는 mockProducts에 없음 */}
             </div>
             <div>
-              <div className="text-sm text-gray-600 mb-1">면세여부</div>
+                <div className="text-sm text-gray-600 mb-1">면세여부</div>
               <div className="font-semibold">
-                {product.is_dutyfree ? "면세" : "과세"}
+                {editing ? (
+                  <select value={product.is_dutyfree ? '1' : '0'} onChange={(e) => setProduct((p:any) => ({ ...(p||{}), is_dutyfree: e.target.value === '1' }))} className="px-2 py-1 border rounded">
+                    <option value="1">면세</option>
+                    <option value="0">과세</option>
+                  </select>
+                ) : (
+                  (product.is_dutyfree ? "면세" : "과세")
+                )}
               </div>
             </div>
           </div>
@@ -471,47 +498,35 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             >
               닫기
             </Button>
-            {/* 실제 설정 변경 기능은 추후 구현 */}
+            <Button
+              variant="primary"
+              onClick={() => {
+                // apply settingsForm to product (local state)
+                if (settingsForm) {
+                  setProduct((prev:any) => ({ ...(prev||{}),
+                    is_selling: !!settingsForm.is_selling,
+                    is_soldout: !!settingsForm.is_soldout,
+                    is_dutyfree: !!settingsForm.is_dutyfree,
+                    origin_country: settingsForm.origin_country,
+                    purchase_name: settingsForm.purchase_name,
+                    shipping_policy: settingsForm.shipping_policy,
+                    hs_code: settingsForm.hs_code,
+                    box_qty: settingsForm.box_qty,
+                    classification_id: settingsForm.classification_id,
+                    // propagate stock link to first variant if present
+                    variants: prev?.variants ? prev.variants.map((v:any, i:number) => i===0 ? ({ ...(v||{}), is_stock_linked: !!settingsForm.is_stock_linked }) : v) : prev?.variants
+                  }))
+                }
+                setShowSettingsModal(false)
+                setToast('상품 설정이 저장되었습니다.')
+              }}
+            >저장</Button>
           </div>
         </div>
       </Modal>
 
-      {/* 상품 설명 수정 모달 */}
-      <Modal
-        open={showDescriptionModal}
-        onClose={() => setShowDescriptionModal(false)}
-        title="상품 설명 수정"
-      >
-        <div className="space-y-4">
-          <textarea
-            className="w-full border border-gray-300 rounded-lg p-3 text-base"
-            rows={6}
-              value={editingDescription !== '' ? editingDescription : (product.description || '')}
-              onChange={(e) => setEditingDescription(e.target.value)}
-            placeholder="상품 설명을 입력하세요"
-          />
-          <div className="flex justify-end gap-2 mt-6">
-            <Button
-              variant="secondary"
-              onClick={() => setShowDescriptionModal(false)}
-            >
-              취소
-            </Button>
-            <Button
-              variant="primary"
-                onClick={() => {
-                  // save to client state for immediate preview
-                  setProduct((prev: any) => ({ ...(prev || {}), description: editingDescription || prev?.description }))
-                  setShowDescriptionModal(false)
-                  setToast('상품 설명이 저장되었습니다.')
-                }}
-            >
-              저장
-            </Button>
-            {/* 실제 저장 기능은 추후 구현 */}
-          </div>
-        </div>
-      </Modal>
+
+      {/* (상품 설명 수정 모달 제거) */}
     </Container>
     {toast && <Toast message={toast} onClose={() => setToast(null)} />}
     </>

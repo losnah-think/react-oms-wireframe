@@ -1,12 +1,25 @@
 import React from 'react'
 import { Container, Card, Button, Grid, GridCol, GridRow } from '../../design-system'
 import Icon from '../../design-system/components/Icon'
+import { mockProducts } from '../../data/mockProducts'
 
 type Product = {
   id: string
+  productId?: number
   title?: string
   barcode?: string | null
   sku?: string
+  image?: string
+  supplier?: string
+  cost_price?: number
+  selling_price?: number
+  variantName?: string
+  width_cm?: number
+  height_cm?: number
+  depth_cm?: number
+  weight_g?: number
+  volume_cc?: number
+  externalMall?: any
 }
 
 // EAN-13 helpers
@@ -86,34 +99,54 @@ const ProductBarcodesPage: React.FC = () => {
 
   React.useEffect(() => {
     try {
-      const raw = typeof window !== 'undefined' ? localStorage.getItem('products_local_v1') : null
-      let arr = raw ? JSON.parse(raw) : []
-      // seed mock data when empty
-      if ((!arr || arr.length === 0) && typeof window !== 'undefined') {
-        arr = Array.from({ length: 16 }, (_, i) => {
-          const prefix = '880'
-          const core = ('' + (100000000 + i)).slice(-9)
-          const twelve = prefix + core
-          const check = ean13Checksum(twelve)
-          const barcode = check ? twelve + check : null
-          return {
-            id: `PRD-${1000 + i}`,
-            title: `상품 ${i + 1}`,
-            sku: `SKU-${1000 + i}`,
-            barcode
-          }
-        })
-        const dupPrefix = '880'
-        const dupCore = '999999990'
-        const dupTwelve = dupPrefix + dupCore
-        const dupCheck = ean13Checksum(dupTwelve)
-        const dupCode = dupCheck ? dupTwelve + dupCheck : dupTwelve + '0'
-  // no deterministic duplicate samples included by default
-        localStorage.setItem('products_local_v1', JSON.stringify(arr))
-      }
-      const norm = Array.isArray(arr) ? arr.map((p: any, i: number) => ({ id: String(p.id ?? p._id ?? p.sku ?? i), title: p.title ?? p.name ?? p.productName ?? '', barcode: p.barcode ?? p.bcd ?? p.sku ?? null, sku: p.sku ?? p.externalSku ?? '' })) : []
-      setProducts(norm)
-      setFiltered(norm)
+      // Use mockProducts as the canonical source for barcode management in the demo
+      const rows: Product[] = []
+      mockProducts.forEach(mp => {
+        const prodImage = Array.isArray(mp.images) && mp.images.length > 0 ? mp.images[0] : undefined
+        if (Array.isArray(mp.variants) && mp.variants.length > 0) {
+          mp.variants.forEach((v: any) => {
+            rows.push({
+              id: String(v.id) + `-${mp.id}`,
+              productId: mp.id,
+              title: mp.name,
+              sku: v.code || v.sku || mp.code || '',
+              barcode: v.barcode1 || v.barcode2 || v.barcode3 || (v.code && null) || null,
+              image: prodImage,
+              supplier: mp.supplier_id ? String(mp.supplier_id) : undefined,
+              cost_price: v.cost_price ?? mp.cost_price,
+              selling_price: v.selling_price ?? mp.selling_price,
+              variantName: v.variant_name,
+              width_cm: v.width_cm ?? mp.width_cm,
+              height_cm: v.height_cm ?? mp.height_cm,
+              depth_cm: v.depth_cm ?? mp.depth_cm,
+              weight_g: v.weight_g ?? mp.weight_g,
+              volume_cc: v.volume_cc ?? mp.volume_cc,
+              externalMall: mp.externalMall
+            })
+          })
+        } else {
+          rows.push({
+            id: String(mp.id),
+            productId: mp.id,
+            title: mp.name,
+            sku: mp.code || '',
+            barcode: (mp.variants && mp.variants[0] && (mp.variants[0].barcode1 || mp.variants[0].barcode2)) || null,
+            image: prodImage,
+            supplier: mp.supplier_id ? String(mp.supplier_id) : undefined,
+            cost_price: mp.cost_price,
+            selling_price: mp.selling_price,
+            variantName: undefined,
+            width_cm: mp.width_cm,
+            height_cm: mp.height_cm,
+            depth_cm: mp.depth_cm,
+            weight_g: mp.weight_g,
+            volume_cc: mp.volume_cc,
+            externalMall: mp.externalMall
+          })
+        }
+      })
+      setProducts(rows)
+      setFiltered(rows)
     } catch (e) { setProducts([]); setFiltered([]) }
   }, [])
 
@@ -388,7 +421,7 @@ const ProductBarcodesPage: React.FC = () => {
 
       <Card padding="none">
         <div className="overflow-x-auto">
-          <table className="w-full table-fixed text-sm border-collapse min-w-0">
+          <table className="w-full table-fixed text-sm border-collapse min-w-[900px]">
             <thead className="bg-white sticky top-0">
               <tr className="text-left text-gray-600 border-b">
                 <th className="p-2 text-left" style={{width:'8%'}}>공급처</th>
@@ -406,11 +439,19 @@ const ProductBarcodesPage: React.FC = () => {
                 const state = getBarcodeState(p.barcode)
                 return (
                   <tr key={p.id} className="border-t hover:bg-gray-50 align-top">
-                    <td className="p-2 text-sm text-blue-600 font-medium">자체제작</td>
-                    <td className="p-2"><div className="w-12 h-12 bg-gray-100 flex items-center justify-center"> <img src="/icons/sellmate.png" alt="img" className="max-h-10" /> </div></td>
+                    <td className="p-2 text-sm text-blue-600 font-medium">{p.supplier ?? '자체제작'}</td>
+                    <td className="p-2">
+                      <div className="w-12 h-12 bg-gray-100 flex items-center justify-center">
+                        {p.image ? <img src={p.image} alt="img" className="max-h-10 object-cover" /> : <img src="/icons/sellmate.png" alt="img" className="max-h-10" />}
+                      </div>
+                    </td>
                     <td className="p-2 text-sm">
                       <div className="font-semibold text-blue-700">{p.title ?? '무명 상품'}</div>
-                      <div className="text-xs text-gray-500 mt-1">{p.sku} · {p.id}</div>
+                      <div className="text-xs text-gray-500 mt-1">{p.sku} · {p.productId}{p.variantName ? ` · ${p.variantName}` : ''}</div>
+                      {p.externalMall && (
+                        <div className="text-xs text-gray-600 mt-1">외부몰: {p.externalMall.platform} / SKU: {p.externalMall.external_sku}</div>
+                      )}
+                      <div className="text-xs text-gray-600 mt-1">사이즈: {p.width_cm ?? '—'}×{p.height_cm ?? '—'}×{p.depth_cm ?? '—'} cm · 무게: {p.weight_g ?? '—'} g</div>
                     </td>
                     <td className="p-2 text-center"><input type="checkbox" checked={!!selected[p.id]} onChange={() => toggleSelect(p.id)} /></td>
                     <td className="p-2 text-sm font-mono text-center">{p.barcode ?? '—'}{p.barcode && barcodeCounts[p.barcode] > 1 && (<div className="text-xs text-yellow-800">중복</div>)}</td>

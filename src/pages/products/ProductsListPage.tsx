@@ -978,7 +978,17 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredProducts.map((p, idx) => (
-                <tr key={p.id} className={`hover:bg-gray-50 ${compactView ? 'text-sm' : ''}`}>
+                <tr
+                  key={p.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => {
+                    if (onNavigate) onNavigate('products-edit', String(p.id))
+                    else window.location.href = `/products/${p.id}`
+                  }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (onNavigate) onNavigate('products-edit', String(p.id)); else window.location.href = `/products/${p.id}` } }}
+                  className={`hover:bg-gray-50 cursor-pointer ${compactView ? 'text-sm' : ''}`}
+                >
                   <td className={`${compactView ? 'px-3 py-2' : 'px-4 py-6'}`} onClick={(e) => e.stopPropagation()}>
                     <input type="checkbox" checked={!!selectedIds[p.id]} onChange={() => toggleRow(String(p.id))} />
                   </td>
