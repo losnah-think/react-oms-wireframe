@@ -1,6 +1,6 @@
 "use client"
 import React, { useMemo, useState } from 'react'
-import { Container, Card, Button, Input } from '../../design-system'
+import { Container, Card, Button, Input, Modal } from '../../design-system'
 
 type Row = {
   seq: number
@@ -52,6 +52,18 @@ export default function RegistrationHistoryPage(){
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage))
   const pageRows = filtered.slice((page-1)*perPage, page*perPage)
+  const [openSeq, setOpenSeq] = React.useState<number | null>(null)
+
+  const mockDetailsForSeq = (seq: number) => {
+    // generate some mock option rows similar to the attached screenshot
+    return Array.from({ length: 8 }, (_, i) => ({
+      option: ['블랙,F1','블랙,F2','브라운,F1','브라운,F2','베이지,F1','네이비,F1','베이지,S','네이비,M'][i] ?? `옵션${i+1}`,
+      stock: Math.floor(Math.random()*3),
+      safety: 0,
+      price: (i+1) * 6700,
+      amount: ((i+1) * 6700) * Math.floor(Math.random()*2)
+    }))
+  }
 
   return (
     <Container maxWidth="full" centered={false} padding="md">
@@ -101,7 +113,7 @@ export default function RegistrationHistoryPage(){
                     <div className="text-xs text-gray-600 mt-1">성공 {r.success} / 실패 {r.failed}</div>
                   </td>
                   <td className="px-3 py-2 align-top">
-                    <Button variant="secondary" className="px-3 py-1 text-sm">리스트보기</Button>
+                    <Button variant="secondary" className="px-3 py-1 text-sm" onClick={() => setOpenSeq(r.seq)}>리스트보기</Button>
                   </td>
                 </tr>
               ))}
@@ -118,6 +130,36 @@ export default function RegistrationHistoryPage(){
           </div>
         </div>
       </Card>
+      {openSeq !== null && (
+        <Modal open={true} onClose={() => setOpenSeq(null)} size="big" title={`입력차수 ${openSeq} - 상품 목록`} footer={<Button variant="secondary" onClick={()=>setOpenSeq(null)}>닫기</Button>}>
+          <div className="overflow-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs text-gray-600">
+                  <th className="px-3 py-2 w-1/3">상품정보</th>
+                  <th className="px-3 py-2">상품옵션</th>
+                  <th className="px-3 py-2 w-20">재고</th>
+                  <th className="px-3 py-2 w-20">안정재고</th>
+                  <th className="px-3 py-2 w-24">원가</th>
+                  <th className="px-3 py-2 w-24">재고금액</th>
+                </tr>
+              </thead>
+              <tbody>
+                {mockDetailsForSeq(openSeq).map((d, i) => (
+                  <tr key={i} className="border-t">
+                    <td className="px-3 py-2 align-top">상품명 예시 #{i+1}<div className="text-xs text-gray-500">서브타이틀 / 코드</div></td>
+                    <td className="px-3 py-2 align-top">{d.option}</td>
+                    <td className="px-3 py-2 align-top">{d.stock}</td>
+                    <td className="px-3 py-2 align-top">{d.safety}</td>
+                    <td className="px-3 py-2 align-top">{d.price.toLocaleString()}</td>
+                    <td className="px-3 py-2 align-top">{d.amount.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Modal>
+      )}
     </Container>
   )
 }
