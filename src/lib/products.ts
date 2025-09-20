@@ -23,6 +23,23 @@ function tryRequireMock() {
   }
 }
 
+function requireMockProducts() {
+  try {
+    // Prefer the correctly-cased filename
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    return require('../data/mockProducts');
+  } catch (e) {
+    try {
+      // Some environments or previously committed files may use a different case.
+      // Try the lowercase variant as a fallback to avoid build-time errors.
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      return require('../data/mockproducts');
+    } catch (e2) {
+      throw e; // rethrow original for visibility
+    }
+  }
+}
+
 export async function listProductFilters() {
   try {
     const { data, error } = await supabaseAdmin
@@ -61,7 +78,8 @@ export async function listProducts(limit = 100, offset = 0): Promise<ProductSumm
   if (!supabaseAdmin) {
     try {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { mockProducts } = require('../data/mockProducts')
+      const mod = requireMockProducts()
+      const { mockProducts } = mod
       return (mockProducts || []).slice(offset, offset + limit).map((p: any) => ({
         id: String(p.id),
         name: p.name,
@@ -90,7 +108,8 @@ export async function getProduct(id: string) {
     try {
       console.debug('[lib/products] supabaseAdmin not configured — using mock fallback')
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { mockProducts } = require('../data/mockProducts')
+      const mod = requireMockProducts()
+      const { mockProducts } = mod
       const found = (mockProducts || []).find((p: any) => String(p.id) === String(id))
       if (found) return found
 
