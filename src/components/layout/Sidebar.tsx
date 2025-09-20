@@ -472,7 +472,13 @@ const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside
       aria-label="Main sidebar"
-      className={`${isCollapsed ? "w-16 p-2" : "w-60 p-4"} bg-white border-r border-gray-200 sticky top-0 h-screen overflow-y-auto transition-all duration-300 ease-in-out flex flex-col sidebar ${isCollapsed ? "collapsed" : ""}`}
+      className={`${
+        isCollapsed
+          ? "w-16 min-w-[64px] max-w-[64px] p-2"
+          : "w-[240px] min-w-[240px] max-w-[240px] p-4"
+      } bg-white border-r border-gray-200 sticky top-0 h-screen overflow-y-auto transition-all duration-300 ease-in-out flex flex-col flex-shrink-0 sidebar ${
+        isCollapsed ? "collapsed" : ""
+      }`}
     >
       {/* 접기/펼치기 버튼 */}
       {onToggleCollapse && (

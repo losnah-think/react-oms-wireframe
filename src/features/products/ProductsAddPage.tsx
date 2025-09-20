@@ -124,6 +124,15 @@ const initialFormData: ProductFormData = {
       storageConditions: "",
       shelfLife: undefined,
     },
+    options: [
+      {
+        id: "opt-default",
+        name: "기본 옵션",
+        type: "other",
+        values: [],
+        isRequired: false,
+      },
+    ],
     memos: Array.from({ length: 15 }).map(() => ""),
   },
   validation: {
@@ -139,9 +148,6 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
   productId,
 }) => {
   const [formData, setFormData] = useState<ProductFormData>(initialFormData);
-  const [collapsedSections, setCollapsedSections] = useState<{
-    [k: string]: boolean;
-  }>({ additionalInfo: true, logistics: true, policies: true });
   const [saving, setSaving] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [productFilterOptions, setProductFilterOptions] = useState<any>({
@@ -150,8 +156,7 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
     suppliers: [],
     status: [],
   });
-  const [groupsData, setGroupsData] = useState<any[]>([]);
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [expandedPanels, setExpandedPanels] = useState<string[]>([]);
 
   // 필드 업데이트 함수
   const updateField = (path: string, value: any) => {
@@ -321,21 +326,6 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
     };
   }, []);
 
-  useEffect(() => {
-    let mounted = true;
-    fetch("/api/meta/groups")
-      .then((r) => safeJson(r, { groups: [] }))
-      .then((data) => {
-        if (!mounted) return;
-        const groups = data && data.groups ? data.groups : [];
-        setGroupsData(Array.isArray(groups) ? groups : []);
-      })
-      .catch(() => {});
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
   // 공급가 자동계산
   useEffect(() => {
     const selling = formData.basicInfo.pricing.sellingPrice || 0;
@@ -349,8 +339,13 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
     formData.basicInfo.pricing.commissionRate,
   ]);
 
-  const toggleSection = (name: string) =>
-    setCollapsedSections((prev) => ({ ...prev, [name]: !prev[name] }));
+  const togglePanel = (panelId: string) => {
+    setExpandedPanels((prev) =>
+      prev.includes(panelId)
+        ? prev.filter((id) => id !== panelId)
+        : [...prev, panelId],
+    );
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -370,46 +365,441 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
     onNavigate?.("products-list");
   };
 
-  const handleSaveAndContinue = async () => {
-    setSaving(true);
-    try {
-      // basic validation
-      if (
-        !formData.basicInfo.productName ||
-        !formData.basicInfo.codes.internal
-      ) {
-        setToastMessage("필수 항목을 입력하세요.");
-        setSaving(false);
-        return;
-      }
-      await new Promise((r) => setTimeout(r, 700));
-      onSave?.(formData);
-      setToastMessage("상품이 저장되었습니다. 계속 등록하실 수 있습니다.");
-      // reset form but preserve commonly reused selectors (brand, supplier, category)
-      setFormData((prev) => {
-        const preserved = {
-          basicInfo: {
-            brandId:
-              prev.basicInfo?.brandId || initialFormData.basicInfo.brandId,
-            supplierId:
-              prev.basicInfo?.supplierId ||
-              initialFormData.basicInfo.supplierId,
-            categoryId:
-              prev.basicInfo?.categoryId ||
-              initialFormData.basicInfo.categoryId,
-            codes: { ...initialFormData.basicInfo.codes },
-          },
-          additionalInfo: { ...initialFormData.additionalInfo },
-          validation: { ...initialFormData.validation },
-        } as ProductFormData;
-        // ensure codes.internal is cleared
-        preserved.basicInfo.codes.internal = "";
-        return preserved;
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
+  const advancedSections: {
+    id: string;
+    title: string;
+    description?: string;
+    render: () => React.ReactNode;
+  }[] = [
+    {
+      id: "pricing-advanced",
+      title: "추가 가격 설정",
+      description: "원가, 시장가, 소비자가 등의 선택 입력값",
+      render: () => (
+        <GridRow gutter={24}>
+          <GridCol span={6}>
+            <Input
+              label="원가"
+              type="number"
+              placeholder="원가"
+              value={formData.basicInfo.originalCost || 0}
+              onChange={(e) =>
+                updateField(
+                  "basicInfo.originalCost",
+                  Number(e.target.value),
+                )
+              }
+              fullWidth
+            />
+          </GridCol>
+          <GridCol span={6}>
+            <Input
+              label="시장가"
+              type="number"
+              placeholder="시장가"
+              value={formData.basicInfo.pricing.marketPrice || 0}
+              onChange={(e) =>
+                updateField(
+                  "basicInfo.pricing.marketPrice",
+                  Number(e.target.value),
+                )
+              }
+              fullWidth
+            />
+          </GridCol>
+          <GridCol span={6}>
+            <Input
+              label="소비자가"
+              type="number"
+              placeholder="소비자가"
+              value={formData.basicInfo.pricing.consumerPrice || 0}
+              onChange={(e) =>
+                updateField(
+                  "basicInfo.pricing.consumerPrice",
+                  Number(e.target.value),
+                )
+              }
+              fullWidth
+            />
+          </GridCol>
+          <GridCol span={6}>
+            <Input
+              label="외화가"
+              type="number"
+              placeholder="외화가"
+              value={
+                formData.basicInfo.pricing.foreignCurrencyPrice || 0
+              }
+              onChange={(e) =>
+                updateField(
+                  "basicInfo.pricing.foreignCurrencyPrice",
+                  Number(e.target.value),
+                )
+              }
+              fullWidth
+            />
+          </GridCol>
+        </GridRow>
+      ),
+    },
+    {
+      id: "inventory-advanced",
+      title: "재고 · 판매 상태",
+      description: "안전재고와 판매 여부를 세부 설정합니다.",
+      render: () => (
+        <GridRow gutter={24}>
+          <GridCol span={6}>
+            <Input
+              label="안전재고"
+              type="number"
+              placeholder="안전재고"
+              value={formData.basicInfo.safeStock || 0}
+              onChange={(e) =>
+                updateField(
+                  "basicInfo.safeStock",
+                  Number(e.target.value),
+                )
+              }
+              fullWidth
+            />
+          </GridCol>
+          <GridCol span={6}>
+            <Input
+              label="품절여부"
+              type="checkbox"
+              checked={formData.basicInfo.isOutOfStock || false}
+              onChange={(e) =>
+                updateField(
+                  "basicInfo.isOutOfStock",
+                  e.target.checked,
+                )
+              }
+            />
+          </GridCol>
+          <GridCol span={6}>
+            <Input
+              label="판매중"
+              type="checkbox"
+              checked={formData.basicInfo.isSelling || false}
+              onChange={(e) =>
+                updateField(
+                  "basicInfo.isSelling",
+                  e.target.checked,
+                )
+              }
+            />
+          </GridCol>
+          <GridCol span={6}>
+            <Input
+              label="판매종료"
+              type="checkbox"
+              checked={formData.basicInfo.isSoldout || false}
+              onChange={(e) =>
+                updateField(
+                  "basicInfo.isSoldout",
+                  e.target.checked,
+                )
+              }
+            />
+          </GridCol>
+        </GridRow>
+      ),
+    },
+    {
+      id: "detail-info",
+      title: "상세 정보",
+      description: "영문명, 이미지, 설명 등 추가 정보를 입력하세요.",
+      render: () => (
+        <GridRow gutter={24}>
+          <GridCol span={12}>
+            <Input
+              label="영문 상품명"
+              placeholder="예: Premium T-shirt"
+              value={formData.basicInfo.englishProductName || ""}
+              onChange={(e) =>
+                updateField("basicInfo.englishProductName", e.target.value)
+              }
+              fullWidth
+            />
+          </GridCol>
+          <GridCol span={12}>
+            <Input
+              label="대표 이미지 URL"
+              placeholder="대표 이미지 URL"
+              value={formData.basicInfo.representativeImage || ""}
+              onChange={(e) =>
+                updateField(
+                  "basicInfo.representativeImage",
+                  e.target.value,
+                )
+              }
+              fullWidth
+            />
+          </GridCol>
+          <GridCol span={12}>
+            <Input
+              label="상세 이미지 URL(,로 구분)"
+              placeholder="상세 이미지 URL"
+              value={
+                formData.basicInfo.descriptionImages?.join(",") || ""
+              }
+              onChange={(e) =>
+                updateField(
+                  "basicInfo.descriptionImages",
+                  e.target.value.split(","),
+                )
+              }
+              fullWidth
+            />
+          </GridCol>
+          <GridCol span={12}>
+            <Input
+              label="상품 설명"
+              placeholder="상품 설명"
+              value={formData.basicInfo.description || ""}
+              onChange={(e) =>
+                updateField("basicInfo.description", e.target.value)
+              }
+              fullWidth
+            />
+          </GridCol>
+        </GridRow>
+      ),
+    },
+    {
+      id: "physical-info",
+      title: "물리적 정보",
+      description: "상품의 크기와 무게 정보를 입력하세요.",
+      render: () => (
+        <GridRow gutter={24}>
+          <GridCol span={6}>
+            <Input
+              label="가로(cm)"
+              type="number"
+              placeholder="가로"
+              value={formData.basicInfo.logistics.width || 0}
+              onChange={(e) =>
+                updateField(
+                  "basicInfo.logistics.width",
+                  Number(e.target.value),
+                )
+              }
+              fullWidth
+            />
+          </GridCol>
+          <GridCol span={6}>
+            <Input
+              label="세로(cm)"
+              type="number"
+              placeholder="세로"
+              value={formData.basicInfo.logistics.height || 0}
+              onChange={(e) =>
+                updateField(
+                  "basicInfo.logistics.height",
+                  Number(e.target.value),
+                )
+              }
+              fullWidth
+            />
+          </GridCol>
+          <GridCol span={6}>
+            <Input
+              label="높이(cm)"
+              type="number"
+              placeholder="높이"
+              value={formData.basicInfo.logistics.depth || 0}
+              onChange={(e) =>
+                updateField(
+                  "basicInfo.logistics.depth",
+                  Number(e.target.value),
+                )
+              }
+              fullWidth
+            />
+          </GridCol>
+          <GridCol span={6}>
+            <Input
+              label="무게(g)"
+              type="number"
+              placeholder="무게"
+              value={formData.basicInfo.logistics.weight || 0}
+              onChange={(e) =>
+                updateField(
+                  "basicInfo.logistics.weight",
+                  Number(e.target.value),
+                )
+              }
+              fullWidth
+            />
+          </GridCol>
+          <GridCol span={6}>
+            <Input
+              label="부피(cm³)"
+              type="number"
+              placeholder="부피"
+              value={formData.basicInfo.logistics.volume || 0}
+              onChange={(e) =>
+                updateField(
+                  "basicInfo.logistics.volume",
+                  Number(e.target.value),
+                )
+              }
+              fullWidth
+            />
+          </GridCol>
+        </GridRow>
+      ),
+    },
+    {
+      id: "metadata-info",
+      title: "기타 정보",
+      description: "원산지, HS코드 등 기타 속성을 관리합니다.",
+      render: () => (
+        <GridRow gutter={24}>
+          <GridCol span={6}>
+            <Input
+              label="HS 코드"
+              placeholder="HS 코드"
+              value={formData.basicInfo.hsCode || ""}
+              onChange={(e) =>
+                updateField("basicInfo.hsCode", e.target.value)
+              }
+              fullWidth
+            />
+          </GridCol>
+          <GridCol span={6}>
+            <Input
+              label="원산지"
+              placeholder="원산지"
+              value={formData.basicInfo.origin || ""}
+              onChange={(e) =>
+                updateField("basicInfo.origin", e.target.value)
+              }
+              fullWidth
+            />
+          </GridCol>
+          <GridCol span={6}>
+            <Input
+              label="면세여부"
+              type="checkbox"
+              checked={formData.basicInfo.isTaxExempt || false}
+              onChange={(e) =>
+                updateField(
+                  "basicInfo.isTaxExempt",
+                  e.target.checked,
+                )
+              }
+            />
+          </GridCol>
+          <GridCol span={6}>
+            <Input
+              label="송장에 상품명 표시"
+              type="checkbox"
+              checked={
+                formData.basicInfo.policies.showProductNameOnInvoice || false
+              }
+              onChange={(e) =>
+                updateField(
+                  "basicInfo.policies.showProductNameOnInvoice",
+                  e.target.checked,
+                )
+              }
+            />
+          </GridCol>
+          <GridCol span={6}>
+            <Input
+              label="상품 디자이너"
+              placeholder="상품 디자이너"
+              value={formData.additionalInfo.productDesigner || ""}
+              onChange={(e) =>
+                updateField(
+                  "additionalInfo.productDesigner",
+                  e.target.value,
+                )
+              }
+              fullWidth
+            />
+          </GridCol>
+          <GridCol span={6}>
+            <Input
+              label="상품 등록자"
+              placeholder="상품 등록자"
+              value={formData.additionalInfo.productRegistrant || ""}
+              onChange={(e) =>
+                updateField(
+                  "additionalInfo.productRegistrant",
+                  e.target.value,
+                )
+              }
+              fullWidth
+            />
+          </GridCol>
+          <GridCol span={6}>
+            <Input
+              label="연도"
+              placeholder="연도"
+              value={formData.additionalInfo.productYear || ""}
+              onChange={(e) =>
+                updateField(
+                  "additionalInfo.productYear",
+                  e.target.value,
+                )
+              }
+              fullWidth
+            />
+          </GridCol>
+          <GridCol span={6}>
+            <Input
+              label="시즌"
+              placeholder="시즌"
+              value={formData.additionalInfo.productSeason || ""}
+              onChange={(e) =>
+                updateField(
+                  "additionalInfo.productSeason",
+                  e.target.value,
+                )
+              }
+              fullWidth
+            />
+          </GridCol>
+        </GridRow>
+      ),
+    },
+    {
+      id: "external-info",
+      title: "외부 연동 정보",
+      description: "외부 시스템과 연결되는 정보를 입력하세요.",
+      render: () => (
+        <GridRow gutter={24}>
+          <GridCol span={12}>
+            <Input
+              label="외부 상품ID"
+              placeholder="외부 상품ID"
+              value={formData.basicInfo.externalProductId || ""}
+              onChange={(e) =>
+                updateField(
+                  "basicInfo.externalProductId",
+                  e.target.value,
+                )
+              }
+              fullWidth
+            />
+          </GridCol>
+          <GridCol span={12}>
+            <Input
+              label="외부 상품URL"
+              placeholder="외부 상품URL"
+              value={formData.basicInfo.externalUrl || ""}
+              onChange={(e) =>
+                updateField("basicInfo.externalUrl", e.target.value)
+              }
+              fullWidth
+            />
+          </GridCol>
+        </GridRow>
+      ),
+    },
+  ];
 
   return (
     <>
@@ -417,20 +807,6 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
         <div className="max-w-5xl mx-auto">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-bold">상품 등록</h1>
-            <div>
-              <button
-                className="px-3 py-1 border rounded text-sm mr-2"
-                onClick={() => setShowAdvanced((s) => !s)}
-              >
-                {showAdvanced ? "고급항목 숨기기" : "고급항목 표시"}
-              </button>
-              <button
-                className="px-3 py-1 bg-blue-600 text-white rounded text-sm"
-                onClick={handleSaveAndContinue}
-              >
-                저장 후 계속
-              </button>
-            </div>
           </div>
           <div className="flex flex-col md:flex-row gap-6">
             {/* 메인 폼 영역 */}
@@ -457,20 +833,6 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
                   </GridCol>
                   <GridCol span={12}>
                     <Input
-                      label="영문 상품명"
-                      placeholder="예: Premium T-shirt"
-                      value={formData.basicInfo.englishProductName || ""}
-                      onChange={(e) =>
-                        updateField(
-                          "basicInfo.englishProductName",
-                          e.target.value,
-                        )
-                      }
-                      fullWidth
-                    />
-                  </GridCol>
-                  <GridCol span={12}>
-                    <Input
                       label="상품코드"
                       required
                       placeholder="내부 상품코드"
@@ -483,57 +845,41 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
                   </GridCol>
                   <GridCol span={12}>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      그룹(소속)
+                      상품 카테고리
                     </label>
-                    {!showAdvanced ? (
-                      <div className="px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-sm">
-                        {formData.basicInfo.categoryId || "미지정"}
-                      </div>
-                    ) : (
-                      <select
-                        value={formData.basicInfo.categoryId}
-                        onChange={(e) =>
-                          updateField("basicInfo.categoryId", e.target.value)
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      >
-                        <option value="">카테고리 선택</option>
-                        {(productFilterOptions.categories || []).map(
-                          (cat: any) => (
-                            <option key={cat.id} value={cat.id}>
-                              {cat.name}
-                            </option>
-                          ),
-                        )}
-                      </select>
-                    )}
+                    <select
+                      value={formData.basicInfo.categoryId}
+                      onChange={(e) =>
+                        updateField("basicInfo.categoryId", e.target.value)
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    >
+                      <option value="">카테고리 선택</option>
+                      {(productFilterOptions.categories || []).map((cat: any) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
+                      ))}
+                    </select>
                   </GridCol>
                   <GridCol span={12}>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       브랜드
                     </label>
-                    {!showAdvanced ? (
-                      <div className="px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-sm">
-                        {formData.basicInfo.brandId || "미지정"}
-                      </div>
-                    ) : (
-                      <select
-                        value={formData.basicInfo.brandId}
-                        onChange={(e) =>
-                          updateField("basicInfo.brandId", e.target.value)
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      >
-                        <option value="">브랜드 선택</option>
-                        {(productFilterOptions.brands || []).map(
-                          (brand: any) => (
-                            <option key={brand.id} value={brand.id}>
-                              {brand.name}
-                            </option>
-                          ),
-                        )}
-                      </select>
-                    )}
+                    <select
+                      value={formData.basicInfo.brandId}
+                      onChange={(e) =>
+                        updateField("basicInfo.brandId", e.target.value)
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    >
+                      <option value="">브랜드 선택</option>
+                      {(productFilterOptions.brands || []).map((brand: any) => (
+                        <option key={brand.id} value={brand.id}>
+                          {brand.name}
+                        </option>
+                      ))}
+                    </select>
                   </GridCol>
                   <GridCol span={12}>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -568,21 +914,6 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
                 <GridRow gutter={24}>
                   <GridCol span={6}>
                     <Input
-                      label="원가"
-                      type="number"
-                      placeholder="원가"
-                      value={formData.basicInfo.originalCost || 0}
-                      onChange={(e) =>
-                        updateField(
-                          "basicInfo.originalCost",
-                          Number(e.target.value),
-                        )
-                      }
-                      fullWidth
-                    />
-                  </GridCol>
-                  <GridCol span={6}>
-                    <Input
                       label="판매가"
                       required
                       type="number"
@@ -612,53 +943,6 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
                       fullWidth
                     />
                   </GridCol>
-                  <GridCol span={6}>
-                    <Input
-                      label="시장가"
-                      type="number"
-                      placeholder="시장가"
-                      value={formData.basicInfo.pricing.marketPrice || 0}
-                      onChange={(e) =>
-                        updateField(
-                          "basicInfo.pricing.marketPrice",
-                          Number(e.target.value),
-                        )
-                      }
-                      fullWidth
-                    />
-                  </GridCol>
-                  <GridCol span={6}>
-                    <Input
-                      label="소비자가"
-                      type="number"
-                      placeholder="소비자가"
-                      value={formData.basicInfo.pricing.consumerPrice || 0}
-                      onChange={(e) =>
-                        updateField(
-                          "basicInfo.pricing.consumerPrice",
-                          Number(e.target.value),
-                        )
-                      }
-                      fullWidth
-                    />
-                  </GridCol>
-                  <GridCol span={6}>
-                    <Input
-                      label="외화가"
-                      type="number"
-                      placeholder="외화가"
-                      value={
-                        formData.basicInfo.pricing.foreignCurrencyPrice || 0
-                      }
-                      onChange={(e) =>
-                        updateField(
-                          "basicInfo.pricing.foreignCurrencyPrice",
-                          Number(e.target.value),
-                        )
-                      }
-                      fullWidth
-                    />
-                  </GridCol>
                 </GridRow>
               </Card>
               <Card>
@@ -677,336 +961,6 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
                       value={formData.basicInfo.stock || 0}
                       onChange={(e) =>
                         updateField("basicInfo.stock", Number(e.target.value))
-                      }
-                      fullWidth
-                    />
-                  </GridCol>
-                  <GridCol span={6}>
-                    <Input
-                      label="안전재고"
-                      type="number"
-                      placeholder="안전재고"
-                      value={formData.basicInfo.safeStock || 0}
-                      onChange={(e) =>
-                        updateField(
-                          "basicInfo.safeStock",
-                          Number(e.target.value),
-                        )
-                      }
-                      fullWidth
-                    />
-                  </GridCol>
-                  <GridCol span={6}>
-                    <Input
-                      label="품절여부"
-                      type="checkbox"
-                      checked={formData.basicInfo.isOutOfStock || false}
-                      onChange={(e) =>
-                        updateField("basicInfo.isOutOfStock", e.target.checked)
-                      }
-                    />
-                  </GridCol>
-                  <GridCol span={6}>
-                    <Input
-                      label="판매중"
-                      type="checkbox"
-                      checked={formData.basicInfo.isSelling || false}
-                      onChange={(e) =>
-                        updateField("basicInfo.isSelling", e.target.checked)
-                      }
-                    />
-                  </GridCol>
-                  <GridCol span={6}>
-                    <Input
-                      label="판매종료"
-                      type="checkbox"
-                      checked={formData.basicInfo.isSoldout || false}
-                      onChange={(e) =>
-                        updateField("basicInfo.isSoldout", e.target.checked)
-                      }
-                    />
-                  </GridCol>
-                </GridRow>
-              </Card>
-              <Card>
-                <div className="mb-4">
-                  <h2 className="text-lg font-bold">상세 정보</h2>
-                  <p className="text-sm text-gray-500">
-                    상품 이미지 및 설명을 입력하세요.
-                  </p>
-                </div>
-                <GridRow gutter={24}>
-                  <GridCol span={12}>
-                    <Input
-                      label="대표 이미지 URL"
-                      placeholder="대표 이미지 URL"
-                      value={formData.basicInfo.representativeImage || ""}
-                      onChange={(e) =>
-                        updateField(
-                          "basicInfo.representativeImage",
-                          e.target.value,
-                        )
-                      }
-                      fullWidth
-                    />
-                  </GridCol>
-                  <GridCol span={12}>
-                    <Input
-                      label="상세 이미지 URL(,로 구분)"
-                      placeholder="상세 이미지 URL"
-                      value={
-                        formData.basicInfo.descriptionImages?.join(",") || ""
-                      }
-                      onChange={(e) =>
-                        updateField(
-                          "basicInfo.descriptionImages",
-                          e.target.value.split(","),
-                        )
-                      }
-                      fullWidth
-                    />
-                  </GridCol>
-                  <GridCol span={12}>
-                    <Input
-                      label="상품 설명"
-                      placeholder="상품 설명"
-                      value={formData.basicInfo.description || ""}
-                      onChange={(e) =>
-                        updateField("basicInfo.description", e.target.value)
-                      }
-                      fullWidth
-                    />
-                  </GridCol>
-                </GridRow>
-              </Card>
-              <Card>
-                <div className="mb-4">
-                  <h2 className="text-lg font-bold">물리적 정보</h2>
-                  <p className="text-sm text-gray-500">
-                    상품의 크기, 무게, 부피 정보를 입력하세요.
-                  </p>
-                </div>
-                <GridRow gutter={24}>
-                  <GridCol span={6}>
-                    <Input
-                      label="가로(cm)"
-                      type="number"
-                      placeholder="가로"
-                      value={formData.basicInfo.logistics.width || 0}
-                      onChange={(e) =>
-                        updateField(
-                          "basicInfo.logistics.width",
-                          Number(e.target.value),
-                        )
-                      }
-                      fullWidth
-                    />
-                  </GridCol>
-                  <GridCol span={6}>
-                    <Input
-                      label="세로(cm)"
-                      type="number"
-                      placeholder="세로"
-                      value={formData.basicInfo.logistics.height || 0}
-                      onChange={(e) =>
-                        updateField(
-                          "basicInfo.logistics.height",
-                          Number(e.target.value),
-                        )
-                      }
-                      fullWidth
-                    />
-                  </GridCol>
-                  <GridCol span={6}>
-                    <Input
-                      label="높이(cm)"
-                      type="number"
-                      placeholder="높이"
-                      value={formData.basicInfo.logistics.depth || 0}
-                      onChange={(e) =>
-                        updateField(
-                          "basicInfo.logistics.depth",
-                          Number(e.target.value),
-                        )
-                      }
-                      fullWidth
-                    />
-                  </GridCol>
-                  <GridCol span={6}>
-                    <Input
-                      label="무게(g)"
-                      type="number"
-                      placeholder="무게"
-                      value={formData.basicInfo.logistics.weight || 0}
-                      onChange={(e) =>
-                        updateField(
-                          "basicInfo.logistics.weight",
-                          Number(e.target.value),
-                        )
-                      }
-                      fullWidth
-                    />
-                  </GridCol>
-                  <GridCol span={6}>
-                    <Input
-                      label="부피(cm³)"
-                      type="number"
-                      placeholder="부피"
-                      value={formData.basicInfo.logistics.volume || 0}
-                      onChange={(e) =>
-                        updateField(
-                          "basicInfo.logistics.volume",
-                          Number(e.target.value),
-                        )
-                      }
-                      fullWidth
-                    />
-                  </GridCol>
-                </GridRow>
-              </Card>
-              <Card>
-                <div className="mb-4">
-                  <h2 className="text-lg font-bold">기타 정보</h2>
-                  <p className="text-sm text-gray-500">
-                    HS코드, 원산지, 면세여부 등 기타 정보를 입력하세요.
-                  </p>
-                </div>
-                <GridRow gutter={24}>
-                  <GridCol span={6}>
-                    <Input
-                      label="HS 코드"
-                      placeholder="HS 코드"
-                      value={formData.basicInfo.hsCode || ""}
-                      onChange={(e) =>
-                        updateField("basicInfo.hsCode", e.target.value)
-                      }
-                      fullWidth
-                    />
-                  </GridCol>
-                  <GridCol span={6}>
-                    <Input
-                      label="원산지"
-                      placeholder="원산지"
-                      value={formData.basicInfo.origin || ""}
-                      onChange={(e) =>
-                        updateField("basicInfo.origin", e.target.value)
-                      }
-                      fullWidth
-                    />
-                  </GridCol>
-                  <GridCol span={6}>
-                    <Input
-                      label="면세여부"
-                      type="checkbox"
-                      checked={formData.basicInfo.isTaxExempt || false}
-                      onChange={(e) =>
-                        updateField("basicInfo.isTaxExempt", e.target.checked)
-                      }
-                    />
-                  </GridCol>
-                  <GridCol span={6}>
-                    <Input
-                      label="송장에 상품명 표시"
-                      type="checkbox"
-                      checked={
-                        formData.basicInfo.policies.showProductNameOnInvoice ||
-                        false
-                      }
-                      onChange={(e) =>
-                        updateField(
-                          "basicInfo.policies.showProductNameOnInvoice",
-                          e.target.checked,
-                        )
-                      }
-                    />
-                  </GridCol>
-                  <GridCol span={6}>
-                    <Input
-                      label="상품 디자이너"
-                      placeholder="상품 디자이너"
-                      value={formData.additionalInfo.productDesigner || ""}
-                      onChange={(e) =>
-                        updateField(
-                          "additionalInfo.productDesigner",
-                          e.target.value,
-                        )
-                      }
-                      fullWidth
-                    />
-                  </GridCol>
-                  <GridCol span={6}>
-                    <Input
-                      label="상품 등록자"
-                      placeholder="상품 등록자"
-                      value={formData.additionalInfo.productRegistrant || ""}
-                      onChange={(e) =>
-                        updateField(
-                          "additionalInfo.productRegistrant",
-                          e.target.value,
-                        )
-                      }
-                      fullWidth
-                    />
-                  </GridCol>
-                  <GridCol span={6}>
-                    <Input
-                      label="연도"
-                      placeholder="연도"
-                      value={formData.additionalInfo.productYear || ""}
-                      onChange={(e) =>
-                        updateField(
-                          "additionalInfo.productYear",
-                          e.target.value,
-                        )
-                      }
-                      fullWidth
-                    />
-                  </GridCol>
-                  <GridCol span={6}>
-                    <Input
-                      label="시즌"
-                      placeholder="시즌"
-                      value={formData.additionalInfo.productSeason || ""}
-                      onChange={(e) =>
-                        updateField(
-                          "additionalInfo.productSeason",
-                          e.target.value,
-                        )
-                      }
-                      fullWidth
-                    />
-                  </GridCol>
-                </GridRow>
-              </Card>
-              <Card>
-                <div className="mb-4">
-                  <h2 className="text-lg font-bold">외부 연동 정보</h2>
-                  <p className="text-sm text-gray-500">
-                    외부 상품ID, URL 등 연동 정보를 입력하세요.
-                  </p>
-                </div>
-                <GridRow gutter={24}>
-                  <GridCol span={12}>
-                    <Input
-                      label="외부 상품ID"
-                      placeholder="외부 상품ID"
-                      value={formData.basicInfo.externalProductId || ""}
-                      onChange={(e) =>
-                        updateField(
-                          "basicInfo.externalProductId",
-                          e.target.value,
-                        )
-                      }
-                      fullWidth
-                    />
-                  </GridCol>
-                  <GridCol span={12}>
-                    <Input
-                      label="외부 상품URL"
-                      placeholder="외부 상품URL"
-                      value={formData.basicInfo.externalUrl || ""}
-                      onChange={(e) =>
-                        updateField("basicInfo.externalUrl", e.target.value)
                       }
                       fullWidth
                     />
@@ -1033,6 +987,53 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
                   </GridCol>
                 </GridRow>
               </Card>
+              <Card>
+                <div className="mb-4">
+                  <h2 className="text-lg font-bold">고급 설정</h2>
+                  <p className="text-sm text-gray-500">
+                    AWS EC2 생성 단계처럼 필요할 때만 펼쳐 추가 정보를 입력하세요.
+                  </p>
+                </div>
+                <div className="space-y-3">
+                  {advancedSections.map((section) => {
+                    const isOpen = expandedPanels.includes(section.id);
+                    const panelId = `${section.id}-content`;
+                    return (
+                      <div
+                        key={section.id}
+                        className="border border-gray-200 rounded-md overflow-hidden"
+                      >
+                        <button
+                          type="button"
+                          className="w-full flex items-center justify-between px-4 py-3 text-left bg-gray-50 hover:bg-gray-100 focus:outline-none"
+                          onClick={() => togglePanel(section.id)}
+                          aria-expanded={isOpen}
+                          aria-controls={panelId}
+                        >
+                          <div>
+                            <div className="font-medium text-sm md:text-base">
+                              {section.title}
+                            </div>
+                            {section.description ? (
+                              <p className="text-xs md:text-sm text-gray-500 mt-1">
+                                {section.description}
+                              </p>
+                            ) : null}
+                          </div>
+                          <span className="text-xl leading-none font-semibold">
+                            {isOpen ? "-" : "+"}
+                          </span>
+                        </button>
+                        {isOpen && (
+                          <div id={panelId} className="px-4 pb-5 pt-4 bg-white">
+                            {section.render()}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card>
               <div className="sticky bottom-0 bg-white py-4 flex justify-end border-t z-10">
                 <Stack direction="row" gap={3}>
                   <Button
@@ -1047,13 +1048,6 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
                     onClick={handleSave}
                   >
                     {saving ? "저장중..." : "물품등록"}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    loading={saving}
-                    onClick={handleSaveAndContinue}
-                  >
-                    {saving ? "처리중..." : "등록후계속"}
                   </Button>
                 </Stack>
               </div>
