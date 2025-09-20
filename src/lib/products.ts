@@ -24,20 +24,8 @@ function tryRequireMock() {
 }
 
 function requireMockProducts() {
-  try {
-    // Prefer the correctly-cased filename
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    return require('../data/mockProducts');
-  } catch (e) {
-    try {
-      // Some environments or previously committed files may use a different case.
-      // Try the lowercase variant as a fallback to avoid build-time errors.
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      return require('../data/mockproducts');
-    } catch (e2) {
-      throw e; // rethrow original for visibility
-    }
-  }
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  return require('../data/mockProducts')
 }
 
 export async function listProductFilters() {
