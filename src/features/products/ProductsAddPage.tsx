@@ -13,7 +13,6 @@ import type {
   ProductBarcodeSettings,
 } from "../../types/multitenant";
 import Toast from "../../components/Toast";
-import BarcodePrintSettingsSection from "./components/BarcodePrintSettingsSection";
 
 const safeJson = async (res: Response | undefined, fallback: any) => {
   if (!res || !res.ok) return fallback;
@@ -135,10 +134,7 @@ const initialFormData: ProductFormData = {
     isValid: true,
     touchedFields: new Set(),
   },
-  barcodeSettings: {
-    policyAcknowledged: false,
-    vendors: [],
-  },
+  // barcodeSettings moved to central settings page
 };
 const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
   onNavigate,
@@ -345,15 +341,6 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
     );
   };
 
-  const handleBarcodeSettingsChange = useCallback(
-    (nextSettings: ProductBarcodeSettings) => {
-      setFormData((prev) => ({
-        ...prev,
-        barcodeSettings: JSON.parse(JSON.stringify(nextSettings)),
-      }));
-    },
-    [],
-  );
 
   const handleSave = async () => {
     setSaving(true);
@@ -407,11 +394,7 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
         } as ProductFormData;
         // ensure codes.internal is cleared
         preserved.basicInfo.codes.internal = "";
-        const nextBarcodeSettings =
-          prev.barcodeSettings || initialFormData.barcodeSettings;
-        preserved.barcodeSettings = nextBarcodeSettings
-          ? JSON.parse(JSON.stringify(nextBarcodeSettings))
-          : { policyAcknowledged: false, vendors: [] };
+        // barcodeSettings moved to central settings page; nothing to preserve here
         return preserved;
       });
     } finally {
@@ -1049,13 +1032,7 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
                   </GridCol>
                 </GridRow>
               </Card>
-              {formData.barcodeSettings ? (
-                <BarcodePrintSettingsSection
-                  settings={formData.barcodeSettings}
-                  onChange={handleBarcodeSettingsChange}
-                  suppliers={productFilterOptions.suppliers || []}
-                />
-              ) : null}
+              {/* Barcode print settings moved to Barcode Management > Barcode Settings */}
               <Card>
                 <div className="mb-4">
                   <h2 className="text-lg font-bold">고급 설정</h2>

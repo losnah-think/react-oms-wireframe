@@ -8,6 +8,8 @@ import type { BarcodeTemplate } from "../../../components/barcodes/TemplateList"
 import { mockProducts } from "../../../data/mockProducts";
 import { mockSuppliers } from "../../../data/mockSuppliers";
 import { mockWarehouses } from "../../../data/mockWarehouses";
+import BarcodePrintSettingsSection from "../../../features/products/components/BarcodePrintSettingsSection";
+// ProductBarcodeSettings type is embedded in the component's props; avoid direct import mismatch
 import QRImage from "../../../components/barcodes/QRImage";
 import { useSession } from "next-auth/react";
 import { shouldSkipAuth } from "../../../lib/devAuth";
@@ -38,6 +40,22 @@ export default function BarcodeSettingsPage() {
     } catch (e) {}
     return {};
   });
+
+  const [barcodeSettings, setBarcodeSettings] = useState(() => {
+    try {
+      if (typeof window === "undefined") return { policyAcknowledged: false, vendors: [] };
+      const raw = localStorage.getItem("barcode_settings_v1");
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return { policyAcknowledged: false, vendors: [] };
+  });
+
+  React.useEffect(() => {
+    try {
+      if (typeof window === "undefined") return;
+      localStorage.setItem("barcode_settings_v1", JSON.stringify(barcodeSettings || { policyAcknowledged: false, vendors: [] }));
+    } catch (e) {}
+  }, [barcodeSettings]);
 
   const selectedTemplate = useMemo<BarcodeTemplate | null>(() => {
     return templates.find((t: BarcodeTemplate) => t.id === selectedId) ?? null;
@@ -280,6 +298,13 @@ export default function BarcodeSettingsPage() {
               template={selectedTemplate}
               onChange={handleChange}
             />
+            <div className="mt-4">
+              <BarcodePrintSettingsSection
+                settings={barcodeSettings}
+                onChange={(next) => setBarcodeSettings(next)}
+                suppliers={(mockSuppliers || []).map((s) => ({ id: String(s.id), name: s.name }))}
+              />
+            </div>
             <div className="mt-4">
               <h4 className="font-medium">Actions</h4>
               <div className="mt-2 space-y-2">

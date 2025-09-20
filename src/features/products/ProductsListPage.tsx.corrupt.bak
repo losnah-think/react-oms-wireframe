@@ -1,122 +1,89 @@
-import React, {
-  useState,
-  useMemo,
-  useEffect,
-  useRef,
-  useCallback,
-} from "react";
-import {
-  Container,
-  Card,
-  Button,
-  Stack,
-  GridRow,
-  GridCol,
-} from "../../design-system";
-import TableExportButton from "../../components/common/TableExportButton";
-import HierarchicalSelect from "../../components/common/HierarchicalSelect";
-import Typeahead from "../../components/common/Typeahead";
-import { formatPrice } from "../../utils/productUtils";
-import { normalizeProductGroup } from "../../utils/groupUtils";
-
-interface ProductsListPageProps {
-  onNavigate?: (page: string, productId?: string) => void;
-}
-
-const safeJson = async (res: Response | undefined, fallback: any) => {
-  if (!res || !res.ok) return fallback;
-  try {
-    const j = await res.json();
-    if (!j) return fallback;
-    if (Array.isArray(j)) return { products: j };
-    if (j.products && Array.isArray(j.products))
-      return { products: j.products };
-    return fallback;
-  } catch {
-    return fallback;
-  }
-};
-
-const normalizeProducts = (list: any[]): any[] =>
-  (Array.isArray(list) ? list : []).map((p: any) => {
-    const base = {
-      ...p,
-      code: p.code || p.sku || "",
-      selling_price: p.selling_price ?? p.price ?? 0,
-      variants: Array.isArray(p.variants) ? p.variants : [],
-    };
-    return normalizeProductGroup(base);
-  });
-
-const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
-  const [products, setProducts] = useState<any[]>([]);
-  const [productFilterOptions, setProductFilterOptions] = useState<any>({
-    brands: [],
-    status: [],
-  });
-  const [classificationsData, setClassificationsData] = useState<any[]>([]);
-  const [groupsData, setGroupsData] = useState<any[]>([]);
-  const [categoryNames, setCategoryNames] = useState<Record<string, string>>(
-    {},
-  );
-
-  const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [debounced, setDebounced] = useState(searchTerm);
-  const debounceRef = useRef<number | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState("전체");
-  const [selectedBrand, setSelectedBrand] = useState("전체");
-  const [sortBy, setSortBy] = useState("newest");
-  const [showFilters, setShowFilters] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Record<string, boolean>>({});
-  const [selectAll, setSelectAll] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
-  const [isOptionBatchModalOpen, setIsOptionBatchModalOpen] = useState(false);
-  const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
-  const [localClassifications, setLocalClassifications] = useState<any[]>([]);
-  const [newCategoryName, setNewCategoryName] = useState("");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState("");
-  const [suppliers, setSuppliers] = useState<any[]>([]);
-  const [selectedSuppliers, setSelectedSuppliers] = useState<string[]>([]);
-  const [designers, setDesigners] = useState<any[]>([]);
-  const [registrants, setRegistrants] = useState<any[]>([]);
-  const [selectedDesigner, setSelectedDesigner] = useState<string>("");
-  const [selectedRegistrant, setSelectedRegistrant] = useState<string>("");
-  const [selectedSeason, setSelectedSeason] = useState<string>("전체");
-  const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
-  const [malls, setMalls] = useState<any[]>([]);
-  const [selectedMall, setSelectedMall] = useState<string>("");
-  const [generalSettings, setGeneralSettings] = useState<any>({});
-  const [isSupplierManagerOpen, setIsSupplierManagerOpen] = useState(false);
-  const [isSupplierDropdownOpen, setIsSupplierDropdownOpen] = useState(false);
-  const [isGroupDropdownOpen, setIsGroupDropdownOpen] = useState(false);
-  const [onlyWithShippingPolicy, setOnlyWithShippingPolicy] = useState(false);
-  const [compactView, setCompactView] = useState(false);
-
-  // --- Search UX states & helpers ---
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
-  const [recentQueries, setRecentQueries] = useState<string[]>([]);
-  const [highlightedSuggestionIndex, setHighlightedSuggestionIndex] = useState<number>(-1);
-  const [dateFrom, setDateFrom] = useState<string>("");
-  const [dateTo, setDateTo] = useState<string>("");
-
-  const resetFilters = useCallback(() => {
-    setSelectedCategory("전체");
-    setSelectedBrand("전체");
-    setSelectedSuppliers([]);
-    setSelectedGroups([]);
-    setOnlyWithShippingPolicy(false);
-    setSearchTerm("");
-    setDebounced("");
-    setSelectedDesigner("");
-    setSelectedRegistrant("");
-    setSelectedSeason("전체");
-    setDateFrom("");
-    setDateTo("");
-  }, []);
+            <div className="relative flex-1">
+              <div className="flex items-center">
+                <div className="relative flex-1">
+                  <input
+                    id="product-search-input"
+                    role="combobox"
+                    aria-expanded={isSuggestionsOpen}
+                    aria-autocomplete="list"
+                    aria-controls="product-search-suggestions"
+                    type="text"
+                    placeholder="상품명, 상품코드로 검색 (단축키: ⌘/Ctrl+K, /)"
+                    value={searchTerm}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      setIsSuggestionsOpen(true);
+                    }}
+                    onFocus={() => {
+                      setIsSearchFocused(true);
+                      setIsSuggestionsOpen(true);
+                    }}
+                    onBlur={() => {
+                      setIsSearchFocused(false);
+                      setTimeout(() => setIsSuggestionsOpen(false), 150);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") executeSearch();
+                      if (e.key === "Escape") {
+                        setIsSuggestionsOpen(false);
+                        (e.target as HTMLInputElement).blur();
+                      }
+                      if (e.key === "ArrowDown") {
+                        e.preventDefault();
+                        setHighlightedSuggestionIndex((prev) =>
+                          Math.min(prev + 1, recentQueries.length - 1),
+                        );
+                      }
+                      if (e.key === "ArrowUp") {
+                        e.preventDefault();
+                        setHighlightedSuggestionIndex((prev) => Math.max(prev - 1, 0));
+                      }
+                    }}
+                    className={`w-full pl-4 pr-10 py-3 text-lg border rounded-md ${isSearchFocused ? "ring-2 ring-blue-300 border-blue-400" : "border-gray-300"}`}
+                  />
+                  {searchTerm && (
+                    <button
+                      type="button"
+                      aria-label="검색어 지우기"
+                      onClick={clearSearch}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 px-2"
+                    >
+                      ×
+                    </button>
+                  )}
+                  {isSuggestionsOpen && recentQueries.length > 0 && (
+                    <ul
+                      id="product-search-suggestions"
+                      role="listbox"
+                      className="absolute z-20 mt-1 w-full bg-white border rounded shadow"
+                    >
+                      {recentQueries.map((q, i) => (
+                        <li
+                          role="option"
+                          aria-selected={i === highlightedSuggestionIndex}
+                          key={q}
+                          className="px-3 py-2 hover:bg-gray-50 cursor-pointer"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setSearchTerm(q);
+                            executeSearch(q);
+                          }}
+                        >
+                          {q}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  className="ml-3 px-4 py-3 bg-blue-600 text-white rounded"
+                  onClick={() => executeSearch()}
+                >
+                  검색
+                </button>
+              </div>
+              </div>
 
   // compute active filters summary for collapsed view (objects with keys)
   const activeFilters = useMemo(() => {
@@ -272,6 +239,21 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
         ) as HTMLElement | null;
       if (el && typeof el.focus === "function") el.focus();
     }, 120);
+  }, []);
+
+  const resetFilters = useCallback(() => {
+    setSelectedCategory("전체");
+    setSelectedBrand("전체");
+    setSelectedSuppliers([]);
+    setSelectedGroups([]);
+    setOnlyWithShippingPolicy(false);
+    setSearchTerm("");
+    setDebounced("");
+    setSelectedDesigner("");
+    setSelectedRegistrant("");
+    setSelectedSeason("전체");
+    setDateFrom("");
+    setDateTo("");
   }, []);
 
   // initialize persisted toggles
@@ -1322,8 +1304,10 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
           </div>
           {/* 검색 내부 상단 필드들은 필터로 이동함 */}
 
-          <div className="flex items-center gap-4 w-full">
-            <label className="w-40 text-sm text-gray-700">통합검색</label>
+          <div className="flex flex-col sm:flex-row items-start gap-4">
+            <div className="w-full sm:w-40">
+              <label className="text-sm text-gray-700">통합검색</label>
+            </div>
             <div className="relative flex-1">
               <input
                 id="product-search-input"
@@ -1363,25 +1347,18 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
                     setHighlightedSuggestionIndex((prev) => Math.max(prev - 1, 0));
                   }
                 }}
-                className={`w-full pl-4 pr-28 py-3 text-lg border rounded-md ${isSearchFocused ? "ring-2 ring-blue-300 border-blue-400" : "border-gray-300"}`}
+                className={`w-full pl-4 pr-24 py-3 text-lg border rounded-md ${isSearchFocused ? "ring-2 ring-blue-300 border-blue-400" : "border-gray-300"}`}
               />
               {searchTerm && (
                 <button
                   type="button"
                   aria-label="검색어 지우기"
                   onClick={clearSearch}
-                  className="absolute right-24 top-1/2 -translate-y-1/2 text-gray-500 px-2"
+                  className="absolute right-44 top-1/2 -translate-y-1/2 text-gray-500 px-2"
                 >
                   ×
                 </button>
               )}
-              <button
-                type="button"
-                className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-2 bg-blue-600 text-white rounded-md"
-                onClick={() => executeSearch()}
-              >
-                검색
-              </button>
               {isSuggestionsOpen && recentQueries.length > 0 && (
                 <ul
                   id="product-search-suggestions"
@@ -1405,7 +1382,28 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
                   ))}
                 </ul>
               )}
+
+              <div className="mt-3">
+                <button
+                  type="button"
+                  className="w-full px-4 py-3 bg-blue-600 text-white rounded text-center"
+                  onClick={() => executeSearch()}
+                >
+                  검색
+                </button>
+              </div>
             </div>
+
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md"
+            >
+              <option value="newest">최신순</option>
+              <option value="oldest">오래된순</option>
+              <option value="price-asc">가격↑</option>
+              <option value="price-desc">가격↓</option>
+            </select>
           </div>
         </div>
       </Card>
@@ -1413,25 +1411,12 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
       {/* Action toolbar (Excel, batch edit, option batch edit, delete, sort) */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-2">
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md"
-              aria-label="정렬 기준"
-            >
-              <option value="newest">최신순</option>
-              <option value="oldest">오래된순</option>
-              <option value="price-asc">가격↑</option>
-              <option value="price-desc">가격↓</option>
-            </select>
-            <div>
-              <TableExportButton
-                data={exportData}
-                fileName={`products-list.xlsx`}
-                aria-label="엑셀 다운로드"
-              />
-            </div>
+          <div>
+            <TableExportButton
+              data={exportData}
+              fileName={`products-list.xlsx`}
+              aria-label="엑셀 다운로드"
+            />
           </div>
           {/* mall select moved next to '선택 외부 송신' button */}
           <button
