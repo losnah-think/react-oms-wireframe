@@ -48,11 +48,20 @@ const menuItems: MenuItem[] = [
     ],
   },
   {
-    id: "orders",
-    label: "주문 관리",
-    icon: "archive",
-    children: [{ id: "orders-list", label: "주문 목록", icon: "list" }, { id: "orders-settings", label: "주문 설정", icon: "settings" }],
+    id: "barcodes",
+    label: "바코드 관리",
+    icon: "tag",
+    children: [
+      { id: "barcodes-products", label: "상품 바코드 관리", icon: "menu" },
+      { id: "barcodes-options", label: "옵션 바코드 관리", icon: "menu" },
+    ],
   },
+  // {
+  //   id: "orders",
+  //   label: "주문 관리",
+  //   icon: "archive",
+  //   children: [{ id: "orders-list", label: "주문 목록", icon: "list" }, { id: "orders-settings", label: "주문 설정", icon: "settings" }],
+  // },
   {
     id: "shopping-mall",
     label: "거래처 관리",
@@ -101,15 +110,6 @@ const menuItems: MenuItem[] = [
         icon: "tag",
       },
       // { id: "orders-settings", label: "주문 설정", icon: "settings" },
-    ],
-  },
-  {
-    id: "barcodes",
-    label: "바코드 관리",
-    icon: "tag",
-    children: [
-      { id: "barcodes-products", label: "상품 바코드 관리", icon: "menu" },
-      { id: "barcodes-options", label: "옵션 바코드 관리", icon: "menu" },
     ],
   },
   // vendors moved into shopping-mall section above
