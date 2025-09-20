@@ -124,15 +124,6 @@ const initialFormData: ProductFormData = {
       storageConditions: "",
       shelfLife: undefined,
     },
-    options: [
-      {
-        id: "opt-default",
-        name: "기본 옵션",
-        type: "other",
-        values: [],
-        isRequired: false,
-      },
-    ],
     memos: Array.from({ length: 15 }).map(() => ""),
   },
   validation: {
@@ -363,6 +354,47 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
     setSaving(false);
     onSave?.(formData);
     onNavigate?.("products-list");
+  };
+
+  const handleSaveAndContinue = async () => {
+    setSaving(true);
+    try {
+      // basic validation
+      if (
+        !formData.basicInfo.productName ||
+        !formData.basicInfo.codes.internal
+      ) {
+        setToastMessage("필수 항목을 입력하세요.");
+        setSaving(false);
+        return;
+      }
+      await new Promise((r) => setTimeout(r, 700));
+      onSave?.(formData);
+      setToastMessage("상품이 저장되었습니다. 계속 등록하실 수 있습니다.");
+      // reset form but preserve commonly reused selectors (brand, supplier, category)
+      setFormData((prev) => {
+        const preserved = {
+          basicInfo: {
+            brandId:
+              prev.basicInfo?.brandId || initialFormData.basicInfo.brandId,
+            supplierId:
+              prev.basicInfo?.supplierId ||
+              initialFormData.basicInfo.supplierId,
+            categoryId:
+              prev.basicInfo?.categoryId ||
+              initialFormData.basicInfo.categoryId,
+            codes: { ...initialFormData.basicInfo.codes },
+          },
+          additionalInfo: { ...initialFormData.additionalInfo },
+          validation: { ...initialFormData.validation },
+        } as ProductFormData;
+        // ensure codes.internal is cleared
+        preserved.basicInfo.codes.internal = "";
+        return preserved;
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const advancedSections: {
@@ -807,6 +839,14 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
         <div className="max-w-5xl mx-auto">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-bold">상품 등록</h1>
+            <div className="flex items-center gap-2">
+              <button
+                className="px-3 py-1 bg-blue-600 text-white rounded text-sm"
+                onClick={handleSaveAndContinue}
+              >
+                저장 후 계속
+              </button>
+            </div>
           </div>
           <div className="flex flex-col md:flex-row gap-6">
             {/* 메인 폼 영역 */}
@@ -991,7 +1031,7 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
                 <div className="mb-4">
                   <h2 className="text-lg font-bold">고급 설정</h2>
                   <p className="text-sm text-gray-500">
-                    AWS EC2 생성 단계처럼 필요할 때만 펼쳐 추가 정보를 입력하세요.
+                    필요할 때만 펼쳐 추가 정보를 입력하세요.
                   </p>
                 </div>
                 <div className="space-y-3">
@@ -1048,6 +1088,13 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
                     onClick={handleSave}
                   >
                     {saving ? "저장중..." : "물품등록"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    loading={saving}
+                    onClick={handleSaveAndContinue}
+                  >
+                    {saving ? "처리중..." : "등록후계속"}
                   </Button>
                 </Stack>
               </div>
