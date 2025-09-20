@@ -120,6 +120,44 @@ export async function getProduct(id: string) {
   return data
 }
 
+/**
+ * Attempts to match an order to a product using product.matching_keywords.
+ * Returns an object with `matched: boolean` and `matchedKeywords: string[]`.
+ * Matching is case-insensitive and checks common order fields and item names/SKUs.
+ */
+export function matchOrder(order: any, product: any): { matched: boolean; matchedKeywords: string[] } {
+  if (!order || !product) return { matched: false, matchedKeywords: [] }
+  const rawKeywords = product.matching_keywords || product.matchingKeywords || []
+  const keywords = Array.isArray(rawKeywords) ? rawKeywords.map((k: any) => String(k).trim()).filter(Boolean) : []
+  if (keywords.length === 0) return { matched: false, matchedKeywords: [] }
+
+  const haystackFields: string[] = []
+  // common top-level order fields
+  if (order.customer_name) haystackFields.push(String(order.customer_name))
+  if (order.buyer_name) haystackFields.push(String(order.buyer_name))
+  if (order.shipping_address) haystackFields.push(String(order.shipping_address))
+  if (order.memo) haystackFields.push(String(order.memo))
+  if (order.order_note) haystackFields.push(String(order.order_note))
+
+  // item-level fields
+  if (Array.isArray(order.items)) {
+    for (const it of order.items) {
+      if (it.name) haystackFields.push(String(it.name))
+      if (it.sku) haystackFields.push(String(it.sku))
+      if (it.options) haystackFields.push(String(it.options))
+    }
+  }
+
+  const haystack = haystackFields.join(" \n ").toLowerCase()
+  const matchedKeywords: string[] = []
+  for (const kw of keywords) {
+    const k = String(kw).toLowerCase()
+    if (k.length === 0) continue
+    if (haystack.indexOf(k) !== -1) matchedKeywords.push(kw)
+  }
+  return { matched: matchedKeywords.length > 0, matchedKeywords }
+}
+
 export function makePlaceholderProduct(id: string) {
   const pid = Number(id) || Date.now()
   return {

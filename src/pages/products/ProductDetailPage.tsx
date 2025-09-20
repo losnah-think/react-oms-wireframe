@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Container,
   Card,
@@ -8,23 +8,14 @@ import {
   Modal,
 } from "../../design-system";
 import Toast from "../../components/Toast";
+import { matchOrder } from "../../lib/products";
 import { normalizeProductGroup } from "../../utils/groupUtils";
 import { useRouter } from "next/router";
 import {
   formatDate,
   formatPrice,
+  getStockStatus,
 } from "../../utils/productUtils";
-
-const FALLBACK_IMAGE =
-  "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=600&fit=crop";
-
-const PAGE_SECTIONS = [
-  { id: "overview", label: "요약" },
-  { id: "media", label: "이미지" },
-  { id: "options", label: "옵션" },
-  { id: "extra", label: "추가 정보" },
-  { id: "description", label: "상세 설명" },
-];
 
 interface ProductDetailPageProps {
   productId?: string;
@@ -63,64 +54,65 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   // editing: true = form editable, false = read-only
   const [editing, setEditing] = useState<boolean>(true);
   const [toast, setToast] = useState<string | null>(null);
+  // matching keyword UI state
+  const [newKeyword, setNewKeyword] = useState("");
+  const [showMatchTestModal, setShowMatchTestModal] = useState(false);
+  const [matchTestInput, setMatchTestInput] = useState("{}");
+  const [matchTestResult, setMatchTestResult] = useState<any | null>(null);
 
   const [product, setProduct] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [classificationNames, setClassificationNames] = useState<
     Record<string, string>
   >({});
-  const descEditorRef = useRef<HTMLDivElement | null>(null);
-  const purifyRef = useRef<any>(null);
+
+  // Variant edit modal
+  const [showVariantModal, setShowVariantModal] = useState(false);
+  const [editingVariantIndex, setEditingVariantIndex] = useState<number | null>(
+    null,
+  );
+  const [variantForm, setVariantForm] = useState<any>(null);
+  // Image management
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [imageListDraft, setImageListDraft] = useState<string[]>([]);
+  // Description preview
+  const [showDescPreview, setShowDescPreview] = useState(false);
+  const [showDescEdit, setShowDescEdit] = useState(false);
+  const [descEditValue, setDescEditValue] = useState("");
+
+  // Dropdown options for product-level fields (fetched from mock API)
+  const [YEAR_OPTIONS, setYearOptions] = useState<string[]>([])
+  const [SEASON_OPTIONS, setSeasonOptions] = useState<string[]>([])
+  const [BRAND_OPTIONS, setBrandOptions] = useState<string[]>([])
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    import("dompurify")
-      .then((mod) => {
-        purifyRef.current = (mod.default || mod);
+    let mounted = true
+    fetch('/api/meta/product-options')
+      .then((r) => r.json())
+      .then((body) => {
+        if (!mounted) return
+        setYearOptions(body.years || [])
+        setSeasonOptions(body.seasons || [])
+        setBrandOptions(body.brands || [])
       })
       .catch(() => {
-        purifyRef.current = null;
-      });
-  }, []);
+        if (!mounted) return
+        const now = new Date().getFullYear()
+        setYearOptions(Array.from({ length: 10 }).map((_, i) => String(now - 5 + i)))
+        setSeasonOptions(['전체', 'SS', 'FW', 'SPRING', 'SUMMER', 'AUTUMN', 'WINTER'])
+        setBrandOptions(['(없음)', '브랜드A', '브랜드B', '브랜드C'])
+      })
 
-  const sanitizeHtml = (html: string) => {
-    try {
-      if (purifyRef.current && purifyRef.current.sanitize) {
-        return purifyRef.current.sanitize(html);
-      }
-    } catch (e) {
-      // fallthrough to regex fallback
+    return () => {
+      mounted = false
     }
-    return String(html).replace(/<script[\s\S]*?>[\s\S]*?<\/[\s]*script>/gi, "");
-  };
+  }, [])
 
-  const fileToDataUrl = (file: File) =>
-    new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (ev) => resolve(String(ev.target?.result || ""));
-      reader.onerror = (err) => reject(err);
-      reader.readAsDataURL(file);
-    });
-  const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
-  const [imageDrafts, setImageDrafts] = useState<Record<number, string>>({});
-  const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
-  const replaceImageInputRef = useRef<HTMLInputElement | null>(null);
-  const addImageInputRef = useRef<HTMLInputElement | null>(null);
-  const pendingReplaceIndexRef = useRef<number | null>(null);
-  const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
-  const [activeSection, setActiveSection] = useState<string>(PAGE_SECTIONS[0].id);
-  const sectionOrder = useMemo(() => PAGE_SECTIONS.map((section) => section.id), []);
-
-  const registerSectionRef = (id: string) => (el: HTMLElement | null) => {
-    sectionRefs.current[id] = el;
-  };
-
-  const scrollToSection = (id: string) => {
-    const el = sectionRefs.current[id];
-    if (!el) return;
-    const top = el.getBoundingClientRect().top + window.scrollY - 96;
-    window.scrollTo({ top, behavior: "smooth" });
-  };
+  useEffect(() => {
+    if (showDescEdit) {
+      setDescEditValue(product?.description || "")
+    }
+  }, [showDescEdit])
 
   useEffect(() => {
     let mounted = true;
@@ -217,46 +209,6 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     };
   }, []);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentOffset = window.scrollY + 140;
-      let currentId = PAGE_SECTIONS[0].id;
-      sectionOrder.forEach((id) => {
-        const el = sectionRefs.current[id];
-        if (!el) return;
-        const elementTop = el.offsetTop;
-        if (currentOffset >= elementTop) {
-          currentId = id;
-        }
-      });
-      setActiveSection(currentId);
-    };
-
-    handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [sectionOrder, product?.id]);
-
-  const images: string[] = useMemo(
-    () => (Array.isArray(product?.images) ? [...product.images] : []),
-    [product?.images],
-  );
-
-  useEffect(() => {
-    if (images.length === 0) {
-      setSelectedImageIndex(-1);
-      return;
-    }
-    setSelectedImageIndex((prev) => {
-      if (prev < 0 || prev >= images.length) return 0;
-      return prev;
-    });
-  }, [images.length]);
-
-  useEffect(() => {
-    setImageDrafts({});
-  }, [product?.id]);
-
   const handleBack = () => {
     if (onNavigate) {
       onNavigate("products-list");
@@ -264,177 +216,6 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
       // Next.js pages/[id].tsx에서 직접 접근 시 목록으로 이동
       window.location.href = "/products";
     }
-  };
-
-  const handleSelectImage = (idx: number) => {
-    if (idx < 0 || idx >= images.length) return;
-    setSelectedImageIndex(idx);
-  };
-
-  const commitImageDraft = (idx: number) => {
-    if (idx < 0) return;
-    const draft = imageDrafts[idx];
-    if (draft === undefined) return;
-    setProduct((prev: any) => {
-      const imgs = Array.isArray(prev?.images) ? [...prev.images] : [];
-      const previousValue = imgs[idx];
-      if (previousValue === draft) {
-        return prev;
-      }
-      imgs[idx] = draft;
-      const next: any = { ...(prev || {}), images: imgs };
-      if (prev?.representative_image === previousValue) {
-        next.representative_image = draft;
-      }
-      return next;
-    });
-    setImageDrafts((prev) => {
-      const copy = { ...prev };
-      delete copy[idx];
-      return copy;
-    });
-  };
-
-  const handleImageDraftChange = (idx: number, value: string) => {
-    if (idx < 0) return;
-    setImageDrafts((prev) => ({ ...prev, [idx]: value }));
-  };
-
-  const handleSetRepresentative = (idx: number) => {
-    const target = images[idx];
-    if (!target) return;
-    setProduct((prev: any) => ({ ...(prev || {}), representative_image: target }));
-  };
-
-  const handleRemoveImage = (idx: number) => {
-    if (idx < 0) return;
-    setProduct((prev: any) => {
-      const imgs = Array.isArray(prev?.images) ? [...prev.images] : [];
-      if (!imgs.length) return prev;
-      const removed = imgs.splice(idx, 1)[0];
-      const nextRepresentative = prev?.representative_image === removed ? imgs[0] : prev?.representative_image;
-      return {
-        ...(prev || {}),
-        images: imgs,
-        representative_image: nextRepresentative,
-      };
-    });
-
-    setImageDrafts((prev) => {
-      if (!Object.keys(prev).length) return prev;
-      const next: Record<number, string> = {};
-      Object.entries(prev).forEach(([key, value]) => {
-        const numKey = Number(key);
-        if (numKey === idx) return;
-        if (numKey > idx) next[numKey - 1] = value as string;
-        else next[numKey] = value as string;
-      });
-      return next;
-    });
-
-    setSelectedImageIndex((prev) => {
-      if (prev < 0) return prev;
-      if (prev === idx) return Math.max(0, prev - 1);
-      if (prev > idx) return prev - 1;
-      return prev;
-    });
-  };
-
-  const triggerReplaceImage = (idx: number) => {
-    if (!editing || idx < 0) return;
-    pendingReplaceIndexRef.current = idx;
-    replaceImageInputRef.current?.click();
-  };
-
-  const handleReplaceImageFileChange = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const file = event.target.files?.[0];
-    const idx = pendingReplaceIndexRef.current;
-    if (!file || idx === null) {
-      event.target.value = "";
-      pendingReplaceIndexRef.current = null;
-      return;
-    }
-    setUploadingIndex(idx);
-    try {
-      const data = await fileToDataUrl(file);
-      setProduct((prev: any) => {
-        const imgs = Array.isArray(prev?.images) ? [...prev.images] : [];
-        imgs[idx] = data;
-        const next: any = { ...(prev || {}), images: imgs };
-        if (!prev?.representative_image) {
-          next.representative_image = data;
-        } else if (prev?.representative_image === prev?.images?.[idx]) {
-          next.representative_image = data;
-        }
-        return next;
-      });
-      setImageDrafts((prev) => {
-        if (!(idx in prev)) return prev;
-        const copy = { ...prev };
-        delete copy[idx];
-        return copy;
-      });
-    } catch (err) {
-      console.error("file read error", err);
-    } finally {
-      setUploadingIndex(null);
-      pendingReplaceIndexRef.current = null;
-      event.target.value = "";
-    }
-  };
-
-  const triggerAddImages = () => {
-    if (!editing) return;
-    addImageInputRef.current?.click();
-  };
-
-  const handleAddImageFiles = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const files = event.target.files;
-    if (!files || !files.length) {
-      event.target.value = "";
-      return;
-    }
-    const prevLength = images.length;
-    setUploadingIndex(-1);
-    try {
-      const newImages = await Promise.all(
-        Array.from(files).map((file) => fileToDataUrl(file)),
-      );
-      setProduct((prev: any) => {
-        const imgs = Array.isArray(prev?.images) ? [...prev.images] : [];
-        const nextImages = [...imgs, ...newImages];
-        const nextRepresentative = prev?.representative_image || nextImages[0] || prev?.representative_image;
-        return {
-          ...(prev || {}),
-          images: nextImages,
-          representative_image: nextRepresentative,
-        };
-      });
-      if (newImages.length) {
-        setSelectedImageIndex(prevLength);
-      }
-    } catch (err) {
-      console.error("file read error", err);
-    } finally {
-      setUploadingIndex(null);
-      event.target.value = "";
-    }
-  };
-
-  const handleAddBlankImage = () => {
-    if (!editing) return;
-    const nextIndex = images.length;
-    setProduct((prev: any) => {
-      const imgs = Array.isArray(prev?.images) ? [...prev.images] : [];
-      imgs.push("");
-      return { ...(prev || {}), images: imgs };
-    });
-    setSelectedImageIndex(nextIndex);
-    setImageDrafts((prev) => ({ ...prev, [nextIndex]: "" }));
   };
 
   if (loading) {
@@ -468,303 +249,180 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     100
   ).toFixed(0);
 
-  const hasImages = images.length > 0;
-  const effectiveSelectedIndex = hasImages
-    ? Math.min(Math.max(selectedImageIndex, 0), images.length - 1)
-    : -1;
-  const selectedImageOriginal =
-    effectiveSelectedIndex >= 0 ? images[effectiveSelectedIndex] : undefined;
-  const selectedImageDraft =
-    effectiveSelectedIndex >= 0
-      ? imageDrafts[effectiveSelectedIndex] ?? undefined
-      : undefined;
-  const previewImage = selectedImageDraft ?? selectedImageOriginal;
-  const representativeImage = product.representative_image;
-  const isSelectedRepresentative =
-    !!previewImage && representativeImage === selectedImageOriginal;
-
   return (
     <>
       <Container
-        maxWidth="full"
+        maxWidth="6xl"
         padding="lg"
-        centered={false}
         className="bg-gray-50 min-h-screen"
       >
-        <div className="mx-auto w-full max-w-7xl px-0 lg:px-4">
-          <div className="flex flex-col gap-6 lg:flex-row">
-            <aside className="hidden w-60 shrink-0 lg:block">
-              <div className="sticky top-24 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-                <h2 className="text-sm font-semibold text-gray-900">상품 섹션</h2>
-                <p className="mt-1 text-xs text-gray-500">원하는 영역으로 빠르게 이동하세요.</p>
-                <nav className="mt-4 space-y-1">
-                  {PAGE_SECTIONS.map((section) => {
-                    const isActive = activeSection === section.id;
-                    return (
-                      <button
-                        type="button"
-                        key={section.id}
-                        onClick={() => scrollToSection(section.id)}
-                        className={`w-full rounded-md px-3 py-2 text-left text-sm transition ${
-                          isActive
-                            ? "bg-blue-50 font-semibold text-blue-600"
-                            : "text-gray-600 hover:bg-gray-50"
-                        }`}
-                        aria-current={isActive ? "true" : "false"}
-                      >
-                        {section.label}
-                      </button>
-                    );
-                  })}
-                </nav>
-              </div>
-            </aside>
-            <div className="min-w-0 flex-1">
-              <div className="sticky top-16 z-10 mb-4 flex items-center gap-2 rounded-lg border border-gray-200 bg-white p-3 shadow-sm lg:hidden">
-                <label htmlFor="mobile-section-nav" className="text-xs font-medium text-gray-500">
-                  섹션 이동
-                </label>
-                <select
-                  id="mobile-section-nav"
-                  className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
-                  value={activeSection}
-                  onChange={(e) => scrollToSection(e.target.value)}
-                >
-                  {PAGE_SECTIONS.map((section) => (
-                    <option key={section.id} value={section.id}>
-                      {section.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-6">
-                <section
-                  id="overview"
-                  data-section-id="overview"
-                  ref={registerSectionRef("overview")}
-                  className="scroll-mt-28 space-y-4"
-                >
-                  <div className="flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <Button
-                        variant="ghost"
-                        onClick={handleBack}
-                        className="text-blue-600"
-                      >
-                        ← 목록으로
-                      </Button>
-                      <Stack direction="row" gap={2} className="flex-wrap">
-                        <Button
-                          variant={editing ? "outline" : "primary"}
-                          aria-pressed={!editing}
-                          onClick={() => setEditing((s) => !s)}
-                          className="font-medium"
-                          title={editing ? "편집 잠금" : "편집 가능"}
-                        >
-                          {editing ? "잠금" : "수정"}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          className="border-blue-500 text-blue-600"
-                          onClick={() => {
-                            setSettingsForm({
-                              is_selling: !!product.is_selling,
-                              is_soldout: !!product.is_soldout,
-                              is_dutyfree: !!product.is_dutyfree,
-                              origin_country: product.origin_country || "",
-                              purchase_name: product.purchase_name || "",
-                              shipping_policy: product.shipping_policy || "",
-                              hs_code: product.hs_code || "",
-                              box_qty: product.box_qty || "",
-                              is_stock_linked: !!(
-                                product.variants &&
-                                product.variants[0] &&
-                                product.variants[0].is_stock_linked
-                              ),
-                              classification_id: product.classification_id || "",
-                            });
-                            setShowSettingsModal(true);
-                          }}
-                        >
-                          상품 설정
-                        </Button>
-                        <Button
-                          variant="danger"
-                          onClick={() => {
-                            if (!confirm("정말 이 상품을 휴지통으로 이동하시겠습니까?"))
-                              return;
-                            try {
-                              const raw = localStorage.getItem("trashed_products_v1");
-                              const existing = raw ? JSON.parse(raw) : [];
-                              existing.push(product);
-                              localStorage.setItem(
-                                "trashed_products_v1",
-                                JSON.stringify(existing),
-                              );
-                            } catch (e) {}
-                            if (onNavigate) onNavigate("products-list");
-                            else window.location.href = "/products";
-                          }}
-                        >
-                          삭제
-                        </Button>
-                      </Stack>
-                    </div>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="rounded-lg border border-gray-200 p-4">
-                        <h3 className="text-sm font-semibold text-gray-800">등록 정보</h3>
-                        <dl className="mt-2 space-y-1 text-xs text-gray-600">
-                          <div className="flex justify-between">
-                            <dt>등록 아이디</dt>
-                            <dd>
-                              <strong>
-                                {product?.created_by ||
-                                  product?.registered_by ||
-                                  "api_test"}
-                              </strong>
-                            </dd>
-                          </div>
-                          <div className="flex justify-between">
-                            <dt>등록일자</dt>
-                            <dd>
-                              {product?.created_at
-                                ? `${new Date(product.created_at).toLocaleDateString("ko-KR")} ${new Date(product.created_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}`
-                                : "-"}
-                            </dd>
-                          </div>
-                          <div className="flex justify-between">
-                            <dt>최종 수정자</dt>
-                            <dd>
-                              <strong>
-                                {product?.updated_by ||
-                                  product?.modified_by ||
-                                  product?.created_by ||
-                                  "api_test"}
-                              </strong>
-                            </dd>
-                          </div>
-                          <div className="flex justify-between">
-                            <dt>최종 수정일</dt>
-                            <dd>
-                              {product?.updated_at
-                                ? `${new Date(product.updated_at).toLocaleDateString("ko-KR")} ${new Date(product.updated_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}`
-                                : "-"}
-                            </dd>
-                          </div>
-                        </dl>
-                        <Button
-                          variant="outline"
-                          size="small"
-                          className="mt-3 w-full"
-                          onClick={() => {
-                            const now = new Date().toISOString();
-                            setProduct((prev: any) => ({
-                              ...(prev || {}),
-                              created_at: now,
-                            }));
-                          }}
-                        >
-                          상품등록일자 오늘로 갱신
-                        </Button>
-                      </div>
-                      <div className="rounded-lg border border-gray-200 p-4">
-                        <h3 className="text-sm font-semibold text-gray-800">가격/재고 요약</h3>
-                        <dl className="mt-2 space-y-1 text-xs text-gray-600">
-                          <div className="flex justify-between">
-                            <dt>판매가</dt>
-                            <dd>{formatPrice(product.selling_price)}</dd>
-                          </div>
-                          <div className="flex justify-between">
-                            <dt>공급가</dt>
-                            <dd>{formatPrice(product.supply_price)}</dd>
-                          </div>
-                          <div className="flex justify-between">
-                            <dt>원가</dt>
-                            <dd>{formatPrice(product.cost_price)}</dd>
-                          </div>
-                          <div className="flex justify-between">
-                            <dt>총재고</dt>
-                            <dd>
-                              {product.variants
-                                ? (product.variants as any[])
-                                    .reduce(
-                                      (s: number, v: any) => s + (v.stock || 0),
-                                      0,
-                                    )
-                                    .toLocaleString()
-                                : "0"}
-                            </dd>
-                          </div>
-                          <div className="flex justify-between">
-                            <dt>마진률</dt>
-                            <dd>{marginRate}%</dd>
-                          </div>
-                          <div className="flex justify-between">
-                            <dt>등록일</dt>
-                            <dd>{formatDate(product.created_at)}</dd>
-                          </div>
-                        </dl>
-                      </div>
-                    </div>
-                  </div>
+        {/* 상단 액션 바 */}
+        <div className="flex justify-between items-center mb-6">
+          <Button
+            variant="ghost"
+            onClick={handleBack}
+            className="text-blue-600"
+          >
+            ← 목록으로
+          </Button>
+          <Stack direction="row" gap={2}>
+            <Button
+              variant={editing ? "outline" : "primary"}
+              aria-pressed={!editing}
+              onClick={() => setEditing((s) => !s)}
+              className="font-medium"
+              title={editing ? "편집 잠금" : "편집 가능"}
+            >
+              {editing ? "잠금" : "수정"}
+            </Button>
+            <Button
+              variant="outline"
+              className="border-blue-500 text-blue-600"
+              onClick={() => {
+                // prepare settings form from current product
+                setSettingsForm({
+                  is_selling: !!product.is_selling,
+                  is_soldout: !!product.is_soldout,
+                  is_dutyfree: !!product.is_dutyfree,
+                  origin_country: product.origin_country || "",
+                  purchase_name: product.purchase_name || "",
+                  shipping_policy: product.shipping_policy || "",
+                  hs_code: product.hs_code || "",
+                  box_qty: product.box_qty || "",
+                  is_stock_linked: !!(
+                    product.variants &&
+                    product.variants[0] &&
+                    product.variants[0].is_stock_linked
+                  ),
+                  classification_id: product.classification_id || "",
+                });
+                setShowSettingsModal(true);
+              }}
+            >
+              상품 설정
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() => {
+                if (!confirm("정말 이 상품을 휴지통으로 이동하시겠습니까?"))
+                  return;
+                try {
+                  const raw = localStorage.getItem("trashed_products_v1");
+                  const existing = raw ? JSON.parse(raw) : [];
+                  existing.push(product);
+                  localStorage.setItem(
+                    "trashed_products_v1",
+                    JSON.stringify(existing),
+                  );
+                } catch (e) {}
+                // navigate back to products list and show toast via onNavigate
+                if (onNavigate) onNavigate("products-list");
+                else window.location.href = "/products";
+              }}
+            >
+              삭제
+            </Button>
+          </Stack>
+        </div>
 
-                  <Card padding="md" className="shadow-sm">
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                      <div className="text-sm text-gray-600">
-                        <div>
-                          등록아이디:{" "}
-                          <strong>
-                            {product?.created_by || product?.registered_by || "api_test"}
-                          </strong>{" "}
-                          | 등록일자 :{" "}
-                          {product?.created_at
-                            ? `${new Date(product.created_at).toLocaleDateString("ko-KR")} ${new Date(product.created_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}`
-                            : "-"}
-                        </div>
-                        <div>
-                          최종수정아이디:{" "}
-                          <strong>
-                            {product?.updated_by ||
-                              product?.modified_by ||
-                              product?.created_by ||
-                              "api_test"}
-                          </strong>{" "}
-                          | 최종수정일자 :{" "}
-                          {product?.updated_at
-                            ? `${new Date(product.updated_at).toLocaleDateString("ko-KR")} ${new Date(product.updated_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}`
-                            : "-"}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="small"
-                          onClick={() => {
-                            const now = new Date().toISOString();
-                            setProduct((prev: any) => ({
-                              ...(prev || {}),
-                              created_at: now,
-                            }));
-                          }}
-                        >
-                          상품등록일자 오늘로 갱신
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                </section>
+        {/* 등록/수정 정보 */}
+        <Card padding="md" className="mb-6">
+          <div className="flex justify-between items-center">
+            <div className="text-sm text-gray-600">
+              <div>
+                등록아이디:{" "}
+                <strong>
+                  {product?.created_by || product?.registered_by || "api_test"}
+                </strong>{" "}
+                | 등록일자 :{" "}
+                {product?.created_at
+                  ? `${new Date(product.created_at).toLocaleDateString("ko-KR")} ${new Date(product.created_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}`
+                  : "-"}
+              </div>
+              <div>
+                최종수정아이디:{" "}
+                <strong>
+                  {product?.updated_by ||
+                    product?.modified_by ||
+                    product?.created_by ||
+                    "api_test"}
+                </strong>{" "}
+                | 최종수정일자 :{" "}
+                {product?.updated_at
+                  ? `${new Date(product.updated_at).toLocaleDateString("ko-KR")} ${new Date(product.updated_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}`
+                  : "-"}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="small"
+                onClick={() => {
+                  const now = new Date().toISOString();
+                  setProduct((prev: any) => ({
+                    ...(prev || {}),
+                    created_at: now,
+                  }));
+                }}
+              >
+                상품등록일자 오늘로 갱신
+              </Button>
+            </div>
+          </div>
+        </Card>
 
-                <section
-                  id="media"
-                  data-section-id="media"
-                  ref={registerSectionRef("media")}
-                  className="scroll-mt-28"
-                >
-                  <Card padding="lg" className="shadow-sm">
+        {/* Matching Keywords 관리 */}
+        <Card padding="md" className="mb-6">
+          <div className="flex justify-between items-center mb-2">
+            <div className="font-bold">매칭 키워드 관리</div>
+            <div className="text-sm text-gray-600">주문 매칭용 키워드</div>
+          </div>
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <input
+                className="px-2 py-1 border rounded flex-1"
+                placeholder="키워드 추가 (예: 브랜드명, 모델명, 색상)"
+                value={newKeyword}
+                onChange={(e) => setNewKeyword(e.target.value)}
+              />
+              <Button
+                variant="primary"
+                onClick={() => {
+                  if (!newKeyword.trim()) return;
+                  setProduct((p: any) => ({ ...(p || {}), matching_keywords: Array.from(new Set([...(p?.matching_keywords || []), newKeyword.trim()])) }));
+                  setNewKeyword("");
+                }}
+              >
+                추가
+              </Button>
+              <Button variant="outline" onClick={() => setShowMatchTestModal(true)}>
+                매칭 테스트
+              </Button>
+            </div>
+            <div>
+              {(product?.matching_keywords || []).map((k: string, idx: number) => (
+                <span key={`${k}-${idx}`} className="inline-flex items-center px-2 py-1 mr-2 mb-2 bg-gray-100 rounded">
+                  <span className="text-sm">{k}</span>
+                  {editing ? (
+                    <button
+                      className="ml-2 text-red-500"
+                      onClick={() => setProduct((p: any) => ({ ...(p || {}), matching_keywords: (p?.matching_keywords || []).filter((x: string) => x !== k) }))}
+                    >
+                      삭제
+                    </button>
+                  ) : null}
+                </span>
+              ))}
+            </div>
+          </div>
+        </Card>
+
+        {/* 상품 이미지 및 기본 정보 — TABLE VIEW */}
+        <Card padding="lg" className="mb-6 shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full table-fixed border-collapse min-w-0">
               <colgroup>
-                <col className="w-72" />
+                <col className="w-48" />
                 <col />
               </colgroup>
               <tbody>
@@ -773,168 +431,19 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                     대표 이미지
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex flex-col gap-4">
-                      <div className="flex flex-col gap-4 sm:flex-row">
-                        <div className="relative w-full max-w-xs">
-                          <div className="relative aspect-square w-full overflow-hidden rounded-lg border bg-white">
-                            <img
-                              src={previewImage || FALLBACK_IMAGE}
-                              alt={product.name}
-                              className="h-full w-full object-cover"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = FALLBACK_IMAGE;
-                              }}
-                            />
-                            {isSelectedRepresentative && (
-                              <span className="absolute left-2 top-2 rounded bg-blue-600 px-2 py-1 text-xs font-semibold text-white">
-                                대표 이미지
-                              </span>
-                            )}
-                          </div>
-                          {uploadingIndex === effectiveSelectedIndex && (
-                            <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-white/80 text-xs text-gray-700">
-                              업로드 중...
-                            </div>
-                          )}
-                          {!hasImages && !editing && (
-                            <div className="mt-2 text-xs text-gray-500">
-                              등록된 이미지가 없습니다.
-                            </div>
-                          )}
-                        </div>
-                        <div className="min-w-[220px] flex-1 space-y-3">
-                          <div>
-                            <label className="text-xs text-gray-600">이미지 URL</label>
-                            {effectiveSelectedIndex >= 0 ? (
-                              <input
-                                className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
-                                value={selectedImageDraft ?? selectedImageOriginal ?? ""}
-                                onChange={(e) =>
-                                  handleImageDraftChange(
-                                    effectiveSelectedIndex,
-                                    e.target.value,
-                                  )
-                                }
-                                onBlur={() => commitImageDraft(effectiveSelectedIndex)}
-                                placeholder="https:// 혹은 data:image 형식을 입력하세요"
-                                disabled={!editing}
-                              />
-                            ) : (
-                              <div className="mt-2 text-sm text-gray-500">
-                                등록된 이미지가 없습니다. 아래에서 이미지를 추가하세요.
-                              </div>
-                            )}
-                          </div>
-                          {editing && effectiveSelectedIndex >= 0 && (
-                            <div className="flex flex-wrap gap-2">
-                              <Button
-                                size="small"
-                                variant="primary"
-                                onClick={() => handleSetRepresentative(effectiveSelectedIndex)}
-                                disabled={!selectedImageOriginal || isSelectedRepresentative}
-                              >
-                                대표 이미지로 설정
-                              </Button>
-                              <Button
-                                size="small"
-                                variant="outline"
-                                onClick={() => triggerReplaceImage(effectiveSelectedIndex)}
-                                disabled={!editing || selectedImageIndex < 0}
-                              >
-                                파일로 교체
-                              </Button>
-                              <Button
-                                size="small"
-                                variant="outline"
-                                onClick={() => commitImageDraft(effectiveSelectedIndex)}
-                                disabled={selectedImageDraft === undefined}
-                              >
-                                URL 적용
-                              </Button>
-                              <Button
-                                size="small"
-                                variant="outline"
-                                onClick={() => handleRemoveImage(effectiveSelectedIndex)}
-                                disabled={!hasImages}
-                              >
-                                삭제
-                              </Button>
-                            </div>
-                          )}
-                          {editing && (
-                            <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
-                              <Button size="small" variant="outline" onClick={triggerAddImages}>
-                                파일 업로드
-                              </Button>
-                              <Button size="small" variant="outline" onClick={handleAddBlankImage}>
-                                URL 슬롯 추가
-                              </Button>
-                              <span className="text-xs text-gray-500">다중 파일 선택 가능</span>
-                              {uploadingIndex === -1 && (
-                                <span className="text-xs text-blue-600">업로드 중...</span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="text-xs font-medium text-gray-600">썸네일 목록</div>
-                        {images.length ? (
-                          <div className="flex flex-wrap gap-3">
-                            {images.map((src: string, idx: number) => {
-                              const draftValue = imageDrafts[idx];
-                              const thumbSrc = draftValue ?? src ?? FALLBACK_IMAGE;
-                              const isActive = effectiveSelectedIndex === idx;
-                              const isRepresentative = representativeImage === src;
-                              return (
-                                <button
-                                  type="button"
-                                  key={`${src}-${idx}`}
-                                  className={`relative h-20 w-20 overflow-hidden rounded border transition focus:outline-none focus:ring ${
-                                    isActive
-                                      ? "border-blue-500 ring-2 ring-blue-200"
-                                      : "border-gray-200"
-                                  }`}
-                                  onClick={() => handleSelectImage(idx)}
-                                  title={`이미지 ${idx + 1}`}
-                                >
-                                  <img
-                                    src={thumbSrc || FALLBACK_IMAGE}
-                                    alt={`thumb-${idx}`}
-                                    className="h-full w-full object-cover"
-                                    onError={(e) => {
-                                      (e.target as HTMLImageElement).src = FALLBACK_IMAGE;
-                                    }}
-                                  />
-                                  {isRepresentative && (
-                                    <span className="absolute left-1 top-1 rounded bg-blue-600 px-1 text-[10px] font-semibold text-white">
-                                      대표
-                                    </span>
-                                  )}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <div className="rounded border border-dashed px-4 py-6 text-center text-sm text-gray-500">
-                            이미지가 없습니다. 파일 업로드 또는 URL 슬롯 추가 버튼을 사용하세요.
-                          </div>
-                        )}
-                      </div>
-                      <input
-                        ref={replaceImageInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleReplaceImageFileChange}
-                        className="hidden"
-                      />
-                      <input
-                        ref={addImageInputRef}
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={handleAddImageFiles}
-                        className="hidden"
+                    <div className="w-48 h-48 bg-gray-100 rounded overflow-hidden">
+                      <img
+                        src={
+                          Array.isArray(product.images) && product.images[0]
+                            ? product.images[0]
+                            : "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=600&fit=crop"
+                        }
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src =
+                            "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=600&fit=crop";
+                        }}
                       />
                     </div>
                   </td>
@@ -1286,15 +795,8 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
           </div>
         </Card>
 
-      </section>
-
-      <section
-        id="options"
-        data-section-id="options"
-        ref={registerSectionRef("options")}
-        className="scroll-mt-28"
-      >
-        <Card padding="lg" className="shadow-sm">
+        {/* 옵션 및 상세 정보 */}
+        <Card padding="lg" className="mb-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">상품 옵션</h2>
           <div className="overflow-x-auto">
             <table className="min-w-full border border-gray-200 rounded-lg overflow-hidden min-w-0">
@@ -1363,17 +865,24 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                         </td>
                         <td className="px-4 py-3 text-gray-700">
                           {editing ? (
-                            <input
-                              className="px-2 py-1 border rounded"
-                              value={variant.code || ""}
-                              onChange={(e) =>
-                                setProduct((p: any) => {
-                                  const copy = JSON.parse(JSON.stringify(p));
-                                  copy.variants[vIdx].code = e.target.value;
-                                  return copy;
-                                })
-                              }
-                            />
+                            <div className="flex items-center gap-2">
+                              <input
+                                className="px-2 py-1 border rounded"
+                                value={variant.code || ""}
+                                readOnly
+                              />
+                              <Button
+                                variant="outline"
+                                size="small"
+                                onClick={() => {
+                                  setEditingVariantIndex(vIdx);
+                                  setVariantForm(JSON.parse(JSON.stringify(variant)));
+                                  setShowVariantModal(true);
+                                }}
+                              >
+                                코드 수정
+                              </Button>
+                            </div>
                           ) : (
                             variant.code
                           )}
@@ -1545,6 +1054,21 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                               </span>
                             ) : null}
                           </div>
+                          {editing ? (
+                            <div className="mt-2">
+                              <Button
+                                variant="outline"
+                                size="small"
+                                onClick={() => {
+                                  setEditingVariantIndex(vIdx);
+                                  setVariantForm(JSON.parse(JSON.stringify(variant)));
+                                  setShowVariantModal(true);
+                                }}
+                              >
+                                수정
+                              </Button>
+                            </div>
+                          ) : null}
                         </td>
                       </tr>
                     ),
@@ -1553,359 +1077,349 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             </table>
           </div>
         </Card>
-      </section>
 
-      <section
-        id="extra"
-        data-section-id="extra"
-        ref={registerSectionRef("extra")}
-        className="scroll-mt-28"
-      >
-        <Card padding="lg" className="shadow-sm">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">추가 정보</h2>
-          <div className="flex flex-col gap-6 lg:flex-row">
-            <div className="flex-1 space-y-4 text-sm text-gray-700">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {/* Variant Edit Modal */}
+        <Modal
+          open={showVariantModal}
+          onClose={() => setShowVariantModal(false)}
+          title="옵션 수정"
+        >
+          {variantForm ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs text-gray-600">가로(cm)</label>
-                  {editing ? (
-                    <input
-                      className="mt-1 w-full rounded border px-2 py-2"
-                      value={
-                        product.width_cm ??
-                        (product.variants && product.variants[0] && product.variants[0].width_cm) ??
-                        ""
-                      }
-                      onChange={(e) =>
-                        setProduct((p: any) => ({ ...(p || {}), width_cm: e.target.value }))
-                      }
-                    />
-                  ) : (
-                    <div className="mt-1">
-                      {product.width_cm ||
-                        (product.variants && product.variants[0] && product.variants[0].width_cm) ||
-                        "-"}
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <label className="text-xs text-gray-600">세로(cm)</label>
-                  {editing ? (
-                    <input
-                      className="mt-1 w-full rounded border px-2 py-2"
-                      value={
-                        product.height_cm ??
-                        (product.variants && product.variants[0] && product.variants[0].height_cm) ??
-                        ""
-                      }
-                      onChange={(e) =>
-                        setProduct((p: any) => ({ ...(p || {}), height_cm: e.target.value }))
-                      }
-                    />
-                  ) : (
-                    <div className="mt-1">
-                      {product.height_cm ||
-                        (product.variants && product.variants[0] && product.variants[0].height_cm) ||
-                        "-"}
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <label className="text-xs text-gray-600">높이(cm)</label>
-                  {editing ? (
-                    <input
-                      className="mt-1 w-full rounded border px-2 py-2"
-                      value={
-                        product.depth_cm ??
-                        (product.variants && product.variants[0] && product.variants[0].depth_cm) ??
-                        ""
-                      }
-                      onChange={(e) =>
-                        setProduct((p: any) => ({ ...(p || {}), depth_cm: e.target.value }))
-                      }
-                    />
-                  ) : (
-                    <div className="mt-1">
-                      {product.depth_cm ||
-                        (product.variants && product.variants[0] && product.variants[0].depth_cm) ||
-                        "-"}
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <label className="text-xs text-gray-600">무게(g)</label>
-                  {editing ? (
-                    <input
-                      className="mt-1 w-full rounded border px-2 py-2"
-                      value={
-                        product.weight_g ??
-                        (product.variants && product.variants[0] && product.variants[0].weight_g) ??
-                        ""
-                      }
-                      onChange={(e) =>
-                        setProduct((p: any) => ({ ...(p || {}), weight_g: e.target.value }))
-                      }
-                    />
-                  ) : (
-                    <div className="mt-1">
-                      {product.weight_g ||
-                        (product.variants && product.variants[0] && product.variants[0].weight_g) ||
-                        "-"}
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <label className="text-xs text-gray-600">부피(cc)</label>
-                  {editing ? (
-                    <input
-                      className="mt-1 w-full rounded border px-2 py-2"
-                      value={
-                        product.volume_cc ??
-                        (product.variants && product.variants[0] && product.variants[0].volume_cc) ??
-                        ""
-                      }
-                      onChange={(e) =>
-                        setProduct((p: any) => ({ ...(p || {}), volume_cc: e.target.value }))
-                      }
-                    />
-                  ) : (
-                    <div className="mt-1">
-                      {product.volume_cc ||
-                        (product.variants && product.variants[0] && product.variants[0].volume_cc) ||
-                        "-"}
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <label className="text-xs text-gray-600">원산지</label>
-                  {editing ? (
-                    <input
-                      className="mt-1 w-full rounded border px-2 py-2"
-                      value={product.origin_country || ""}
-                      onChange={(e) =>
-                        setProduct((p: any) => ({ ...(p || {}), origin_country: e.target.value }))
-                      }
-                    />
-                  ) : (
-                    <div className="mt-1">{product.origin_country || "-"}</div>
-                  )}
-                </div>
-              </div>
-              <div>
-                <label className="text-xs text-gray-600">외부몰 데이터</label>
-                {editing ? (
+                  <div className="text-sm text-gray-600 mb-1">옵션명</div>
                   <input
-                    className="mt-1 w-full rounded border px-2 py-2"
-                    value={
-                      product.externalMall?.platform ||
-                      product.externalMall?.platformName ||
-                      ""
-                    }
+                    className="w-full px-2 py-1 border rounded"
+                    value={variantForm.variant_name || ""}
                     onChange={(e) =>
-                      setProduct((p: any) => ({
-                        ...(p || {}),
-                        externalMall: {
-                          ...(p.externalMall || {}),
-                          platform: e.target.value,
-                        },
-                      }))
+                      setVariantForm((v: any) => ({ ...v, variant_name: e.target.value }))
                     }
                   />
+                </div>
+                <div>
+                  <div className="text-sm text-gray-600 mb-1">코드</div>
+                  <input
+                    className="w-full px-2 py-1 border rounded"
+                    value={variantForm.code || ""}
+                    onChange={(e) => setVariantForm((v: any) => ({ ...v, code: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <div className="text-sm text-gray-600 mb-1">바코드1</div>
+                  <input
+                    className="w-full px-2 py-1 border rounded"
+                    value={variantForm.barcode1 || ""}
+                    onChange={(e) => setVariantForm((v: any) => ({ ...v, barcode1: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <div className="text-sm text-gray-600 mb-1">바코드2</div>
+                  <input
+                    className="w-full px-2 py-1 border rounded"
+                    value={variantForm.barcode2 || ""}
+                    onChange={(e) => setVariantForm((v: any) => ({ ...v, barcode2: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <div className="text-sm text-gray-600 mb-1">바코드3</div>
+                  <input
+                    className="w-full px-2 py-1 border rounded"
+                    value={variantForm.barcode3 || ""}
+                    onChange={(e) => setVariantForm((v: any) => ({ ...v, barcode3: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <div className="text-sm text-gray-600 mb-1">재고</div>
+                  <input
+                    className="w-full px-2 py-1 border rounded text-right"
+                    value={String(variantForm.stock || 0)}
+                    onChange={(e) => setVariantForm((v: any) => ({ ...v, stock: Number(e.target.value || 0) }))}
+                  />
+                </div>
+                <div>
+                  <div className="text-sm text-gray-600 mb-1">판매가</div>
+                  <input
+                    className="w-full px-2 py-1 border rounded text-right"
+                    value={String(variantForm.selling_price || 0)}
+                    onChange={(e) => setVariantForm((v: any) => ({ ...v, selling_price: Number(e.target.value || 0) }))}
+                  />
+                </div>
+                <div>
+                  <div className="text-sm text-gray-600 mb-1">원가</div>
+                  <input
+                    className="w-full px-2 py-1 border rounded text-right"
+                    value={String(variantForm.cost_price || 0)}
+                    onChange={(e) => setVariantForm((v: any) => ({ ...v, cost_price: Number(e.target.value || 0) }))}
+                  />
+                </div>
+                <div>
+                  <div className="text-sm text-gray-600 mb-1">공급가</div>
+                  <input
+                    className="w-full px-2 py-1 border rounded text-right"
+                    value={String(variantForm.supply_price || 0)}
+                    onChange={(e) => setVariantForm((v: any) => ({ ...v, supply_price: Number(e.target.value || 0) }))}
+                  />
+                </div>
+                <div>
+                  <div className="text-sm text-gray-600 mb-1">위치</div>
+                  <input
+                    className="w-full px-2 py-1 border rounded"
+                    value={variantForm.warehouse_location || ""}
+                    onChange={(e) => setVariantForm((v: any) => ({ ...v, warehouse_location: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <div className="text-sm text-gray-600 mb-1">무게(g)</div>
+                  <input
+                    className="w-full px-2 py-1 border rounded text-right"
+                    value={String(variantForm.weight_g || "")}
+                    onChange={(e) => setVariantForm((v: any) => ({ ...v, weight_g: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 mt-4">
+                <Button variant="secondary" onClick={() => setShowVariantModal(false)}>
+                  닫기
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    if (editingVariantIndex === null) return;
+                    setProduct((p: any) => {
+                      const copy = JSON.parse(JSON.stringify(p));
+                      copy.variants[editingVariantIndex] = {
+                        ...(copy.variants[editingVariantIndex] || {}),
+                        ...variantForm,
+                      };
+                      return copy;
+                    });
+                    setShowVariantModal(false);
+                    setToast("옵션이 저장되었습니다.");
+                  }}
+                >
+                  저장
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div>로딩중...</div>
+          )}
+        </Modal>
+
+        {/* Match Test Modal */}
+        <Modal
+          open={showMatchTestModal}
+          onClose={() => setShowMatchTestModal(false)}
+          title="매칭 테스트"
+        >
+          <div className="space-y-4">
+            <div>
+              <div className="text-sm text-gray-600 mb-1">주문 JSON(예)</div>
+              <textarea
+                className="w-full h-40 p-2 border rounded font-mono text-sm"
+                value={matchTestInput}
+                onChange={(e) => setMatchTestInput(e.target.value)}
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="secondary" onClick={() => setShowMatchTestModal(false)}>
+                닫기
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  try {
+                    const parsed = JSON.parse(matchTestInput || "{}")
+                    const res = matchOrder(parsed, product)
+                    setMatchTestResult(res)
+                  } catch (e) {
+                    setMatchTestResult({ error: String(e) })
+                  }
+                }}
+              >
+                검사
+              </Button>
+            </div>
+            {matchTestResult ? (
+              <div className="p-3 bg-gray-50 border rounded">
+                {matchTestResult.error ? (
+                  <div className="text-red-600">오류: {matchTestResult.error}</div>
                 ) : (
-                  <div className="mt-1">
-                    {product.externalMall?.platform ||
-                      product.externalMall?.platformName ||
-                      "없음"}
+                  <div>
+                    <div>matched: {String(matchTestResult.matched)}</div>
+                    <div>matchedKeywords: {(matchTestResult.matchedKeywords || []).join(", ")}</div>
                   </div>
                 )}
               </div>
-            </div>
-            <div className="flex-1">
-              <div className="text-sm text-gray-600 mb-2">메모</div>
-              {editing ? (
-                <div className="space-y-2">
-                  {(product.memos || []).map((m: string, idx: number) => (
-                    <div key={idx} className="flex items-start gap-2">
-                      <input
-                        className="flex-1 rounded border px-2 py-2"
-                        value={m}
-                        onChange={(e) =>
-                          setProduct((p: any) => {
-                            const memos = Array.isArray(p.memos)
-                              ? [...p.memos]
-                              : [];
-                            memos[idx] = e.target.value;
-                            return { ...(p || {}), memos };
-                          })
-                        }
-                      />
-                      <button
-                        className="rounded border px-2 py-1 text-sm"
-                        onClick={() =>
-                          setProduct((p: any) => {
-                            const memos = Array.isArray(p.memos)
-                              ? [...p.memos]
-                              : [];
-                            memos.splice(idx, 1);
-                            return { ...(p || {}), memos };
-                          })
-                        }
-                      >
-                        삭제
-                      </button>
-                    </div>
-                  ))}
-                  <button
-                    className="rounded border px-3 py-1 text-sm"
-                    onClick={() =>
-                      setProduct((p: any) => ({
-                        ...(p || {}),
-                        memos: [...(p.memos || []), ""],
-                      }))
-                    }
-                  >
-                    메모 추가
-                  </button>
+            ) : null}
+          </div>
+        </Modal>
+
+        {/* Image Management Modal */}
+        <Modal open={showImageModal} onClose={() => setShowImageModal(false)} title="이미지 관리">
+          <div className="space-y-4">
+            <div>
+              <div className="text-sm text-gray-600 mb-1">이미지 목록 (URL)</div>
+              {imageListDraft.map((url, i) => (
+                <div key={i} className="flex items-center gap-2 mb-2">
+                  <input className="flex-1 px-2 py-1 border rounded" value={url} onChange={(e) => setImageListDraft((s) => { const c = s.slice(); c[i] = e.target.value; return c })} />
+                  <button className="text-red-500" onClick={() => setImageListDraft((s) => s.filter((_, idx) => idx !== i))}>삭제</button>
                 </div>
+              ))}
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setImageListDraft((s) => [...s, ''])}>이미지 추가</Button>
+                <Button variant="outline" onClick={() => setImageListDraft([])}>모두 삭제</Button>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => setShowImageModal(false)}>취소</Button>
+              <Button variant="primary" onClick={() => { setProduct((p:any) => ({ ...(p||{}), images: imageListDraft })); setShowImageModal(false); setToast('이미지 목록이 저장되었습니다.') }}>저장</Button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Description Preview Modal */}
+        <Modal open={showDescPreview} onClose={() => setShowDescPreview(false)} title="상세 설명 미리보기">
+          <div className="prose max-w-none text-lg text-gray-700">
+            <div dangerouslySetInnerHTML={{ __html: String(product.description || '').replace(/<script[\s\S]*?>[\s\S]*?<\/[\s]*script>/gi, '') }} />
+          </div>
+        </Modal>
+
+        {/* Description Edit Modal */}
+        <Modal open={showDescEdit} onClose={() => setShowDescEdit(false)} title="상세 설명 편집">
+          <div className="space-y-4">
+            <div>
+              <div className="text-sm text-gray-600 mb-1">HTML 입력</div>
+              <textarea className="w-full h-56 p-2 border rounded font-mono text-sm" value={descEditValue} onChange={(e)=>setDescEditValue(e.target.value)} />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => setShowDescEdit(false)}>취소</Button>
+              <Button variant="primary" onClick={() => { setProduct((p:any)=>({...p, description: descEditValue})); setShowDescEdit(false); setToast('상세 설명이 저장되었습니다.'); }}>저장</Button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Description Edit Modal */}
+        <Modal open={editing && showDescPreview === false && false} onClose={() => {}} title="상세 설명 편집">
+          {/* placeholder in case we want an edit modal later */}
+        </Modal>
+
+        {/* 추가 상세 정보: 이미지, 메모, 사이즈/무게 */}
+        <Card padding="lg" className="mb-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">추가 정보</h2>
+          <div className="mb-2">
+            <Button variant="outline" size="small" onClick={() => {
+              setImageListDraft(Array.isArray(product.images) ? product.images.slice() : [])
+              setShowImageModal(true)
+            }}>이미지 편집</Button>
+            <Button variant="outline" size="small" className="ml-2" onClick={() => setShowDescPreview(true)}>상세 설명 미리보기</Button>
+            {editing ? (
+              <Button variant="primary" size="small" className="ml-2" onClick={() => setShowDescEdit(true)}>상세 설명 편집</Button>
+            ) : null}
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            {product.images &&
+              product.images.map((src: string, idx: number) => (
+                <div
+                  key={idx}
+                  className="w-full h-48 bg-gray-100 rounded overflow-hidden"
+                >
+                  <img
+                    src={src}
+                    className="w-full h-full object-cover"
+                    alt={`image-${idx}`}
+                  />
+                </div>
+              ))}
+          </div>
+            <div className="mt-4 grid grid-cols-3 gap-4 text-sm text-gray-700">
+            <div>
+              가로(cm): {" "}
+              {editing ? (
+                <input className="px-2 py-1 border rounded w-32" value={product.width_cm || (product.variants && product.variants[0] && product.variants[0].width_cm) || ''} onChange={(e) => setProduct((p:any)=>({...p, width_cm: e.target.value}))} />
               ) : (
-                <ul className="list-disc pl-5 text-sm text-gray-700">
-                  {(product.memos || []).map((m: string, idx: number) => (
-                    <li key={idx}>{m}</li>
-                  ))}
-                </ul>
+                product.width_cm || (product.variants && product.variants[0] && product.variants[0].width_cm) || "-"
+              )}
+            </div>
+            <div>
+              세로(cm): {" "}
+              {editing ? (
+                <input className="px-2 py-1 border rounded w-32" value={product.height_cm || (product.variants && product.variants[0] && product.variants[0].height_cm) || ''} onChange={(e) => setProduct((p:any)=>({...p, height_cm: e.target.value}))} />
+              ) : (
+                product.height_cm || (product.variants && product.variants[0] && product.variants[0].height_cm) || "-"
+              )}
+            </div>
+            <div>
+              높이(cm): {" "}
+              {editing ? (
+                <input className="px-2 py-1 border rounded w-32" value={product.depth_cm || (product.variants && product.variants[0] && product.variants[0].depth_cm) || ''} onChange={(e) => setProduct((p:any)=>({...p, depth_cm: e.target.value}))} />
+              ) : (
+                product.depth_cm || (product.variants && product.variants[0] && product.variants[0].depth_cm) || "-"
+              )}
+            </div>
+            <div>
+              무게(g): {" "}
+              {editing ? (
+                <input className="px-2 py-1 border rounded w-32" value={product.weight_g || (product.variants && product.variants[0] && product.variants[0].weight_g) || ''} onChange={(e) => setProduct((p:any)=>({...p, weight_g: e.target.value}))} />
+              ) : (
+                product.weight_g || (product.variants && product.variants[0] && product.variants[0].weight_g) || "-"
+              )}
+            </div>
+            <div>
+              부피(cc): {" "}
+              {editing ? (
+                <input className="px-2 py-1 border rounded w-32" value={product.volume_cc || (product.variants && product.variants[0] && product.variants[0].volume_cc) || ''} onChange={(e) => setProduct((p:any)=>({...p, volume_cc: e.target.value}))} />
+              ) : (
+                product.volume_cc || (product.variants && product.variants[0] && product.variants[0].volume_cc) || "-"
+              )}
+            </div>
+            <div>원산지: {editing ? (<input className="px-2 py-1 border rounded w-32" value={product.origin_country || ''} onChange={(e) => setProduct((p:any)=>({...p, origin_country: e.target.value}))} />) : (product.origin_country || "-")}</div>
+            <div>
+              외부몰 데이터:{" "}
+              {editing ? (
+                <input className="px-2 py-1 border rounded" value={product.externalMall?.platform || product.externalMall?.platformName || ""} onChange={(e) => setProduct((p:any) => ({ ...(p||{}), externalMall: {...(p.externalMall||{}), platform: e.target.value }}))} />
+              ) : (
+                product.externalMall?.platform || product.externalMall?.platformName || "없음"
               )}
             </div>
           </div>
-        </Card>
-      </section>
+          <div className="mt-4">
+            <div className="text-sm text-gray-600 mb-2">메모</div>
+            <ul className="list-disc pl-5 text-sm text-gray-700">
+              {editing ? (
+                <li>
+                  <textarea className="w-full p-2 border rounded" value={(product.memos || []).join('\n')} onChange={(e) => setProduct((p:any) => ({ ...(p||{}), memos: e.target.value.split('\n').map((s:any)=>s.trim()).filter(Boolean) }))} />
+                </li>
+              ) : (
+                product.memos && product.memos.map((m: string, idx: number) => (
+                  <li key={idx}>{m}</li>
+                ))
+              )}
+            </ul>
+          </div>
 
-      <section
-        id="description"
-        data-section-id="description"
-        ref={registerSectionRef("description")}
-        className="scroll-mt-28"
-      >
-        <Card padding="lg" className="shadow-sm">
+          <div className="mt-4 grid grid-cols-3 gap-4 text-sm text-gray-700"></div>
+        </Card>
+
+        {/* 상품 상세 설명 */}
+        <Card padding="lg" className="mb-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">
             상품 상세 설명
           </h2>
           <div className="prose max-w-none text-lg text-gray-700">
-            {/* Show WYSIWYG HTML editor when editing, otherwise sanitized render */}
-            {editing ? (
-              <div>
-                <div className="flex gap-2 mb-2">
-                  <button
-                    type="button"
-                    className="px-2 py-1 border rounded text-sm"
-                    onClick={() => {
-                      document.execCommand("bold");
-                      descEditorRef.current?.focus();
-                    }}
-                  >
-                    B
-                  </button>
-                  <button
-                    type="button"
-                    className="px-2 py-1 border rounded text-sm"
-                    onClick={() => {
-                      document.execCommand("italic");
-                      descEditorRef.current?.focus();
-                    }}
-                  >
-                    I
-                  </button>
-                  <button
-                    type="button"
-                    className="px-2 py-1 border rounded text-sm"
-                    onClick={() => {
-                      document.execCommand("underline");
-                      descEditorRef.current?.focus();
-                    }}
-                  >
-                    U
-                  </button>
-                  <button
-                    type="button"
-                    className="px-2 py-1 border rounded text-sm"
-                    onClick={() => {
-                      const url = window.prompt("링크 URL 입력:");
-                      if (url) document.execCommand("createLink", false, url);
-                      descEditorRef.current?.focus();
-                    }}
-                  >
-                    link
-                  </button>
-                  <button
-                    type="button"
-                    className="px-2 py-1 border rounded text-sm"
-                    onClick={() => {
-                      const src = window.prompt("이미지 URL 입력:");
-                      if (src) document.execCommand("insertImage", false, src);
-                      descEditorRef.current?.focus();
-                    }}
-                  >
-                    img
-                  </button>
-                  <button
-                    type="button"
-                    className="px-2 py-1 border rounded text-sm"
-                    onClick={() => {
-                      document.execCommand("insertUnorderedList");
-                      descEditorRef.current?.focus();
-                    }}
-                  >
-                    ul
-                  </button>
-                  <button
-                    type="button"
-                    className="px-2 py-1 border rounded text-sm"
-                    onClick={() => {
-                      document.execCommand("insertOrderedList");
-                      descEditorRef.current?.focus();
-                    }}
-                  >
-                    ol
-                  </button>
-                  <button
-                    type="button"
-                    className="px-2 py-1 border rounded text-sm"
-                    onClick={() => {
-                      document.execCommand("removeFormat");
-                      descEditorRef.current?.focus();
-                    }}
-                  >
-                    clear
-                  </button>
-                </div>
-                <div
-                  ref={descEditorRef}
-                  contentEditable
-                  suppressContentEditableWarning
-                  className="min-h-[160px] p-3 border rounded bg-white prose max-w-none text-base text-gray-800"
-                  onInput={(e) => {
-                    const html = (e.target as HTMLDivElement).innerHTML;
-                    setProduct((p: any) => ({ ...(p || {}), description: html }));
-                  }}
-                  dangerouslySetInnerHTML={{
-                    __html: sanitizeHtml(String(product.description || "")),
-                  }}
-                />
-              </div>
-            ) : (
-              <div
-                dangerouslySetInnerHTML={{
-                  __html: sanitizeHtml(String(product.description || "")),
-                }}
-              />
-            )}
+            {/* Render HTML description safely for mock/demo content. Basic sanitizer: remove <script> tags. */}
+            <div
+              dangerouslySetInnerHTML={{
+                __html: String(product.description || "").replace(
+                  /<script[\s\S]*?>[\s\S]*?<\/[\s]*script>/gi,
+                  "",
+                ),
+              }}
+            />
           </div>
         </Card>
-      </section>
-
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* 상품 설정 모달 */}
         <Modal
@@ -1918,145 +1432,39 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <div className="text-sm text-gray-600 mb-1">활성화</div>
-                <div>
-                  <label className="inline-flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={!!settingsForm?.is_active}
-                      onChange={(e) =>
-                        setSettingsForm((s: any) => ({ ...(s || {}), is_active: e.target.checked }))
-                      }
-                    />
-                    <span className="text-sm">활성</span>
-                  </label>
-                </div>
+                {/* 활성화 상태는 mockProducts에 없음 */}
               </div>
               <div>
                 <div className="text-sm text-gray-600 mb-1">판매중</div>
-                <div>
-                  <label className="inline-flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={!!settingsForm?.is_selling}
-                      onChange={(e) =>
-                        setSettingsForm((s: any) => ({ ...(s || {}), is_selling: e.target.checked }))
-                      }
-                    />
-                    <span className="text-sm">판매중</span>
-                  </label>
-                </div>
+                {/* 판매중 상태는 mockProducts에 없음 */}
               </div>
-
               <div>
                 <div className="text-sm text-gray-600 mb-1">품절</div>
-                <div>
-                  <label className="inline-flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={!!settingsForm?.is_soldout}
-                      onChange={(e) =>
-                        setSettingsForm((s: any) => ({ ...(s || {}), is_soldout: e.target.checked }))
-                      }
-                    />
-                    <span className="text-sm">품절</span>
-                  </label>
-                </div>
+                {/* 품절 상태는 mockProducts에 없음 */}
               </div>
-
               <div>
                 <div className="text-sm text-gray-600 mb-1">면세여부</div>
-                <div>
-                  <select
-                    value={settingsForm?.is_dutyfree ? "1" : "0"}
-                    onChange={(e) =>
-                      setSettingsForm((s: any) => ({ ...(s || {}), is_dutyfree: e.target.value === "1" }))
-                    }
-                    className="px-2 py-1 border rounded"
-                  >
-                    <option value="1">면세</option>
-                    <option value="0">과세</option>
-                  </select>
+                <div className="font-semibold">
+                  {editing ? (
+                    <select
+                      value={product.is_dutyfree ? "1" : "0"}
+                      onChange={(e) =>
+                        setProduct((p: any) => ({
+                          ...(p || {}),
+                          is_dutyfree: e.target.value === "1",
+                        }))
+                      }
+                      className="px-2 py-1 border rounded"
+                    >
+                      <option value="1">면세</option>
+                      <option value="0">과세</option>
+                    </select>
+                  ) : product.is_dutyfree ? (
+                    "면세"
+                  ) : (
+                    "과세"
+                  )}
                 </div>
-              </div>
-
-              <div>
-                <div className="text-sm text-gray-600 mb-1">원산지</div>
-                <input
-                  className="w-full px-2 py-1 border rounded"
-                  value={settingsForm?.origin_country || ""}
-                  onChange={(e) =>
-                    setSettingsForm((s: any) => ({ ...(s || {}), origin_country: e.target.value }))
-                  }
-                />
-              </div>
-
-              <div>
-                <div className="text-sm text-gray-600 mb-1">사입상품명</div>
-                <input
-                  className="w-full px-2 py-1 border rounded"
-                  value={settingsForm?.purchase_name || ""}
-                  onChange={(e) =>
-                    setSettingsForm((s: any) => ({ ...(s || {}), purchase_name: e.target.value }))
-                  }
-                />
-              </div>
-
-              <div>
-                <div className="text-sm text-gray-600 mb-1">배송비정책</div>
-                <input
-                  className="w-full px-2 py-1 border rounded"
-                  value={settingsForm?.shipping_policy || ""}
-                  onChange={(e) =>
-                    setSettingsForm((s: any) => ({ ...(s || {}), shipping_policy: e.target.value }))
-                  }
-                />
-              </div>
-
-              <div>
-                <div className="text-sm text-gray-600 mb-1">HS Code</div>
-                <input
-                  className="w-full px-2 py-1 border rounded"
-                  value={settingsForm?.hs_code || ""}
-                  onChange={(e) =>
-                    setSettingsForm((s: any) => ({ ...(s || {}), hs_code: e.target.value }))
-                  }
-                />
-              </div>
-
-              <div>
-                <div className="text-sm text-gray-600 mb-1">박스당수량</div>
-                <input
-                  className="w-full px-2 py-1 border rounded"
-                  value={settingsForm?.box_qty || ""}
-                  onChange={(e) =>
-                    setSettingsForm((s: any) => ({ ...(s || {}), box_qty: e.target.value }))
-                  }
-                />
-              </div>
-
-              <div>
-                <div className="text-sm text-gray-600 mb-1">재고연동 (첫 옵션)</div>
-                <select
-                  value={settingsForm?.is_stock_linked ? "1" : "0"}
-                  onChange={(e) =>
-                    setSettingsForm((s: any) => ({ ...(s || {}), is_stock_linked: e.target.value === "1" }))
-                  }
-                  className="px-2 py-1 border rounded"
-                >
-                  <option value="1">연동</option>
-                  <option value="0">미연동</option>
-                </select>
-              </div>
-
-              <div className="col-span-2">
-                <div className="text-sm text-gray-600 mb-1">분류 ID</div>
-                <input
-                  className="w-full px-2 py-1 border rounded"
-                  value={settingsForm?.classification_id || ""}
-                  onChange={(e) =>
-                    setSettingsForm((s: any) => ({ ...(s || {}), classification_id: e.target.value }))
-                  }
-                />
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-6">
@@ -2088,7 +1496,8 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                             i === 0
                               ? {
                                   ...(v || {}),
-                                  is_stock_linked: !!settingsForm.is_stock_linked,
+                                  is_stock_linked:
+                                    !!settingsForm.is_stock_linked,
                                 }
                               : v,
                           )
@@ -2105,6 +1514,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
           </div>
         </Modal>
 
+        {/* (상품 설명 수정 모달 제거) */}
       </Container>
       {toast && <Toast message={toast} onClose={() => setToast(null)} />}
     </>

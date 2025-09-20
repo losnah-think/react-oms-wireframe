@@ -15,7 +15,7 @@ export default function Layout({ children }: LayoutProps) {
       <Header />
       <div className="flex">
         <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} isCollapsed={collapsed} onToggleCollapse={() => setCollapsed(s => !s)} />
-        <div className="flex-1 p-6">
+        <div className="flex-1 p-6 min-w-0">
           {children}
         </div>
       </div>
