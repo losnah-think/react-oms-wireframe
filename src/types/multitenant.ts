@@ -438,3 +438,53 @@ export interface ProductFormResponse {
   errors?: Record<string, string[]>;
   warnings?: Record<string, string[]>;
 }
+
+// Barcode print settings types (used by products features)
+export interface BarcodePrintField {
+  id: string;
+  order: number;
+  label: string;
+  description?: string;
+  enabled: boolean;
+  required?: boolean;
+}
+
+export interface VendorBarcodeSetting {
+  vendorId: string;
+  vendorName: string;
+  globalBarcodePrefix?: string;
+  level: 'single' | 'bundle' | 'carton' | 'pallet';
+  allowGeneralBarcode?: boolean;
+  labelPreset?: '40x20' | '50x30' | '100x50' | '100x75' | 'A5';
+  quietZone?: number;
+  dpi?: number;
+  sequenceStart?: number;
+  printFields: BarcodePrintField[];
+  textSettings: {
+    align: 'left' | 'center' | 'right';
+    fontSize: number;
+    lineHeight: number;
+  };
+  pdfGrid: {
+    columns: number;
+    rows: number;
+    gapX: number;
+    gapY: number;
+    marginTop: number;
+    marginLeft: number;
+  };
+  locationLabel: {
+    labelWidth: number;
+    labelHeight: number;
+    barcodeHeight: number;
+    barcodeType: string;
+    offsetX: number;
+    offsetY: number;
+  };
+  notes?: string;
+}
+
+export interface ProductBarcodeSettings {
+  policyAcknowledged: boolean;
+  vendors: VendorBarcodeSetting[];
+}
