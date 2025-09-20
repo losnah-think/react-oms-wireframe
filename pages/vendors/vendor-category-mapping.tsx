@@ -1,5 +1,5 @@
 import React from "react";
-import CategoryMappingPage from "../malls/CategoryMappingPage";
+import CategoryMappingPage from "@/features/malls/CategoryMappingPage";
 export default function VendorCategoryMappingWrapper() {
   return <CategoryMappingPage />;
 }

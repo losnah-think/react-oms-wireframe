@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Container } from "../../../design-system";
+import { Container } from "@/design-system";
 
 interface Vendor {
   id: string;

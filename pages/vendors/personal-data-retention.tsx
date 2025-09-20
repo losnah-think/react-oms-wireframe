@@ -1,7 +1,7 @@
 import React from "react";
 import { Container, Card, Button, Input } from "@/design-system";
 import Layout from "@/components/layout/Layout";
-import { VENDORS } from "../mock-data";
+import { VENDORS } from "@/data/vendorsMock";
 
 export default function PersonalDataRetentionPage() {
   return (

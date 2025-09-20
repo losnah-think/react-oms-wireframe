@@ -1,7 +1,7 @@
 import React from "react";
 import Layout from "@/components/layout/Layout";
 import { Container, Card, Button, Input } from "@/design-system";
-import { VENDORS } from "../mock-data";
+import { VENDORS } from "@/data/vendorsMock";
 
 export default function VendorEditPage() {
   return (

@@ -1,5 +1,5 @@
 import React from "react";
-import { Container } from "../../../../design-system";
+import { Container } from "@/design-system";
 
 export default function OrderSlipListPage() {
   return (
