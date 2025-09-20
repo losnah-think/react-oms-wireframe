@@ -1,1 +1,1 @@
-export { default } from "../../../../src/pages/api/integrations/cafe24/callback";
+export { default } from "@/server/api/integrations/cafe24/callback";

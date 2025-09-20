@@ -21,70 +21,73 @@ interface SidebarProps {
   forceExpandAll?: boolean;
 }
 
+const SETTINGS_DESCRIPTION =
+  "시스템 전반의 환경설정(연동, 상품 분류, 브랜드/연도/시즌 등)을 관리합니다.";
+
 const menuItems: MenuItem[] = [
   {
     id: "products",
     label: "상품 관리",
-    icon: "box",
+    icon: "package",
     children: [
-      { id: "products-list", label: "상품 목록", icon: "list" },
+      { id: "products-list", label: "상품 목록", icon: "menu" },
       { id: "products-add", label: "개별 상품 등록", icon: "plus" },
       { id: "products-csv", label: "CSV 상품 등록", icon: "upload" },
       {
         id: "products-import",
         label: "외부 쇼핑몰 상품 가져오기",
-        icon: "external-link",
+        icon: "externalLink",
       },
       {
         id: "products-registration-history",
         label: "차수별 상품등록내역",
         icon: "clock",
       },
-      { id: "products-bulk-edit", label: "상품/옵션 일괄 수정", icon: "file" },
-      { id: "products-trash", label: "휴지통", icon: "trash" },
+      { id: "products-bulk-edit", label: "상품/옵션 일괄 수정", icon: "document" },
+      { id: "products-trash", label: "휴지통", icon: "delete" },
     ],
   },
-  {
-    id: "orders",
-    label: "주문 관리",
-    icon: "archive",
-    children: [{ id: "orders-list", label: "주문 목록", icon: "list" }],
-  },
+  // {
+  //   id: "orders",
+  //   label: "주문 관리",
+  //   icon: "archive",
+  //   children: [{ id: "orders-list", label: "주문 목록", icon: "list" }],
+  // },
   {
     id: "shopping-mall",
-    label: "판매처 관리",
-    icon: "layers",
+    label: "거래처 관리",
+    icon: "package",
     children: [
-      { id: "vendors-sales", label: "판매처 관리", icon: "user-plus" },
+      { id: "vendors-sales", label: "판매처 관리", icon: "user" },
       {
         id: "vendors-fixed-addresses",
         label: "판매처 고정주소 관리",
-        icon: "map-pin",
+        icon: "tag",
       },
-      { id: "vendors-products", label: "판매처별 상품 관리", icon: "box" },
+      { id: "vendors-products", label: "판매처별 상품 관리", icon: "package" },
       { id: "vendors-info", label: "판매처별 부가 정보", icon: "info" },
       { id: "vendors-category-mapping", label: "판매처별 카테고리 매핑", icon: "copy" },
       // vendors merged into this section
-      { id: "vendors-delivery", label: "택배사 관리", icon: "truck" },
-      { id: "vendors-automation", label: "판매처 자동화", icon: "settings" },
-      { id: "vendors-suppliers", label: "공급처 관리", icon: "truck" },
-      {
-        id: "vendors-supplier-orders",
-        label: "공급처 발주 관리",
-        icon: "shopping-cart",
-      },
-      { id: "vendors-payments", label: "지불 관리", icon: "credit-card" },
+      // { id: "vendors-delivery", label: "택배사 관리", icon: "truck" },
+      // { id: "vendors-automation", label: "판매처 자동화", icon: "settings" },
+      // { id: "vendors-suppliers", label: "공급처 관리", icon: "truck" },
+      // {
+      //   id: "vendors-supplier-orders",
+      //   label: "공급처 발주 관리",
+      //   icon: "shoppingCart",
+      // },
+      // { id: "vendors-payments", label: "지불 관리", icon: "document" },
     ],
   },
   {
     id: "settings",
-    label: "기초 관리",
+    label: "환경설정",
     icon: "settings",
     children: [
       {
         id: "settings-integrations",
         label: "외부 연동",
-        icon: "external-link",
+        icon: "externalLink",
       },
       { id: "settings-product-groups", label: "상품 분류", icon: "copy" },
       {
@@ -95,18 +98,18 @@ const menuItems: MenuItem[] = [
       {
         id: "settings-basic-metadata",
         label: "브랜드·연도·시즌",
-        icon: "layers",
+        icon: "tag",
       },
-      { id: "orders-settings", label: "주문 설정", icon: "settings" },
+      // { id: "orders-settings", label: "주문 설정", icon: "settings" },
     ],
   },
   {
     id: "barcodes",
     label: "바코드 관리",
-    icon: "barcode",
+    icon: "tag",
     children: [
-      { id: "barcodes-products", label: "상품 바코드 관리", icon: "list" },
-      { id: "barcodes-options", label: "옵션 바코드 관리", icon: "list" },
+      { id: "barcodes-products", label: "상품 바코드 관리", icon: "menu" },
+      { id: "barcodes-options", label: "옵션 바코드 관리", icon: "menu" },
     ],
   },
   // vendors moved into shopping-mall section above
@@ -152,17 +155,21 @@ const Sidebar: React.FC<SidebarProps> = ({
       download: "download",
       upload: "upload",
       "external-link": "externalLink",
+      externalLink: "externalLink",
       archive: "package",
       home: "home",
       settings: "settings",
-      users: "user-plus",
       "user-plus": "user",
+      users: "user",
       search: "search",
       edit: "edit",
       copy: "copy",
       clock: "clock",
       info: "info",
       image: "document",
+      trash: "delete",
+      barcode: "tag",
+      "shopping-cart": "shoppingCart",
     };
 
     const iconKey = (mapToIconKey[iconName] ?? iconName) as any;
@@ -373,16 +380,28 @@ const Sidebar: React.FC<SidebarProps> = ({
     if (isCollapsed && level === 0) {
       return (
         <div key={item.id} className="mb-2 flex justify-center">
-          <div
-            className={`
-              flex items-center justify-center w-10 h-10 rounded-lg cursor-pointer relative
-              ${active ? "bg-primary-100 text-primary-700" : "text-gray-700 hover:bg-gray-100"}
-              touch-target
-            `}
-            onClick={() => handleItemClick(item)}
-            title={item.label}
-          >
-            {getIconComponent(item.icon ?? "document", 16, active)}
+          <div className="group relative">
+            <div
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") handleItemClick(item);
+              }}
+              className={`
+                flex items-center justify-center w-12 h-12 rounded-lg cursor-pointer relative
+                ${active ? "bg-primary-100 text-primary-700" : "text-gray-700 hover:bg-gray-100"}
+                touch-target
+              `}
+              onClick={() => handleItemClick(item)}
+              title={item.id === "settings" ? SETTINGS_DESCRIPTION : item.label}
+              aria-label={item.id === "settings" ? SETTINGS_DESCRIPTION : item.label}
+            >
+              {getIconComponent(item.icon ?? "document", 18, active)}
+            </div>
+
+            <div className="absolute left-full top-1/2 transform -translate-y-1/2 ml-3 whitespace-nowrap bg-gray-900 text-white text-xs px-2 py-1 rounded shadow-lg z-50 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none">
+              {item.id === "settings" ? SETTINGS_DESCRIPTION : item.label}
+            </div>
           </div>
         </div>
       );
@@ -407,23 +426,18 @@ const Sidebar: React.FC<SidebarProps> = ({
             ${level === 1 ? "text-xs" : level === 2 ? "text-xs" : ""}
             cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-200
           `}
+          title={item.id === "settings" ? SETTINGS_DESCRIPTION : item.label}
         >
           <div className="flex items-center">
-            <div
-              className={`flex items-center justify-center ${isCollapsed ? "w-8 h-8 mx-auto" : level === 0 ? "w-4 h-4 mr-2" : "w-3 h-3 mr-2"}`}
-            >
-              {getIconComponent(
-                item.icon ?? "document",
-                level === 0 ? 14 : 10,
-                active,
-              )}
+            <div className={`flex items-center justify-center ${isCollapsed ? "w-10 h-10 mx-auto" : level === 0 ? "w-6 h-6 mr-3" : "w-5 h-5 mr-2"}`}> 
+              {getIconComponent(item.icon ?? "document", level === 0 ? 18 : level === 1 ? 14 : 12, active)}
             </div>
             {!isCollapsed && (
-              <span className="flex items-center gap-2">
-                {item.label}
+              <span className="flex items-center gap-2 truncate">
+                <span className="truncate">{item.label}</span>
                 {/* Show combined trashed count on the parent 'products' menu */}
                 {level === 0 && item.id === "products" && trashedCount > 0 && (
-                  <span className="inline-flex items-center justify-center text-xs px-2 py-0.5 bg-red-50 text-red-700 rounded-full border border-red-100">
+                  <span className="inline-flex items-center justify-center text-xs px-2 py-0.5 bg-red-50 text-red-700 rounded-full border border-red-100 ml-2">
                     {trashedCount}
                   </span>
                 )}

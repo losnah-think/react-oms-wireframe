@@ -1,1 +1,1 @@
-export { default } from "../../../src/pages/api/dev/create-admin";
+export { default } from "@/server/api/dev/create-admin";

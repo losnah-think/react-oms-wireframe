@@ -1,1 +1,1 @@
-export { default } from "../../../src/pages/api/integrations/connected-shops";
+export { default } from "@/server/api/integrations/connected-shops";

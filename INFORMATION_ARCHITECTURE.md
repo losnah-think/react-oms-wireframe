@@ -332,10 +332,10 @@ erDiagram
 ---
 
 ## 7) 파일 및 코드 참조
-- `src/pages/settings/ProductClassificationsPage.tsx`
+- `src/features/settings/ProductClassificationsPage.tsx`
 - `src/components/common/HierarchicalSelect.tsx`
-- `src/pages/malls/CategoryMappingPage.tsx`
-- `src/pages/products/ProductsListPage.tsx`
+- `src/features/malls/CategoryMappingPage.tsx`
+- `src/features/products/ProductsListPage.tsx`
 
 ---
 

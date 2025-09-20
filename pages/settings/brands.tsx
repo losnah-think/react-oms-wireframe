@@ -1,2 +1,6 @@
-const BrandsPage = require("../../src/pages/settings/BrandsPage").default;
-export default BrandsPage;
+import React from "react";
+import BasicMetadataSettings from "@/features/settings/basic-metadata";
+
+export default function BrandsSettingsPage() {
+  return <BasicMetadataSettings initialTab="brands" />;
+}

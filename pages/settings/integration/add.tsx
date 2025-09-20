@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import Link from 'next/link';
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "../../../src/pages/api/auth/[...nextauth]";
-import Container from "../../../src/design-system/components/Container";
-import Card from "../../../src/design-system/components/Card";
+import { authOptions } from "@/server/api/auth/[...nextauth]";
+import Container from "@/design-system/components/Container";
+import Card from "@/design-system/components/Card";
 
 export default function AddShopPage() {
   const [shopId, setShopId] = useState("");

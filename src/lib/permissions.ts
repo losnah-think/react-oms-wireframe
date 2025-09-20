@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSession } from 'next-auth'
-import { authOptions } from 'src/pages/api/auth/[...nextauth]'
+import { authOptions } from '@/server/api/auth/[...nextauth]'
 
 export async function requireRole(req: NextApiRequest, res: NextApiResponse, roles: string[] = []) : Promise<{ ok: boolean, status: number, body: any, session?: any }> {
   // Dev-only bypass: if NODE_ENV !== 'production' and header `x-dev-user` is present,

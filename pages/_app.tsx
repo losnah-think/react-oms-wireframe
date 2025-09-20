@@ -1,13 +1,13 @@
 "use client";
 import React from "react";
-import "../src/App.css";
+import "@/App.css";
 import "react-quill/dist/quill.snow.css";
 import type { AppProps } from "next/app";
-import { GridStyles } from "../src/design-system/components";
+import { GridStyles } from "@/design-system/components";
 import { SessionProvider } from "next-auth/react";
-import { ToastProvider } from "../src/components/ui/Toast";
-import UrlBanner from "../src/components/UrlBanner";
-import Layout from "../src/components/layout/Layout";
+import { ToastProvider } from "@/components/ui/Toast";
+import UrlBanner from "@/components/UrlBanner";
+import Layout from "@/components/layout/Layout";
 import { useRouter } from "next/router";
 
 export default function App({ Component, pageProps }: AppProps) {

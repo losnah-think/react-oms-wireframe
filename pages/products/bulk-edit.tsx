@@ -1,2 +1,2 @@
-import BulkEdit from "../../src/pages/products/bulk-edit";
+import BulkEdit from "@/features/products/bulk-edit";
 export default BulkEdit;

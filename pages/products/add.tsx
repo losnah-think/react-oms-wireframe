@@ -1,2 +1,2 @@
-import ProductsAddPage from "../../src/pages/products/ProductsAddPage";
+import ProductsAddPage from "@/features/products/ProductsAddPage";
 export default ProductsAddPage;

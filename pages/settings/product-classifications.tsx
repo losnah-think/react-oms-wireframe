@@ -1,3 +1,3 @@
 const ProductCategoryPage =
-  require("../../src/pages/settings/ProductCategoryPage").default;
+  require("@/features/settings/ProductCategoryPage").default;
 export default ProductCategoryPage;

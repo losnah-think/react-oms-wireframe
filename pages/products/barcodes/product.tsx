@@ -1,2 +1,2 @@
-import ProductBarcodesPage from "../../../src/pages/barcodes/product";
+import ProductBarcodesPage from "@/features/barcodes/product";
 export default ProductBarcodesPage;

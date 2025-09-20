@@ -11,9 +11,9 @@ Files changed (high level)
 - pages/api/meta/groups.ts (new)
 - src/utils/groupUtils.ts (new)
 - src/components/Toast.tsx (new)
-- src/pages/products/ProductsListPage.tsx (updated)
-- src/pages/products/ProductsAddPage.tsx (updated)
-- src/pages/products/ProductsEditPage.tsx (updated)
+- src/features/products/ProductsListPage.tsx (updated)
+- src/features/products/ProductsAddPage.tsx (updated)
+- src/features/products/ProductsEditPage.tsx (updated)
 
 Notes
 - All batch/edit/delete flows are currently mock/local-only. They show modals and toasts and perform local state changes; server-side endpoints should be implemented to persist changes.

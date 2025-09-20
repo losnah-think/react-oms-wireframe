@@ -12,12 +12,12 @@
 - `src/components/integrations/IntegrationIntervalsModal.tsx`
 - `src/components/integrations/SecretModal.tsx`
 - `src/components/integrations/RegisterIntegrationForm.tsx`
-- `src/pages/settings/IntegrationsPage.tsx`
-- `src/pages/settings/BrandsPage.tsx`
-- `src/pages/settings/ProductClassificationsPage.tsx`
-- `src/pages/settings/ProductSeasonsPage.tsx`
-- `src/pages/settings/ProductYearsPage.tsx`
-- 일부 제품/주문 유틸·컴포넌트 타입 완화: `src/utils/productUtils.ts`, `src/components/products/*`, `src/pages/orders/OrderListPage.tsx` 등
+- `src/features/settings/IntegrationsPage.tsx`
+- `src/features/settings/BrandsPage.tsx`
+- `src/features/settings/ProductClassificationsPage.tsx`
+- `src/features/settings/ProductSeasonsPage.tsx`
+- `src/features/settings/ProductYearsPage.tsx`
+- 일부 제품/주문 유틸·컴포넌트 타입 완화: `src/utils/productUtils.ts`, `src/components/products/*`, `src/features/orders/OrderListPage.tsx` 등
 
 **동작 확인 방법 (검토자 체크리스트)**
 - [ ] `npx tsc --noEmit` 명령이 에러 없이 종료되는지 확인.
@@ -49,10 +49,10 @@
 
 ## 요약
 - CI 워크플로우 추가 (`.github/workflows/ci.yml`): PR/푸시 시 `npm ci` 후 Jest 테스트를 실행하고, 페이지 렌더 요약(`pages-summary`)을 아티팩트로 업로드합니다.
-- 페이지 렌더 요약 테스트 보강 (`src/pages/__tests__/all-pages.summary.test.tsx`): CI 환경에서 `test-results/pages-summary.json`을 생성합니다.
+- 페이지 렌더 요약 테스트 보강 (`src/features/__tests__/all-pages.summary.test.tsx`): CI 환경에서 `test-results/pages-summary.json`을 생성합니다.
 - 테스트 안정성 및 방어적 코드 수정:
   - `src/utils/orderUtils.ts`: null/undefined 안전성 보강 (기본값, 빈 배열 처리 등).
-  - `src/pages/orders/OrderListPage.tsx`: mock 매핑에 안전한 기본값 추가.
+  - `src/features/orders/OrderListPage.tsx`: mock 매핑에 안전한 기본값 추가.
   - `src/components/orders/OrderTable.tsx`: item/order key 안정화 및 방어적 렌더링.
 - 자잘한 리팩터 및 정리:
   - 중복 Jest 설정 제거/정리.
@@ -63,9 +63,9 @@
 - 브랜치: `chore/ci-and-report`
 - 주요 파일:
   - `.github/workflows/ci.yml`
-  - `src/pages/__tests__/all-pages.summary.test.tsx`
+  - `src/features/__tests__/all-pages.summary.test.tsx`
   - `src/utils/orderUtils.ts`
-  - `src/pages/orders/OrderListPage.tsx`
+  - `src/features/orders/OrderListPage.tsx`
   - `src/components/orders/OrderTable.tsx`
   - `src/design-system/components/Icon.tsx`
 

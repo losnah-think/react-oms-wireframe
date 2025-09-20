@@ -3,42 +3,40 @@ import { useRouter } from 'next/router';
 // `getServerSession` and `authOptions` are server-only and imported dynamically
 // inside `getServerSideProps` to avoid pulling server-only dependencies into
 // the client/test runtime at module-evaluation time.
-import LoginPage from "../src/pages/settings/integration-admin/login";
-import Breadcrumbs from "../src/components/Breadcrumbs";
+import LoginPage from "@/features/settings/integration-admin/login";
+import Breadcrumbs from "@/components/Breadcrumbs";
 
 // Dashboard
-import Dashboard from "../src/pages/dashboard/Dashboard";
+import Dashboard from "@/features/dashboard/Dashboard";
 
 // Products
-import ProductsListPage from "../src/pages/products/ProductsListPage";
-import ProductDetailPage from "../src/pages/products/ProductDetailPage";
-import ProductsAddPage from "../src/pages/products/ProductsAddPage";
-import ProductCsvUploadPage from "../src/pages/products/ProductCsvUploadPage";
-import ProductImportPage from "../src/pages/products/ProductImportPage";
-import ExternalProductImportPage from "../src/pages/products/ExternalProductImportPage";
-import RegistrationHistoryPage from "../src/pages/products/registration-history";
-import IndividualRegistrationPage from "../src/pages/products/individual-registration";
+import ProductsListPage from "@/features/products/ProductsListPage";
+import ProductDetailPage from "@/features/products/ProductDetailPage";
+import ProductsAddPage from "@/features/products/ProductsAddPage";
+import ProductCsvUploadPage from "@/features/products/ProductCsvUploadPage";
+import ProductImportPage from "@/features/products/ProductImportPage";
+import ExternalProductImportPage from "@/features/products/ExternalProductImportPage";
+import RegistrationHistoryPage from "@/features/products/registration-history";
+import IndividualRegistrationPage from "@/features/products/individual-registration";
 
 // Orders
-import OrderList from "../src/pages/orders/OrderList";
-import OrderAnalytics from "../src/pages/orders/OrderAnalytics";
-import OrderSettings from "../src/pages/orders/OrderSettings";
+import OrderList from "@/features/orders/OrderList";
+import OrderAnalytics from "@/features/orders/OrderAnalytics";
+import OrderSettings from "@/features/orders/OrderSettings";
 
 // Categories
-import CategoriesManagementPage from "../src/pages/categories/CategoriesManagementPage";
+import CategoriesManagementPage from "@/features/categories/CategoriesManagementPage";
 
 // Malls
-import MallsListPage from "../src/pages/malls/MallsListPage";
-import MallInfoManagementPage from "../src/pages/malls/MallInfoManagementPage";
-import MallProductsPage from "../src/pages/malls/MallProductsPage";
-import CategoryMappingPage from "../src/pages/malls/CategoryMappingPage";
+import MallsListPage from "@/features/malls/MallsListPage";
+import MallInfoManagementPage from "@/features/malls/MallInfoManagementPage";
+import MallProductsPage from "@/features/malls/MallProductsPage";
+import CategoryMappingPage from "@/features/malls/CategoryMappingPage";
 
 // Settings
-import BrandsPage from "../src/pages/settings/BrandsPage";
-import ProductCategoryPage from "../src/pages/settings/ProductCategoryPage";
-import ProductGroupPage from "../src/pages/settings/ProductGroupPage";
-import ProductSeasonsPage from "../src/pages/settings/ProductSeasonsPage";
-import ProductYearsPage from "../src/pages/settings/ProductYearsPage";
+import BasicMetadataSettings from "@/features/settings/basic-metadata";
+import ProductCategoryPage from "@/features/settings/ProductCategoryPage";
+import ProductGroupPage from "@/features/settings/ProductGroupPage";
 
 export default function Home(props: any) {
   // If no session, render the login UI inline at '/'
@@ -138,6 +136,8 @@ export default function Home(props: any) {
       if (sub === "product-groups" || sub === "product-group")
         return { page: "settings-product-groups" };
       if (sub === "integrations") return { page: "settings-integrations" };
+      if (sub === "basic-metadata")
+        return { page: "settings-basic-metadata" };
       if (sub === "barcodes") return { page: "settings-barcodes" };
       if (sub === "brands") return { page: "settings-brands" };
       if (sub === "years") return { page: "settings-product-years" };
@@ -270,20 +270,22 @@ export default function Home(props: any) {
         // render pages-based integrations index for SPA navigation
         // Dynamically import to avoid SSR issues
         const IntegrationsPage =
-          require("../src/pages/settings/IntegrationsPage").default;
+          require("@/features/settings/IntegrationsPage").default;
         return <IntegrationsPage onNavigate={handleNavigate} />;
       case "settings-integrations-orderDetail":
         const IntegrationOrderDetail =
-          require("../src/pages/settings/integrations/orderDetail").default;
+          require("@/features/settings/integrations/orderDetail").default;
         return <IntegrationOrderDetail orderId={selectedProductId} />;
       case "settings-brands":
-        return <BrandsPage />;
+        return <BasicMetadataSettings initialTab="brands" />;
+      case "settings-basic-metadata":
+        return <BasicMetadataSettings initialTab="brands" />;
       case "settings-product-years":
-        return <ProductYearsPage />;
+        return <BasicMetadataSettings initialTab="years" />;
       case "settings-product-seasons":
-        return <ProductSeasonsPage />;
+        return <BasicMetadataSettings initialTab="seasons" />;
       case "settings-barcodes":
-        const BarcodeManagement = require("../src/pages/settings/bc").default;
+        const BarcodeManagement = require("@/features/settings/bc").default;
         return <BarcodeManagement onNavigate={handleNavigate} />;
 
       default:

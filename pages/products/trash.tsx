@@ -1,2 +1,2 @@
-import ProductsTrash from "../../src/pages/products/trash";
+import ProductsTrash from "@/features/products/trash";
 export default ProductsTrash;

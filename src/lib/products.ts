@@ -123,7 +123,7 @@ export function makePlaceholderProduct(id: string) {
     supply_price: 14900,
     cost_price: 12900,
     images: [
-      'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=600&fit=crop'
+      `https://picsum.photos/seed/${pid}/800/600`
     ],
     variants: [
       { id: `v-${pid}-1`, code: `V-${pid}-1`, variant_name: '기본 옵션', selling_price: 19900, cost_price: 12900, supply_price: 14900, stock: 25, is_selling: true, is_soldout: false },

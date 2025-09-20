@@ -1,2 +1,2 @@
-import ProductsListPage from "../../src/pages/products/ProductsListPage";
+import ProductsListPage from "@/features/products/ProductsListPage";
 export default ProductsListPage;

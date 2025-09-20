@@ -1,3 +1,3 @@
 const ProductGroupPage =
-  require("../../src/pages/settings/ProductGroupPage").default;
+  require("@/features/settings/ProductGroupPage").default;
 export default ProductGroupPage;

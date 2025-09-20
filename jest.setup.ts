@@ -39,9 +39,9 @@ jest.mock('next-auth/react', () => ({
 // Conditionally mock API handlers that may be imported by pages during render in tests
 try {
 	const possiblePaths = [
-		'./src/pages/api/admin/create-initial-admin',
+		'./src/server/api/admin/create-initial-admin',
 		'./pages/api/admin/create-initial-admin',
-		'src/pages/api/admin/create-initial-admin',
+		'src/server/api/admin/create-initial-admin',
 		'pages/api/admin/create-initial-admin'
 	];
 	for (const p of possiblePaths) {

@@ -6,19 +6,10 @@ const sampleProducts = Array.from({ length: 20 }).map((_, i) => {
   const category = ["Clothing", "Electronics", "Home", "Sports"][i % 4];
   const colors = ["red", "blue", "green", "black"];
   const sizes = ["S", "M", "L", "XL"];
-  // Use Unsplash images for nicer demo thumbnails (stable queries)
-  const unsplashSeeds = [
-    "fashion,clothing",
-    "electronics,gadget",
-    "furniture,home",
-    "sports,fitness",
-    "beauty,cosmetics",
-    "accessories,bag",
-  ];
-  const seed = unsplashSeeds[i % unsplashSeeds.length];
+  // Use picsum.photos seeded images for stable local mocks
   const images = [
-    `https://source.unsplash.com/collection/190727/400x300?${encodeURIComponent(seed)}&sig=${i}`,
-    `https://source.unsplash.com/collection/190727/400x300?${encodeURIComponent(seed)}&sig=${i + 10}`,
+    `https://picsum.photos/seed/${id}/800/600`,
+    `https://picsum.photos/seed/${id}-1/800/600`,
   ];
   const variants = [
     {

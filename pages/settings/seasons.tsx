@@ -1,2 +1,6 @@
-const Seasons = require("../../src/pages/settings/seasons").default;
-export default Seasons;
+import React from "react";
+import BasicMetadataSettings from "@/features/settings/basic-metadata";
+
+export default function SeasonsSettingsPage() {
+  return <BasicMetadataSettings initialTab="seasons" />;
+}

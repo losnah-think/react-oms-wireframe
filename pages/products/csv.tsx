@@ -1,2 +1,2 @@
-import ProductCsvUploadPage from "../../src/pages/products/ProductCsvUploadPage";
+import ProductCsvUploadPage from "@/features/products/ProductCsvUploadPage";
 export default ProductCsvUploadPage;

@@ -8,8 +8,8 @@ export default async function handler(
   const parts = Array.isArray(slug) ? slug : [String(slug)];
   const relPath = parts.length ? parts.join("/") : "index";
 
-  // resolve path under src/pages/api
-  const target = `../../src/pages/api/${relPath}`;
+  // resolve path under src/server/api
+  const target = `../../src/server/api/${relPath}`;
   try {
     const mod = await import(target);
     if (mod && typeof mod.default === "function") {

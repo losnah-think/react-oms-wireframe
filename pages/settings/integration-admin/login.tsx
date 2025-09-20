@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useRouter } from "next/router";
-import LoginPage from "../../../src/pages/settings/integration-admin/login";
+import LoginPage from "@/features/settings/integration-admin/login";
 
 export default function LegacyLoginWrapper() {
   const router = useRouter();

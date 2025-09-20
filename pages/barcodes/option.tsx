@@ -1,2 +1,2 @@
-import OptionBarcodesPage from "../../src/pages/barcodes/option";
+import OptionBarcodesPage from "@/features/barcodes/option";
 export default OptionBarcodesPage;

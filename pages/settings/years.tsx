@@ -1,2 +1,6 @@
-const Years = require("../../src/pages/settings/years").default;
-export default Years;
+import React from "react";
+import BasicMetadataSettings from "@/features/settings/basic-metadata";
+
+export default function YearsSettingsPage() {
+  return <BasicMetadataSettings initialTab="years" />;
+}

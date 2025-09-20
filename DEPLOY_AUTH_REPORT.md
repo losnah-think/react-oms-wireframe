@@ -5,7 +5,7 @@ Deployment Auth Report
 
 Actions performed:
 - Patched NextAuth authorize() to trim and case-normalize `ADMIN_EMAIL` and `ADMIN_PASSWORD`, and log when env-admin fallback is used.
-  - Files: `src/pages/api/auth/[...nextauth].ts`, `pages/api/auth/[...nextauth].ts`
+  - Files: `src/server/api/auth/[...nextauth].ts`, `pages/api/auth/[...nextauth].ts`
 - Seeded/updated admin user in Supabase via service-role REST API.
   - Scripts used/added: `scripts/update-admin-pass.js` (created), `scripts/create-sb-user.js` (existing)
   - Updated `admin@example.com` password to `admin-pass-123` (bcrypt hash stored).
