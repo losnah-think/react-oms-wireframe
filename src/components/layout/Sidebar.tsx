@@ -54,6 +54,11 @@ const menuItems: MenuItem[] = [
     children: [
       { id: "barcodes-products", label: "상품 바코드 관리", icon: "menu" },
       { id: "barcodes-options", label: "옵션 바코드 관리", icon: "menu" },
+      {
+        id: "barcodes-settings",
+        label: "바코드 환경 설정",
+        icon: "settings",
+      },
     ],
   },
   // {
@@ -268,13 +273,13 @@ const Sidebar: React.FC<SidebarProps> = ({
   // vendor related mappings
   Object.assign(idToPath, {
   vendors: "/vendors",
-    "vendors-sales": "/shopping-mall/vendors/sales",
-    "vendors-delivery": "/shopping-mall/vendors/delivery-companies",
-    "vendors-fixed-addresses": "/shopping-mall/vendors/fixed-addresses",
-    "vendors-automation": "/shopping-mall/vendors/automation",
-    "vendors-suppliers": "/shopping-mall/vendors/suppliers",
-    "vendors-supplier-orders": "/shopping-mall/vendors/supplier-orders",
-    "vendors-payments": "/shopping-mall/vendors/payments",
+    "vendors-sales": "/vendors/sales",
+    "vendors-delivery": "/vendors/delivery-companies",
+    "vendors-fixed-addresses": "/vendors/fixed-addresses",
+    "vendors-automation": "/vendors/automation",
+    "vendors-suppliers": "/vendors/suppliers",
+    "vendors-supplier-orders": "/vendors/supplier-orders",
+    "vendors-payments": "/vendors/payments",
   });
 
   // barcodes mappings
@@ -282,6 +287,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     barcodes: "/barcodes",
     "barcodes-products": "/barcodes/product",
     "barcodes-options": "/barcodes/option",
+    "barcodes-settings": "/barcodes/settings",
   });
 
   const isActive = (id: string) => {
@@ -295,6 +301,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     // consider vendors pages as part of the shopping-mall parent after merge
     if (id === "shopping-mall" && currentPage.startsWith("vendors-"))
       return true;
+    if (id === "barcodes" && currentPage.startsWith("barcodes-")) return true;
     if (id === "basic" && currentPage.startsWith("basic-")) return true;
     if (id === "settings" && currentPage.startsWith("settings-")) return true;
     return false;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Button,
   Input,
@@ -8,9 +8,12 @@ import {
   GridRow,
   GridCol,
 } from "../../design-system";
-import { normalizeProductGroup } from "../../utils/groupUtils";
-import type { ProductFormData } from "../../types/multitenant";
+import type {
+  ProductFormData,
+  ProductBarcodeSettings,
+} from "../../types/multitenant";
 import Toast from "../../components/Toast";
+import BarcodePrintSettingsSection from "./components/BarcodePrintSettingsSection";
 
 const safeJson = async (res: Response | undefined, fallback: any) => {
   if (!res || !res.ok) return fallback;
@@ -131,6 +134,10 @@ const initialFormData: ProductFormData = {
     warnings: {},
     isValid: true,
     touchedFields: new Set(),
+  },
+  barcodeSettings: {
+    policyAcknowledged: false,
+    vendors: [],
   },
 };
 const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
@@ -338,6 +345,16 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
     );
   };
 
+  const handleBarcodeSettingsChange = useCallback(
+    (nextSettings: ProductBarcodeSettings) => {
+      setFormData((prev) => ({
+        ...prev,
+        barcodeSettings: JSON.parse(JSON.stringify(nextSettings)),
+      }));
+    },
+    [],
+  );
+
   const handleSave = async () => {
     setSaving(true);
     if (
@@ -390,6 +407,11 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
         } as ProductFormData;
         // ensure codes.internal is cleared
         preserved.basicInfo.codes.internal = "";
+        const nextBarcodeSettings =
+          prev.barcodeSettings || initialFormData.barcodeSettings;
+        preserved.barcodeSettings = nextBarcodeSettings
+          ? JSON.parse(JSON.stringify(nextBarcodeSettings))
+          : { policyAcknowledged: false, vendors: [] };
         return preserved;
       });
     } finally {
@@ -1027,6 +1049,13 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
                   </GridCol>
                 </GridRow>
               </Card>
+              {formData.barcodeSettings ? (
+                <BarcodePrintSettingsSection
+                  settings={formData.barcodeSettings}
+                  onChange={handleBarcodeSettingsChange}
+                  suppliers={productFilterOptions.suppliers || []}
+                />
+              ) : null}
               <Card>
                 <div className="mb-4">
                   <h2 className="text-lg font-bold">고급 설정</h2>

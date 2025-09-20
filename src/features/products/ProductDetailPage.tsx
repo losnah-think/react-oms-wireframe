@@ -164,6 +164,36 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     }
   };
 
+  const handleVariantNavigate = (
+    event: React.MouseEvent<HTMLTableRowElement, MouseEvent>,
+    variant: any,
+    index: number,
+  ) => {
+    if (!variant) return;
+    const target = event.target as HTMLElement | null;
+    if (target && target.closest("input, button, a, textarea, select, [role='button']")) {
+      return;
+    }
+    const pid = product?.id ?? productId;
+    if (!pid) return;
+    const resolvedVariantId =
+      variant.id ??
+      variant.variant_id ??
+      variant.code ??
+      variant.option_code ??
+      variant.barcode1 ??
+      variant.barcode ??
+      `index-${index}`;
+    const nextPath = `/products/${encodeURIComponent(String(pid))}/options/${encodeURIComponent(String(resolvedVariantId))}`;
+    try {
+      router?.push?.(nextPath);
+    } catch (err) {
+      if (typeof window !== "undefined") {
+        window.location.href = nextPath;
+      }
+    }
+  };
+
   if (loading) {
     return (
       <Container maxWidth="6xl" padding="lg">
@@ -190,10 +220,138 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     );
   }
 
-  const marginRate = (
-    ((product.selling_price - product.cost_price) / product.selling_price) *
-    100
-  ).toFixed(0);
+  const sellingPriceValue = Number(product?.selling_price ?? 0);
+  const costPriceValue = Number(product?.cost_price ?? 0);
+  const supplyPriceValue = Number(product?.supply_price ?? 0);
+  const marginRate = sellingPriceValue
+    ? (
+        ((sellingPriceValue - costPriceValue) / sellingPriceValue) * 100
+      ).toFixed(0)
+    : null;
+  const consumerPriceValue =
+    typeof product?.consumer_price === "number"
+      ? product.consumer_price
+      : typeof product?.pricing?.consumerPrice === "number"
+        ? product.pricing.consumerPrice
+        : null;
+  const marketPriceValue =
+    typeof product?.market_price === "number"
+      ? product.market_price
+      : typeof product?.pricing?.marketPrice === "number"
+        ? product.pricing.marketPrice
+        : null;
+  const marginAmountValue = (() => {
+    if (typeof product?.margin_amount === "number") {
+      return product.margin_amount;
+    }
+    if (
+      Number.isFinite(sellingPriceValue) &&
+      Number.isFinite(supplyPriceValue)
+    ) {
+      return sellingPriceValue - supplyPriceValue;
+    }
+    if (Number.isFinite(sellingPriceValue) && Number.isFinite(costPriceValue)) {
+      return sellingPriceValue - costPriceValue;
+    }
+    return null;
+  })();
+  const brandCommissionRateRaw =
+    typeof product?.brand_commission_rate === "number"
+      ? product.brand_commission_rate
+      : typeof product?.commission_rate === "number"
+        ? product.commission_rate
+        : typeof product?.pricing?.commissionRate === "number"
+          ? product.pricing.commissionRate
+          : null;
+  const brandCommissionRatePercent =
+    typeof brandCommissionRateRaw === "number"
+      ? brandCommissionRateRaw > 1
+        ? brandCommissionRateRaw
+        : brandCommissionRateRaw * 100
+      : null;
+  const internalProductCode =
+    product?.codes?.internal || product?.code || product?.sku || "-";
+  const cafe24ProductCode = (() => {
+    if (product?.codes?.cafe24) return product.codes.cafe24;
+    if (product?.cafe24_product_code) return product.cafe24_product_code;
+    if (product?.cafe24ProductCode) return product.cafe24ProductCode;
+    const platformLabel = (
+      product?.externalMall?.platformName || product?.externalMall?.platform || ""
+    )
+      .toString()
+      .toLowerCase();
+    if (
+      platformLabel.includes("cafe24") &&
+      product?.externalMall?.external_sku
+    ) {
+      return product.externalMall.external_sku;
+    }
+    return (
+      product?.externalMall?.cafe24ProductCode ||
+      product?.cafe24_product_code_v2 ||
+      ""
+    );
+  })();
+  const sellerProductCode =
+    product?.seller_product_code ||
+    product?.sellerProductCode ||
+    product?.codes?.seller ||
+    "";
+  const sellerChannelCodes = (() => {
+    if (Array.isArray(product?.codes?.channels)) {
+      return product.codes.channels;
+    }
+    if (Array.isArray(product?.channel_codes)) {
+      return product.channel_codes;
+    }
+    if (product?.seller_codes && typeof product.seller_codes === "object") {
+      return Object.entries(product.seller_codes).map(([key, value]) => ({
+        channelId: key,
+        channelName: key,
+        code: value as string,
+      }));
+    }
+    if (
+      product?.externalMall?.external_sku &&
+      (product?.externalMall?.platform || product?.externalMall?.platformName)
+    ) {
+      return [
+        {
+          channelId: product.externalMall.platformName ||
+            product.externalMall.platform,
+          channelName:
+            product.externalMall.platformName ||
+            product.externalMall.platform,
+          code: product.externalMall.external_sku,
+        },
+      ];
+    }
+    return [];
+  })();
+  const productYearValue =
+    product?.product_year || product?.year || product?.season_year || "";
+  const productSeasonValue =
+    product?.product_season || product?.season || product?.season_name || "";
+  const englishProductName =
+    product?.name_en || product?.english_name || product?.nameEnglish || "";
+  const englishCategoryName =
+    product?.english_category_name ||
+    product?.category_name_en ||
+    product?.categoryEnglishName ||
+    "";
+  const foreignCurrencyPriceValue =
+    product?.foreign_currency_price ||
+    product?.foreignCurrencyPrice ||
+    product?.pricing?.foreignCurrencyPrice ||
+    (product?.foreign_currency &&
+    typeof product.foreign_currency === "object"
+      ? product.foreign_currency.price
+      : null) ||
+    "";
+  const formatPriceOrDash = (value?: number | null) =>
+    typeof value === "number" && Number.isFinite(value)
+      ? formatPrice(value)
+      : "-";
 
   return (
     <>
@@ -370,12 +528,56 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 </tr>
 
                 <tr className="border-b">
+                  <td className="px-4 py-3 text-sm text-gray-600">
+                    영문 정보
+                  </td>
+                  <td className="px-4 py-3 text-gray-700">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                      <div>
+                        영문 상품명:{" "}
+                        {editing ? (
+                          <input
+                            className="px-2 py-1 border rounded w-full"
+                            value={englishProductName || ""}
+                            onChange={(e) =>
+                              setProduct((p: any) => ({
+                                ...(p || {}),
+                                name_en: e.target.value,
+                              }))
+                            }
+                          />
+                        ) : (
+                          englishProductName || "-"
+                        )}
+                      </div>
+                      <div>
+                        영문 카테고리명:{" "}
+                        {editing ? (
+                          <input
+                            className="px-2 py-1 border rounded w-full"
+                            value={englishCategoryName || ""}
+                            onChange={(e) =>
+                              setProduct((p: any) => ({
+                                ...(p || {}),
+                                english_category_name: e.target.value,
+                              }))
+                            }
+                          />
+                        ) : (
+                          englishCategoryName || "-"
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr className="border-b">
                   <td className="px-4 py-3 text-sm text-gray-600">기본 정보</td>
                   <td className="px-4 py-3 text-gray-700">
-                    <div className="flex flex-wrap gap-3 text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
                       <div>상품ID: {product.id}</div>
                       <div>
-                        코드:{" "}
+                        자체상품코드:{" "}
                         {editing ? (
                           <input
                             className="px-2 py-1 border rounded"
@@ -384,11 +586,68 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                               setProduct((p: any) => ({
                                 ...(p || {}),
                                 code: e.target.value,
+                                codes: p?.codes
+                                  ? { ...p.codes, internal: e.target.value }
+                                  : p?.codes,
                               }))
                             }
                           />
                         ) : (
-                          product.code
+                          internalProductCode || "-"
+                        )}
+                      </div>
+                      <div>
+                        카페24상품코드:{" "}
+                        {editing ? (
+                          <input
+                            className="px-2 py-1 border rounded"
+                            value={cafe24ProductCode || ""}
+                            onChange={(e) =>
+                              setProduct((p: any) => ({
+                                ...(p || {}),
+                                cafe24_product_code: e.target.value,
+                                codes: p?.codes
+                                  ? { ...p.codes, cafe24: e.target.value }
+                                  : p?.codes,
+                              }))
+                            }
+                          />
+                        ) : (
+                          cafe24ProductCode || "-"
+                        )}
+                      </div>
+                      <div>
+                        상품 연도:{" "}
+                        {editing ? (
+                          <input
+                            className="px-2 py-1 border rounded w-32"
+                            value={productYearValue || ""}
+                            onChange={(e) =>
+                              setProduct((p: any) => ({
+                                ...(p || {}),
+                                product_year: e.target.value,
+                              }))
+                            }
+                          />
+                        ) : (
+                          productYearValue || "-"
+                        )}
+                      </div>
+                      <div>
+                        상품 시즌:{" "}
+                        {editing ? (
+                          <input
+                            className="px-2 py-1 border rounded w-32"
+                            value={productSeasonValue || ""}
+                            onChange={(e) =>
+                              setProduct((p: any) => ({
+                                ...(p || {}),
+                                product_season: e.target.value,
+                              }))
+                            }
+                          />
+                        ) : (
+                          productSeasonValue || "-"
                         )}
                       </div>
                       <div>
@@ -409,6 +668,41 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                         )}
                       </div>
                       <div>공급사ID: {product.supplier_id || "-"}</div>
+                      <div>
+                        판매처 상품코드:{" "}
+                        {editing ? (
+                          <input
+                            className="px-2 py-1 border rounded"
+                            value={sellerProductCode || ""}
+                            onChange={(e) =>
+                              setProduct((p: any) => ({
+                                ...(p || {}),
+                                seller_product_code: e.target.value,
+                              }))
+                            }
+                          />
+                        ) : (
+                          sellerProductCode || "-"
+                        )}
+                      </div>
+                      <div className="sm:col-span-2 lg:col-span-3">
+                        판매처별상품코드:{" "}
+                        {sellerChannelCodes.length ? (
+                          <div className="mt-1 flex flex-wrap gap-2">
+                            {sellerChannelCodes.map((code: any, idx: number) => (
+                              <Badge
+                                key={`${code.channelId || code.channelName || idx}-${code.code}`}
+                                variant="neutral"
+                              >
+                                {code.channelName || code.channelId || "판매처"}
+                                {code.code ? `: ${code.code}` : ""}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          "-"
+                        )}
+                      </div>
                     </div>
                   </td>
                 </tr>
@@ -418,7 +712,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                     가격 / 재고
                   </td>
                   <td className="px-4 py-3 text-gray-700">
-                    <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                       <div>
                         판매가:{" "}
                         <strong>
@@ -434,7 +728,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                               }
                             />
                           ) : (
-                            formatPrice(product.selling_price)
+                            formatPriceOrDash(sellingPriceValue)
                           )}
                         </strong>
                       </div>
@@ -452,7 +746,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                             }
                           />
                         ) : (
-                          formatPrice(product.cost_price)
+                          formatPriceOrDash(costPriceValue)
                         )}
                       </div>
                       <div>
@@ -469,7 +763,76 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                             }
                           />
                         ) : (
-                          formatPrice(product.supply_price)
+                          formatPriceOrDash(supplyPriceValue)
+                        )}
+                      </div>
+                      <div>
+                        소비자가:{" "}
+                        {editing ? (
+                          <input
+                            className="px-2 py-1 border rounded text-right"
+                            value={
+                              consumerPriceValue !== null
+                                ? String(consumerPriceValue)
+                                : ""
+                            }
+                            onChange={(e) =>
+                              setProduct((p: any) => ({
+                                ...(p || {}),
+                                consumer_price: e.target.value
+                                  ? Number(e.target.value)
+                                  : null,
+                              }))
+                            }
+                          />
+                        ) : (
+                          formatPriceOrDash(consumerPriceValue)
+                        )}
+                      </div>
+                      <div>
+                        마진금액:{" "}
+                        {editing ? (
+                          <input
+                            className="px-2 py-1 border rounded text-right"
+                            value={
+                              marginAmountValue !== null
+                                ? String(marginAmountValue)
+                                : ""
+                            }
+                            onChange={(e) =>
+                              setProduct((p: any) => ({
+                                ...(p || {}),
+                                margin_amount: e.target.value
+                                  ? Number(e.target.value)
+                                  : null,
+                              }))
+                            }
+                          />
+                        ) : (
+                          formatPriceOrDash(marginAmountValue)
+                        )}
+                      </div>
+                      <div>
+                        시중가:{" "}
+                        {editing ? (
+                          <input
+                            className="px-2 py-1 border rounded text-right"
+                            value={
+                              marketPriceValue !== null
+                                ? String(marketPriceValue)
+                                : ""
+                            }
+                            onChange={(e) =>
+                              setProduct((p: any) => ({
+                                ...(p || {}),
+                                market_price: e.target.value
+                                  ? Number(e.target.value)
+                                  : null,
+                              }))
+                            }
+                          />
+                        ) : (
+                          formatPriceOrDash(marketPriceValue)
                         )}
                       </div>
                       <div>
@@ -486,16 +849,83 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                         </strong>
                       </div>
                       <div>
-                        마진률: <strong>{marginRate}%</strong>
+                        마진률:{" "}
+                        <strong>{marginRate !== null ? `${marginRate}%` : "-"}</strong>
                       </div>
-                      <div>등록일: {formatDate(product.created_at)}</div>
+                      <div>
+                        브랜드 수수료율:{" "}
+                        {editing ? (
+                          <div className="flex items-center gap-1">
+                            <input
+                              className="px-2 py-1 border rounded text-right w-20"
+                              value={
+                                brandCommissionRatePercent !== null
+                                  ? String(
+                                      Number(
+                                        brandCommissionRatePercent.toFixed(2),
+                                      ),
+                                    )
+                                  : ""
+                              }
+                              onChange={(e) => {
+                                const raw = e.target.value;
+                                const trimmed = raw.trim();
+                                if (!trimmed) {
+                                  setProduct((p: any) => ({
+                                    ...(p || {}),
+                                    brand_commission_rate: null,
+                                  }));
+                                  return;
+                                }
+                                const nextValue = Number(trimmed);
+                                setProduct((p: any) => ({
+                                  ...(p || {}),
+                                  brand_commission_rate: Number.isFinite(
+                                    nextValue,
+                                  )
+                                    ? nextValue / 100
+                                    : p?.brand_commission_rate,
+                                }));
+                              }}
+                            />
+                            <span>%</span>
+                          </div>
+                        ) : brandCommissionRatePercent !== null ? (
+                          `${brandCommissionRatePercent.toFixed(1)}%`
+                        ) : (
+                          "-"
+                        )}
+                      </div>
+                      <div>
+                        해외통화 상품가:{" "}
+                        {editing ? (
+                          <input
+                            className="px-2 py-1 border rounded text-right"
+                            value={
+                              foreignCurrencyPriceValue
+                                ? String(foreignCurrencyPriceValue)
+                                : ""
+                            }
+                            onChange={(e) =>
+                              setProduct((p: any) => ({
+                                ...(p || {}),
+                                foreign_currency_price: e.target.value,
+                              }))
+                            }
+                          />
+                        ) : foreignCurrencyPriceValue ? (
+                          foreignCurrencyPriceValue
+                        ) : (
+                          "-"
+                        )}
+                      </div>
                     </div>
                   </td>
                 </tr>
 
                 <tr className="border-b">
                   <td className="px-4 py-3 text-sm text-gray-600">추가 속성</td>
-                  <td className="px-4 py-3 text-gray-700 grid grid-cols-2 gap-2 text-sm">
+                  <td className="px-4 py-3 text-gray-700 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                     <div>
                       공급처:{" "}
                       <strong>{product?.supplier_name || "자사"}</strong>
@@ -654,6 +1084,57 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                         product.externalMall?.platformName ||
                         "없음"}
                     </div>
+                    <div>
+                      혼용률:{" "}
+                      {editing ? (
+                        <input
+                          className="px-2 py-1 border rounded"
+                          value={product.composition || product.material || ""}
+                          onChange={(e) =>
+                            setProduct((p: any) => ({
+                              ...(p || {}),
+                              composition: e.target.value,
+                            }))
+                          }
+                        />
+                      ) : (
+                        product.composition || product.material || "-"
+                      )}
+                    </div>
+                    <div>
+                      세탁방법:{" "}
+                      {editing ? (
+                        <input
+                          className="px-2 py-1 border rounded"
+                          value={product.wash_method || product.care || ""}
+                          onChange={(e) =>
+                            setProduct((p: any) => ({
+                              ...(p || {}),
+                              wash_method: e.target.value,
+                            }))
+                          }
+                        />
+                      ) : (
+                        product.wash_method || product.care || "-"
+                      )}
+                    </div>
+                    <div className="sm:col-span-2">
+                      편직정보:{" "}
+                      {editing ? (
+                        <input
+                          className="px-2 py-1 border rounded w-full"
+                          value={product.knitting_info || ""}
+                          onChange={(e) =>
+                            setProduct((p: any) => ({
+                              ...(p || {}),
+                              knitting_info: e.target.value,
+                            }))
+                          }
+                        />
+                      ) : (
+                        product.knitting_info || "-"
+                      )}
+                    </div>
                   </td>
                 </tr>
 
@@ -743,7 +1224,10 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                     (variant: any, vIdx: number) => (
                       <tr
                         key={variant.id || vIdx}
-                        className="bg-white border-b border-gray-100"
+                        className="bg-white border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition-colors"
+                        onClick={(event) =>
+                          handleVariantNavigate(event, variant, vIdx)
+                        }
                       >
                         <td className="px-4 py-3 font-semibold text-gray-900">
                           {editing ? (
