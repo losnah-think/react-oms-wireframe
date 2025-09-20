@@ -47,12 +47,12 @@ const menuItems: MenuItem[] = [
       { id: "products-trash", label: "휴지통", icon: "delete" },
     ],
   },
-  // {
-  //   id: "orders",
-  //   label: "주문 관리",
-  //   icon: "archive",
-  //   children: [{ id: "orders-list", label: "주문 목록", icon: "list" }],
-  // },
+  {
+    id: "orders",
+    label: "주문 관리",
+    icon: "archive",
+    children: [{ id: "orders-list", label: "주문 목록", icon: "list" }, { id: "orders-settings", label: "주문 설정", icon: "settings" }],
+  },
   {
     id: "shopping-mall",
     label: "거래처 관리",

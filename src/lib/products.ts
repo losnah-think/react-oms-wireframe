@@ -61,7 +61,7 @@ export async function listProducts(limit = 100, offset = 0): Promise<ProductSumm
   if (!supabaseAdmin) {
     try {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { mockProducts } = require('../data/mockproducts')
+      const { mockProducts } = require('../data/mockProducts')
       return (mockProducts || []).slice(offset, offset + limit).map((p: any) => ({
         id: String(p.id),
         name: p.name,
@@ -90,7 +90,7 @@ export async function getProduct(id: string) {
     try {
       console.debug('[lib/products] supabaseAdmin not configured — using mock fallback')
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { mockProducts } = require('../data/mockproducts')
+      const { mockProducts } = require('../data/mockProducts')
       const found = (mockProducts || []).find((p: any) => String(p.id) === String(id))
       if (found) return found
 
