@@ -61,3 +61,4 @@ docs/*.png
 
 /generated/prisma
 .env
+tsconfig.tsbuildinfo
