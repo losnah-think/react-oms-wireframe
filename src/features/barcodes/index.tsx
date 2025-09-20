@@ -12,6 +12,9 @@ const BarcodesIndexPage: React.FC = () => {
         <Link href="/barcodes/option" className="text-primary-600 hover:underline">
           옵션 바코드 관리
         </Link>
+        <Link href="/barcodes/settings" className="text-primary-600 hover:underline">
+          바코드 환경 설정
+        </Link>
       </div>
     </div>
   );

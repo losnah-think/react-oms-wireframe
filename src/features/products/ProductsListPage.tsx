@@ -1431,30 +1431,20 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
 
       {/* Action toolbar (Excel, batch edit, option batch edit, delete, sort) */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-4">
-          <div className="text-sm text-gray-600">
-            총{" "}
-            <span className="font-bold text-blue-600">
-              {filteredProducts.length}
-            </span>{" "}
-            건
-          </div>
-          <div className="text-sm text-gray-400">
-            (전체 {products.length}개)
-          </div>
-          <div className="ml-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <div>
             <TableExportButton
               data={exportData}
               fileName={`products-list.xlsx`}
               aria-label="엑셀 다운로드"
             />
           </div>
-          <div>
+          <div className="flex items-center gap-2">
             <label className="sr-only">전송 쇼핑몰 선택</label>
             <select
               value={selectedMall}
               onChange={(e) => setSelectedMall(e.target.value)}
-              className="ml-2 px-3 py-2 border border-gray-300 rounded-md text-sm"
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm"
             >
               <option value="">쇼핑몰 선택</option>
               {(malls || []).map((m: any) => (
@@ -1466,37 +1456,35 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
           </div>
           <button
             aria-label="상품 일괄수정"
-            className="px-3 py-1 bg-white border rounded text-sm"
+            className="px-3 py-2 bg-white border rounded text-sm"
             onClick={() => {
-              if (onNavigate) onNavigate("products-bulk-edit");
-              else window.location.href = "/products/bulk-edit?tab=product";
+              setIsBatchModalOpen(true);
             }}
           >
             상품 일괄수정
           </button>
           <button
             aria-label="파일 업로드 일괄수정"
-            className="px-3 py-1 bg-white border rounded text-sm"
+            className="px-3 py-2 bg-white border rounded text-sm"
             onClick={() => {
-              if (onNavigate) onNavigate("products-bulk-edit");
-              else window.location.href = "/products/bulk-edit?tab=product";
+              if (onNavigate) onNavigate("products-csv");
+              else window.location.href = "/products/csv";
             }}
           >
             파일 업로드 일괄수정
           </button>
           <button
             aria-label="옵션 일괄수정"
-            className="px-3 py-1 bg-white border rounded text-sm"
+            className="px-3 py-2 bg-white border rounded text-sm"
             onClick={() => {
-              if (onNavigate) onNavigate("products-bulk-edit");
-              else window.location.href = "/products/bulk-edit?tab=option";
+              setIsOptionBatchModalOpen(true);
             }}
           >
             옵션 일괄수정
           </button>
           <button
             aria-label="선택 외부 송신"
-            className="px-3 py-1 bg-white border rounded text-sm"
+            className="px-3 py-2 bg-white border rounded text-sm"
             onClick={() =>
               handleExternalSend(
                 Object.keys(selectedIds).filter((k) => selectedIds[k]),
@@ -1507,25 +1495,21 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
             선택 외부 송신
           </button>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <button
             aria-label="선택삭제"
-            className="px-3 py-1 bg-red-50 border border-red-300 text-red-700 rounded text-sm"
+            className="px-3 py-2 bg-red-50 border border-red-300 text-red-700 rounded text-sm"
             onClick={handleDeleteSelected}
           >
             선택삭제
           </button>
-          <select
-            aria-label="정렬방법"
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="px-2 py-1 border rounded text-sm"
+          <button
+            aria-label={compactView ? "자세히 보기로 전환" : "간략히 보기로 전환"}
+            className="px-3 py-2 bg-white border rounded text-sm"
+            onClick={() => setCompactView((prev) => !prev)}
           >
-            <option value="newest">최신순</option>
-            <option value="oldest">오래된순</option>
-            <option value="price-asc">가격↑</option>
-            <option value="price-desc">가격↓</option>
-          </select>
+            {compactView ? "자세히 보기" : "간략히 보기"}
+          </button>
         </div>
       </div>
 

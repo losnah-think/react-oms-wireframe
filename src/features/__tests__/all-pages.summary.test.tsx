@@ -13,7 +13,7 @@ jest.mock("../../components/layout/Sidebar", () => ({
   default: (props: any) => React.createElement("aside", null, "Sidebar Mock"),
 }));
 jest.mock("next/router", () => ({
-  useRouter: () => ({ push: jest.fn(), query: {} }),
+  useRouter: () => ({ push: jest.fn(), replace: () => Promise.resolve(), query: {} }),
 }));
 
 const pagesDir = path.resolve(__dirname, "..");

@@ -316,6 +316,7 @@ export interface ProductFormData {
   
   // 검증 상태
   validation: FormValidation;
+
 }
 
 export interface ProductBasicInfo {
