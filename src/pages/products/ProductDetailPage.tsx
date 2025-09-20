@@ -1262,8 +1262,25 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setShowImageModal(false)}>취소</Button>
-              <Button variant="primary" onClick={() => { setProduct((p:any) => ({ ...(p||{}), images: imageListDraft })); setShowImageModal(false); setToast('이미지 목록이 저장되었습니다.') }}>저장</Button>
+                <Button variant="secondary" onClick={() => setShowImageModal(false)}>취소</Button>
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    setProduct((p: any) => {
+                      const updated = { ...(p || {}), images: imageListDraft };
+                      try {
+                        if (updated && updated.id) {
+                          localStorage.setItem(`product_draft_${updated.id}`, JSON.stringify(updated));
+                        }
+                      } catch (e) {}
+                      return updated;
+                    });
+                    setShowImageModal(false);
+                    setToast("이미지 목록이 저장되었습니다.");
+                  }}
+                >
+                  저장
+                </Button>
             </div>
           </div>
         </Modal>
@@ -1387,8 +1404,25 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               )}
             </ul>
           </div>
-
           <div className="mt-4 grid grid-cols-3 gap-4 text-sm text-gray-700"></div>
+          <div className="mt-4 flex justify-end gap-2">
+            <Button
+              variant="outline"
+              size="small"
+              onClick={() => {
+                try {
+                  if (product && product.id) {
+                    localStorage.setItem(`product_draft_${product.id}`, JSON.stringify(product));
+                    setToast("추가 정보가 로컬에 저장되었습니다.");
+                  }
+                } catch (e) {
+                  setToast("저장에 실패했습니다.");
+                }
+              }}
+            >
+              추가정보 저장
+            </Button>
+          </div>
         </Card>
 
         {/* 상품 상세 설명 */}
