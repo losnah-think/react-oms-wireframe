@@ -1,21 +1,10 @@
 import React, { useState, useMemo, useEffect } from "react";
-import {
-  Container,
-  Card,
-  Button,
-  Badge,
-  Stack,
-  Modal,
-} from "../../design-system";
+import { Container, Card, Button, Badge, Stack, Modal } from "../../design-system";
 import Toast from "../../components/Toast";
 import { matchOrder } from "../../lib/products";
 import { normalizeProductGroup } from "../../utils/groupUtils";
 import { useRouter } from "next/router";
-import {
-  formatDate,
-  formatPrice,
-  getStockStatus,
-} from "../../utils/productUtils";
+import { formatDate, formatPrice, getStockStatus } from "../../utils/productUtils";
 
 interface ProductDetailPageProps {
   productId?: string;
@@ -51,8 +40,8 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     propProductId || fromRouter || fromSearch || fromPath || "1";
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [settingsForm, setSettingsForm] = useState<any>(null);
-  // editing: true = form editable, false = read-only
-  const [editing, setEditing] = useState<boolean>(true);
+  // editing: keep inputs always editable for this page
+  const editing = true;
   const [toast, setToast] = useState<string | null>(null);
   // matching keyword UI state
   const [newKeyword, setNewKeyword] = useState("");
@@ -267,13 +256,12 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
           </Button>
           <Stack direction="row" gap={2}>
             <Button
-              variant={editing ? "outline" : "primary"}
-              aria-pressed={!editing}
-              onClick={() => setEditing((s) => !s)}
+              variant="primary"
               className="font-medium"
-              title={editing ? "편집 잠금" : "편집 가능"}
+              title="항상 편집 모드"
+              onClick={() => {}}
             >
-              {editing ? "잠금" : "수정"}
+              편집(항상)
             </Button>
             <Button
               variant="outline"
