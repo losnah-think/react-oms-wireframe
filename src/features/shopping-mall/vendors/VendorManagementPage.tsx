@@ -25,6 +25,10 @@ const VendorManagementPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPrivacyOpen, setPrivacyOpen] = useState(false);
+  const [isRealtimeOpen, setRealtimeOpen] = useState(false);
+  const [isAutobotLogOpen, setAutobotLogOpen] = useState(false);
+  const [isChangePasswordOpen, setChangePasswordOpen] = useState(false);
 
   const mockVendors: Vendor[] = [
     {
@@ -124,6 +128,12 @@ const VendorManagementPage: React.FC = () => {
           <p className="text-gray-600">
             판매처와 공급처 정보를 통합 관리합니다.
           </p>
+          <div className="mt-3 flex gap-2">
+            <button className="text-sm text-blue-600 hover:underline" onClick={() => setPrivacyOpen(true)}>개인정보보관기간 설정</button>
+            <button className="text-sm text-blue-600 hover:underline" onClick={() => setRealtimeOpen(true)}>실시간 판매처 설정</button>
+            <button className="text-sm text-blue-600 hover:underline" onClick={() => setAutobotLogOpen(true)}>Autobot Log</button>
+            <button className="text-sm text-blue-600 hover:underline" onClick={() => setChangePasswordOpen(true)}>비밀번호 수정</button>
+          </div>
         </div>
 
         {/* 타입 선택 탭 */}
@@ -445,6 +455,58 @@ const VendorManagementPage: React.FC = () => {
                   저장
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {isPrivacyOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">개인정보보관기간 설정</h3>
+                <button onClick={() => setPrivacyOpen(false)} className="text-gray-400">✕</button>
+              </div>
+              <div className="text-sm text-gray-700">[개인정보보관기간 설정 목업 테이블]</div>
+              <div className="mt-4 flex justify-end"><button onClick={() => setPrivacyOpen(false)} className="px-3 py-1 border rounded">닫기</button></div>
+            </div>
+          </div>
+        )}
+
+        {isRealtimeOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">실시간 판매처 설정</h3>
+                <button onClick={() => setRealtimeOpen(false)} className="text-gray-400">✕</button>
+              </div>
+              <div className="text-sm text-gray-700">[실시간 판매처 설정 목업]</div>
+              <div className="mt-4 flex justify-end"><button onClick={() => setRealtimeOpen(false)} className="px-3 py-1 border rounded">닫기</button></div>
+            </div>
+          </div>
+        )}
+
+        {isAutobotLogOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-5xl max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">Autobot Log</h3>
+                <button onClick={() => setAutobotLogOpen(false)} className="text-gray-400">✕</button>
+              </div>
+              <div className="text-sm text-gray-700">[Autobot Log 목업]</div>
+              <div className="mt-4 flex justify-end"><button onClick={() => setAutobotLogOpen(false)} className="px-3 py-1 border rounded">닫기</button></div>
+            </div>
+          </div>
+        )}
+
+        {isChangePasswordOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">비밀번호 수정</h3>
+                <button onClick={() => setChangePasswordOpen(false)} className="text-gray-400">✕</button>
+              </div>
+              <div className="text-sm text-gray-700">[비밀번호 수정 폼 목업]</div>
+              <div className="mt-4 flex justify-end"><button onClick={() => setChangePasswordOpen(false)} className="px-3 py-1 border rounded">닫기</button></div>
             </div>
           </div>
         )}
