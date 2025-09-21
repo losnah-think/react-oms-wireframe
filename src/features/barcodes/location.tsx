@@ -1,5 +1,6 @@
 import React from "react";
 import { mockProducts } from "../../data/mockProducts";
+import { clientBarcodeStore } from "../../lib/clientBarcodeStore";
 
 type Row = { id: number; code: string; created_at: string };
 
@@ -60,13 +61,25 @@ const LocationBarcodesPage: React.FC = () => {
       alert('업로드할 데이터가 없습니다');
       return;
     }
-    // merge parsed rows at top
-    setRows((prev) => [...parsed, ...prev]);
+    // persist into client store so other pages see the upload
+    clientBarcodeStore.addLocationBarcodes(parsed);
     setParsed(null);
     setFileName(null);
     setTab('list');
     alert(`${parsed.length}건 업로드 완료`);
   };
+
+  React.useEffect(() => {
+    clientBarcodeStore.initIfNeeded();
+    const next = clientBarcodeStore.getLocationBarcodes();
+    if (Array.isArray(next) && next.length > 0) setRows(next);
+    const handler = (e: any) => {
+      const d = clientBarcodeStore.getLocationBarcodes();
+      setRows(d || []);
+    };
+    window.addEventListener("clientBarcodesChanged", handler);
+    return () => window.removeEventListener("clientBarcodesChanged", handler);
+  }, []);
 
   const productCountForBarcode = React.useMemo(() => {
     const map: Record<string, Set<string>> = {};
@@ -91,6 +104,7 @@ const LocationBarcodesPage: React.FC = () => {
     Object.keys(map).forEach((k) => (out[k] = map[k].size));
     return out;
   }, []);
+
 
   return (
     <div className="p-6">

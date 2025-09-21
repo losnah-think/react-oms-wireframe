@@ -9,6 +9,7 @@ import {
 } from "../../design-system";
 import Icon from "../../design-system/components/Icon";
 import { mockProducts } from "../../data/mockProducts";
+import { clientBarcodeStore } from "../../lib/clientBarcodeStore";
 
 type Product = {
   id: string;
@@ -130,71 +131,43 @@ const ProductBarcodesPage: React.FC = () => {
   const [logsOpen, setLogsOpen] = React.useState(false);
 
   React.useEffect(() => {
-    try {
-      // Use mockProducts as the canonical source for barcode management in the demo
-      const rows: Product[] = [];
-      mockProducts.forEach((mp) => {
-        const prodImage =
-          Array.isArray(mp.images) && mp.images.length > 0
-            ? mp.images[0]
-            : undefined;
-        if (Array.isArray(mp.variants) && mp.variants.length > 0) {
-          mp.variants.forEach((v: any) => {
-            rows.push({
-              id: String(v.id) + `-${mp.id}`,
-              productId: mp.id,
-              title: mp.name,
-              sku: v.code || v.sku || mp.code || "",
-              barcode:
-                v.barcode1 ||
-                v.barcode2 ||
-                v.barcode3 ||
-                (v.code && null) ||
-                null,
-              image: prodImage,
-              supplier: mp.supplier_id ? String(mp.supplier_id) : undefined,
-              cost_price: v.cost_price ?? mp.cost_price,
-              selling_price: v.selling_price ?? mp.selling_price,
-              variantName: v.variant_name,
-              width_cm: v.width_cm ?? mp.width_cm,
-              height_cm: v.height_cm ?? mp.height_cm,
-              depth_cm: v.depth_cm ?? mp.depth_cm,
-              weight_g: v.weight_g ?? mp.weight_g,
-              volume_cc: v.volume_cc ?? mp.volume_cc,
-              externalMall: mp.externalMall,
-            });
-          });
-        } else {
-          rows.push({
-            id: String(mp.id),
-            productId: mp.id,
-            title: mp.name,
-            sku: mp.code || "",
-            barcode:
-              (mp.variants &&
-                mp.variants[0] &&
-                (mp.variants[0].barcode1 || mp.variants[0].barcode2)) ||
-              null,
-            image: prodImage,
-            supplier: mp.supplier_id ? String(mp.supplier_id) : undefined,
-            cost_price: mp.cost_price,
-            selling_price: mp.selling_price,
-            variantName: undefined,
-            width_cm: mp.width_cm,
-            height_cm: mp.height_cm,
-            depth_cm: mp.depth_cm,
-            weight_g: mp.weight_g,
-            volume_cc: mp.volume_cc,
-            externalMall: mp.externalMall,
-          });
-        }
-      });
-      setProducts(rows);
-      setFiltered(rows);
-    } catch (e) {
-      setProducts([]);
-      setFiltered([]);
-    }
+    clientBarcodeStore.initIfNeeded();
+    const rows = clientBarcodeStore.getProducts().map((p: any) => ({
+      id: String(p.id),
+      productId: p.productId,
+      title: p.title,
+      sku: p.sku,
+      barcode: p.barcode ?? null,
+      image: p.image,
+      supplier: p.supplier,
+      cost_price: p.cost_price,
+      selling_price: p.selling_price,
+      variantName: p.variantName,
+      width_cm: p.width_cm,
+      height_cm: p.height_cm,
+      depth_cm: p.depth_cm,
+      weight_g: p.weight_g,
+      volume_cc: p.volume_cc,
+      externalMall: p.externalMall,
+    }));
+    setProducts(rows);
+    setFiltered(rows);
+
+    const handler = () => {
+      const next = clientBarcodeStore.getProducts().map((p: any) => ({
+        id: String(p.id),
+        productId: p.productId,
+        title: p.title,
+        sku: p.sku,
+        barcode: p.barcode ?? null,
+        image: p.image,
+        supplier: p.supplier,
+      }));
+      setProducts(next);
+      setFiltered(next);
+    };
+    window.addEventListener("clientBarcodesChanged", handler);
+    return () => window.removeEventListener("clientBarcodesChanged", handler);
   }, []);
 
   const barcodeCounts = React.useMemo(() => {
@@ -343,35 +316,22 @@ const ProductBarcodesPage: React.FC = () => {
   };
 
   const apiSaveBarcode = async (id: string, barcode: string | null) => {
+    // use client-only store
     await new Promise((res) => setTimeout(res, 120));
-    try {
-      const raw = localStorage.getItem("products_local_v1");
-      const arr = raw ? JSON.parse(raw) : [];
-      const idx = arr.findIndex((p: any) => String(p.id) === String(id));
-      if (idx >= 0) {
-        arr[idx].barcode = barcode;
-      }
-      localStorage.setItem("products_local_v1", JSON.stringify(arr));
-      return { ok: true };
-    } catch (e) {
-      return { ok: false, error: String(e) };
-    }
+    return clientBarcodeStore.updateProductBarcode(id, barcode);
   };
 
   const apiSync = async () => {
     await new Promise((res) => setTimeout(res, 300));
-    const raw = localStorage.getItem("products_local_v1");
-    const arr = raw ? JSON.parse(raw) : [];
-    const norm = Array.isArray(arr)
-      ? arr.map((p: any, i: number) => ({
-          id: String(p.id ?? p._id ?? p.sku ?? i),
-          title: p.title ?? "",
-          barcode: p.barcode ?? null,
-          sku: p.sku ?? "",
-        }))
-      : [];
-    setProducts(norm);
-    setFiltered(norm);
+    clientBarcodeStore.initIfNeeded();
+    const arr = clientBarcodeStore.getProducts().map((p: any) => ({
+      id: String(p.id),
+      title: p.title,
+      barcode: p.barcode ?? null,
+      sku: p.sku ?? "",
+    }));
+    setProducts(arr);
+    setFiltered(arr);
     alert("동기화 완료 (로컬 데이터 기준)");
   };
 
@@ -387,17 +347,10 @@ const ProductBarcodesPage: React.FC = () => {
       alert("EAN-13 체크섬 불일치");
       return;
     }
-    const updated = products.map((p) =>
-      p.id === id ? { ...p, barcode: manualValue || null } : p,
-    );
+    const updated = products.map((p) => (p.id === id ? { ...p, barcode: manualValue || null } : p));
     setProducts(updated);
-    saveLog({
-      ts: new Date().toISOString(),
-      user: "operator",
-      action: "manual-edit",
-      id,
-      value: manualValue,
-    });
+    clientBarcodeStore.updateProductBarcode(id, manualValue || null);
+    clientBarcodeStore.appendLog({ ts: new Date().toISOString(), user: "operator", action: "manual-edit", id, value: manualValue });
     setShowEditId(null);
   };
 
