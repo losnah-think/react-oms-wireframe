@@ -14,6 +14,8 @@ const LocationBarcodesPage: React.FC = () => {
   const [query, setQuery] = React.useState("");
   const [rows, setRows] = React.useState<Row[]>(SAMPLE);
   const [selected, setSelected] = React.useState<Record<number, boolean>>({});
+  const [editingId, setEditingId] = React.useState<number | null>(null);
+  const [editingValue, setEditingValue] = React.useState<string>("");
 
   // upload state
   const [fileName, setFileName] = React.useState<string | null>(null);
@@ -21,6 +23,37 @@ const LocationBarcodesPage: React.FC = () => {
 
   const toggle = (id: number) =>
     setSelected((s) => ({ ...s, [id]: !s[id] }));
+
+  const startEdit = (r: Row) => {
+    setEditingId(r.id);
+    setEditingValue(r.code);
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditingValue("");
+  };
+
+  const saveEdit = async () => {
+    if (editingId == null) return;
+    const res = clientBarcodeStore.updateLocationBarcode(editingId, { code: editingValue });
+    if (!res.ok) {
+      alert("저장 실패: " + String(res.error || ""));
+      return;
+    }
+    cancelEdit();
+    alert("수정 저장 완료");
+  };
+
+  const doDelete = async (id: number) => {
+    if (!confirm("정말로 삭제하시겠습니까?")) return;
+    const res = clientBarcodeStore.deleteLocationBarcode(id);
+    if (!res.ok) {
+      alert("삭제 실패: " + String(res.error || ""));
+      return;
+    }
+    alert("삭제 완료");
+  };
 
   const downloadTemplate = () => {
     const csv = 'code,created_at\nlocation-001,2025-01-01 00:00:00\nlocation-002,2025-01-02 00:00:00\n';
@@ -191,8 +224,8 @@ const LocationBarcodesPage: React.FC = () => {
                     </td>
                     <td className="p-2 text-center">{r.created_at}</td>
                     <td className="p-2 text-center">
-                      <button className="px-2 py-1 text-sm border rounded">수정</button>
-                      <button className="px-2 py-1 text-sm border rounded ml-2 text-red-600">삭제</button>
+                      <button className="px-2 py-1 text-sm border rounded" onClick={() => startEdit(r)}>수정</button>
+                      <button className="px-2 py-1 text-sm border rounded ml-2 text-red-600" onClick={() => doDelete(r.id)}>삭제</button>
                     </td>
                   </tr>
                 ))}
@@ -252,6 +285,20 @@ const LocationBarcodesPage: React.FC = () => {
           <div className="flex gap-2 justify-end">
             <button className="px-3 py-2 border rounded" onClick={() => { setParsed(null); setFileName(null); }}>취소</button>
             <button className="px-3 py-2 bg-blue-600 text-white rounded" onClick={doUpload}>업로드</button>
+          </div>
+        </div>
+      )}
+
+      {/* Edit modal for location code */}
+      {editingId != null && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+          <div className="bg-white p-6 rounded w-[480px]">
+            <h3 className="text-lg font-semibold mb-2">위치 바코드 수정</h3>
+            <input className="border w-full p-2 mb-3 font-mono" value={editingValue} onChange={(e) => setEditingValue(e.target.value)} />
+            <div className="flex justify-end gap-2">
+              <button className="px-3 py-2 border rounded" onClick={cancelEdit}>취소</button>
+              <button className="px-3 py-2 bg-blue-600 text-white rounded" onClick={saveEdit}>저장</button>
+            </div>
           </div>
         </div>
       )}

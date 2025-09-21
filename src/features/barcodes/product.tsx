@@ -165,6 +165,8 @@ const ProductBarcodesPage: React.FC = () => {
       }));
       setProducts(next);
       setFiltered(next);
+      const locs = clientBarcodeStore.getLocationBarcodes() || [];
+      setKnownLocations(locs.map((l: any) => ({ id: Number(l.id), code: String(l.code) })));
     };
     window.addEventListener("clientBarcodesChanged", handler);
     return () => window.removeEventListener("clientBarcodesChanged", handler);
@@ -415,6 +417,8 @@ const ProductBarcodesPage: React.FC = () => {
   const openLogs = () => setLogsOpen(true);
   const [conflictOpen, setConflictOpen] = React.useState(false);
   const [conflictList, setConflictList] = React.useState<any[]>([]);
+  const [knownLocations, setKnownLocations] = React.useState<Array<{id:number,code:string}>>([]);
+  const [selectedLocationForAssign, setSelectedLocationForAssign] = React.useState<string | null>(null);
   const [printModalOpen, setPrintModalOpen] = React.useState(false);
   const [printOptions, setPrintOptions] = React.useState({
     size: "50x30",
@@ -867,7 +871,7 @@ const ProductBarcodesPage: React.FC = () => {
                     <td className="p-2">{c.title}</td>
                     <td className="p-2">{c.sku}</td>
                     <td className="p-2">
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 items-center">
                         <Button
                           size="small"
                           variant="outline"
@@ -888,6 +892,21 @@ const ProductBarcodesPage: React.FC = () => {
                         >
                           무효화
                         </Button>
+                        <div className="flex items-center gap-2">
+                          <select className="border px-2 py-1 text-sm" value={selectedLocationForAssign ?? ""} onChange={(e) => setSelectedLocationForAssign(e.target.value || null)}>
+                            <option value="">위치 선택</option>
+                            {knownLocations.map((l) => (
+                              <option key={l.id} value={l.code}>{l.code}</option>
+                            ))}
+                          </select>
+                          <Button size="small" onClick={async () => {
+                            if (!selectedLocationForAssign) { alert('위치를 선택하세요'); return; }
+                            const res = clientBarcodeStore.assignLocationToProduct(selectedLocationForAssign, c.id);
+                            if (!res.ok) { alert('할당 실패: ' + String(res.error || '')); return; }
+                            alert('위치 바코드가 상품에 할당되었습니다');
+                            detectConflicts();
+                          }}>위치 할당</Button>
+                        </div>
                       </div>
                     </td>
                   </tr>

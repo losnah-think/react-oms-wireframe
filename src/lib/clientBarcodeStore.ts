@@ -122,6 +122,71 @@ export const clientBarcodeStore = {
     this.saveLocationBarcodes(next);
   },
 
+  updateLocationBarcode(id: number, patch: Partial<{ code: string; created_at: string }>) {
+    try {
+      const arr = this.getLocationBarcodes();
+      const idx = arr.findIndex((r: any) => Number(r.id) === Number(id));
+      if (idx >= 0) {
+        arr[idx] = { ...arr[idx], ...patch };
+        this.saveLocationBarcodes(arr);
+        this.appendLog({ ts: new Date().toISOString(), user: "operator", action: "update-location", id, patch });
+        return { ok: true };
+      }
+      return { ok: false, error: "not_found" };
+    } catch (e) {
+      return { ok: false, error: String(e) };
+    }
+  },
+
+  deleteLocationBarcode(id: number) {
+    try {
+      const arr = this.getLocationBarcodes();
+      const idx = arr.findIndex((r: any) => Number(r.id) === Number(id));
+      if (idx >= 0) {
+        arr.splice(idx, 1);
+        this.saveLocationBarcodes(arr);
+        this.appendLog({ ts: new Date().toISOString(), user: "operator", action: "delete-location", id });
+        return { ok: true };
+      }
+      return { ok: false, error: "not_found" };
+    } catch (e) {
+      return { ok: false, error: String(e) };
+    }
+  },
+
+  // assign a location code to a product's barcode field (simple association)
+  assignLocationToProduct(locationCode: string, productId: string) {
+    try {
+      const products = this.getProducts();
+      const idx = products.findIndex((p: any) => String(p.id) === String(productId));
+      if (idx >= 0) {
+        products[idx] = { ...products[idx], barcode: String(locationCode) };
+        this.saveProducts(products);
+        this.appendLog({ ts: new Date().toISOString(), user: "operator", action: "assign-location", locationCode, productId });
+        return { ok: true };
+      }
+      return { ok: false, error: "product_not_found" };
+    } catch (e) {
+      return { ok: false, error: String(e) };
+    }
+  },
+
+  unassignLocationFromProduct(productId: string) {
+    try {
+      const products = this.getProducts();
+      const idx = products.findIndex((p: any) => String(p.id) === String(productId));
+      if (idx >= 0) {
+        products[idx] = { ...products[idx], barcode: null };
+        this.saveProducts(products);
+        this.appendLog({ ts: new Date().toISOString(), user: "operator", action: "unassign-location", productId });
+        return { ok: true };
+      }
+      return { ok: false, error: "product_not_found" };
+    } catch (e) {
+      return { ok: false, error: String(e) };
+    }
+  },
+
   appendLog(entry: any) {
     try {
       const logs = safeParse(localStorage.getItem(KEY_LOGS)) || [];
