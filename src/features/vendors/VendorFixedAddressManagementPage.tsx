@@ -25,6 +25,7 @@ const VendorFixedAddressManagementPage: React.FC = () => {
   const [selectedAddress, setSelectedAddress] =
     useState<VendorFixedAddress | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalVendorId, setModalVendorId] = useState<string | null>(null);
 
   const mockVendors = [
     { id: "V001", name: "네이버 스마트스토어" },
@@ -120,6 +121,13 @@ const VendorFixedAddressManagementPage: React.FC = () => {
   });
 
   const handleAddAddress = () => {
+    setModalVendorId(null);
+    setSelectedAddress(null);
+    setIsModalOpen(true);
+  };
+
+  const handleAddAddressForVendor = (vendorId: string) => {
+    setModalVendorId(vendorId);
     setSelectedAddress(null);
     setIsModalOpen(true);
   };
@@ -242,76 +250,57 @@ const VendorFixedAddressManagementPage: React.FC = () => {
           </div>
         </div>
 
-        {/* 주소 목록 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {filteredAddresses.map((address) => (
-            <div key={address.id} className="bg-white border rounded-lg p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center space-x-2">
-                  <span
-                    className={`inline-flex px-2 py-1 text-xs rounded-full ${getAddressTypeColor(address.addressType)}`}
-                  >
-                    {address.addressType}
-                  </span>
-                  {address.isDefault && (
-                    <span className="inline-flex px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">
-                      기본 주소
-                    </span>
-                  )}
-                  {getStatusBadge(address.status)}
+        {/* 주소 목록 (판매처별 그룹) */}
+        <div className="space-y-6">
+          {mockVendors
+            .filter((v) => selectedVendor === "all" || v.id === selectedVendor)
+            .map((vendor) => {
+              const vendorAddresses = filteredAddresses.filter((a) => a.vendorId === vendor.id);
+              return (
+                <div key={vendor.id} className="bg-white border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <div className="text-sm text-gray-500">판매처</div>
+                      <div className="font-medium text-gray-900">{vendor.name}</div>
+                      <div className="text-xs text-gray-500">총 {vendorAddresses.length}개 주소</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => handleAddAddressForVendor(vendor.id)} className="px-3 py-1 bg-blue-600 text-white rounded text-sm">신규 주소 등록</button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {vendorAddresses.length === 0 && (
+                      <div className="text-sm text-gray-500 col-span-full">등록된 고정주소가 없습니다.</div>
+                    )}
+                    {vendorAddresses.map((address) => (
+                      <div key={address.id} className="border rounded p-3">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex items-center space-x-2">
+                            <span className={`inline-flex px-2 py-1 text-xs rounded-full ${getAddressTypeColor(address.addressType)}`}>{address.addressType}</span>
+                            {address.isDefault && <span className="inline-flex px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">기본 주소</span>}
+                            {getStatusBadge(address.status)}
+                          </div>
+                          <div className="flex space-x-2">
+                            <button onClick={() => handleEditAddress(address)} className="text-blue-600 hover:text-blue-800 text-sm">수정</button>
+                            {!address.isDefault && <button onClick={() => handleSetDefault(address.id)} className="text-green-600 hover:text-green-800 text-sm">기본설정</button>}
+                            <button className="text-red-600 hover:text-red-800 text-sm">삭제</button>
+                          </div>
+                        </div>
+                        <div className="text-sm text-gray-500">담당자</div>
+                        <div className="font-medium text-gray-900">{address.name}</div>
+                        <div className="text-sm text-gray-600 mb-2">{address.phone}</div>
+                        <div className="text-sm text-gray-500">주소</div>
+                        <div className="text-sm text-gray-600">({address.zipcode})</div>
+                        <div className="text-gray-900">{address.address}</div>
+                        {address.addressDetail && <div className="text-gray-600">{address.addressDetail}</div>}
+                        <div className="text-xs text-gray-500 mt-3">등록일: {address.registrationDate}</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => handleEditAddress(address)}
-                    className="text-blue-600 hover:text-blue-800 text-sm"
-                  >
-                    수정
-                  </button>
-                  {!address.isDefault && (
-                    <button
-                      onClick={() => handleSetDefault(address.id)}
-                      className="text-green-600 hover:text-green-800 text-sm"
-                    >
-                      기본설정
-                    </button>
-                  )}
-                  <button className="text-red-600 hover:text-red-800 text-sm">
-                    삭제
-                  </button>
-                </div>
-              </div>
-
-              {/* 판매처 정보 */}
-              <div className="mb-3 pb-3 border-b border-gray-100">
-                <div className="text-sm text-gray-500">판매처</div>
-                <div className="font-medium text-gray-900">
-                  {address.vendorName}
-                </div>
-              </div>
-
-              {/* 연락처 정보 */}
-              <div className="mb-3">
-                <div className="text-sm text-gray-500">담당자</div>
-                <div className="font-medium text-gray-900">{address.name}</div>
-                <div className="text-sm text-gray-600">{address.phone}</div>
-              </div>
-
-              {/* 주소 정보 */}
-              <div className="mb-3">
-                <div className="text-sm text-gray-500">주소</div>
-                <div className="text-sm text-gray-600">({address.zipcode})</div>
-                <div className="text-gray-900">{address.address}</div>
-                {address.addressDetail && (
-                  <div className="text-gray-600">{address.addressDetail}</div>
-                )}
-              </div>
-
-              {/* 등록일 */}
-              <div className="text-xs text-gray-500 mt-4 pt-3 border-t border-gray-100">
-                등록일: {address.registrationDate}
-              </div>
-            </div>
-          ))}
+              )
+            })}
         </div>
 
         {filteredAddresses.length === 0 && (
@@ -355,7 +344,7 @@ const VendorFixedAddressManagementPage: React.FC = () => {
                       판매처 선택 *
                     </label>
                     <select
-                      defaultValue={selectedAddress?.vendorId || ""}
+                      defaultValue={modalVendorId ?? selectedAddress?.vendorId ?? ""}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="">판매처를 선택하세요</option>
