@@ -11,12 +11,48 @@ const sampleProducts = Array.from({ length: 20 }).map((_, i) => {
     `https://picsum.photos/seed/${id}/800/600`,
     `https://picsum.photos/seed/${id}-1/800/600`,
   ];
+  const suppliers = ["자사", "공급처A", "공급처B", "공급처C"];
+  const supplier_name = suppliers[i % suppliers.length];
+
   const variants = [
     {
       id: `v-${id}-1`,
       sku: `SKU-${id}-01`,
+      code: `V-${id}-1`,
+      variant_name: `옵션 1`,
+      selling_price: (10 + i) * 1000,
+      cost_price: (7 + i) * 1000,
+      supply_price: (8 + i) * 1000,
+      margin_amount: 2000,
       stock: Math.max(0, 30 - i),
-      price: (10 + i) * 1000,
+      safety_stock: 2,
+      warehouse_location: '본사_보관존',
+      barcode1: `88000${id}01`,
+      barcode2: `99000${id}01`,
+      barcode3: `77000${id}01`,
+      is_selling: true,
+      is_soldout: false,
+      is_stock_linked: true,
+      extra_fields: {
+        option_supplier_name: supplier_name,
+        channel_option_codes: `NAVER:OPT-1`,
+        inbound_expected_date: null,
+        inbound_expected_qty: 0,
+        order_status: null,
+        option_memo1: '',
+        option_memo2: '',
+        option_memo3: '',
+        option_memo4: '',
+        option_memo5: '',
+        english_option_name: '',
+        foreign_currency_price: '',
+        hidden_release: false,
+        prevent_bundle: false,
+        auto_scan: false,
+        cafe_sale_use: '관리안함',
+      },
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
       attributes: {
         color: colors[i % colors.length],
         size: sizes[i % sizes.length],
@@ -25,8 +61,41 @@ const sampleProducts = Array.from({ length: 20 }).map((_, i) => {
     {
       id: `v-${id}-2`,
       sku: `SKU-${id}-02`,
+      code: `V-${id}-2`,
+      variant_name: `옵션 2`,
+      selling_price: (9 + i) * 1000,
+      cost_price: (6 + i) * 1000,
+      supply_price: (7 + i) * 1000,
+      margin_amount: 1500,
       stock: Math.max(0, 15 - i),
-      price: (9 + i) * 1000,
+      safety_stock: 1,
+      warehouse_location: '물류센터_A',
+      barcode1: `88000${id}02`,
+      barcode2: `99000${id}02`,
+      barcode3: `77000${id}02`,
+      is_selling: true,
+      is_soldout: false,
+      is_stock_linked: false,
+      extra_fields: {
+        option_supplier_name: supplier_name,
+        channel_option_codes: `CAFE24:OPT-2`,
+        inbound_expected_date: null,
+        inbound_expected_qty: 0,
+        order_status: null,
+        option_memo1: '',
+        option_memo2: '',
+        option_memo3: '',
+        option_memo4: '',
+        option_memo5: '',
+        english_option_name: '',
+        foreign_currency_price: '',
+        hidden_release: false,
+        prevent_bundle: false,
+        auto_scan: false,
+        cafe_sale_use: '관리안함',
+      },
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
       attributes: {
         color: colors[(i + 1) % colors.length],
         size: sizes[(i + 1) % sizes.length],
@@ -35,8 +104,6 @@ const sampleProducts = Array.from({ length: 20 }).map((_, i) => {
   ];
   // ~66% of items will have a shipping policy value for testing the filter
   const hasShippingPolicy = i % 3 !== 0;
-  const suppliers = ["자사", "공급처A", "공급처B", "공급처C"];
-  const supplier_name = suppliers[i % suppliers.length];
   return {
     id: String(id),
     name: `Demo ${brand} ${category} ${i + 1}`,

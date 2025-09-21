@@ -129,6 +129,9 @@ export function mapDbProductToForm(p: any): ProductFormData {
         }))
       })(),
     },
+    compliance: {
+      // fill with sensible defaults (all optional fields allowed)
+    },
     validation: {
       errors: {},
       warnings: {},

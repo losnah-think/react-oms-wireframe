@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import {
   Container,
   Card,
@@ -7,6 +7,7 @@ import {
   Stack,
   Modal,
 } from "../../design-system";
+import SideGuide from "../../components/SideGuide";
 import Toast from "../../components/Toast";
 import { normalizeProductGroup } from "../../utils/groupUtils";
 import { useRouter } from "next/router";
@@ -15,6 +16,46 @@ import {
   formatPrice,
   getStockStatus,
 } from "../../utils/productUtils";
+import OptionEditPage from "./OptionEditPage";
+
+const DEFAULT_COMPLIANCE = {
+  productSerialNumber: '',
+  purchaseProductName: '',
+  marginAmount: 0,
+  includeInIncomingList: false,
+  salesChannelProductCode: '',
+  salesChannelCodes: '',
+  knittingInfo: '',
+  englishCategoryName: '',
+  washingMethod: '',
+  brandCommissionRate: 0,
+  englishProductCategoryName: '',
+  dutyCode: '',
+  expectedInboundFlag: false,
+};
+
+const mergeCompliance = (source?: any) => ({
+  ...DEFAULT_COMPLIANCE,
+  ...(source || {}),
+});
+
+const COMPLIANCE_EXTRA_FIELD_MAP: Record<string, string> = {
+  productSerialNumber: 'product_serial_number',
+  purchaseProductName: 'purchase_product_name',
+  includeInIncomingList: 'include_in_incoming_list',
+  salesChannelProductCode: 'sales_channel_product_code',
+  salesChannelCodes: 'sales_channel_codes',
+  knittingInfo: 'knitting_info',
+  englishCategoryName: 'english_category_name',
+  washingMethod: 'washing_method',
+  brandCommissionRate: 'brand_commission_rate',
+  englishProductCategoryName: 'english_product_category_name',
+  dutyCode: 'duty_code',
+  expectedInboundFlag: 'expected_inbound_flag',
+  invoiceDisplayName: 'invoice_display_name',
+  purchaseName: 'purchase_name',
+  marginAmount: 'margin_amount',
+};
 
 interface ProductDetailPageProps {
   productId?: string;
@@ -59,6 +100,188 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   const [classificationNames, setClassificationNames] = useState<
     Record<string, string>
   >({});
+  // Draft / modal states for additional info and description
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [imageListDraft, setImageListDraft] = useState<string[]>([]);
+  const [showDescEdit, setShowDescEdit] = useState(false);
+  const [descEditValue, setDescEditValue] = useState("");
+  const [showVariantModal, setShowVariantModal] = useState(false);
+  const [variantForm, setVariantForm] = useState<any>(null);
+  const [editingVariantIndex, setEditingVariantIndex] = useState<number | null>(null);
+  // ---- Option Edit Route Detection (unify to full page, not modal) ----
+  const isOptionRoute = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    return window.location.pathname.includes("/options/");
+  }, [router?.asPath]);
+
+  const optionKey = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const segs = window.location.pathname.split("/").filter(Boolean);
+      const idx = segs.indexOf("options");
+      if (idx >= 0 && segs[idx + 1]) return decodeURIComponent(segs[idx + 1]);
+      return null;
+    } catch {
+      return null;
+    }
+  }, [router?.asPath]);
+
+  const currentVariantIndex = useMemo(() => {
+    if (!isOptionRoute || !product || !Array.isArray(product.variants) || !optionKey) return -1;
+    // try to match by common identifiers
+    const directIdx = product.variants.findIndex((v: any, i: number) => {
+      const key =
+        v.id ??
+        v.variant_id ??
+        v.code ??
+        v.option_code ??
+        v.barcode1 ??
+        v.barcode ??
+        `index-${i}`;
+      return String(key) === String(optionKey);
+    });
+    if (directIdx >= 0) return directIdx;
+    if (String(optionKey).startsWith("index-")) {
+      const n = Number(String(optionKey).replace("index-", ""));
+      if (!Number.isNaN(n) && product.variants[n]) return n;
+    }
+    return -1;
+  }, [isOptionRoute, product?.variants, optionKey]);
+
+  const currentVariant = useMemo(() => {
+    if (currentVariantIndex < 0 || !product?.variants) return null;
+    return (product.variants as any[])[currentVariantIndex];
+  }, [product?.variants, currentVariantIndex]);
+  // ---- end Option Edit helpers ----
+  // Save UX: autosave and status
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const lastSavedDraftRef = useRef<any>(null);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+
+  // Dropdown options for product-level fields (fetched from mock API)
+  const [YEAR_OPTIONS, setYearOptions] = useState<string[]>([]);
+  const [SEASON_OPTIONS, setSeasonOptions] = useState<string[]>([]);
+  const [BRAND_OPTIONS, setBrandOptions] = useState<string[]>([]);
+
+  const normalizeProduct = useCallback((input: any) => {
+    if (!input) return null;
+    const extraCompliance = mergeCompliance(input.extra_fields);
+    const mergedCompliance = {
+      ...extraCompliance,
+      ...mergeCompliance(input.compliance),
+    };
+    const repSelling = Number(
+      input.representative_selling_price ??
+        input.selling_price ??
+        0,
+    );
+    const repSupply = Number(
+      input.representative_supply_price ??
+        input.supply_price ??
+        input.cost_price ??
+        0,
+    );
+    mergedCompliance.marginAmount = Number(
+      Number.isFinite(repSelling - repSupply)
+        ? (repSelling - repSupply).toFixed(2)
+        : '0',
+    );
+    if (typeof input.invoice_display_name !== 'undefined') {
+      mergedCompliance.invoiceDisplayName = !!input.invoice_display_name;
+    }
+    const variants = Array.isArray(input.variants)
+      ? input.variants.map((variant: any) => {
+          const extra = {
+            ...(variant.extra_fields || {}),
+          };
+          const memoList = Array.isArray(extra.option_memos)
+            ? extra.option_memos
+            : Array.isArray(variant.option_memos)
+              ? variant.option_memos
+              : [];
+          return {
+            ...variant,
+            extra_fields: extra,
+            option_memos: memoList,
+          };
+        })
+      : [];
+    return {
+      ...input,
+      compliance: mergedCompliance,
+      variants,
+      description_images:
+        input.description_images ||
+        mergedCompliance.description_images ||
+        [],
+    };
+  }, []);
+
+  const applyProductPatch = useCallback(
+    (mutator: (draft: any) => void) => {
+      setProduct((prev: any) => {
+        if (!prev) return prev;
+        const copy = JSON.parse(JSON.stringify(prev));
+        mutator(copy);
+        return normalizeProduct(copy);
+      });
+    },
+    [normalizeProduct],
+  );
+
+  const updateVariant = useCallback(
+    (index: number, mutator: (variant: any) => void) => {
+      applyProductPatch((draft) => {
+        if (!Array.isArray(draft.variants) || !draft.variants[index]) return;
+        mutator(draft.variants[index]);
+      });
+    },
+    [applyProductPatch],
+  );
+
+  const updateCurrentVariant = useCallback(
+    (mutator: (variant: any) => void) => {
+      if (currentVariantIndex < 0) return;
+      updateVariant(currentVariantIndex, mutator);
+    },
+    [currentVariantIndex, updateVariant],
+  );
+
+  const updateCompliance = useCallback((patch: Record<string, any>) => {
+    setProduct((prev: any) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        compliance: {
+          ...mergeCompliance(prev.compliance),
+          ...patch,
+        },
+      };
+    });
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    fetch("/api/meta/product-options")
+      .then((r) => r.json())
+      .then((body) => {
+        if (!mounted) return;
+        setYearOptions(body.years || []);
+        setSeasonOptions(body.seasons || []);
+        setBrandOptions(body.brands || []);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        const now = new Date().getFullYear();
+        setYearOptions(Array.from({ length: 10 }).map((_, i) => String(now - 5 + i)));
+        setSeasonOptions(["전체", "SS", "FW", "SPRING", "SUMMER", "AUTUMN", "WINTER"]);
+        setBrandOptions(["(없음)", "브랜드A", "브랜드B", "브랜드C"]);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
 
   useEffect(() => {
     let mounted = true;
@@ -73,7 +296,33 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             r.status,
           );
           const pid = Number(productId) || Date.now();
-          setProduct({
+          setProduct(
+            normalizeProduct({
+              id: pid,
+              code: `PRD-PLACEHOLDER-${pid}`,
+              name: `샘플 상품 (${pid})`,
+              selling_price: 0,
+              supply_price: 0,
+              cost_price: 0,
+              images: [],
+              variants: [],
+              description: "데모 환경: 실제 데이터가 없습니다.",
+            }) || null,
+          );
+          return;
+        }
+        const data = await r.json();
+        // Some API routes return `{ product }`, others return the raw product.
+        const resolved = data?.product ?? data;
+        console.debug("[ProductDetailPage] fetched data=", resolved);
+        setProduct(normalizeProduct(resolved || {}));
+      })
+      .catch((e) => {
+        console.error("[ProductDetailPage] fetch error", e);
+        if (!mounted) return;
+        const pid = Number(productId) || Date.now();
+        setProduct(
+          normalizeProduct({
             id: pid,
             code: `PRD-PLACEHOLDER-${pid}`,
             name: `샘플 상품 (${pid})`,
@@ -82,31 +331,9 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             cost_price: 0,
             images: [],
             variants: [],
-            description: "데모 환경: 실제 데이터가 없습니다.",
-          });
-          return;
-        }
-        const data = await r.json();
-        // Some API routes return `{ product }`, others return the raw product.
-        const resolved = data?.product ?? data;
-        console.debug("[ProductDetailPage] fetched data=", resolved);
-        setProduct(resolved || null);
-      })
-      .catch((e) => {
-        console.error("[ProductDetailPage] fetch error", e);
-        if (!mounted) return;
-        const pid = Number(productId) || Date.now();
-        setProduct({
-          id: pid,
-          code: `PRD-PLACEHOLDER-${pid}`,
-          name: `샘플 상품 (${pid})`,
-          selling_price: 0,
-          supply_price: 0,
-          cost_price: 0,
-          images: [],
-          variants: [],
-          description: "데모 환경: 실제 데이터가 없습니다. (네트워크 오류)",
-        });
+            description: "데모 환경: 실제 데이터가 없습니다. (네트워크 오류)",
+          }) || null,
+        );
       })
       .finally(() => {
         if (mounted) setLoading(false);
@@ -155,14 +382,14 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     };
   }, []);
 
-  const handleBack = () => {
-    if (onNavigate) {
-      onNavigate("products-list");
-    } else {
-      // Next.js pages/[id].tsx에서 직접 접근 시 목록으로 이동
-      window.location.href = "/products";
+  const handleCancelRestore = useCallback(() => {
+    if (lastSavedDraftRef.current) {
+      setProduct((p: any) => ({
+        ...(p || {}),
+        description: lastSavedDraftRef.current.description || '',
+      }));
     }
-  };
+  }, []);
 
   const handleVariantNavigate = (
     event: React.MouseEvent<HTMLTableRowElement, MouseEvent>,
@@ -353,6 +580,18 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
       ? formatPrice(value)
       : "-";
 
+  // If on option edit route, render the dedicated Option Edit Page (unified page navigation)
+  if (isOptionRoute) {
+    return (
+      <OptionEditPage
+        product={product}
+        currentVariant={currentVariant}
+        updateCurrentVariant={updateCurrentVariant}
+        optionKey={optionKey}
+      />
+    );
+  }
+
   return (
     <>
       <Container
@@ -364,7 +603,10 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
         <div className="flex justify-between items-center mb-6">
           <Button
             variant="ghost"
-            onClick={handleBack}
+            onClick={() => {
+              if (onNavigate) onNavigate("products-list");
+              else window.location.href = "/products";
+            }}
             className="text-blue-600"
           >
             ← 목록으로
@@ -1208,6 +1450,9 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                     공급가
                   </th>
                   <th className="px-4 py-2 text-right text-xs font-bold text-gray-700">
+                    마진
+                  </th>
+                  <th className="px-4 py-2 text-right text-xs font-bold text-gray-700">
                     재고
                   </th>
                   <th className="px-4 py-2 text-left text-xs font-bold text-gray-700">
@@ -1235,11 +1480,8 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                               className="w-full px-2 py-1 border rounded"
                               value={variant.variant_name || ""}
                               onChange={(e) =>
-                                setProduct((p: any) => {
-                                  const copy = JSON.parse(JSON.stringify(p));
-                                  copy.variants[vIdx].variant_name =
-                                    e.target.value;
-                                  return copy;
+                                updateVariant(vIdx, (draft) => {
+                                  draft.variant_name = e.target.value;
                                 })
                               }
                             />
@@ -1253,15 +1495,44 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                               className="px-2 py-1 border rounded"
                               value={variant.code || ""}
                               onChange={(e) =>
-                                setProduct((p: any) => {
-                                  const copy = JSON.parse(JSON.stringify(p));
-                                  copy.variants[vIdx].code = e.target.value;
-                                  return copy;
+                                updateVariant(vIdx, (draft) => {
+                                  draft.code = e.target.value;
                                 })
                               }
                             />
                           ) : (
-                            variant.code
+                            <a
+                              href={`/products/${encodeURIComponent(String(product?.id ?? productId))}/options/${encodeURIComponent(String(
+                                variant.id ??
+                                variant.variant_id ??
+                                variant.code ??
+                                variant.option_code ??
+                                variant.barcode1 ??
+                                variant.barcode ??
+                                `index-${vIdx}`
+                              ))}`}
+                              className="text-blue-600 underline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const pid = product?.id ?? productId;
+                                const vid =
+                                  variant.id ??
+                                  variant.variant_id ??
+                                  variant.code ??
+                                  variant.option_code ??
+                                  variant.barcode1 ??
+                                  variant.barcode ??
+                                  `index-${vIdx}`;
+                                const nextPath = `/products/${encodeURIComponent(String(pid))}/options/${encodeURIComponent(String(vid))}`;
+                                try {
+                                  router?.push?.(nextPath);
+                                } catch {
+                                  if (typeof window !== "undefined") window.location.href = nextPath;
+                                }
+                              }}
+                            >
+                              {variant.code || "-"}
+                            </a>
                           )}
                         </td>
                         <td className="px-4 py-3 text-gray-700">
@@ -1270,10 +1541,8 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                               className="px-2 py-1 border rounded"
                               value={variant.barcode1 || ""}
                               onChange={(e) =>
-                                setProduct((p: any) => {
-                                  const copy = JSON.parse(JSON.stringify(p));
-                                  copy.variants[vIdx].barcode1 = e.target.value;
-                                  return copy;
+                                updateVariant(vIdx, (draft) => {
+                                  draft.barcode1 = e.target.value;
                                 })
                               }
                             />
@@ -1287,10 +1556,8 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                               className="px-2 py-1 border rounded"
                               value={variant.barcode2 || ""}
                               onChange={(e) =>
-                                setProduct((p: any) => {
-                                  const copy = JSON.parse(JSON.stringify(p));
-                                  copy.variants[vIdx].barcode2 = e.target.value;
-                                  return copy;
+                                updateVariant(vIdx, (draft) => {
+                                  draft.barcode2 = e.target.value;
                                 })
                               }
                             />
@@ -1304,10 +1571,8 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                               className="px-2 py-1 border rounded"
                               value={variant.barcode3 || ""}
                               onChange={(e) =>
-                                setProduct((p: any) => {
-                                  const copy = JSON.parse(JSON.stringify(p));
-                                  copy.variants[vIdx].barcode3 = e.target.value;
-                                  return copy;
+                                updateVariant(vIdx, (draft) => {
+                                  draft.barcode3 = e.target.value;
                                 })
                               }
                             />
@@ -1321,12 +1586,8 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                               className="w-24 px-2 py-1 border rounded text-right"
                               value={String(variant.selling_price || 0)}
                               onChange={(e) =>
-                                setProduct((p: any) => {
-                                  const copy = JSON.parse(JSON.stringify(p));
-                                  copy.variants[vIdx].selling_price = Number(
-                                    e.target.value || 0,
-                                  );
-                                  return copy;
+                                updateVariant(vIdx, (draft) => {
+                                  draft.selling_price = Number(e.target.value || 0);
                                 })
                               }
                             />
@@ -1340,12 +1601,8 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                               className="w-24 px-2 py-1 border rounded text-right"
                               value={String(variant.cost_price || 0)}
                               onChange={(e) =>
-                                setProduct((p: any) => {
-                                  const copy = JSON.parse(JSON.stringify(p));
-                                  copy.variants[vIdx].cost_price = Number(
-                                    e.target.value || 0,
-                                  );
-                                  return copy;
+                                updateVariant(vIdx, (draft) => {
+                                  draft.cost_price = Number(e.target.value || 0);
                                 })
                               }
                             />
@@ -1359,17 +1616,23 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                               className="w-24 px-2 py-1 border rounded text-right"
                               value={String(variant.supply_price || 0)}
                               onChange={(e) =>
-                                setProduct((p: any) => {
-                                  const copy = JSON.parse(JSON.stringify(p));
-                                  copy.variants[vIdx].supply_price = Number(
-                                    e.target.value || 0,
-                                  );
-                                  return copy;
+                                updateVariant(vIdx, (draft) => {
+                                  draft.supply_price = Number(e.target.value || 0);
                                 })
                               }
                             />
                           ) : (
                             formatPrice(variant.supply_price)
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-right text-purple-700 font-semibold">
+                          {formatPrice(
+                            typeof variant.margin_amount === 'number'
+                              ? variant.margin_amount
+                              : Number(
+                                  (Number(variant.selling_price || 0) -
+                                    Number(variant.supply_price || 0)).toFixed(2),
+                                ),
                           )}
                         </td>
                         <td className="px-4 py-3 text-right text-gray-700">
@@ -1383,7 +1646,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                                   copy.variants[vIdx].stock = Number(
                                     e.target.value || 0,
                                   );
-                                  return copy;
+                                  return normalizeProduct(copy);
                                 })
                               }
                             />
@@ -1397,11 +1660,8 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                               className="px-2 py-1 border rounded"
                               value={variant.warehouse_location || ""}
                               onChange={(e) =>
-                                setProduct((p: any) => {
-                                  const copy = JSON.parse(JSON.stringify(p));
-                                  copy.variants[vIdx].warehouse_location =
-                                    e.target.value;
-                                  return copy;
+                                updateVariant(vIdx, (draft) => {
+                                  draft.warehouse_location = e.target.value;
                                 })
                               }
                             />
@@ -1443,6 +1703,31 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
         {/* 추가 상세 정보: 이미지, 메모, 사이즈/무게 */}
         <Card padding="lg" className="mb-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">추가 정보</h2>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-semibold text-gray-900">추가 이미지</h3>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="small"
+                onClick={() => {
+                  setImageListDraft(Array.isArray(product.images) ? product.images.slice() : []);
+                  setShowImageModal(true);
+                }}
+              >
+                추가 이미지 편집
+              </Button>
+              <Button
+                variant="outline"
+                size="small"
+                onClick={() => {
+                  setDescEditValue(product.description || "");
+                  setShowDescEdit(true);
+                }}
+              >
+                상세 설명 편집
+              </Button>
+            </div>
+          </div>
           <div className="grid grid-cols-3 gap-4">
             {product.images &&
               product.images.map((src: string, idx: number) => (
@@ -1460,46 +1745,101 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
           </div>
           <div className="mt-4 grid grid-cols-3 gap-4 text-sm text-gray-700">
             <div>
-              가로(cm):{" "}
-              {product.width_cm ||
-                (product.variants &&
-                  product.variants[0] &&
-                  product.variants[0].width_cm) ||
-                "-"}
+              가로(cm): {" "}
+              {editing ? (
+                <input
+                  className="px-2 py-1 border rounded w-32"
+                  value={product.width_cm || (product.variants && product.variants[0] && product.variants[0].width_cm) || ""}
+                  onChange={(e) =>
+                    applyProductPatch((draft) => {
+                      draft.width_cm = e.target.value;
+                    })
+                  }
+                />
+              ) : (
+                product.width_cm || (product.variants && product.variants[0] && product.variants[0].width_cm) || "-"
+              )}
             </div>
             <div>
-              세로(cm):{" "}
-              {product.height_cm ||
-                (product.variants &&
-                  product.variants[0] &&
-                  product.variants[0].height_cm) ||
-                "-"}
+              세로(cm): {" "}
+              {editing ? (
+                <input
+                  className="px-2 py-1 border rounded w-32"
+                  value={product.height_cm || (product.variants && product.variants[0] && product.variants[0].height_cm) || ""}
+                  onChange={(e) =>
+                    applyProductPatch((draft) => {
+                      draft.height_cm = e.target.value;
+                    })
+                  }
+                />
+              ) : (
+                product.height_cm || (product.variants && product.variants[0] && product.variants[0].height_cm) || "-"
+              )}
             </div>
             <div>
-              높이(cm):{" "}
-              {product.depth_cm ||
-                (product.variants &&
-                  product.variants[0] &&
-                  product.variants[0].depth_cm) ||
-                "-"}
+              높이(cm): {" "}
+              {editing ? (
+                <input
+                  className="px-2 py-1 border rounded w-32"
+                  value={product.depth_cm || (product.variants && product.variants[0] && product.variants[0].depth_cm) || ""}
+                  onChange={(e) =>
+                    applyProductPatch((draft) => {
+                      draft.depth_cm = e.target.value;
+                    })
+                  }
+                />
+              ) : (
+                product.depth_cm || (product.variants && product.variants[0] && product.variants[0].depth_cm) || "-"
+              )}
             </div>
             <div>
-              무게(g):{" "}
-              {product.weight_g ||
-                (product.variants &&
-                  product.variants[0] &&
-                  product.variants[0].weight_g) ||
-                "-"}
+              무게(g): {" "}
+              {editing ? (
+                <input
+                  className="px-2 py-1 border rounded w-32"
+                  value={product.weight_g || (product.variants && product.variants[0] && product.variants[0].weight_g) || ""}
+                  onChange={(e) =>
+                    applyProductPatch((draft) => {
+                      draft.weight_g = e.target.value;
+                    })
+                  }
+                />
+              ) : (
+                product.weight_g || (product.variants && product.variants[0] && product.variants[0].weight_g) || "-"
+              )}
             </div>
             <div>
-              부피(cc):{" "}
-              {product.volume_cc ||
-                (product.variants &&
-                  product.variants[0] &&
-                  product.variants[0].volume_cc) ||
-                "-"}
+              부피(cc): {" "}
+              {editing ? (
+                <input
+                  className="px-2 py-1 border rounded w-32"
+                  value={product.volume_cc || (product.variants && product.variants[0] && product.variants[0].volume_cc) || ""}
+                  onChange={(e) =>
+                    applyProductPatch((draft) => {
+                      draft.volume_cc = e.target.value;
+                    })
+                  }
+                />
+              ) : (
+                product.volume_cc || (product.variants && product.variants[0] && product.variants[0].volume_cc) || "-"
+              )}
             </div>
-            <div>원산지: {product.origin_country || "-"}</div>
+            <div>
+              원산지: {editing ? (
+                <input
+                  className="px-2 py-1 border rounded w-32"
+                  value={product.origin_country || ''}
+                  onChange={(e) =>
+                    applyProductPatch((draft) => {
+                      draft.origin_country = e.target.value;
+                    })
+                  }
+                />
+              ) : (
+                product.origin_country || "-"
+              )}
+            </div>
+            <div className="sm:col-span-3" />
             <div>
               외부몰 데이터:{" "}
               {product.externalMall?.platform ||
@@ -1510,10 +1850,16 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
           <div className="mt-4">
             <div className="text-sm text-gray-600 mb-2">메모</div>
             <ul className="list-disc pl-5 text-sm text-gray-700">
-              {product.memos &&
+              {editing ? (
+                <li>
+                  <textarea className="w-full p-2 border rounded" value={(product.memos || []).join('\n')} onChange={(e) => setProduct((p:any) => ({ ...(p||{}), memos: e.target.value.split('\n').map((s:any)=>s.trim()).filter(Boolean) }))} />
+                </li>
+              ) : (
+                product.memos &&
                 product.memos.map((m: string, idx: number) => (
                   <li key={idx}>{m}</li>
-                ))}
+                ))
+              )}
             </ul>
           </div>
 
@@ -1526,17 +1872,144 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             상품 상세 설명
           </h2>
           <div className="prose max-w-none text-lg text-gray-700">
-            {/* Render HTML description safely for mock/demo content. Basic sanitizer: remove <script> tags. */}
-            <div
-              dangerouslySetInnerHTML={{
-                __html: String(product.description || "").replace(
-                  /<script[\s\S]*?>[\s\S]*?<\/[\s]*script>/gi,
-                  "",
-                ),
-              }}
-            />
+            {editing ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-600">HTML 편집 (기본 스크립트 태그는 제거됩니다)</div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="small" onClick={() => { setShowDescEdit(true); setDescEditValue(product.description || ''); }}>모달 편집</Button>
+                    <Button variant="outline" size="small" onClick={() => {
+                      // toggle preview content by re-sanitizing
+                      setProduct((p:any)=>({...p, description: String(p.description||'') }));
+                      setToast('미리보기가 갱신되었습니다.');
+                    }}>미리보기 갱신</Button>
+                  </div>
+                </div>
+                <textarea className="w-full h-48 p-2 border rounded font-mono text-sm" value={product.description || ''} onChange={(e)=>setProduct((p:any)=>({...p, description: e.target.value}))} />
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" size="small" onClick={() => {
+                    // restore from last saved draft or original
+                    handleCancelRestore();
+                  }}>취소</Button>
+                  <Button variant="primary" size="small" onClick={() => {
+                    try {
+                      const key = `product_draft_${product.id}`;
+                      const payload = JSON.parse(localStorage.getItem(key) || '{}');
+                      payload.description = product.description || '';
+                      localStorage.setItem(key, JSON.stringify(payload));
+                      lastSavedDraftRef.current = payload;
+                      setSaveStatus('saved');
+                      setToast('상세 설명이 로컬에 저장되었습니다.');
+                    } catch (e) {
+                      setToast('로컬 저장 실패');
+                    }
+                  }}>저장</Button>
+                </div>
+                <div className="border-t pt-2 text-sm text-gray-500">미리보기:</div>
+                <div className="prose max-w-none bg-white p-4 rounded" dangerouslySetInnerHTML={{ __html: String(product.description || '').replace(/<script[\s\S]*?>[\s\S]*?<\/[\s]*script>/gi, '') }} />
+              </div>
+            ) : (
+              <div
+                dangerouslySetInnerHTML={{
+                  __html: String(product.description || "").replace(
+                    /<script[\s\S]*?>[\s\S]*?<\/[\s]*script>/gi,
+                    "",
+                  ),
+                }}
+              />
+            )}
           </div>
         </Card>
+
+        {/* Image Management Modal */}
+        <Modal open={showImageModal} onClose={() => setShowImageModal(false)} title="이미지 관리">
+          <div className="space-y-4">
+            <div>
+              <div className="text-sm text-gray-600 mb-1">이미지 목록 (URL)</div>
+              {imageListDraft.map((url, i) => (
+                <div key={i} className="flex items-center gap-2 mb-2">
+                  <input className="flex-1 px-2 py-1 border rounded" value={url} onChange={(e) => setImageListDraft((s) => { const c = s.slice(); c[i] = e.target.value; return c })} />
+                  <button className="text-red-500" onClick={() => setImageListDraft((s) => s.filter((_, idx) => idx !== i))}>삭제</button>
+                </div>
+              ))}
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setImageListDraft((s) => [...s, ''])}>이미지 추가</Button>
+                <Button variant="outline" onClick={() => setImageListDraft([])}>모두 삭제</Button>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => setShowImageModal(false)}>취소</Button>
+              <Button variant="primary" onClick={() => { setProduct((p:any) => ({ ...(p||{}), images: imageListDraft })); setShowImageModal(false); setToast('이미지 목록이 저장되었습니다.'); try { localStorage.setItem(`product_draft_${product.id}`, JSON.stringify({ images: imageListDraft, description: descEditValue })); } catch (e) {} }}>저장</Button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Description Edit Modal */}
+        <Modal open={showDescEdit} onClose={() => setShowDescEdit(false)} title="상세 설명 편집">
+          <div className="space-y-4">
+            <div>
+              <div className="text-sm text-gray-600 mb-1">HTML 입력</div>
+              <textarea className="w-full h-56 p-2 border rounded font-mono text-sm" value={descEditValue} onChange={(e)=>setDescEditValue(e.target.value)} />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => setShowDescEdit(false)}>취소</Button>
+              <Button variant="primary" onClick={() => { setProduct((p:any)=>({...p, description: descEditValue})); setShowDescEdit(false); setToast('상세 설명이 저장되었습니다.'); try { localStorage.setItem(`product_draft_${product.id}`, JSON.stringify({ images: imageListDraft, description: descEditValue })); } catch (e) {} }}>저장</Button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Variant Edit Modal */}
+        <Modal open={showVariantModal} onClose={() => setShowVariantModal(false)} title="옵션 편집">
+          <div className="space-y-4">
+            {variantForm ? (
+              <div className="grid grid-cols-1 gap-3">
+                <div>
+                  <div className="text-sm text-gray-600">옵션명</div>
+                  <input className="w-full px-2 py-1 border rounded" value={variantForm.variant_name || ''} onChange={(e) => setVariantForm((v:any)=>({...v, variant_name: e.target.value}))} />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <div className="text-sm text-gray-600">코드</div>
+                    <input className="w-full px-2 py-1 border rounded" value={variantForm.code || ''} onChange={(e)=>setVariantForm((v:any)=>({...v, code: e.target.value}))} />
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-600">바코드1</div>
+                    <input className="w-full px-2 py-1 border rounded" value={variantForm.barcode1 || ''} onChange={(e)=>setVariantForm((v:any)=>({...v, barcode1: e.target.value}))} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <div className="text-sm text-gray-600">판매가</div>
+                    <input className="w-full px-2 py-1 border rounded" value={String(variantForm.selling_price || 0)} onChange={(e)=>setVariantForm((v:any)=>({...v, selling_price: Number(e.target.value||0)}))} />
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-600">재고</div>
+                    <input className="w-full px-2 py-1 border rounded" value={String(variantForm.stock || 0)} onChange={(e)=>setVariantForm((v:any)=>({...v, stock: Number(e.target.value||0)}))} />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div>옵션을 불러오는 중입니다.</div>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => setShowVariantModal(false)}>취소</Button>
+              <Button variant="primary" onClick={() => {
+                if (editingVariantIndex === null || !product) { setShowVariantModal(false); return; }
+                setProduct((p:any) => {
+                  const copy = JSON.parse(JSON.stringify(p));
+                  copy.variants = copy.variants || [];
+                  copy.variants[editingVariantIndex] = {
+                    ...(copy.variants[editingVariantIndex] || {}),
+                    ...(variantForm || {}),
+                  };
+                  return normalizeProduct(copy);
+                });
+                setShowVariantModal(false);
+                setToast('옵션이 업데이트되었습니다.');
+              }}>저장</Button>
+            </div>
+          </div>
+        </Modal>
 
         {/* 상품 설정 모달 */}
         <Modal
@@ -1634,6 +2107,24 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
         {/* (상품 설명 수정 모달 제거) */}
       </Container>
       {toast && <Toast message={toast} onClose={() => setToast(null)} />}
+          <div className="fixed right-6 bottom-6 z-50">
+            <button
+              className="px-3 py-2 bg-white border rounded text-sm"
+              onClick={() => setIsHelpOpen(true)}
+              aria-label="도움말"
+            >
+              도움말
+            </button>
+          </div>
+          <SideGuide open={isHelpOpen} onClose={() => setIsHelpOpen(false)} title="상품 상세 도움말">
+            <div className="space-y-3 text-sm text-gray-700">
+              <p>이 페이지에서는 선택한 상품의 상세 정보를 보고 편집할 수 있습니다.</p>
+              <ul className="list-disc pl-5">
+                <li>옵션과 가격, 재고는 각 옵션별로 관리됩니다.</li>
+                <li>저장 버튼으로 로컬 상태에 반영되며 서버 동기화는 별도 구현입니다.</li>
+              </ul>
+            </div>
+          </SideGuide>
     </>
   );
 };

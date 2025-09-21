@@ -239,19 +239,19 @@ export default function RegistrationHistoryPage() {
               <tbody>
                 {mockDetailsForSeq(openSeq).map((d, i) => (
                   <tr key={i} className="border-t">
-                    <td className="px-3 py-2 align-top">
+                    <td className="px-3 py-0 align-top">
                       상품명 예시 #{i + 1}
                       <div className="text-xs text-gray-500">
                         서브타이틀 / 코드
                       </div>
                     </td>
-                    <td className="px-3 py-2 align-top">{d.option}</td>
-                    <td className="px-3 py-2 align-top">{d.stock}</td>
-                    <td className="px-3 py-2 align-top">{d.safety}</td>
-                    <td className="px-3 py-2 align-top">
+                    <td className="px-3 py-0 align-top">{d.option}</td>
+                    <td className="px-3 py-0 align-top">{d.stock}</td>
+                    <td className="px-3 py-0 align-top">{d.safety}</td>
+                    <td className="px-3 py-0 align-top">
                       {d.price.toLocaleString()}
                     </td>
-                    <td className="px-3 py-2 align-top">
+                    <td className="px-3 py-0 align-top">
                       {d.amount.toLocaleString()}
                     </td>
                   </tr>

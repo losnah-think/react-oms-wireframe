@@ -9,6 +9,7 @@ import {
   GridRow,
   GridCol,
 } from "../../design-system";
+import SideGuide from "../../components/SideGuide";
 
 interface Platform {
   id: string;
@@ -146,6 +147,7 @@ const ProductCsvUploadPage: React.FC = () => {
   };
   const [uploadHistory, setUploadHistory] = useState<UploadHistory[]>([]);
   const [showHistory, setShowHistory] = useState<boolean>(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   // 6가지 플랫폼 정의 (자사, 카페24, 위사몰, 네이버 스마트스토어, 메이크샵, 고도몰5)
   const platforms: Platform[] = [
@@ -361,12 +363,7 @@ const ProductCsvUploadPage: React.FC = () => {
       return;
     }
 
-    if (file.size > 50 * 1024 * 1024) {
-      // 50MB 제한
-      showMessage("파일 크기는 50MB 이하여야 합니다.", "error");
-      return;
-    }
-
+    setUploadedFile(file);
     setUploadedFile(file);
     setIsAnalyzing(true);
     setDetectedPlatform(null);

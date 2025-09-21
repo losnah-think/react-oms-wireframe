@@ -35,15 +35,35 @@ type OptionFormState = {
   syncStock: boolean;
   isSelling: boolean;
   isSoldout: boolean;
-  color: string;
-  size: string;
+  importer: string;
   manufacturer: string;
   manufactureCountry: string;
   material: string;
+  productType: string;
+  usagePolicy: string;
+  autoScan: boolean;
+  hiddenRelease: boolean;
+  preventBundle: boolean;
+  cafeSaleUse: string;
+  color: string;
+  size: string;
   weight: string;
   width: string;
   height: string;
   depth: string;
+  sellerOptionCodes: string;
+  inboundExpectedDate: string;
+  inboundExpectedQty: string;
+  createdAt: string;
+  updatedAt: string;
+  orderStatus: string;
+  optionMemo1: string;
+  optionMemo2: string;
+  optionMemo3: string;
+  optionMemo4: string;
+  optionMemo5: string;
+  englishOptionName: string;
+  foreignCurrencyPrice: string;
 };
 
 const defaultFormState: OptionFormState = {
@@ -65,15 +85,35 @@ const defaultFormState: OptionFormState = {
   syncStock: true,
   isSelling: true,
   isSoldout: false,
-  color: "",
-  size: "",
+  importer: "",
   manufacturer: "",
   manufactureCountry: "",
   material: "",
+  productType: "",
+  usagePolicy: "",
+  autoScan: false,
+  hiddenRelease: false,
+  preventBundle: false,
+  cafeSaleUse: "",
+  color: "",
+  size: "",
   weight: "",
   width: "",
   height: "",
   depth: "",
+  sellerOptionCodes: "",
+  inboundExpectedDate: "",
+  inboundExpectedQty: "",
+  createdAt: "",
+  updatedAt: "",
+  orderStatus: "",
+  optionMemo1: "",
+  optionMemo2: "",
+  optionMemo3: "",
+  optionMemo4: "",
+  optionMemo5: "",
+  englishOptionName: "",
+  foreignCurrencyPrice: "",
 };
 
 const OptionEditPage: React.FC<OptionEditPageProps> = ({
@@ -112,6 +152,53 @@ const OptionEditPage: React.FC<OptionEditPageProps> = ({
   const [variant, setVariant] = useState<any | null>(null);
   const [form, setForm] = useState<OptionFormState>(defaultFormState);
   const [toast, setToast] = useState<string | null>(null);
+
+  // Dropdown option lists (populate all choices you requested)
+  const productLocations = [
+    'ON',
+    '상품위치-test',
+    '마르헨제이_이천센터_국내재고',
+    '마르헨제이_이천센터_출고존',
+    '마르헨제이_이천센터_보관존',
+    '마르헨제이_이천센터_입고존',
+    '마르헨제이_이천센터_가상재고',
+    '마르헨제이_이천센터_불량재고',
+    '마르헨제이_이천센터_해외재고',
+    '마르헨제이_본사창고_보관존',
+    '마르헨제이_본사창고_입고존',
+    '마르헨제이_본사창고_출고존',
+  ];
+
+  const saleStatuses = [
+    { value: 'selling', label: '판매중' },
+    { value: 'stopped', label: '판매중지' },
+  ];
+
+  const soldoutOptions = [
+    { value: 'false', label: '미품절' },
+    { value: 'true', label: '품절' },
+  ];
+
+  const grades = [
+    '일반관리',
+    '중요관리',
+    '보류',
+  ];
+
+  const orderStatuses = [
+    '선택 안함',
+    '발주 필요',
+    '발주 완료',
+    '발주 보류',
+  ];
+
+  const suppliers = ['자사', '공급처A', '공급처B', '공급처C'];
+  const manufacturers = ['제조원A', '제조원B', '제조원C'];
+  const countries = ['KR', 'CN', 'US', 'JP'];
+  const materials = ['면', '폴리에스터', '울', '레이온'];
+  const productTypes = ['의류', '전자', '잡화', '생활'];
+  const usageOptions = ['동일상품 동시적용', '별도적용'];
+  const booleanOptions = [{ value: 'yes', label: '사용' }, { value: 'no', label: '사용안함' }];
 
   useEffect(() => {
     if (!productId) return;
@@ -164,6 +251,37 @@ const OptionEditPage: React.FC<OptionEditPageProps> = ({
     setVariant(found || null);
   }, [product, variantId]);
 
+  // If product did not contain a rich variant, try fetching variant directly
+  // from the API to obtain more fields (useful when getProduct returns a
+  // lightweight placeholder). This helps when supabase is not configured
+  // and the product payload lacks detailed variant data.
+  useEffect(() => {
+    if (!productId || !variantId) return;
+    // if variant already present with useful fields, skip
+    if (variant && (variant.sku || variant.selling_price || variant.stock)) return;
+    let mounted = true;
+    fetch(`/api/products/${productId}/variants/${variantId}`)
+      .then((res) => res.json())
+      .then((payload) => {
+        if (!mounted) return;
+        // payload may be a wrapper or the variant itself
+        const v = payload?.variant ?? payload;
+        if (v) {
+          setVariant((prev: any) => {
+            if (!prev) return v
+            const mergedExtra = Object.assign({}, prev.extra_fields || {}, v.extra_fields || {})
+            return Object.assign({}, prev, v, { extra_fields: mergedExtra })
+          })
+        }
+      })
+      .catch(() => {
+        // ignore
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [productId, variantId, variant]);
+
   useEffect(() => {
     if (!variant) {
       setForm(defaultFormState);
@@ -206,6 +324,37 @@ const OptionEditPage: React.FC<OptionEditPageProps> = ({
       width: toStringValue(variant.width_cm ?? variant.width),
       height: toStringValue(variant.height_cm ?? variant.height),
       depth: toStringValue(variant.depth_cm ?? variant.depth),
+      sellerOptionCodes:
+        variant.channel_option_codes ||
+        variant.extra_fields?.channel_option_codes ||
+        "",
+      inboundExpectedDate:
+        variant.extra_fields?.inbound_expected_date || variant.inbound_expected_date || "",
+      inboundExpectedQty: toStringValue(
+        variant.extra_fields?.inbound_expected_qty ?? variant.inbound_expected_qty ?? "",
+      ),
+      createdAt: variant.created_at || variant.createdAt || "",
+      updatedAt: variant.updated_at || variant.updatedAt || "",
+      orderStatus: variant.order_status || variant.extra_fields?.order_status || "",
+      importer: variant.supplier || variant.extra_fields?.supplier || "",
+      productType: variant.product_type || variant.extra_fields?.product_type || "",
+      usagePolicy: variant.usage_policy || variant.extra_fields?.usage_policy || "",
+      autoScan: Boolean(variant.auto_scan ?? variant.extra_fields?.auto_scan ?? false),
+      hiddenRelease: Boolean(variant.hidden_release ?? variant.extra_fields?.hidden_release ?? false),
+      preventBundle: Boolean(variant.prevent_bundle ?? variant.extra_fields?.prevent_bundle ?? false),
+      cafeSaleUse: variant.extra_fields?.cafe_sale_use || variant.cafe_sale_use || "",
+      // option memos and additional display fields
+      optionMemo1: variant.extra_fields?.option_memo1 || variant.option_memo1 || "",
+      optionMemo2: variant.extra_fields?.option_memo2 || variant.option_memo2 || "",
+      optionMemo3: variant.extra_fields?.option_memo3 || variant.option_memo3 || "",
+      optionMemo4: variant.extra_fields?.option_memo4 || variant.option_memo4 || "",
+      optionMemo5: variant.extra_fields?.option_memo5 || variant.option_memo5 || "",
+      englishOptionName: variant.extra_fields?.english_option_name || variant.english_option_name || "",
+      foreignCurrencyPrice: toStringValue(variant.extra_fields?.foreign_currency_price ?? variant.foreign_currency_price ?? ""),
+      // flags
+      hiddenRelease: Boolean(variant.hidden_release ?? variant.extra_fields?.hidden_release ?? false),
+      preventBundle: Boolean(variant.prevent_bundle ?? variant.extra_fields?.prevent_bundle ?? false),
+      autoScan: Boolean(variant.auto_scan ?? variant.extra_fields?.auto_scan ?? false),
     });
   }, [variant]);
 
@@ -364,7 +513,7 @@ const OptionEditPage: React.FC<OptionEditPageProps> = ({
                 fullWidth
               />
             </FormRow>
-            <FormRow label="공급처 옵션명">
+            <FormRow label="사입옵션명">
               <Input
                 value={form.supplierOptionName}
                 onChange={(e) =>
@@ -380,16 +529,16 @@ const OptionEditPage: React.FC<OptionEditPageProps> = ({
                 fullWidth
               />
             </FormRow>
-            <FormRow label="바코드1" required>
+            <FormRow label="바코드번호" required>
               <Input value={form.barcode1} disabled fullWidth />
               <p className="text-xs text-gray-500">
                 바코드 번호는 시스템에서 관리되며 변경할 수 없습니다.
               </p>
             </FormRow>
-            <FormRow label="바코드2">
+            <FormRow label="바코드번호2">
               <Input value={form.barcode2} disabled fullWidth />
             </FormRow>
-            <FormRow label="바코드3">
+            <FormRow label="바코드번호3">
               <Input value={form.barcode3} disabled fullWidth />
             </FormRow>
           </div>
@@ -447,12 +596,19 @@ const OptionEditPage: React.FC<OptionEditPageProps> = ({
                 fullWidth
               />
             </FormRow>
-            <FormRow label="보관위치">
-              <Input
+            <FormRow label="상품위치">
+              <select
                 value={form.location}
-                onChange={(e) => handleChange("location", e.target.value)}
-                fullWidth
-              />
+                onChange={(e) => handleChange('location', e.target.value)}
+                className="rounded-md border px-2 py-2"
+              >
+                <option value="">선택</option>
+                {productLocations.map((loc) => (
+                  <option key={loc} value={loc}>
+                    {loc}
+                  </option>
+                ))}
+              </select>
             </FormRow>
             <FormRow label="자동발주">
               <label className="flex items-center gap-2 text-sm text-gray-700">
@@ -475,24 +631,26 @@ const OptionEditPage: React.FC<OptionEditPageProps> = ({
               </label>
             </FormRow>
             <FormRow label="판매상태">
-              <div className="flex items-center gap-6 text-sm text-gray-700">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={form.isSelling}
-                    onChange={(e) => handleChange("isSelling", e.target.checked)}
-                  />
-                  판매중
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={form.isSoldout}
-                    onChange={(e) => handleChange("isSoldout", e.target.checked)}
-                  />
-                  품절 처리
-                </label>
-              </div>
+              <select
+                value={form.isSelling ? 'selling' : 'stopped'}
+                onChange={(e) => handleChange('isSelling', e.target.value === 'selling')}
+                className="rounded-md border px-2 py-2"
+              >
+                {saleStatuses.map(s => (
+                  <option key={s.value} value={s.value}>{s.label}</option>
+                ))}
+              </select>
+            </FormRow>
+            <FormRow label="품절여부">
+              <select
+                value={form.isSoldout ? 'true' : 'false'}
+                onChange={(e) => handleChange('isSoldout', e.target.value === 'true')}
+                className="rounded-md border px-2 py-2"
+              >
+                {soldoutOptions.map(s => (
+                  <option key={s.value} value={s.value}>{s.label}</option>
+                ))}
+              </select>
             </FormRow>
           </div>
         </Card>
@@ -502,12 +660,36 @@ const OptionEditPage: React.FC<OptionEditPageProps> = ({
             추가 정보
           </h2>
           <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
-            <FormRow label="등급">
-              <Input
+            <FormRow label="관리등급">
+              <select
                 value={form.grade}
-                onChange={(e) => handleChange("grade", e.target.value)}
-                fullWidth
-              />
+                onChange={(e) => handleChange('grade', e.target.value)}
+                className="rounded-md border px-2 py-2"
+              >
+                <option value="">선택</option>
+                {grades.map(g => <option key={g} value={g}>{g}</option>)}
+              </select>
+            </FormRow>
+            <FormRow label="입고 예정일">
+              <Input value={form.inboundExpectedDate || ''} disabled fullWidth />
+            </FormRow>
+            <FormRow label="입고 예정수량">
+              <Input value={form.inboundExpectedQty || ''} disabled fullWidth />
+            </FormRow>
+            <FormRow label="발주상태">
+              <select
+                value={form.orderStatus || ''}
+                onChange={(e) => handleChange('orderStatus', e.target.value)}
+                className="rounded-md border px-2 py-2"
+              >
+                {orderStatuses.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </FormRow>
+            <FormRow label="등록일자">
+              <Input value={form.createdAt || ''} disabled fullWidth />
+            </FormRow>
+            <FormRow label="최종수정일자">
+              <Input value={form.updatedAt || ''} disabled fullWidth />
             </FormRow>
             <FormRow label="색상">
               <Input
@@ -586,6 +768,49 @@ const OptionEditPage: React.FC<OptionEditPageProps> = ({
                 value={form.memo}
                 onChange={(e) => handleChange("memo", e.target.value)}
               />
+            </FormRow>
+            <FormRow label="옵션메모1">
+              <Input value={form.optionMemo1} onChange={(e) => handleChange('optionMemo1', e.target.value)} fullWidth />
+            </FormRow>
+            <FormRow label="옵션메모2">
+              <Input value={form.optionMemo2} onChange={(e) => handleChange('optionMemo2', e.target.value)} fullWidth />
+            </FormRow>
+            <FormRow label="옵션메모3">
+              <Input value={form.optionMemo3} onChange={(e) => handleChange('optionMemo3', e.target.value)} fullWidth />
+            </FormRow>
+            <FormRow label="옵션메모4">
+              <Input value={form.optionMemo4} onChange={(e) => handleChange('optionMemo4', e.target.value)} fullWidth />
+            </FormRow>
+            <FormRow label="옵션메모5">
+              <Input value={form.optionMemo5} onChange={(e) => handleChange('optionMemo5', e.target.value)} fullWidth />
+            </FormRow>
+            <FormRow label="영문옵션명">
+              <Input value={form.englishOptionName} onChange={(e) => handleChange('englishOptionName', e.target.value)} fullWidth />
+            </FormRow>
+            <FormRow label="해외통화옵션가">
+              <Input value={form.foreignCurrencyPrice} onChange={(e) => handleChange('foreignCurrencyPrice', e.target.value)} fullWidth />
+            </FormRow>
+            <FormRow label="미진열출고여부">
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input type="checkbox" checked={form.hiddenRelease} onChange={(e) => handleChange('hiddenRelease', e.target.checked)} /> 미진열출고여부 설정
+              </label>
+            </FormRow>
+            <FormRow label="옵션합포방지여부">
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input type="checkbox" checked={form.preventBundle} onChange={(e) => handleChange('preventBundle', e.target.checked)} /> 옵션합포방지여부 설정
+              </label>
+            </FormRow>
+            <FormRow label="자동스캔여부">
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input type="checkbox" checked={form.autoScan} onChange={(e) => handleChange('autoScan', e.target.checked)} /> 자동 스캔 사용
+              </label>
+            </FormRow>
+            <FormRow label="카페판매사용여부">
+              <select value={form.cafeSaleUse || ''} onChange={(e) => handleChange('cafeSaleUse', e.target.value)} className="rounded-md border px-2 py-2">
+                <option value="">선택</option>
+                <option value="관리안함">관리안함</option>
+                <option value="사용">사용</option>
+              </select>
             </FormRow>
           </div>
         </Card>

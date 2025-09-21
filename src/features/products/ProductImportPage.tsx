@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useToast } from "../../components/ui/Toast";
 import { Container, Card, Button, Input } from "../../design-system";
+import SideGuide from "../../components/SideGuide";
 
 /**
  * ProductImportPage — Cafe24-focused
@@ -25,6 +26,7 @@ type Cafe24ListResponse = {
 
 export default function ProductImportPage(): JSX.Element {
   const toast = useToast();
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [platform, setPlatform] = useState<string>("cafe24");
   // Platform-specific state
   const [sellerSelect, setSellerSelect] = useState<string>("");
@@ -115,7 +117,13 @@ export default function ProductImportPage(): JSX.Element {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">플랫폼별 상품 등록 / 가져오기</h1>
         <div className="flex gap-2">
-          {/* Removed global reset per request; keep page heading only */}
+          <button
+            aria-label="도움말"
+            className="px-3 py-1 border rounded text-sm"
+            onClick={() => setIsHelpOpen(true)}
+          >
+            도움말
+          </button>
         </div>
       </div>
 
@@ -575,6 +583,15 @@ export default function ProductImportPage(): JSX.Element {
           </Card>
         )}
       </div>
+      <SideGuide open={isHelpOpen} onClose={() => setIsHelpOpen(false)} title="플랫폼별 상품 가져오기 도움말">
+        <div className="space-y-3 text-sm text-gray-700">
+          <p>플랫폼에서 상품을 조회하여 로컬에 불러올 수 있습니다.</p>
+          <ul className="list-disc pl-5">
+            <li>판매처 선택 후 조회 버튼을 눌러 데이터를 가져오세요.</li>
+            <li>불러온 데이터는 로컬 저장소에 저장되며 실제 등록은 별도 처리입니다.</li>
+          </ul>
+        </div>
+      </SideGuide>
     </Container>
   );
 }

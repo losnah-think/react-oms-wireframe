@@ -18,6 +18,7 @@ import HierarchicalSelect from "../../components/common/HierarchicalSelect";
 import Typeahead from "../../components/common/Typeahead";
 import { formatPrice } from "../../utils/productUtils";
 import { normalizeProductGroup } from "../../utils/groupUtils";
+import SideGuide from "../../components/SideGuide";
 
 interface ProductsListPageProps {
   onNavigate?: (page: string, productId?: string) => void;
@@ -94,6 +95,8 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
   const [isGroupDropdownOpen, setIsGroupDropdownOpen] = useState(false);
   const [onlyWithShippingPolicy, setOnlyWithShippingPolicy] = useState(false);
   const [compactView, setCompactView] = useState(false);
+  const [isBatchHelpOpen, setIsBatchHelpOpen] = useState(false);
+  const [isOptionBatchHelpOpen, setIsOptionBatchHelpOpen] = useState(false);
 
   // --- Search UX states & helpers ---
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -911,51 +914,25 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
 
       <Card padding="lg" className="mb-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
-          <div>
-            <strong>필터</strong>
-            <div className="text-sm text-gray-500">
-              필터를 접어 보기와 탐색을 단순화할 수 있습니다.
+          <div className="flex items-center gap-4">
+            <div>
+              <strong className="text-lg">정렬</strong>
             </div>
-            {!showFilters && activeFilters.length > 0 && (
-              <div className="mt-2 flex items-center gap-2">
-                {activeFilters.slice(0, 6).map((f, i) => (
-                  <span
-                    key={f.key}
-                    className="inline-flex items-center px-2 py-0.5 rounded-full text-sm bg-blue-50 text-blue-800 border border-blue-100"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => focusFilterField(f.key)}
-                      className="text-sm text-blue-800 px-1"
-                    >
-                      {f.label}
-                    </button>
-                    <button
-                      aria-label={`clear-${f.key}`}
-                      onClick={() => clearFilter(f.key)}
-                      className="ml-2 text-blue-600 hover:text-blue-800 px-1"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-                {activeFilters.length > 6 && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-sm bg-gray-100 text-gray-700 border">
-                    +{activeFilters.length - 6}
-                  </span>
-                )}
-              </div>
-            )}
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg text-sm bg-white hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 font-medium"
+              aria-label="정렬 기준"
+            >
+              <option value="newest">최신순</option>
+              <option value="oldest">오래된순</option>
+              <option value="price-asc">가격 낮은순</option>
+              <option value="price-desc">가격 높은순</option>
+            </select>
           </div>
           <div className="flex items-center gap-2">
             <button
-              className="px-2 py-1 border rounded text-sm"
-              onClick={resetFilters}
-            >
-              필터 초기화
-            </button>
-            <button
-              className="px-2 py-1 border rounded text-sm"
+              className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 font-medium"
               onClick={() => setShowFilters((s) => !s)}
             >
               {showFilters ? "필터 접기" : "필터 펼치기"}
@@ -963,348 +940,358 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
           </div>
         </div>
 
+        {/* 선택된 필터 칩들 */}
+        {activeFilters.length > 0 && (
+          <div className="mb-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-medium text-gray-700">적용된 필터:</span>
+              {activeFilters.map((f, i) => (
+                <span
+                  key={f.key}
+                  className="inline-flex items-center px-3 py-1.5 rounded-full text-sm bg-blue-50 text-blue-800 border border-blue-200 hover:bg-blue-100 hover:border-blue-300 transition-all duration-200 shadow-sm"
+                >
+                  <span className="font-medium">{f.label}</span>
+                  <button
+                    aria-label={`clear-${f.key}`}
+                    onClick={() => clearFilter(f.key)}
+                    className="ml-2 text-blue-600 hover:text-blue-800 font-bold text-lg leading-none w-4 h-4 flex items-center justify-center rounded-full hover:bg-blue-200 transition-colors"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+              <button
+                onClick={resetFilters}
+                className="text-sm text-gray-500 hover:text-gray-700 underline hover:no-underline transition-all duration-200 ml-2 px-2 py-1 rounded hover:bg-gray-100"
+              >
+                전체 해제
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* 추가 필터: 토글로 접고 펼침 */}
         {showFilters && (
-          <fieldset className="space-y-4 mt-4" aria-label="추가 필터">
-            <legend className="sr-only">추가 필터</legend>
-            <GridRow gutter={12} className="mt-3">
-              <GridCol span={4}>
-                <div className="flex items-center gap-3">
-                  <label className="text-sm w-28">상품 등록일자</label>
+          <div className="border-t pt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* 상품 등록일자 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  상품 등록일자
+                </label>
+                <div className="flex items-center gap-2">
                   <input
                     type="date"
                     value={dateFrom}
                     onChange={(e) => setDateFrom(e.target.value)}
                     aria-label="검색 시작일"
-                    className="px-3 py-1.5 border border-gray-300 rounded-md text-sm"
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
                   />
-                  <span className="text-sm text-gray-500">~</span>
+                  <span className="text-gray-500 font-medium">~</span>
                   <input
                     type="date"
                     value={dateTo}
                     onChange={(e) => setDateTo(e.target.value)}
                     aria-label="검색 종료일"
-                    className="px-3 py-1.5 border border-gray-300 rounded-md text-sm"
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
                   />
                 </div>
-              </GridCol>
-              <GridCol span={4}>
-                <div className="flex items-center gap-3">
-                  <label className="text-sm w-28">분류</label>
-                  <select className="px-3 py-1.5 border border-gray-300 rounded-md text-sm">
-                    <option>전체상품분류</option>
-                  </select>
-                  <button
-                    className="px-3 py-1.5 border border-gray-300 rounded-md text-sm"
-                    onClick={() => setIsCategoryManagerOpen(true)}
-                  >
-                    상품분류 관리
-                  </button>
-                </div>
-              </GridCol>
-              <GridCol span={4}>
-                <div className="flex items-center gap-3">
-                  <label className="text-sm w-28">재고관리</label>
-                  <select className="px-3 py-1.5 border border-gray-300 rounded-md text-sm">
-                    <option>전체</option>
-                    <option>재고관리</option>
-                  </select>
+              </div>
+
+              {/* 카테고리 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  카테고리
+                </label>
+                <HierarchicalSelect
+                  data={
+                    classificationsData.length
+                      ? classificationsData
+                      : groupsData
+                  }
+                  value={
+                    selectedCategory === "전체" ? undefined : selectedCategory
+                  }
+                  placeholder="카테고리 선택"
+                  onChange={(node) =>
+                    setSelectedCategory(node ? node.name : "전체")
+                  }
+                />
+              </div>
+
+              {/* 브랜드 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  브랜드
+                </label>
+                <select
+                  value={selectedBrand}
+                  onChange={(e) => setSelectedBrand(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
+                >
+                  <option value="전체">전체 브랜드</option>
+                  {(productFilterOptions.brands || []).map((b: any) => (
+                    <option key={b.id} value={b.name}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 공급처 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  공급처
+                </label>
+                <div className="relative">
                   <div
-                    role="switch"
+                    role="button"
                     tabIndex={0}
-                    aria-checked={onlyWithShippingPolicy}
-                    aria-label="배송비정책 있는 상품만 보기"
-                    onClick={() => setOnlyWithShippingPolicy((s) => !s)}
+                    aria-haspopup="listbox"
+                    aria-expanded={isSupplierDropdownOpen}
+                    onClick={() => setIsSupplierDropdownOpen((s) => !s)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
-                        setOnlyWithShippingPolicy((s) => !s);
+                        setIsSupplierDropdownOpen((s) => !s);
                       }
                     }}
-                    className={`px-3 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 cursor-pointer ${onlyWithShippingPolicy ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700"}`}
+                    className="px-3 py-2 border border-gray-300 rounded-md text-sm bg-white cursor-pointer flex items-center justify-between min-h-[38px]"
                   >
-                    배송비정책 있는것만
-                  </div>
-                </div>
-              </GridCol>
-            </GridRow>
-
-            <GridRow className="mt-2">
-              <GridCol span={6}>
-                <div className="flex items-center gap-3">
-                  <label className="text-sm w-40">공급처</label>
-                  <div className="relative">
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      aria-haspopup="listbox"
-                      aria-expanded={isSupplierDropdownOpen}
-                      onClick={() => setIsSupplierDropdownOpen((s) => !s)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          setIsSupplierDropdownOpen((s) => !s);
-                        }
-                      }}
-                      className="px-3 py-1.5 border border-gray-300 rounded-md text-sm bg-white cursor-pointer flex items-center gap-2"
+                    <span className={selectedSuppliers.length === 0 ? "text-gray-600" : "text-gray-900"}>
+                      {selectedSuppliers.length === 0 ? "전체" : `${selectedSuppliers.length}개 선택`}
+                    </span>
+                    <svg
+                      className="w-4 h-4 text-gray-400"
+                      viewBox="0 0 20 20"
+                      fill="none"
                     >
-                      {selectedSuppliers.length === 0 ? (
-                        <span className="text-gray-600">전체</span>
-                      ) : (
-                        <span className="text-sm text-gray-700">
-                          {selectedSuppliers.length} selected
-                        </span>
-                      )}
-                      <svg
-                        className="w-4 h-4 text-gray-400"
-                        viewBox="0 0 20 20"
-                        fill="none"
+                      <path
+                        d="M6 8l4 4 4-4"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                  {isSupplierDropdownOpen && (
+                    <div className="absolute z-30 mt-1 w-full bg-white border rounded shadow-lg p-2 max-h-48 overflow-y-auto">
+                      <div
+                        className="flex items-center gap-2 px-2 py-2 hover:bg-gray-50 cursor-pointer rounded"
+                        onClick={() => {
+                          setSelectedSuppliers([]);
+                        }}
                       >
-                        <path
-                          d="M6 8l4 4 4-4"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
+                        <input
+                          type="checkbox"
+                          readOnly
+                          checked={selectedSuppliers.length === 0}
+                          className="rounded"
                         />
-                      </svg>
-                    </div>
-                    {isSupplierDropdownOpen && (
-                      <div className="absolute z-30 mt-1 w-56 bg-white border rounded shadow-lg p-2">
-                        <div
-                          className="flex items-center gap-2 px-2 py-1 hover:bg-gray-50 cursor-pointer"
-                          onClick={() => {
-                            setSelectedSuppliers([]);
-                          }}
+                        <div className="text-sm">전체</div>
+                      </div>
+                      <div className="h-px my-1 border-t" />
+                      {(suppliers || []).map((s: any) => (
+                        <label
+                          key={s.id}
+                          className="flex items-center gap-2 px-2 py-2 hover:bg-gray-50 cursor-pointer rounded"
                         >
                           <input
                             type="checkbox"
-                            readOnly
-                            checked={selectedSuppliers.length === 0}
+                            checked={(selectedSuppliers || []).includes(
+                              s.name,
+                            )}
+                            onChange={(e) => {
+                              const next = new Set(selectedSuppliers || []);
+                              if (e.target.checked) next.add(s.name);
+                              else next.delete(s.name);
+                              setSelectedSuppliers(Array.from(next));
+                            }}
+                            className="rounded"
                           />
-                          <div className="text-sm">전체</div>
-                        </div>
-                        <div className="h-1 my-1 border-t" />
-                        {(suppliers || []).map((s: any) => (
-                          <label
-                            key={s.id}
-                            className="flex items-center gap-2 px-2 py-1 hover:bg-gray-50 cursor-pointer"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={(selectedSuppliers || []).includes(
-                                s.name,
-                              )}
-                              onChange={(e) => {
-                                const next = new Set(selectedSuppliers || []);
-                                if (e.target.checked) next.add(s.name);
-                                else next.delete(s.name);
-                                setSelectedSuppliers(Array.from(next));
-                              }}
-                            />
-                            <div className="text-sm">{s.name}</div>
-                          </label>
-                        ))}
-                        <div className="flex justify-end mt-2">
-                          <button
-                            className="px-3 py-1 border rounded text-sm bg-white"
-                            onClick={() => setIsSupplierDropdownOpen(false)}
-                          >
-                            닫기
-                          </button>
-                        </div>
+                          <div className="text-sm">{s.name}</div>
+                        </label>
+                      ))}
+                      <div className="flex justify-end mt-2 pt-2 border-t">
+                        <button
+                          className="px-3 py-1 border rounded text-sm bg-white hover:bg-gray-50"
+                          onClick={() => setIsSupplierDropdownOpen(false)}
+                        >
+                          닫기
+                        </button>
                       </div>
-                    )}
-                  </div>
-                  <button
-                    className="px-2 py-1 border rounded text-sm"
-                    onClick={() => setIsSupplierManagerOpen(true)}
-                  >
-                    공급처 관리
-                  </button>
+                    </div>
+                  )}
                 </div>
-              </GridCol>
-            </GridRow>
-            {/* 카테고리 & 브랜드를 필터로 이동 */}
-            <GridRow className="mt-2">
-              <GridCol span={6}>
-                <div className="flex items-center gap-3">
-                  <label className="text-sm w-40">카테고리</label>
-                  <HierarchicalSelect
-                    data={
-                      classificationsData.length
-                        ? classificationsData
-                        : groupsData
-                    }
-                    value={
-                      selectedCategory === "전체" ? undefined : selectedCategory
-                    }
-                    placeholder="카테고리 선택"
-                    onChange={(node) =>
-                      setSelectedCategory(node ? node.name : "전체")
-                    }
+              </div>
+
+              {/* 디자이너 & 시즌 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  디자이너
+                </label>
+                <div className="space-y-2">
+                  <Typeahead
+                    id="filter-designer"
+                    items={(designers || []).map((d: any) => ({
+                      id: d.id,
+                      name: d.name,
+                    }))}
+                    value={selectedDesigner}
+                    onChange={(v) => setSelectedDesigner(v)}
+                    onSelect={(it) => setSelectedDesigner(it.name)}
+                    placeholder="디자이너 검색"
                   />
-                </div>
-              </GridCol>
-              <GridCol span={6}>
-                <div className="flex items-center gap-3">
-                  <label className="text-sm w-40">브랜드</label>
-                  <select
-                    value={selectedBrand}
-                    onChange={(e) => setSelectedBrand(e.target.value)}
-                    className="w-full px-3 py-1.5 border border-gray-300 rounded-md text-sm"
-                  >
-                    <option value="전체">전체 브랜드</option>
-                    {(productFilterOptions.brands || []).map((b: any) => (
-                      <option key={b.id} value={b.name}>
-                        {b.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </GridCol>
-            </GridRow>
-
-            <GridRow className="mt-2">
-              <GridCol span={6}>
-                <div className="flex items-center gap-3">
-                  <label className="text-sm w-40">디자이너</label>
-                  <div className="w-full">
-                    <Typeahead
-                      id="filter-designer"
-                      items={(designers || []).map((d: any) => ({
-                        id: d.id,
-                        name: d.name,
-                      }))}
-                      value={selectedDesigner}
-                      onChange={(v) => setSelectedDesigner(v)}
-                      onSelect={(it) => setSelectedDesigner(it.name)}
-                      placeholder="검색 가능"
-                    />
-                  </div>
-                  <label className="text-sm ml-4">시즌</label>
-                  <select
-                    id="filter-season"
-                    value={selectedSeason}
-                    onChange={(e) => setSelectedSeason(e.target.value)}
-                    className="px-3 py-1.5 border border-gray-300 rounded-md text-sm"
-                  >
-                    <option value="전체">전체</option>
-                    <option value="SS">SS</option>
-                    <option value="FW">FW</option>
-                    <option value="AW">AW</option>
-                  </select>
-                </div>
-              </GridCol>
-              <GridCol span={6}>
-                <div className="flex items-center gap-3">
-                  <label className="text-sm w-40">등록자</label>
-                  <div className="w-full">
-                    <Typeahead
-                      id="filter-registrant"
-                      items={(registrants || []).map((r: any) => ({
-                        id: r.id,
-                        name: r.name,
-                      }))}
-                      value={selectedRegistrant}
-                      onChange={(v) => setSelectedRegistrant(v)}
-                      onSelect={(it) => setSelectedRegistrant(it.name)}
-                      placeholder="검색 가능"
-                    />
-                  </div>
-                </div>
-              </GridCol>
-            </GridRow>
-
-            <GridRow className="mt-2">
-              <GridCol span={6}>
-                <div className="flex items-center gap-3">
-                  <label className="text-sm w-40">상품 분류</label>
-                  <div className="relative">
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      aria-haspopup="listbox"
-                      aria-expanded={isGroupDropdownOpen}
-                      onClick={() => setIsGroupDropdownOpen((s) => !s)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          setIsGroupDropdownOpen((s) => !s);
-                        }
-                      }}
-                      className="px-3 py-1.5 border border-gray-300 rounded-md text-sm bg-white cursor-pointer flex items-center gap-2"
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm text-gray-600">시즌:</label>
+                    <select
+                      id="filter-season"
+                      value={selectedSeason}
+                      onChange={(e) => setSelectedSeason(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm flex-1 bg-white hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
                     >
-                      {selectedGroups.length === 0 ? (
-                        <span className="text-gray-600">전체</span>
-                      ) : (
-                        <span className="text-sm text-gray-700">
-                          {selectedGroups.length} selected
-                        </span>
-                      )}
-                      <svg
-                        className="w-4 h-4 text-gray-400"
-                        viewBox="0 0 20 20"
-                        fill="none"
+                      <option value="전체">전체</option>
+                      <option value="SS">SS</option>
+                      <option value="FW">FW</option>
+                      <option value="AW">AW</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* 등록자 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  등록자
+                </label>
+                <Typeahead
+                  id="filter-registrant"
+                  items={(registrants || []).map((r: any) => ({
+                    id: r.id,
+                    name: r.name,
+                  }))}
+                  value={selectedRegistrant}
+                  onChange={(v) => setSelectedRegistrant(v)}
+                  onSelect={(it) => setSelectedRegistrant(it.name)}
+                  placeholder="등록자 검색"
+                />
+              </div>
+
+              {/* 상품 분류 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  상품 분류
+                </label>
+                <div className="relative">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    aria-haspopup="listbox"
+                    aria-expanded={isGroupDropdownOpen}
+                    onClick={() => setIsGroupDropdownOpen((s) => !s)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setIsGroupDropdownOpen((s) => !s);
+                      }
+                    }}
+                    className="px-3 py-2 border border-gray-300 rounded-md text-sm bg-white cursor-pointer flex items-center justify-between min-h-[38px]"
+                  >
+                    <span className={selectedGroups.length === 0 ? "text-gray-600" : "text-gray-900"}>
+                      {selectedGroups.length === 0 ? "전체" : `${selectedGroups.length}개 선택`}
+                    </span>
+                    <svg
+                      className="w-4 h-4 text-gray-400"
+                      viewBox="0 0 20 20"
+                      fill="none"
+                    >
+                      <path
+                        d="M6 8l4 4 4-4"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                  {isGroupDropdownOpen && (
+                    <div className="absolute z-30 mt-1 w-full bg-white border rounded shadow-lg p-2 max-h-48 overflow-y-auto">
+                      <div
+                        className="flex items-center gap-2 px-2 py-2 hover:bg-gray-50 cursor-pointer rounded"
+                        onClick={() => {
+                          setSelectedGroups([]);
+                        }}
                       >
-                        <path
-                          d="M6 8l4 4 4-4"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
+                        <input
+                          type="checkbox"
+                          readOnly
+                          checked={selectedGroups.length === 0}
+                          className="rounded"
                         />
-                      </svg>
-                    </div>
-                    {isGroupDropdownOpen && (
-                      <div className="absolute z-30 mt-1 w-56 bg-white border rounded shadow-lg p-2">
-                        <div
-                          className="flex items-center gap-2 px-2 py-1 hover:bg-gray-50 cursor-pointer"
-                          onClick={() => {
-                            setSelectedGroups([]);
-                          }}
+                        <div className="text-sm">전체</div>
+                      </div>
+                      <div className="h-px my-1 border-t" />
+                      {(groupsData || []).map((g: any) => (
+                        <label
+                          key={g.id}
+                          className="flex items-center gap-2 px-2 py-2 hover:bg-gray-50 cursor-pointer rounded"
                         >
                           <input
                             type="checkbox"
-                            readOnly
-                            checked={selectedGroups.length === 0}
+                            checked={(selectedGroups || []).includes(g.id)}
+                            onChange={(e) => {
+                              const next = new Set(selectedGroups || []);
+                              if (e.target.checked) next.add(g.id);
+                              else next.delete(g.id);
+                              setSelectedGroups(Array.from(next));
+                            }}
+                            className="rounded"
                           />
-                          <div className="text-sm">전체</div>
-                        </div>
-                        <div className="h-1 my-1 border-t" />
-                        {(groupsData || []).map((g: any) => (
-                          <label
-                            key={g.id}
-                            className="flex items-center gap-2 px-2 py-1 hover:bg-gray-50 cursor-pointer"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={(selectedGroups || []).includes(g.id)}
-                              onChange={(e) => {
-                                const next = new Set(selectedGroups || []);
-                                if (e.target.checked) next.add(g.id);
-                                else next.delete(g.id);
-                                setSelectedGroups(Array.from(next));
-                              }}
-                            />
-                            <div className="text-sm">{g.name}</div>
-                          </label>
-                        ))}
-                        <div className="flex justify-end mt-2">
-                          <button
-                            className="px-3 py-1 border rounded text-sm bg-white"
-                            onClick={() => setIsGroupDropdownOpen(false)}
-                          >
-                            닫기
-                          </button>
-                        </div>
+                          <div className="text-sm">{g.name}</div>
+                        </label>
+                      ))}
+                      <div className="flex justify-end mt-2 pt-2 border-t">
+                        <button
+                          className="px-3 py-1 border rounded text-sm bg-white hover:bg-gray-50"
+                          onClick={() => setIsGroupDropdownOpen(false)}
+                        >
+                          닫기
+                        </button>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
-              </GridCol>
-            </GridRow>
-          </fieldset>
+              </div>
+
+              {/* 배송비정책 토글 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  배송비정책
+                </label>
+                <div
+                  role="switch"
+                  tabIndex={0}
+                  aria-checked={onlyWithShippingPolicy}
+                  aria-label="배송비정책 있는 상품만 보기"
+                  onClick={() => setOnlyWithShippingPolicy((s) => !s)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setOnlyWithShippingPolicy((s) => !s);
+                    }
+                  }}
+                  className={`px-4 py-2 rounded-lg border cursor-pointer transition-colors ${
+                    onlyWithShippingPolicy
+                      ? "bg-blue-50 border-blue-200 text-blue-800"
+                      : "bg-gray-50 border-gray-200 text-gray-600"
+                  }`}
+                >
+                  {onlyWithShippingPolicy ? "배송비정책 있는 상품만" : "모든 상품"}
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </Card>
 
@@ -1325,86 +1312,90 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
           <div className="flex items-center gap-4 w-full">
             <label className="w-40 text-sm text-gray-700">통합검색</label>
             <div className="relative flex-1">
-              <input
-                id="product-search-input"
-                role="combobox"
-                aria-expanded={isSuggestionsOpen}
-                aria-autocomplete="list"
-                aria-controls="product-search-suggestions"
-                type="text"
-                placeholder="상품명, 상품코드로 검색 (단축키: ⌘/Ctrl+K, /)"
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setIsSuggestionsOpen(true);
-                }}
-                onFocus={() => {
-                  setIsSearchFocused(true);
-                  setIsSuggestionsOpen(true);
-                }}
-                onBlur={() => {
-                  setIsSearchFocused(false);
-                  setTimeout(() => setIsSuggestionsOpen(false), 150);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") executeSearch();
-                  if (e.key === "Escape") {
-                    setIsSuggestionsOpen(false);
-                    (e.target as HTMLInputElement).blur();
-                  }
-                  if (e.key === "ArrowDown") {
-                    e.preventDefault();
-                    setHighlightedSuggestionIndex((prev) =>
-                      Math.min(prev + 1, recentQueries.length - 1),
-                    );
-                  }
-                  if (e.key === "ArrowUp") {
-                    e.preventDefault();
-                    setHighlightedSuggestionIndex((prev) => Math.max(prev - 1, 0));
-                  }
-                }}
-                className={`w-full pl-4 pr-28 py-3 text-lg border rounded-md ${isSearchFocused ? "ring-2 ring-blue-300 border-blue-400" : "border-gray-300"}`}
-              />
-              {searchTerm && (
+              <div className="flex items-center">
+                <div className="relative flex-1">
+                  <input
+                    id="product-search-input"
+                    role="combobox"
+                    aria-expanded={isSuggestionsOpen}
+                    aria-autocomplete="list"
+                    aria-controls="product-search-suggestions"
+                    type="text"
+                    placeholder="상품명, 상품코드로 검색 (단축키: ⌘/Ctrl+K, /)"
+                    value={searchTerm}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      setIsSuggestionsOpen(true);
+                    }}
+                    onFocus={() => {
+                      setIsSearchFocused(true);
+                      setIsSuggestionsOpen(true);
+                    }}
+                    onBlur={() => {
+                      setIsSearchFocused(false);
+                      setTimeout(() => setIsSuggestionsOpen(false), 150);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") executeSearch();
+                      if (e.key === "Escape") {
+                        setIsSuggestionsOpen(false);
+                        (e.target as HTMLInputElement).blur();
+                      }
+                      if (e.key === "ArrowDown") {
+                        e.preventDefault();
+                        setHighlightedSuggestionIndex((prev) =>
+                          Math.min(prev + 1, recentQueries.length - 1),
+                        );
+                      }
+                      if (e.key === "ArrowUp") {
+                        e.preventDefault();
+                        setHighlightedSuggestionIndex((prev) => Math.max(prev - 1, 0));
+                      }
+                    }}
+                    className={`w-full pl-4 pr-10 py-3 text-lg border rounded-md ${isSearchFocused ? "ring-2 ring-blue-300 border-blue-400" : "border-gray-300"}`}
+                  />
+                  {searchTerm && (
+                    <button
+                      type="button"
+                      aria-label="검색어 지우기"
+                      onClick={clearSearch}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 px-2"
+                    >
+                      ×
+                    </button>
+                  )}
+                  {isSuggestionsOpen && recentQueries.length > 0 && (
+                    <ul
+                      id="product-search-suggestions"
+                      role="listbox"
+                      className="absolute z-20 mt-1 w-full bg-white border rounded shadow"
+                    >
+                      {recentQueries.map((q, i) => (
+                        <li
+                          role="option"
+                          aria-selected={i === highlightedSuggestionIndex}
+                          key={q}
+                          className="px-3 py-2 hover:bg-gray-50 cursor-pointer"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setSearchTerm(q);
+                            executeSearch(q);
+                          }}
+                        >
+                          {q}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
                 <button
                   type="button"
-                  aria-label="검색어 지우기"
-                  onClick={clearSearch}
-                  className="absolute right-24 top-1/2 -translate-y-1/2 text-gray-500 px-2"
+                  className="ml-3 px-4 py-3 bg-blue-600 text-white rounded"
+                  onClick={() => executeSearch()}
                 >
-                  ×
+                  검색
                 </button>
-              )}
-              <button
-                type="button"
-                className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-2 bg-blue-600 text-white rounded-md"
-                onClick={() => executeSearch()}
-              >
-                검색
-              </button>
-              {isSuggestionsOpen && recentQueries.length > 0 && (
-                <ul
-                  id="product-search-suggestions"
-                  role="listbox"
-                  className="absolute z-20 mt-1 w-full bg-white border rounded shadow"
-                >
-                  {recentQueries.map((q, i) => (
-                    <li
-                      role="option"
-                      aria-selected={i === highlightedSuggestionIndex}
-                      key={q}
-                      className="px-3 py-2 hover:bg-gray-50 cursor-pointer"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        setSearchTerm(q);
-                        executeSearch(q);
-                      }}
-                    >
-                      {q}
-                    </li>
-                  ))}
-                </ul>
-              )}
+              </div>
             </div>
           </div>
         </div>
@@ -1414,24 +1405,11 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
       <div className="flex items-center justify-between mb-4">
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-2">
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md"
-              aria-label="정렬 기준"
-            >
-              <option value="newest">최신순</option>
-              <option value="oldest">오래된순</option>
-              <option value="price-asc">가격↑</option>
-              <option value="price-desc">가격↓</option>
-            </select>
-            <div>
-              <TableExportButton
-                data={exportData}
-                fileName={`products-list.xlsx`}
-                aria-label="엑셀 다운로드"
-              />
-            </div>
+            <TableExportButton
+              data={exportData}
+              fileName={`products-list.xlsx`}
+              aria-label="엑셀 다운로드"
+            />
           </div>
           {/* mall select moved next to '선택 외부 송신' button */}
           <button
@@ -1467,7 +1445,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
             <select
               value={selectedMall}
               onChange={(e) => setSelectedMall(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
             >
               <option value="">쇼핑몰 선택</option>
               {(malls || []).map((m: any) => (
@@ -1774,7 +1752,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
       {isBatchModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-40">
           <div className="bg-white p-6 rounded shadow-lg w-1/2">
-            <h3 className="text-lg font-bold mb-4">상품 일괄수정</h3>
+            <h3 className="text-lg font-bold mb-4">상품 일괄수정 <Button variant="outline" size="small" onClick={() => setIsBatchHelpOpen(true)}>도움말</Button></h3>
             <p className="text-sm text-gray-600 mb-4">
               선택된 상품 수: {selectedCount}
             </p>
@@ -1791,7 +1769,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
                         priceMode: e.target.value as any,
                       }))
                     }
-                    className="px-3 py-1 border rounded"
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
                   >
                     <option value="none">변경 없음</option>
                     <option value="set">금액 설정</option>
@@ -1824,7 +1802,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
                         stockMode: e.target.value as any,
                       }))
                     }
-                    className="px-3 py-1 border rounded"
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
                   >
                     <option value="none">변경 없음</option>
                     <option value="set">수량 설정</option>
@@ -1858,7 +1836,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
                     setSelling: e.target.value as any,
                   }))
                 }
-                className="px-3 py-1 border rounded mt-2"
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
               >
                 <option value="unchanged">변경 없음</option>
                 <option value="selling">판매중으로 설정</option>
@@ -1979,11 +1957,36 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
         </div>
       )}
 
+      <SideGuide open={isBatchHelpOpen} onClose={() => setIsBatchHelpOpen(false)} title="상품 일괄수정 도움말">
+        <table className="table-auto border-collapse border border-gray-300">
+          <thead>
+            <tr>
+              <th className="border border-gray-300 px-4 py-2">기능</th>
+              <th className="border border-gray-300 px-4 py-2">설명</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td className="border border-gray-300 px-4 py-2">가격 변경</td>
+              <td className="border border-gray-300 px-4 py-2">선택된 상품의 가격을 설정, 증가, 감소 또는 비율로 변경합니다.</td>
+            </tr>
+            <tr>
+              <td className="border border-gray-300 px-4 py-2">재고 변경</td>
+              <td className="border border-gray-300 px-4 py-2">선택된 상품의 재고 수량을 설정, 증가 또는 감소합니다.</td>
+            </tr>
+            <tr>
+              <td className="border border-gray-300 px-4 py-2">판매상태 변경</td>
+              <td className="border border-gray-300 px-4 py-2">상품을 판매중 또는 판매중지로 설정합니다.</td>
+            </tr>
+          </tbody>
+        </table>
+      </SideGuide>
+
       {/* Option batch edit modal (functional) */}
       {isOptionBatchModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-40">
           <div className="bg-white p-6 rounded shadow-lg w-1/2">
-            <h3 className="text-lg font-bold mb-4">옵션 일괄수정</h3>
+            <h3 className="text-lg font-bold mb-4">옵션 일괄수정 <Button variant="outline" size="small" onClick={() => setIsOptionBatchHelpOpen(true)}>도움말</Button></h3>
             <p className="text-sm text-gray-600 mb-4">
               선택된 상품 수: {selectedCount}
             </p>
@@ -2080,6 +2083,27 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
           </div>
         </div>
       )}
+
+      <SideGuide open={isOptionBatchHelpOpen} onClose={() => setIsOptionBatchHelpOpen(false)} title="옵션 일괄수정 도움말">
+        <table className="table-auto border-collapse border border-gray-300">
+          <thead>
+            <tr>
+              <th className="border border-gray-300 px-4 py-2">기능</th>
+              <th className="border border-gray-300 px-4 py-2">설명</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td className="border border-gray-300 px-4 py-2">옵션 가격 증감</td>
+              <td className="border border-gray-300 px-4 py-2">선택된 상품의 옵션 가격을 증가 또는 감소합니다. 예: +100 또는 -50</td>
+            </tr>
+            <tr>
+              <td className="border border-gray-300 px-4 py-2">옵션 재고 증감</td>
+              <td className="border border-gray-300 px-4 py-2">선택된 상품의 옵션 재고를 증가 또는 감소합니다. 예: +10 또는 -5</td>
+            </tr>
+          </tbody>
+        </table>
+      </SideGuide>
 
       {/* Category manager modal (opened from filter area) */}
       {isCategoryManagerOpen && (

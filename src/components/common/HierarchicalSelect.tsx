@@ -13,9 +13,10 @@ interface Props {
   value?: string | null;
   placeholder?: string;
   onChange: (selected: TreeNode | null, path?: string[]) => void;
+  maxDepth?: number;
 }
 
-const MAX_DEPTH = 4
+const DEFAULT_MAX_DEPTH = 3;
 
 const flatten = (nodes: TreeNode[], parents: string[] = []) => {
   const out: Array<{ node: TreeNode; path: string[] }> = [];
@@ -28,7 +29,7 @@ const flatten = (nodes: TreeNode[], parents: string[] = []) => {
   return out;
 };
 
-const HierarchicalSelect: React.FC<Props> = ({ data, value, placeholder, onChange }) => {
+const HierarchicalSelect: React.FC<Props> = ({ data, value, placeholder, onChange, maxDepth = DEFAULT_MAX_DEPTH }) => {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [activePath, setActivePath] = useState<string[]>([]);
@@ -55,7 +56,7 @@ const HierarchicalSelect: React.FC<Props> = ({ data, value, placeholder, onChang
   useLayoutEffect(() => {
     if (!open || !ref.current) return
     const rect = ref.current.getBoundingClientRect()
-    const totalWidth = Math.max(320, rect.width, colWidth * MAX_DEPTH)
+    const totalWidth = Math.max(320, rect.width, colWidth * maxDepth)
     const offset = 8
     // Open below the button, left-aligned; clamp to viewport
     let left = rect.left + window.scrollX
@@ -131,8 +132,8 @@ const HierarchicalSelect: React.FC<Props> = ({ data, value, placeholder, onChang
             />
           </div>
 
-          <div style={{ minHeight: 220, display: 'grid', gridTemplateColumns: `repeat(${MAX_DEPTH}, ${colWidth}px)`, gap: 0 }}>
-            {Array.from({ length: MAX_DEPTH }).map((_, level) => (
+          <div style={{ minHeight: 220, display: 'grid', gridTemplateColumns: `repeat(${maxDepth}, ${colWidth}px)`, gap: 0 }}>
+            {Array.from({ length: maxDepth }).map((_, level) => (
               <div key={level} className="p-2 overflow-auto" style={{ borderLeft: level === 0 ? 'none' : '1px solid #eef2f7' }}>
                 {(() => {
                   const list = getNodesAtLevel(level)
@@ -148,7 +149,7 @@ const HierarchicalSelect: React.FC<Props> = ({ data, value, placeholder, onChang
                       })}
                       onClick={() => {
                         const path = [...activePath.slice(0, level), c.name].filter(Boolean)
-                        if (c.children && level < (MAX_DEPTH - 1)) {
+                        if (c.children && level < (maxDepth - 1)) {
                           setActivePath(path)
                         } else {
                           handleSelectNode(c, path)

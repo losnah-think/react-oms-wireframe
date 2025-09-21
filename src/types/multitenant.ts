@@ -313,7 +313,10 @@ export interface ProductFormData {
   
   // 추가 정보
   additionalInfo: ProductAdditionalInfo;
-  
+
+  // 규격/전달용 확장 필드
+  compliance: ProductComplianceFields;
+
   // 검증 상태
   validation: FormValidation;
 
@@ -358,6 +361,9 @@ export interface ProductBasicInfo {
   productRegistrant?: string;
   productYear?: string;
   productSeason?: string;
+  boxQuantity?: number;
+  composition?: string;
+  classificationPath?: string[];
   externalProductId?: string;
   externalUrl?: string;
   active: boolean;
@@ -369,7 +375,7 @@ export interface ProductBasicInfo {
 export interface ProductAdditionalInfo {
   // 상품 디자이너 및 관리 정보
   productDesigner?: string;
-  publishDate?: Date; // 상품 게시일
+  publishDate?: string | Date; // 상품 게시일
   productRegistrant?: string;
   productYear?: string;
   productSeason?: string;
@@ -379,6 +385,31 @@ export interface ProductAdditionalInfo {
   memos?: string[];
   // 옵션 관리 (백로그)
   options?: ProductOption[];
+  madeDate?: string;
+  exprDate?: string;
+  publicationDate?: string;
+  firstSaleDate?: string;
+  externalMallPlatform?: string;
+  externalMallName?: string;
+  externalMallSku?: string;
+}
+
+export interface ProductComplianceFields {
+  productSerialNumber?: string;
+  purchaseProductName?: string;
+  marginAmount?: number;
+  includeInIncomingList?: boolean;
+  salesChannelProductCode?: string;
+  salesChannelCodes?: string;
+  knittingInfo?: string;
+  englishCategoryName?: string;
+  washingMethod?: string;
+  brandCommissionRate?: number;
+  englishProductCategoryName?: string;
+  purchaseName?: string;
+  invoiceDisplayName?: boolean;
+  dutyCode?: string;
+  expectedInboundFlag?: boolean;
 }
 
 export interface DetailedLogisticsInfo extends LogisticsInfo {
@@ -399,7 +430,7 @@ export interface DetailedLogisticsInfo extends LogisticsInfo {
 
 export interface ProductOption {
   id: string;
-  name: string;
+  name?: string;
   type: 'color' | 'size' | 'material' | 'other';
   values: ProductOptionValue[];
   isRequired: boolean;
@@ -411,6 +442,45 @@ export interface ProductOptionValue {
   additionalPrice: number;
   stock: number;
   isActive: boolean;
+  sku?: string;
+  barcode1?: string;
+  barcode2?: string;
+  barcode3?: string;
+  barcode_new?: string;
+  cost_price?: number;
+  selling_price?: number;
+  supply_price?: number;
+  margin_amount?: number;
+  option_supply_price?: number;
+  supplier_name?: string;
+  purchase_option_name?: string;
+  management_grade?: string;
+  note?: string;
+  automation_flag?: boolean;
+  non_display_shipping?: boolean;
+  channel_option_code?: string;
+  per_channel_option_code?: string;
+  manufacturer?: string;
+  manufacturer_country?: string;
+  product_material?: string;
+  product_type?: string;
+  caution?: string;
+  usage_standard?: string;
+  color?: string;
+  size?: string;
+  overseas_price?: number;
+  box_quantity?: number;
+  safe_stock?: number;
+  option_memos?: string[];
+  width_cm?: number;
+  height_cm?: number;
+  depth_cm?: number;
+  weight_g?: number;
+  volume_cc?: number;
+  warehouse_location?: string;
+  is_selling?: boolean;
+  is_soldout?: boolean;
+  is_stock_linked?: boolean;
 }
 
 // 폼 검증 타입
