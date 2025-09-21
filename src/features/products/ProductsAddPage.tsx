@@ -1847,6 +1847,223 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
 
   return (
     <>
+      {/* Help modal/section (opens when isHelpOpen === true) */}
+      {isHelpOpen && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-6">
+          <div className="w-full max-w-4xl bg-white border rounded shadow-lg overflow-auto max-h-[80vh]">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-semibold">상품 등록 도움말</h3>
+              <button
+                className="text-sm text-gray-600 hover:text-gray-900"
+                onClick={() => setIsHelpOpen(false)}
+              >
+                닫기
+              </button>
+            </div>
+            <div className="p-4 text-sm leading-relaxed">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr>
+                    <th className="border px-2 py-1 text-left">구분</th>
+                    <th className="border px-2 py-1 text-left">입력항목</th>
+                    <th className="border px-2 py-1 text-left">작성방법 / 유의사항</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="border px-2 py-1 align-top">필수값</td>
+                    <td className="border px-2 py-1 align-top">상품명</td>
+                    <td className="border px-2 py-1">- 필수값(미입력 시 업로드 불가)<br/>- 기존 등록 상품과 중복 시 업로드 불가</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-2 py-1" />
+                    <td className="border px-2 py-1">옵션명</td>
+                    <td className="border px-2 py-1">- 필수값(미입력 시 업로드 불가)<br/>- 옵션이 없으면 “단일옵션” 입력<br/>- 작성 시 제공된 예시 형식 참고</td>
+                  </tr>
+
+                  <tr>
+                    <td className="border px-2 py-1 align-top">옵션값</td>
+                    <td className="border px-2 py-1">상품코드</td>
+                    <td className="border px-2 py-1">- 기존 등록 상품과 중복 시 업로드 불가<br/>- 미입력 시 중복체크 안 함</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-2 py-1" />
+                    <td className="border px-2 py-1">옵션코드</td>
+                    <td className="border px-2 py-1">- 기존 등록 옵션과 중복 시 업로드 불가<br/>- 미입력 시 중복체크 안 함</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-2 py-1" />
+                    <td className="border px-2 py-1">바코드번호</td>
+                    <td className="border px-2 py-1">- 중복 불가<br/>- 미입력 시 FULGO가 자동 부여</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-2 py-1" />
+                    <td className="border px-2 py-1">사입상품명</td>
+                    <td className="border px-2 py-1">- 실제 매입 상품명 입력</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-2 py-1" />
+                    <td className="border px-2 py-1">사입옵션명</td>
+                    <td className="border px-2 py-1">- 실제 매입 옵션명 입력</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-2 py-1" />
+                    <td className="border px-2 py-1">대표이미지주소</td>
+                    <td className="border px-2 py-1">- http:// 또는 https:// 포함 경로 입력</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-2 py-1" />
+                    <td className="border px-2 py-1">색상 / 사이즈</td>
+                    <td className="border px-2 py-1">- 옵션 색상/사이즈 입력 가능<br/>- 미입력 시 공란 처리</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-2 py-1" />
+                    <td className="border px-2 py-1">상품설명</td>
+                    <td className="border px-2 py-1">- 상품 설명 입력 가능<br/>- 동일 상품의 옵션별 설명이 다를 경우 최상위 설명이 적용됨</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-2 py-1" />
+                    <td className="border px-2 py-1">영문상품명 / 영문옵션명</td>
+                    <td className="border px-2 py-1">- 영어 상품명/옵션명 입력 가능<br/>- 미입력 시 공란 처리</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-2 py-1" />
+                    <td className="border px-2 py-1">HS코드</td>
+                    <td className="border px-2 py-1">- 상품 HS Code 입력<br/>- 미입력 시 공란 처리</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-2 py-1" />
+                    <td className="border px-2 py-1">가로 / 세로 / 높이</td>
+                    <td className="border px-2 py-1">- cm 단위 숫자 입력<br/>- 옵션 일괄 등록 시 사용</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-2 py-1" />
+                    <td className="border px-2 py-1">무게 / 부피</td>
+                    <td className="border px-2 py-1">- g 단위 무게 입력<br/>- 부피 = (가로×세로×높이)/6000<br/>- 소수점 첫째 자리까지 입력 가능</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-2 py-1" />
+                    <td className="border px-2 py-1">해외통화상품가 / 해외통화옵션가</td>
+                    <td className="border px-2 py-1">- 형식: 통화코드/금액 (예: JPY/1000)</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-2 py-1" />
+                    <td className="border px-2 py-1">박스당수량</td>
+                    <td className="border px-2 py-1">- 숫자 입력, 옵션 일괄 등록 시 사용</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-2 py-1" />
+                    <td className="border px-2 py-1">세탁방법</td>
+                    <td className="border px-2 py-1">- 상품 세탁 방법 입력 가능<br/>- 미입력 시 공란 처리</td>
+                  </tr>
+
+                  <tr>
+                    <td className="border px-2 py-1 align-top">관리정보</td>
+                    <td className="border px-2 py-1">상품분류</td>
+                    <td className="border px-2 py-1">- FULGO 상품분류 관리에 등록된 값 입력<br/>- 미입력 시 기본 분류 처리</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-2 py-1" />
+                    <td className="border px-2 py-1">공급처</td>
+                    <td className="border px-2 py-1">- FULGO 공급처 관리 등록명 입력<br/>- 미입력 시 기본 공급처<br/>- 미등록 공급처 입력 시 자동 등록</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-2 py-1" />
+                    <td className="border px-2 py-1">공급처 전화번호 / 위치</td>
+                    <td className="border px-2 py-1">- 신규 공급처 등록 시 함께 입력 가능<br/>- 기존 공급처 수정은 공급처 관리에서</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-2 py-1" />
+                    <td className="border px-2 py-1">브랜드</td>
+                    <td className="border px-2 py-1">- FULGO 브랜드 관리 등록명 입력<br/>- 미입력 시 “선택안함” 처리<br/>- 미등록 브랜드 입력 시 자동 등록</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-2 py-1" />
+                    <td className="border px-2 py-1">상품연도 / 시즌</td>
+                    <td className="border px-2 py-1">- FULGO 상품 연도·시즌 관리 등록 값 입력<br/>- 미입력 시 “선택안함” 처리<br/>- 미등록 값 입력 시 자동 등록</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-2 py-1" />
+                    <td className="border px-2 py-1">상품디자이너 / 상품등록자</td>
+                    <td className="border px-2 py-1">- 해당 사용자 아이디 입력<br/>- 미입력 또는 불일치 시 “미선택” 처리</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-2 py-1" />
+                    <td className="border px-2 py-1">관리등급</td>
+                    <td className="border px-2 py-1">- 일반 / 우수 / 특별 중 입력<br/>- 미입력 시 “일반” 처리</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-2 py-1" />
+                    <td className="border px-2 py-1">상품위치</td>
+                    <td className="border px-2 py-1">- 상품 보관 위치 입력<br/>- 미입력 시 공란 처리</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-2 py-1" />
+                    <td className="border px-2 py-1">입고예정목록반영여부</td>
+                    <td className="border px-2 py-1">- “반영” 또는 “미반영” 입력<br/>- 발주 시 입고 예정 목록 반영 여부</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-2 py-1" />
+                    <td className="border px-2 py-1">판매여부</td>
+                    <td className="border px-2 py-1">- 판매 중: “판매”<br/>- 판매 중지: “미판매”<br/>- 미입력 시 “판매” 처리</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-2 py-1" />
+                    <td className="border px-2 py-1">품절여부</td>
+                    <td className="border px-2 py-1">- 품절: “품절”<br/>- 정상: “미품절”<br/>- 미입력 시 “미품절” 처리</td>
+                  </tr>
+
+                  <tr>
+                    <td className="border px-2 py-1 align-top">부가정보</td>
+                    <td className="border px-2 py-1">원가 / 공급가 / 대표판매가 / 시중가 / 마진금액</td>
+                    <td className="border px-2 py-1">- 미입력 시 0 처리<br/>- 숫자가 아닌 경우 자동으로 0 처리</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-2 py-1" />
+                    <td className="border px-2 py-1">현재재고 / 안정재고</td>
+                    <td className="border px-2 py-1">- 미입력 시 0 처리<br/>- 숫자가 아닌 경우 자동으로 0 처리</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-2 py-1" />
+                    <td className="border px-2 py-1">상품메모</td>
+                    <td className="border px-2 py-1">- 최대 15개 입력 가능 (1~15)<br/>- 미입력 시 공란 처리</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-2 py-1" />
+                    <td className="border px-2 py-1">옵션메모</td>
+                    <td className="border px-2 py-1">- 최대 5개 입력 가능 (1~5)<br/>- 미입력 시 공란 처리</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-2 py-1" />
+                    <td className="border px-2 py-1">바코드번호2 / 바코드번호3</td>
+                    <td className="border px-2 py-1">- 추가 바코드 입력 가능(중복 불가)<br/>- 미입력 시 공란 처리</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-2 py-1" />
+                    <td className="border px-2 py-1">해외통화상품가 / 해외통화옵션가</td>
+                    <td className="border px-2 py-1">- 다중 입력 가능</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-2 py-1" />
+                    <td className="border px-2 py-1">편직정보</td>
+                    <td className="border px-2 py-1">- 선택안함 / woven / knit 중 입력<br/>- 미입력 시 “선택안함” 처리</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-2 py-1" />
+                    <td className="border px-2 py-1">상품태그</td>
+                    <td className="border px-2 py-1">- 다중 입력 가능, 콤마(,) 구분<br/>- 공백 자동 제거<br/>- 미입력 시 공란 처리</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-2 py-1" />
+                    <td className="border px-2 py-1">소비자가 / 브랜드수수료율</td>
+                    <td className="border px-2 py-1">- 미입력 시 0 처리<br/>- 숫자가 아닌 경우 자동 0 처리</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
       <Container maxWidth="full" className="py-8">
         <div className="max-w-5xl mx-auto">
           <div className="flex items-center justify-between mb-4">
