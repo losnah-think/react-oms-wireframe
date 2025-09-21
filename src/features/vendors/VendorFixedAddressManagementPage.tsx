@@ -107,7 +107,9 @@ const VendorFixedAddressManagementPage: React.FC = () => {
     },
   ];
 
-  const filteredAddresses = mockFixedAddresses.filter((address) => {
+  const [addresses, setAddresses] = useState<VendorFixedAddress[]>(mockFixedAddresses);
+
+  const filteredAddresses = addresses.filter((address) => {
     const matchesVendor =
       selectedVendor === "all" || address.vendorId === selectedVendor;
     const matchesType =
@@ -123,29 +125,81 @@ const VendorFixedAddressManagementPage: React.FC = () => {
   const handleAddAddress = () => {
     setModalVendorId(null);
     setSelectedAddress(null);
+  setAddressForm({ vendorId: '', addressType: undefined, name: '', phone: '', zipcode: '', address: '', addressDetail: '', isDefault: false, status: 'active' });
     setIsModalOpen(true);
   };
 
   const handleAddAddressForVendor = (vendorId: string) => {
     setModalVendorId(vendorId);
     setSelectedAddress(null);
+  setAddressForm({ vendorId, addressType: undefined, name: '', phone: '', zipcode: '', address: '', addressDetail: '', isDefault: false, status: 'active' });
     setIsModalOpen(true);
   };
 
+  const [addressForm, setAddressForm] = useState<Partial<VendorFixedAddress> | null>(null);
+
   const handleEditAddress = (address: VendorFixedAddress) => {
     setSelectedAddress(address);
+    setModalVendorId(address.vendorId);
+    setAddressForm({ ...address });
     setIsModalOpen(true);
   };
 
   const handleSaveAddress = () => {
-    alert("고정주소가 저장되었습니다.");
+    if (!addressForm) return;
+    // validation (basic)
+    if (!addressForm.vendorId || !addressForm.addressType || !addressForm.name) {
+      alert('판매처, 주소유형, 담당자명을 입력하세요');
+      return;
+    }
+
+    if (addressForm.id) {
+      // update existing
+      setAddresses((prev) => prev.map((a) => (String(a.id) === String(addressForm.id) ? { ...(a as any), ...(addressForm as any) } as VendorFixedAddress : a)));
+    } else {
+      // create new
+      const id = `FA_${Date.now()}`;
+      const vendor = mockVendors.find((v) => v.id === addressForm.vendorId);
+      const newItem: VendorFixedAddress = {
+        id,
+        vendorId: String(addressForm.vendorId),
+        vendorName: vendor ? vendor.name : String(addressForm.vendorId),
+        addressType: (addressForm.addressType as any) || '발송지',
+        name: addressForm.name || '',
+        phone: addressForm.phone || '',
+        zipcode: addressForm.zipcode || '',
+        address: addressForm.address || '',
+        addressDetail: addressForm.addressDetail || '',
+        isDefault: !!addressForm.isDefault,
+        status: (addressForm.status as any) || 'active',
+        registrationDate: new Date().toISOString().slice(0,10),
+      };
+      setAddresses((prev) => [newItem, ...prev]);
+    }
+
+    // if set as default, unset others for the vendor
+    if (addressForm.isDefault && addressForm.vendorId) {
+      setAddresses((prev) => prev.map((a) => ({ ...a, isDefault: String(a.vendorId) === String(addressForm.vendorId) ? (String(a.id) === String(addressForm.id) || !addressForm.id && a.id === a.id ? !!a.isDefault : a.isDefault) : false })));
+    }
+
     setIsModalOpen(false);
+    setAddressForm(null);
+    setSelectedAddress(null);
+    setModalVendorId(null);
+    alert("고정주소가 저장되었습니다.");
   };
 
   const handleSetDefault = (addressId: string) => {
-    if (window.confirm("이 주소를 기본 주소로 설정하시겠습니까?")) {
-      alert("기본 주소가 설정되었습니다.");
-    }
+    if (!window.confirm("이 주소를 기본 주소로 설정하시겠습니까?")) return;
+    const target = addresses.find(a => String(a.id) === String(addressId));
+    if (!target) return;
+    setAddresses((prev) => prev.map((a) => ({ ...a, isDefault: String(a.id) === String(addressId) })));
+    alert("기본 주소가 설정되었습니다.");
+  };
+
+  const handleDeleteAddress = (addressId: string) => {
+    if (!window.confirm('정말로 삭제하시겠습니까?')) return;
+    setAddresses((prev) => prev.filter(a => String(a.id) !== String(addressId)));
   };
 
   const getStatusBadge = (status: "active" | "inactive") => {
@@ -344,7 +398,8 @@ const VendorFixedAddressManagementPage: React.FC = () => {
                       판매처 선택 *
                     </label>
                     <select
-                      defaultValue={modalVendorId ?? selectedAddress?.vendorId ?? ""}
+                      value={addressForm?.vendorId ?? modalVendorId ?? ''}
+                      onChange={(e) => setAddressForm((prev) => ({ ...(prev||{}), vendorId: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="">판매처를 선택하세요</option>
@@ -360,7 +415,8 @@ const VendorFixedAddressManagementPage: React.FC = () => {
                       주소 유형 *
                     </label>
                     <select
-                      defaultValue={selectedAddress?.addressType || ""}
+                      value={addressForm?.addressType ?? ''}
+                      onChange={(e) => setAddressForm((prev) => ({ ...(prev||{}), addressType: e.target.value as any }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="">유형을 선택하세요</option>
@@ -378,7 +434,8 @@ const VendorFixedAddressManagementPage: React.FC = () => {
                     </label>
                     <input
                       type="text"
-                      defaultValue={selectedAddress?.name || ""}
+                      value={addressForm?.name ?? ''}
+                      onChange={(e) => setAddressForm((prev) => ({ ...(prev||{}), name: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="담당자명을 입력하세요"
                     />
@@ -389,7 +446,8 @@ const VendorFixedAddressManagementPage: React.FC = () => {
                     </label>
                     <input
                       type="text"
-                      defaultValue={selectedAddress?.phone || ""}
+                      value={addressForm?.phone ?? ''}
+                      onChange={(e) => setAddressForm((prev) => ({ ...(prev||{}), phone: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="02-1234-5678"
                     />
@@ -403,7 +461,8 @@ const VendorFixedAddressManagementPage: React.FC = () => {
                   <div className="flex space-x-2">
                     <input
                       type="text"
-                      defaultValue={selectedAddress?.zipcode || ""}
+                      value={addressForm?.zipcode ?? ''}
+                      onChange={(e) => setAddressForm((prev) => ({ ...(prev||{}), zipcode: e.target.value }))}
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="우편번호"
                     />
@@ -417,32 +476,35 @@ const VendorFixedAddressManagementPage: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     기본주소 *
                   </label>
-                  <input
-                    type="text"
-                    defaultValue={selectedAddress?.address || ""}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="기본주소를 입력하세요"
-                  />
+                    <input
+                      type="text"
+                      value={addressForm?.address ?? ''}
+                      onChange={(e) => setAddressForm((prev) => ({ ...(prev||{}), address: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="기본주소를 입력하세요"
+                    />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    상세주소
-                  </label>
-                  <input
-                    type="text"
-                    defaultValue={selectedAddress?.addressDetail || ""}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="상세주소를 입력하세요"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      상세주소
+                    </label>
+                    <input
+                      type="text"
+                      value={addressForm?.addressDetail ?? ''}
+                      onChange={(e) => setAddressForm((prev) => ({ ...(prev||{}), addressDetail: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="상세주소를 입력하세요"
+                    />
+                  </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="flex items-center">
                       <input
                         type="checkbox"
-                        defaultChecked={selectedAddress?.isDefault || false}
+                        checked={!!addressForm?.isDefault}
+                        onChange={(e) => setAddressForm((prev) => ({ ...(prev||{}), isDefault: e.target.checked }))}
                         className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                       />
                       <span className="ml-2 text-sm text-gray-700">
@@ -455,7 +517,8 @@ const VendorFixedAddressManagementPage: React.FC = () => {
                       상태
                     </label>
                     <select
-                      defaultValue={selectedAddress?.status || "active"}
+                      value={addressForm?.status ?? 'active'}
+                      onChange={(e) => setAddressForm((prev) => ({ ...(prev||{}), status: e.target.value as any }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="active">활성</option>
