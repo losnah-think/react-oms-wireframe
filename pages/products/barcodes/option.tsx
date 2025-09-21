@@ -1,2 +1,2 @@
-import OptionBarcodesPage from "@/features/barcodes/option";
-export default OptionBarcodesPage;
+import LocationBarcodesPage from "@/features/barcodes/location";
+export default LocationBarcodesPage;

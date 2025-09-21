@@ -114,6 +114,9 @@ const saveLog = (entry: any) => {
 };
 
 const ProductBarcodesPage: React.FC = () => {
+  // When barcode is clicked, should we open product edit/detail page in a new tab?
+  const OPEN_BARCODE_IN_NEW_TAB = true;
+
   const [products, setProducts] = React.useState<Product[]>([]);
   const [filtered, setFiltered] = React.useState<Product[]>([]);
   const [query, setQuery] = React.useState("");
@@ -200,6 +203,21 @@ const ProductBarcodesPage: React.FC = () => {
       if (p.barcode) map[p.barcode] = (map[p.barcode] || 0) + 1;
     });
     return map;
+  }, [products]);
+  
+  // number of distinct products that have a given barcode
+  const barcodeProductCounts = React.useMemo(() => {
+    const map: Record<string, Set<string>> = {};
+    products.forEach((p) => {
+      if (!p.barcode) return;
+      const key = p.barcode;
+      map[key] = map[key] || new Set();
+      // productId may be undefined for single-product rows, use id as fallback
+      map[key].add(String(p.productId ?? p.id));
+    });
+    const out: Record<string, number> = {};
+    Object.keys(map).forEach((k) => (out[k] = map[k].size));
+    return out;
   }, [products]);
 
   const stats = React.useMemo(() => {
@@ -471,8 +489,8 @@ const ProductBarcodesPage: React.FC = () => {
   return (
     <Container maxWidth="full" centered={false} padding="md">
       <Grid container gutter={[8, 8]} className="mb-4">
-        <GridCol span={14} className="">
-          <h1 className="text-2xl font-semibold">상품 바코드 관리</h1>
+          <GridCol span={14} className="">
+          <h1 className="text-2xl font-semibold">상품 위치 바코드 관리</h1>
           <div className="flex items-center gap-2 mt-2">
             <Chip tone="info">총 {stats.total}개</Chip>
             <Chip tone="neutral">미발급 {stats.missing}</Chip>
@@ -709,7 +727,26 @@ const ProductBarcodesPage: React.FC = () => {
                       />
                     </td>
                     <td className="p-2 text-sm font-mono text-center">
-                      {p.barcode ?? "—"}
+                      {p.barcode ? (
+                        <div className="inline-flex flex-col items-center">
+                          <a
+                            href={
+                              p.productId ? `/products/${p.productId}` : `/products/${p.id}`
+                            }
+                            target={OPEN_BARCODE_IN_NEW_TAB ? "_blank" : "_self"}
+                            rel={OPEN_BARCODE_IN_NEW_TAB ? "noopener noreferrer" : undefined}
+                            className="text-blue-600 hover:underline break-words inline-block"
+                            title={`상품 수정으로 이동: ${p.productId ?? p.id}`}
+                          >
+                            {p.barcode}
+                          </a>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {barcodeProductCounts[p.barcode] ?? 0}개 상품
+                          </div>
+                        </div>
+                      ) : (
+                        "—"
+                      )}
                       {p.barcode && barcodeCounts[p.barcode] > 1 && (
                         <div className="text-xs text-yellow-800">중복</div>
                       )}
