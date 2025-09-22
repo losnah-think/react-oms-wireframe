@@ -16,6 +16,8 @@ import {
 import TableExportButton from "../../components/common/TableExportButton";
 import HierarchicalSelect from "../../components/common/HierarchicalSelect";
 import Typeahead from "../../components/common/Typeahead";
+import { mockBrands } from '../../data/mockBrands';
+import * as mockSuppliersApi from '../../lib/mockSuppliers';
 import { formatPrice } from "../../utils/productUtils";
 import { normalizeProductGroup } from "../../utils/groupUtils";
 import SideGuide from "../../components/SideGuide";
@@ -463,6 +465,23 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
     return () => {
       mounted = false;
     };
+  }, []);
+
+  // Force-sync brands/suppliers with in-repo mock data for dev
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await mockSuppliersApi.listSuppliers();
+        const suppliers = (res && res.items) ? res.items : [];
+        if (!mounted) return;
+        setProductFilterOptions((prev: any) => ({ ...(prev || {}), brands: mockBrands || [], suppliers: suppliers || [] }));
+      } catch (e) {
+        if (!mounted) return;
+        setProductFilterOptions((prev: any) => ({ ...(prev || {}), brands: mockBrands || [] }));
+      }
+    })();
+    return () => { mounted = false; };
   }, []);
 
   useEffect(() => {

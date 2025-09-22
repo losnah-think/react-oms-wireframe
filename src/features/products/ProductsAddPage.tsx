@@ -9,6 +9,8 @@ import {
   GridCol,
 } from "../../design-system";
 import SideGuide from "../../components/SideGuide";
+import { mockBrands } from "../../data/mockBrands";
+import * as mockSuppliersApi from "../../lib/mockSuppliers";
 import type {
   ProductFormData,
   ProductTag,
@@ -732,6 +734,32 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
         );
       })
       .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Force-sync selects with in-repo mock data for predictable dev behavior
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await mockSuppliersApi.listSuppliers();
+        const suppliers = (res && res.items) ? res.items : [];
+        if (!mounted) return;
+        setProductFilterOptions((prev: any) => ({
+          ...(prev || {}),
+          brands: mockBrands || [],
+          suppliers: suppliers || [],
+        }));
+      } catch (e) {
+        if (!mounted) return;
+        setProductFilterOptions((prev: any) => ({
+          ...(prev || {}),
+          brands: mockBrands || [],
+        }));
+      }
+    })();
     return () => {
       mounted = false;
     };
