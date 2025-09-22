@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useRouter } from "next/router";
 import {
   Container,
@@ -8,6 +8,7 @@ import {
   Input,
   Badge,
 } from "@/design-system";
+import SideGuide from "@/components/SideGuide";
 import Toast from "@/components/Toast";
 import { formatPrice } from "@/utils/productUtils";
 
@@ -152,6 +153,9 @@ const OptionEditPage: React.FC<OptionEditPageProps> = ({
   const [variant, setVariant] = useState<any | null>(null);
   const [form, setForm] = useState<OptionFormState>(defaultFormState);
   const [toast, setToast] = useState<string | null>(null);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const saveTimer = useRef<number | null>(null);
+  const isSaving = useRef(false);
 
   // Dropdown option lists (populate all choices you requested)
   const productLocations = [
@@ -381,16 +385,83 @@ const OptionEditPage: React.FC<OptionEditPageProps> = ({
     ];
   }, [variant]);
 
+  const scheduleSave = (nextForm: OptionFormState) => {
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+    }
+    // debounce 1200ms
+    // @ts-ignore
+    saveTimer.current = window.setTimeout(() => {
+      const payload: Partial<OptionFormState> = {
+        optionName: nextForm.optionName,
+        supplierOptionName: nextForm.supplierOptionName,
+        optionCode: nextForm.optionCode,
+        sellingPrice: nextForm.sellingPrice,
+        costPrice: nextForm.costPrice,
+        supplyPrice: nextForm.supplyPrice,
+        stock: nextForm.stock,
+        safetyStock: nextForm.safetyStock,
+        location: nextForm.location,
+        memo: nextForm.memo,
+        grade: nextForm.grade,
+        autoShip: nextForm.autoShip,
+        syncStock: nextForm.syncStock,
+        isSelling: nextForm.isSelling,
+        isSoldout: nextForm.isSoldout,
+        manufacturer: nextForm.manufacturer,
+        manufactureCountry: nextForm.manufactureCountry,
+        material: nextForm.material,
+        weight: nextForm.weight,
+        width: nextForm.width,
+        height: nextForm.height,
+        depth: nextForm.depth,
+        optionMemo1: nextForm.optionMemo1,
+        optionMemo2: nextForm.optionMemo2,
+        optionMemo3: nextForm.optionMemo3,
+        optionMemo4: nextForm.optionMemo4,
+        optionMemo5: nextForm.optionMemo5,
+        englishOptionName: nextForm.englishOptionName,
+        foreignCurrencyPrice: nextForm.foreignCurrencyPrice,
+        hiddenRelease: nextForm.hiddenRelease,
+        preventBundle: nextForm.preventBundle,
+        autoScan: nextForm.autoScan,
+        cafeSaleUse: nextForm.cafeSaleUse,
+      };
+
+      (async () => {
+        if (!productId || !variant) return;
+        try {
+          isSaving.current = true;
+          await fetch(`/api/products/${productId}/variants/${variant.id || variant.variant_id || variant.option_id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          setToast("옵션 정보가 자동 저장되었습니다.");
+        } catch (err) {
+          setToast("자동 저장에 실패했습니다.");
+        } finally {
+          isSaving.current = false;
+          window.setTimeout(() => setToast(null), 1500);
+        }
+      })();
+
+      saveTimer.current = null;
+    }, 1200);
+  };
+
   const handleChange = <K extends keyof OptionFormState>(
     key: K,
     value: OptionFormState[K],
   ) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
+    setForm((prev) => {
+      const next = { ...prev, [key]: value };
+      scheduleSave(next);
+      return next;
+    });
   };
 
-  const handleSave = () => {
-    setToast("옵션 정보가 임시로 저장되었습니다. (목업)");
-  };
+  // no explicit manual save; autosave handles persistence
 
   const handleBack = () => {
     if (router?.back) {
@@ -465,9 +536,19 @@ const OptionEditPage: React.FC<OptionEditPageProps> = ({
     );
   }
 
+  useEffect(() => {
+    return () => {
+      if (saveTimer.current) {
+        clearTimeout(saveTimer.current);
+        // @ts-ignore
+        saveTimer.current = null;
+      }
+    };
+  }, []);
+
   return (
     <>
-      <Container maxWidth="6xl" padding="lg" className="bg-gray-50 min-h-screen">
+  <Container maxWidth="full" padding="lg" className="bg-gray-50 min-h-screen w-full">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">옵션정보수정</h1>
@@ -486,11 +567,11 @@ const OptionEditPage: React.FC<OptionEditPageProps> = ({
             </div>
           </div>
           <Stack direction="row" gap={2}>
+            <Button variant="outline" onClick={() => setIsHelpOpen(true)}>
+              도움말
+            </Button>
             <Button variant="outline" onClick={handleBack}>
               돌아가기
-            </Button>
-            <Button variant="primary" onClick={handleSave}>
-              저장
             </Button>
           </Stack>
         </div>
@@ -814,13 +895,52 @@ const OptionEditPage: React.FC<OptionEditPageProps> = ({
 
         <div className="flex justify-end gap-3">
           <Button variant="outline" onClick={handleBack}>
-            취소
-          </Button>
-          <Button variant="primary" onClick={handleSave}>
-            저장
+            돌아가기
           </Button>
         </div>
       </Container>
+      <SideGuide open={isHelpOpen} onClose={() => setIsHelpOpen(false)} title="옵션 편집 도움말">
+        <div className="text-sm leading-relaxed">
+          <h3 className="font-semibold mb-2">옵션 편집 페이지 안내</h3>
+          <p className="mb-4">이 페이지에서는 상품 옵션의 상세 정보를 수정할 수 있습니다. 변경사항은 자동으로 저장됩니다.</p>
+          
+          <h4 className="font-semibold mb-2">기본 정보</h4>
+          <ul className="list-disc list-inside mb-4 space-y-1">
+            <li><strong>옵션명:</strong> 옵션의 표시 이름입니다.</li>
+            <li><strong>사입옵션명:</strong> 공급처에서의 옵션 이름입니다.</li>
+            <li><strong>옵션코드:</strong> 시스템에서 사용하는 고유 코드입니다.</li>
+            <li><strong>바코드번호:</strong> 상품 식별을 위한 바코드입니다.</li>
+          </ul>
+          
+          <h4 className="font-semibold mb-2">가격 정보</h4>
+          <ul className="list-disc list-inside mb-4 space-y-1">
+            <li><strong>판매가:</strong> 고객에게 판매되는 가격입니다.</li>
+            <li><strong>원가:</strong> 상품의 실제 원가입니다.</li>
+            <li><strong>공급가:</strong> 공급처로부터의 공급 가격입니다.</li>
+          </ul>
+          
+          <h4 className="font-semibold mb-2">재고 및 출고 정보</h4>
+          <ul className="list-disc list-inside mb-4 space-y-1">
+            <li><strong>재고수량:</strong> 현재 보유하고 있는 재고 수량입니다.</li>
+            <li><strong>안전재고:</strong> 최소 유지해야 할 재고 수량입니다.</li>
+            <li><strong>상품위치:</strong> 창고 내 상품 위치입니다.</li>
+            <li><strong>판매상태:</strong> 상품의 판매 가능 여부입니다.</li>
+            <li><strong>품절여부:</strong> 상품의 품절 상태입니다.</li>
+          </ul>
+          
+          <h4 className="font-semibold mb-2">추가 정보</h4>
+          <ul className="list-disc list-inside mb-4 space-y-1">
+            <li><strong>색상/사이즈:</strong> 상품의 색상과 사이즈 정보입니다.</li>
+            <li><strong>제조사/제조국:</strong> 상품의 제조 관련 정보입니다.</li>
+            <li><strong>무게/크기:</strong> 상품의 물리적 크기 정보입니다.</li>
+            <li><strong>메모:</strong> 추가적인 참고 사항을 기록할 수 있습니다.</li>
+          </ul>
+          
+          <p className="text-xs text-gray-600 mt-4">
+            모든 변경사항은 자동으로 저장됩니다. 수동 저장 버튼은 없습니다.
+          </p>
+        </div>
+      </SideGuide>
       <Toast message={toast} onClose={() => setToast(null)} />
     </>
   );

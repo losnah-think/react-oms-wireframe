@@ -22,7 +22,7 @@ interface SidebarProps {
 }
 
 const SETTINGS_DESCRIPTION =
-  "시스템 전반의 환경설정(연동, 상품 분류, 브랜드/연도/시즌 등)을 관리합니다.";
+  "시스템 전반의 환경설정(연동, 상품 그룹, 브랜드/연도/시즌 등)을 관리합니다.";
 
 const menuItems: MenuItem[] = [
   {
@@ -103,7 +103,7 @@ const menuItems: MenuItem[] = [
         label: "외부 연동",
         icon: "externalLink",
       },
-      { id: "settings-product-groups", label: "상품 분류", icon: "copy" },
+      { id: "settings-product-groups", label: "상품 그룹", icon: "copy" },
       {
         id: "settings-product-classifications",
         label: "상품 카테고리",
@@ -386,13 +386,18 @@ const Sidebar: React.FC<SidebarProps> = ({
 
     if (isCollapsed && level === 0) {
       return (
-        <div key={item.id} className="mb-2 flex justify-center">
-          <div className="group relative">
+        <div key={item.id} className="mb-2 flex flex-col items-center">
+          <div className="group relative flex flex-col items-center">
+            {/* 1Depth 아이콘 */}
             <div
               role="button"
               tabIndex={0}
+              aria-haspopup={hasChildren ? "menu" : undefined}
+              aria-expanded={hasChildren ? isExpanded : undefined}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") handleItemClick(item);
+                if (e.key === "ArrowRight" && hasChildren) toggleExpanded(item.id);
+                if (e.key === "Escape" && hasChildren && isExpanded) toggleExpanded(item.id);
               }}
               className={`
                 flex items-center justify-center w-12 h-12 rounded-lg cursor-pointer relative
@@ -406,9 +411,78 @@ const Sidebar: React.FC<SidebarProps> = ({
               {getIconComponent(item.icon ?? "document", 18, active)}
             </div>
 
-            <div className="absolute left-full top-1/2 transform -translate-y-1/2 ml-3 whitespace-nowrap bg-gray-900 text-white text-xs px-2 py-1 rounded shadow-lg z-50 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none">
+            {/* 2Depth 인라인 아이콘 스택: 확장/활성/forceExpandAll이면 항상 보임 */}
+            {hasChildren && (isExpanded || forceExpandAll || active) && (
+              <div className="mt-2 flex flex-col items-center gap-1">
+                {item.children?.map((child) => {
+                  const activeChild = isActive(child.id);
+                  return (
+                    <button
+                      key={child.id}
+                      type="button"
+                      aria-label={child.label}
+                      title={child.label}
+                      className={`
+                        w-8 h-8 rounded-md flex items-center justify-center
+                        ${activeChild ? "bg-primary-100 text-primary-700" : "text-gray-700 hover:bg-gray-100"}
+                        focus:outline-none focus:ring-2 focus:ring-primary-200
+                      `}
+                      onClick={() => handleItemClick(child)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") handleItemClick(child);
+                      }}
+                    >
+                      {getIconComponent(child.icon ?? "document", 14, activeChild)}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* 라벨 툴팁(접힘 상태 설명) */}
+            <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 whitespace-nowrap bg-gray-900 text-white text-xs px-2 py-1 rounded shadow-lg z-40 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none">
               {item.id === "settings" ? SETTINGS_DESCRIPTION : item.label}
             </div>
+
+            {/* 호버 플라이아웃: 인라인이 안 보일 때만 보조로 사용 */}
+            {hasChildren && !(isExpanded || forceExpandAll || active) && (
+              <div
+                role="menu"
+                aria-label={`${item.label} 하위 메뉴`}
+                className={`
+                  absolute left-full top-0 ml-3 w-56 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-50
+                  opacity-0 pointer-events-none
+                  group-hover:opacity-100 group-hover:pointer-events-auto
+                  group-focus-within:opacity-100 group-focus-within:pointer-events-auto
+                `}
+              >
+                {item.children?.map((child) => {
+                  const activeChild = isActive(child.id);
+                  return (
+                    <div
+                      key={child.id}
+                      role="menuitem"
+                      tabIndex={0}
+                      className={`
+                        flex items-center gap-3 px-3 py-2 text-sm cursor-pointer rounded-md
+                        ${activeChild ? "bg-primary-100 text-primary-700" : "text-gray-700 hover:bg-gray-50"}
+                      `}
+                      onClick={() => handleItemClick(child)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") handleItemClick(child);
+                      }}
+                      title={child.label}
+                      aria-label={child.label}
+                    >
+                      <span className="w-5 h-5 flex items-center justify-center">
+                        {getIconComponent(child.icon ?? "document", 16, activeChild)}
+                      </span>
+                      <span className="truncate">{child.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       );

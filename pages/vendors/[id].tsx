@@ -1,3 +1,4 @@
+import React from 'react';
 import { useRouter } from 'next/router';
 import VendorDetailPage from '@/features/vendors/VendorDetailPage';
 

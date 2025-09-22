@@ -11,21 +11,23 @@ try {
 
 function tryRequireMock() {
   try {
+    // Only attempt to load mock data at runtime on the server.
+    if (typeof window !== 'undefined') return { brands: [], categories: [], suppliers: [], status: [] };
+    const root = process.cwd();
+    // use dynamic import with a static path so bundlers can analyze it
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const path = require('path')
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const root = process.cwd()
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const mod = require(path.join(root, 'src', 'data', 'mockProductFilters'))
-    return mod?.mockProductFilterOptions || mod?.default || { brands: [], categories: [], suppliers: [], status: [] }
+    const mod = require(root + '/src/data/mockProductFilters');
+    return mod?.mockProductFilterOptions || mod?.default || { brands: [], categories: [], suppliers: [], status: [] };
   } catch (e) {
     return { brands: [], categories: [], suppliers: [], status: [] }
   }
 }
 
 function requireMockProducts() {
+  if (typeof window !== 'undefined') return { mockProducts: [] };
+  // Require the mock products using a static relative path (server-only)
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  return require('../data/mockProducts')
+  return require('../data/mockProducts');
 }
 
 export async function listProductFilters() {

@@ -741,6 +741,11 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
 
   // Force-sync selects with in-repo mock data for predictable dev behavior
   useEffect(() => {
+    // Run this sync only once per browser session to avoid repeated mock initialization
+    const sessionFlagKey = "__mock_products_synced_v1";
+    const alreadySynced = typeof window !== "undefined" && sessionStorage.getItem(sessionFlagKey);
+    if (alreadySynced) return;
+
     let mounted = true;
     (async () => {
       try {
@@ -752,12 +757,18 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
           brands: mockBrands || [],
           suppliers: suppliers || [],
         }));
+        try {
+          if (typeof window !== "undefined") sessionStorage.setItem(sessionFlagKey, "1");
+        } catch (e) {}
       } catch (e) {
         if (!mounted) return;
         setProductFilterOptions((prev: any) => ({
           ...(prev || {}),
           brands: mockBrands || [],
         }));
+        try {
+          if (typeof window !== "undefined") sessionStorage.setItem(sessionFlagKey, "1");
+        } catch (e) {}
       }
     })();
     return () => {
@@ -1875,247 +1886,38 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
 
   return (
     <>
-      {/* Help modal/section (opens when isHelpOpen === true) */}
-      {isHelpOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center p-6">
-          <div className="w-full max-w-4xl bg-white border rounded shadow-lg overflow-auto max-h-[80vh]">
-            <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="text-lg font-semibold">상품 등록 도움말</h3>
-              <button
-                className="text-sm text-gray-600 hover:text-gray-900"
-                onClick={() => setIsHelpOpen(false)}
-              >
-                닫기
-              </button>
-            </div>
-            <div className="p-4 text-sm leading-relaxed">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr>
-                    <th className="border px-2 py-1 text-left">구분</th>
-                    <th className="border px-2 py-1 text-left">입력항목</th>
-                    <th className="border px-2 py-1 text-left">작성방법 / 유의사항</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td className="border px-2 py-1 align-top">필수값</td>
-                    <td className="border px-2 py-1 align-top">상품명</td>
-                    <td className="border px-2 py-1">- 필수값(미입력 시 업로드 불가)<br/>- 기존 등록 상품과 중복 시 업로드 불가</td>
-                  </tr>
-                  <tr>
-                    <td className="border px-2 py-1" />
-                    <td className="border px-2 py-1">옵션명</td>
-                    <td className="border px-2 py-1">- 필수값(미입력 시 업로드 불가)<br/>- 옵션이 없으면 “단일옵션” 입력<br/>- 작성 시 제공된 예시 형식 참고</td>
-                  </tr>
-
-                  <tr>
-                    <td className="border px-2 py-1 align-top">옵션값</td>
-                    <td className="border px-2 py-1">상품코드</td>
-                    <td className="border px-2 py-1">- 기존 등록 상품과 중복 시 업로드 불가<br/>- 미입력 시 중복체크 안 함</td>
-                  </tr>
-                  <tr>
-                    <td className="border px-2 py-1" />
-                    <td className="border px-2 py-1">옵션코드</td>
-                    <td className="border px-2 py-1">- 기존 등록 옵션과 중복 시 업로드 불가<br/>- 미입력 시 중복체크 안 함</td>
-                  </tr>
-                  <tr>
-                    <td className="border px-2 py-1" />
-                    <td className="border px-2 py-1">바코드번호</td>
-                    <td className="border px-2 py-1">- 중복 불가<br/>- 미입력 시 FULGO가 자동 부여</td>
-                  </tr>
-                  <tr>
-                    <td className="border px-2 py-1" />
-                    <td className="border px-2 py-1">사입상품명</td>
-                    <td className="border px-2 py-1">- 실제 매입 상품명 입력</td>
-                  </tr>
-                  <tr>
-                    <td className="border px-2 py-1" />
-                    <td className="border px-2 py-1">사입옵션명</td>
-                    <td className="border px-2 py-1">- 실제 매입 옵션명 입력</td>
-                  </tr>
-                  <tr>
-                    <td className="border px-2 py-1" />
-                    <td className="border px-2 py-1">대표이미지주소</td>
-                    <td className="border px-2 py-1">- http:// 또는 https:// 포함 경로 입력</td>
-                  </tr>
-                  <tr>
-                    <td className="border px-2 py-1" />
-                    <td className="border px-2 py-1">색상 / 사이즈</td>
-                    <td className="border px-2 py-1">- 옵션 색상/사이즈 입력 가능<br/>- 미입력 시 공란 처리</td>
-                  </tr>
-                  <tr>
-                    <td className="border px-2 py-1" />
-                    <td className="border px-2 py-1">상품설명</td>
-                    <td className="border px-2 py-1">- 상품 설명 입력 가능<br/>- 동일 상품의 옵션별 설명이 다를 경우 최상위 설명이 적용됨</td>
-                  </tr>
-                  <tr>
-                    <td className="border px-2 py-1" />
-                    <td className="border px-2 py-1">영문상품명 / 영문옵션명</td>
-                    <td className="border px-2 py-1">- 영어 상품명/옵션명 입력 가능<br/>- 미입력 시 공란 처리</td>
-                  </tr>
-                  <tr>
-                    <td className="border px-2 py-1" />
-                    <td className="border px-2 py-1">HS코드</td>
-                    <td className="border px-2 py-1">- 상품 HS Code 입력<br/>- 미입력 시 공란 처리</td>
-                  </tr>
-                  <tr>
-                    <td className="border px-2 py-1" />
-                    <td className="border px-2 py-1">가로 / 세로 / 높이</td>
-                    <td className="border px-2 py-1">- cm 단위 숫자 입력<br/>- 옵션 일괄 등록 시 사용</td>
-                  </tr>
-                  <tr>
-                    <td className="border px-2 py-1" />
-                    <td className="border px-2 py-1">무게 / 부피</td>
-                    <td className="border px-2 py-1">- g 단위 무게 입력<br/>- 부피 = (가로×세로×높이)/6000<br/>- 소수점 첫째 자리까지 입력 가능</td>
-                  </tr>
-                  <tr>
-                    <td className="border px-2 py-1" />
-                    <td className="border px-2 py-1">해외통화상품가 / 해외통화옵션가</td>
-                    <td className="border px-2 py-1">- 형식: 통화코드/금액 (예: JPY/1000)</td>
-                  </tr>
-                  <tr>
-                    <td className="border px-2 py-1" />
-                    <td className="border px-2 py-1">박스당수량</td>
-                    <td className="border px-2 py-1">- 숫자 입력, 옵션 일괄 등록 시 사용</td>
-                  </tr>
-                  <tr>
-                    <td className="border px-2 py-1" />
-                    <td className="border px-2 py-1">세탁방법</td>
-                    <td className="border px-2 py-1">- 상품 세탁 방법 입력 가능<br/>- 미입력 시 공란 처리</td>
-                  </tr>
-
-                  <tr>
-                    <td className="border px-2 py-1 align-top">관리정보</td>
-                    <td className="border px-2 py-1">상품 분류</td>
-                    <td className="border px-2 py-1">- FULGO 상품분류 관리에 등록된 값 입력<br/>- 미입력 시 기본 분류 처리</td>
-                  </tr>
-                  <tr>
-                    <td className="border px-2 py-1" />
-                    <td className="border px-2 py-1">공급처</td>
-                    <td className="border px-2 py-1">- FULGO 공급처 관리 등록명 입력<br/>- 미입력 시 기본 공급처<br/>- 미등록 공급처 입력 시 자동 등록</td>
-                  </tr>
-                  <tr>
-                    <td className="border px-2 py-1" />
-                    <td className="border px-2 py-1">공급처 전화번호 / 위치</td>
-                    <td className="border px-2 py-1">- 신규 공급처 등록 시 함께 입력 가능<br/>- 기존 공급처 수정은 공급처 관리에서</td>
-                  </tr>
-                  <tr>
-                    <td className="border px-2 py-1" />
-                    <td className="border px-2 py-1">브랜드</td>
-                    <td className="border px-2 py-1">- FULGO 브랜드 관리 등록명 입력<br/>- 미입력 시 “선택안함” 처리<br/>- 미등록 브랜드 입력 시 자동 등록</td>
-                  </tr>
-                  <tr>
-                    <td className="border px-2 py-1" />
-                    <td className="border px-2 py-1">상품연도 / 시즌</td>
-                    <td className="border px-2 py-1">- FULGO 상품 연도·시즌 관리 등록 값 입력<br/>- 미입력 시 “선택안함” 처리<br/>- 미등록 값 입력 시 자동 등록</td>
-                  </tr>
-                  <tr>
-                    <td className="border px-2 py-1" />
-                    <td className="border px-2 py-1">상품디자이너 / 상품등록자</td>
-                    <td className="border px-2 py-1">- 해당 사용자 아이디 입력<br/>- 미입력 또는 불일치 시 “미선택” 처리</td>
-                  </tr>
-                  <tr>
-                    <td className="border px-2 py-1" />
-                    <td className="border px-2 py-1">관리등급</td>
-                    <td className="border px-2 py-1">- 일반 / 우수 / 특별 중 입력<br/>- 미입력 시 “일반” 처리</td>
-                  </tr>
-                  <tr>
-                    <td className="border px-2 py-1" />
-                    <td className="border px-2 py-1">상품위치</td>
-                    <td className="border px-2 py-1">- 상품 보관 위치 입력<br/>- 미입력 시 공란 처리</td>
-                  </tr>
-                  <tr>
-                    <td className="border px-2 py-1" />
-                    <td className="border px-2 py-1">입고예정목록반영여부</td>
-                    <td className="border px-2 py-1">- “반영” 또는 “미반영” 입력<br/>- 발주 시 입고 예정 목록 반영 여부</td>
-                  </tr>
-                  <tr>
-                    <td className="border px-2 py-1" />
-                    <td className="border px-2 py-1">판매여부</td>
-                    <td className="border px-2 py-1">- 판매 중: “판매”<br/>- 판매 중지: “미판매”<br/>- 미입력 시 “판매” 처리</td>
-                  </tr>
-                  <tr>
-                    <td className="border px-2 py-1" />
-                    <td className="border px-2 py-1">품절여부</td>
-                    <td className="border px-2 py-1">- 품절: “품절”<br/>- 정상: “미품절”<br/>- 미입력 시 “미품절” 처리</td>
-                  </tr>
-
-                  <tr>
-                    <td className="border px-2 py-1 align-top">부가정보</td>
-                    <td className="border px-2 py-1">원가 / 공급가 / 대표판매가 / 시중가 / 마진금액</td>
-                    <td className="border px-2 py-1">- 미입력 시 0 처리<br/>- 숫자가 아닌 경우 자동으로 0 처리</td>
-                  </tr>
-                  <tr>
-                    <td className="border px-2 py-1" />
-                    <td className="border px-2 py-1">현재재고 / 안정재고</td>
-                    <td className="border px-2 py-1">- 미입력 시 0 처리<br/>- 숫자가 아닌 경우 자동으로 0 처리</td>
-                  </tr>
-                  <tr>
-                    <td className="border px-2 py-1" />
-                    <td className="border px-2 py-1">상품메모</td>
-                    <td className="border px-2 py-1">- 최대 15개 입력 가능 (1~15)<br/>- 미입력 시 공란 처리</td>
-                  </tr>
-                  <tr>
-                    <td className="border px-2 py-1" />
-                    <td className="border px-2 py-1">옵션메모</td>
-                    <td className="border px-2 py-1">- 최대 5개 입력 가능 (1~5)<br/>- 미입력 시 공란 처리</td>
-                  </tr>
-                  <tr>
-                    <td className="border px-2 py-1" />
-                    <td className="border px-2 py-1">바코드번호2 / 바코드번호3</td>
-                    <td className="border px-2 py-1">- 추가 바코드 입력 가능(중복 불가)<br/>- 미입력 시 공란 처리</td>
-                  </tr>
-                  <tr>
-                    <td className="border px-2 py-1" />
-                    <td className="border px-2 py-1">해외통화상품가 / 해외통화옵션가</td>
-                    <td className="border px-2 py-1">- 다중 입력 가능</td>
-                  </tr>
-                  <tr>
-                    <td className="border px-2 py-1" />
-                    <td className="border px-2 py-1">편직정보</td>
-                    <td className="border px-2 py-1">- 선택안함 / woven / knit 중 입력<br/>- 미입력 시 “선택안함” 처리</td>
-                  </tr>
-                  <tr>
-                    <td className="border px-2 py-1" />
-                    <td className="border px-2 py-1">상품태그</td>
-                    <td className="border px-2 py-1">- 다중 입력 가능, 콤마(,) 구분<br/>- 공백 자동 제거<br/>- 미입력 시 공란 처리</td>
-                  </tr>
-                  <tr>
-                    <td className="border px-2 py-1" />
-                    <td className="border px-2 py-1">소비자가 / 브랜드수수료율</td>
-                    <td className="border px-2 py-1">- 미입력 시 0 처리<br/>- 숫자가 아닌 경우 자동 0 처리</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
       <Container maxWidth="full" className="py-8">
-        <div className="max-w-5xl mx-auto">
+        <div className="w-full px-4 lg:px-6">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-bold">상품 등록</h1>
             <div className="flex items-center gap-2">
-              <button
-                className="px-3 py-1 bg-blue-600 text-white rounded text-sm"
-                onClick={handleSaveAndContinue}
+              <Button
+                variant="ghost"
+                onClick={() => (typeof window !== "undefined" ? window.history.back() : null)}
               >
-                저장 후 계속
-              </button>
-              <button
-                aria-label="도움말"
-                className="px-3 py-1 border rounded text-sm"
+                목록으로
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleSave}
+                disabled={saving}
+              >
+                등록
+              </Button>
+              <Button
+                variant="outline"
                 onClick={() => setIsHelpOpen(true)}
               >
                 도움말
-              </button>
+              </Button>
             </div>
           </div>
-          <div className="flex flex-col md:flex-row gap-6">
-            {/* 메인 폼 영역 */}
-            <form className="flex-1 space-y-6">
-              <Card>
+          <GridRow gutter={24}>
+            <GridCol span={3}><div></div></GridCol>
+            <GridCol span={12}>
+              {/* 메인 폼 영역 */}
+              <form className="space-y-6">
+              <Card id="basic-info-section">
                 <div className="mb-4">
                   <h2 className="text-lg font-bold">기본 정보</h2>
                   <p className="text-sm text-gray-500">
@@ -2150,9 +1952,6 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
                   <GridCol span={12}>
                     <div className="mb-1">
                       <div className="text-sm font-medium text-gray-700">대표 이미지</div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        대표 이미지를 추가하려면 URL을 입력하고 Enter 키를 눌러주세요.
-                      </p>
                     </div>
                     <div className="flex flex-col gap-2">
                       <div className="flex gap-2 items-center">
@@ -2272,7 +2071,7 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
                   </GridCol>
                   <GridCol span={12}>
                     <Input
-                      label="상품 분류"
+                      label="상품 그룹"
                       placeholder="예: 의류 > 남성 > 셔츠"
                       helperText="구분자는 '>', ',', '/'를 사용할 수 있습니다."
                       value={(formData.basicInfo.classificationPath || []).join(' > ')}
@@ -2434,307 +2233,558 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
                   </GridCol>
                 </GridRow>
               </Card>
-              <Card>
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-bold mb-2">Variants / Options</h2>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      className="text-sm text-blue-600"
-                      onClick={addOptionGroup}
-                    >
-                      + 그룹
-                    </button>
-                    <button
-                      type="button"
-                      className="text-sm text-green-600"
-                      onClick={saveVariants}
-                    >
-                      Variants 저장
-                    </button>
-                  </div>
-                </div>
-                <div className="text-sm text-gray-700">
-                  {formData.additionalInfo.options &&
-                  formData.additionalInfo.options.length > 0 ? (
-                    <div className="space-y-2">
-                      {formData.additionalInfo.options.map((opt: any) => {
-                        return (
-                          <div
-                            key={opt.id}
-                            className="border rounded p-2 bg-gray-50"
-                          >
-                            <div className="flex justify-between items-center">
-                              <div className="font-semibold">
-                                {opt.name && String(opt.name).trim() ? opt.name : '옵션'} ({(opt.values || []).length})
-                              </div>
-                              <div>
-                                <button
-                                  type="button"
-                                  className="text-xs text-green-600 mr-2"
-                                  onClick={() => addOptionValue(opt.id)}
-                                >
-                                  값+
-                                </button>
-                                <button
-                                  type="button"
-                                  className="text-xs text-red-600"
-                                  onClick={() => removeOptionGroup(opt.id)}
-                                >
-                                  그룹-
-                                </button>
-                              </div>
-                            </div>
-                            <div className="mt-2 space-y-1">
-                              {(opt.values || []).map((v: any) => {
-                                const memoValues = Array.isArray(v.option_memos)
-                                  ? [...v.option_memos, '', '', '', '', ''].slice(0, 5)
-                                  : ['', '', '', '', ''];
-                                const optionMargin = Number(v.selling_price || 0) - Number(v.option_supply_price ?? v.supply_price ?? v.cost_price ?? 0);
-                                return (
-                                  <div
-                                    key={v.id}
-                                    className="p-1 bg-white rounded flex gap-2 items-center"
-                                  >
-                                    <button
-                                      type="button"
-                                      className="text-xs text-gray-500 mr-2"
-                                      onClick={() =>
-                                        setExpandedOptionValueIds((s) => ({
-                                          ...s,
-                                          [v.id]: !s[v.id],
-                                        }))
-                                      }
-                                    >
-                                      {expandedOptionValueIds[v.id] ? '접기' : '상세'}
-                                    </button>
-                                    <input
-                                      className="px-2 py-1 border rounded w-28"
-                                      value={v.value}
-                                      onChange={(e) =>
-                                        updateOptionValue(opt.id, v.id, {
-                                          value: e.target.value,
-                                        })
-                                      }
-                                    />
-                                    <input
-                                      className="px-2 py-1 border rounded w-20"
-                                      type="number"
-                                      value={v.additionalPrice ?? 0}
-                                      onChange={(e) =>
-                                        updateOptionValue(opt.id, v.id, {
-                                          additionalPrice: Number(e.target.value || 0),
-                                        })
-                                      }
-                                    />
-                                    <input
-                                      className="px-2 py-1 border rounded w-20"
-                                      type="number"
-                                      value={v.stock ?? 0}
-                                      onChange={(e) =>
-                                        updateOptionValue(opt.id, v.id, {
-                                          stock: Number(e.target.value || 0),
-                                        })
-                                      }
-                                    />
-                                    <button
-                                      className="text-sm text-red-600"
-                                      onClick={() => removeOptionValue(opt.id, v.id)}
-                                    >
-                                      삭제
-                                    </button>
-                                    {expandedOptionValueIds[v.id] && (
-                                      <div className="mt-2 w-full border-t pt-2">
-                                        <div className="text-xs text-gray-500 mb-1">상세 정보</div>
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
-                                          <div>
-                                            <div className="text-xs text-gray-400">SKU (옵션코드)</div>
-                                            <input className="px-2 py-1 border rounded w-full" placeholder="SKU" value={v.sku || ''} onChange={(e) => updateOptionValue(opt.id, v.id, { sku: e.target.value })} />
-                                          </div>
-                                          <div>
-                                            <div className="text-xs text-gray-400">바코드1</div>
-                                            <input className="px-2 py-1 border rounded w-full" placeholder="바코드1" value={v.barcode1 || ''} onChange={(e) => updateOptionValue(opt.id, v.id, { barcode1: e.target.value })} />
-                                          </div>
-                                          <div>
-                                            <div className="text-xs text-gray-400">바코드2</div>
-                                            <input className="px-2 py-1 border rounded w-full" placeholder="바코드2" value={v.barcode2 || ''} onChange={(e) => updateOptionValue(opt.id, v.id, { barcode2: e.target.value })} />
-                                          </div>
-                                          <div>
-                                            <div className="text-xs text-gray-400">바코드3</div>
-                                            <input className="px-2 py-1 border rounded w-full" placeholder="바코드3" value={v.barcode3 || ''} onChange={(e) => updateOptionValue(opt.id, v.id, { barcode3: e.target.value })} />
-                                          </div>
-                                          <div>
-                                            <div className="text-xs text-gray-400">새 바코드</div>
-                                            <input className="px-2 py-1 border rounded w-full" placeholder="새로운 바코드" value={v.barcode_new || ''} onChange={(e) => updateOptionValue(opt.id, v.id, { barcode_new: e.target.value })} />
-                                          </div>
-                                          <div>
-                                            <div className="text-xs text-gray-400">옵션 공급처명</div>
-                                            <input className="px-2 py-1 border rounded w-full" placeholder="옵션 공급처명" value={v.supplier_name || ''} onChange={(e) => updateOptionValue(opt.id, v.id, { supplier_name: e.target.value })} />
-                                          </div>
-                                          <div>
-                                            <div className="text-xs text-gray-400">사입 옵션명</div>
-                                            <input className="px-2 py-1 border rounded w-full" placeholder="사입 옵션명" value={v.purchase_option_name || ''} onChange={(e) => updateOptionValue(opt.id, v.id, { purchase_option_name: e.target.value })} />
-                                          </div>
-                                          <div>
-                                            <div className="text-xs text-gray-400">안정재고</div>
-                                            <input className="px-2 py-1 border rounded w-full" placeholder="안정재고" type="number" value={v.safe_stock || 0} onChange={(e) => updateOptionValue(opt.id, v.id, { safe_stock: Number(e.target.value || 0) })} />
-                                          </div>
-                                        </div>
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm mt-3">
-                                          <div>
-                                            <div className="text-xs text-gray-400">원가</div>
-                                            <input className="px-2 py-1 border rounded w-full" placeholder="원가" type="number" value={v.cost_price || 0} onChange={(e) => updateOptionValue(opt.id, v.id, { cost_price: Number(e.target.value || 0) })} />
-                                          </div>
-                                          <div>
-                                            <div className="text-xs text-gray-400">판매가</div>
-                                            <input className="px-2 py-1 border rounded w-full" placeholder="판매가" type="number" value={v.selling_price || 0} onChange={(e) => updateOptionValue(opt.id, v.id, { selling_price: Number(e.target.value || 0) })} />
-                                          </div>
-                                          <div>
-                                            <div className="text-xs text-gray-400">옵션 공급가</div>
-                                            <input className="px-2 py-1 border rounded w-full" placeholder="옵션 공급가" type="number" value={v.option_supply_price || v.supply_price || 0} onChange={(e) => updateOptionValue(opt.id, v.id, { option_supply_price: Number(e.target.value || 0), supply_price: Number(e.target.value || 0) })} />
-                                          </div>
-                                          <div>
-                                            <div className="text-xs text-gray-400">마진 금액</div>
-                                            <input className="px-2 py-1 border rounded w-full" readOnly disabled value={Number.isFinite(optionMargin) ? optionMargin.toFixed(2) : '0.00'} />
-                                          </div>
-                                        </div>
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm mt-3">
-                                          <div>
-                                            <div className="text-xs text-gray-400">판매처 옵션코드</div>
-                                            <input className="px-2 py-1 border rounded w-full" placeholder="판매처 옵션코드" value={v.channel_option_code || ''} onChange={(e) => updateOptionValue(opt.id, v.id, { channel_option_code: e.target.value })} />
-                                          </div>
-                                          <div>
-                                            <div className="text-xs text-gray-400">판매처별 옵션코드</div>
-                                            <input className="px-2 py-1 border rounded w-full" placeholder="판매처별 옵션코드" value={v.per_channel_option_code || ''} onChange={(e) => updateOptionValue(opt.id, v.id, { per_channel_option_code: e.target.value })} />
-                                          </div>
-                                          <div>
-                                            <div className="text-xs text-gray-400">제조원</div>
-                                            <input className="px-2 py-1 border rounded w-full" placeholder="제조원" value={v.manufacturer || ''} onChange={(e) => updateOptionValue(opt.id, v.id, { manufacturer: e.target.value })} />
-                                          </div>
-                                          <div>
-                                            <div className="text-xs text-gray-400">제조국</div>
-                                            <input className="px-2 py-1 border rounded w-full" placeholder="제조국" value={v.manufacturer_country || ''} onChange={(e) => updateOptionValue(opt.id, v.id, { manufacturer_country: e.target.value })} />
-                                          </div>
-                                          <div>
-                                            <div className="text-xs text-gray-400">제품 소재</div>
-                                            <input className="px-2 py-1 border rounded w-full" placeholder="제품 소재" value={v.product_material || ''} onChange={(e) => updateOptionValue(opt.id, v.id, { product_material: e.target.value })} />
-                                          </div>
-                                          <div>
-                                            <div className="text-xs text-gray-400">제품 유형</div>
-                                            <input className="px-2 py-1 border rounded w-full" placeholder="제품 유형" value={v.product_type || ''} onChange={(e) => updateOptionValue(opt.id, v.id, { product_type: e.target.value })} />
-                                          </div>
-                                          <div>
-                                            <div className="text-xs text-gray-400">주의사항</div>
-                                            <input className="px-2 py-1 border rounded w-full" placeholder="주의사항" value={v.caution || ''} onChange={(e) => updateOptionValue(opt.id, v.id, { caution: e.target.value })} />
-                                          </div>
-                                          <div>
-                                            <div className="text-xs text-gray-400">사용기준</div>
-                                            <input className="px-2 py-1 border rounded w-full" placeholder="사용기준" value={v.usage_standard || ''} onChange={(e) => updateOptionValue(opt.id, v.id, { usage_standard: e.target.value })} />
-                                          </div>
-                                          <div>
-                                            <div className="text-xs text-gray-400">색상</div>
-                                            <input className="px-2 py-1 border rounded w-full" placeholder="색상" value={v.color || ''} onChange={(e) => updateOptionValue(opt.id, v.id, { color: e.target.value })} />
-                                          </div>
-                                          <div>
-                                            <div className="text-xs text-gray-400">사이즈</div>
-                                            <input className="px-2 py-1 border rounded w-full" placeholder="사이즈" value={v.size || ''} onChange={(e) => updateOptionValue(opt.id, v.id, { size: e.target.value })} />
-                                          </div>
-                                          <div>
-                                            <div className="text-xs text-gray-400">해외통화 옵션가</div>
-                                            <input className="px-2 py-1 border rounded w-full" placeholder="해외통화 옵션가" type="number" value={v.overseas_price || 0} onChange={(e) => updateOptionValue(opt.id, v.id, { overseas_price: Number(e.target.value || 0) })} />
-                                          </div>
-                                          <div>
-                                            <div className="text-xs text-gray-400">박스당 수량</div>
-                                            <input className="px-2 py-1 border rounded w-full" placeholder="박스당 수량" type="number" value={v.box_quantity || 0} onChange={(e) => updateOptionValue(opt.id, v.id, { box_quantity: Number(e.target.value || 0) })} />
-                                          </div>
-                                        </div>
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm mt-3">
-                                          <div className="flex items-center gap-2">
-                                            <input type="checkbox" checked={!!v.is_selling} onChange={(e) => updateOptionValue(opt.id, v.id, { is_selling: e.target.checked })} />
-                                            <span>판매여부</span>
-                                          </div>
-                                          <div className="flex items-center gap-2">
-                                            <input type="checkbox" checked={!!v.is_soldout} onChange={(e) => updateOptionValue(opt.id, v.id, { is_soldout: e.target.checked })} />
-                                            <span>품절여부</span>
-                                          </div>
-                                          <div className="flex items-center gap-2">
-                                            <input type="checkbox" checked={!!v.is_stock_linked} onChange={(e) => updateOptionValue(opt.id, v.id, { is_stock_linked: e.target.checked })} />
-                                            <span>재고연동</span>
-                                          </div>
-                                          <div className="flex items-center gap-2">
-                                            <input type="checkbox" checked={!!v.automation_flag} onChange={(e) => updateOptionValue(opt.id, v.id, { automation_flag: e.target.checked })} />
-                                            <span>발송/출고 자동화</span>
-                                          </div>
-                                          <div className="flex items-center gap-2">
-                                            <input type="checkbox" checked={!!v.non_display_shipping} onChange={(e) => updateOptionValue(opt.id, v.id, { non_display_shipping: e.target.checked })} />
-                                            <span>미진열 출고</span>
-                                          </div>
-                                        </div>
-                                        <div className="grid grid-cols-3 gap-2 text-sm mt-3">
-                                          <div>
-                                            <div className="text-xs text-gray-400">가로(cm)</div>
-                                            <input className="px-2 py-1 border rounded w-full" placeholder="가로(cm)" type="number" value={v.width_cm || 0} onChange={(e) => updateOptionValue(opt.id, v.id, { width_cm: Number(e.target.value || 0) })} />
-                                          </div>
-                                          <div>
-                                            <div className="text-xs text-gray-400">세로(cm)</div>
-                                            <input className="px-2 py-1 border rounded w-full" placeholder="세로(cm)" type="number" value={v.height_cm || 0} onChange={(e) => updateOptionValue(opt.id, v.id, { height_cm: Number(e.target.value || 0) })} />
-                                          </div>
-                                          <div>
-                                            <div className="text-xs text-gray-400">높이(cm)</div>
-                                            <input className="px-2 py-1 border rounded w-full" placeholder="높이(cm)" type="number" value={v.depth_cm || 0} onChange={(e) => updateOptionValue(opt.id, v.id, { depth_cm: Number(e.target.value || 0) })} />
-                                          </div>
-                                          <div>
-                                            <div className="text-xs text-gray-400">무게(g)</div>
-                                            <input className="px-2 py-1 border rounded w-full" placeholder="무게(g)" type="number" value={v.weight_g || 0} onChange={(e) => updateOptionValue(opt.id, v.id, { weight_g: Number(e.target.value || 0) })} />
-                                          </div>
-                                          <div>
-                                            <div className="text-xs text-gray-400">부피(cc)</div>
-                                            <input className="px-2 py-1 border rounded w-full" placeholder="부피(cc)" type="number" value={v.volume_cc || 0} onChange={(e) => updateOptionValue(opt.id, v.id, { volume_cc: Number(e.target.value || 0) })} />
-                                          </div>
-                                          <div className="col-span-3">
-                                            <div className="text-xs text-gray-400">창고 위치</div>
-                                            <input className="px-2 py-1 border rounded w-full" placeholder="창고 위치" value={v.warehouse_location || ''} onChange={(e) => updateOptionValue(opt.id, v.id, { warehouse_location: e.target.value })} />
-                                          </div>
-                                        </div>
-                                        <div className="mt-3">
-                                          <div className="text-xs text-gray-400 mb-1">비고</div>
-                                          <textarea className="w-full px-2 py-1 border rounded" placeholder="옵션 비고" value={v.note || ''} onChange={(e) => updateOptionValue(opt.id, v.id, { note: e.target.value })} />
-                                        </div>
-                                        <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
-                                          {memoValues.map((memoValue, memoIdx) => {
-                                            const nextMemos = [...memoValues];
-                                            return (
-                                              <div key={`option-memo-${v.id}-${memoIdx}`}>
-                                                <div className="text-xs text-gray-400 mb-1">옵션 메모 {memoIdx + 1}</div>
-                                                <textarea
-                                                  className="w-full px-2 py-1 border rounded"
-                                                  placeholder={`옵션 메모 ${memoIdx + 1}`}
-                                                  value={memoValue || ''}
-                                                  onChange={(e) => {
-                                                    nextMemos[memoIdx] = e.target.value;
-                                                    updateOptionValue(opt.id, v.id, { option_memos: nextMemos });
-                                                  }}
-                                                />
-                                              </div>
-                                            );
-                                          })}
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        );
-                      })}
+              {/* 옵션 / Variants */}
+              <Card id="variants-section" className="mt-6">
+  <div className="mb-4">
+    <h2 className="text-lg font-bold">옵션 / Variants</h2>
+    <p className="text-sm text-gray-500">
+      옵션값과 바코드/코드 등 상세 속성을 입력하세요. (재고/위치/입고 관련 항목은 비활성화)
+    </p>
+  </div>
+
+  <div className="mb-3 flex items-center gap-2">
+    <Button type="button" variant="outline" onClick={addOptionGroup}>옵션 그룹 추가</Button>
+  </div>
+
+  {(formData.additionalInfo.options || []).map((g: any) => (
+    <div key={g.id} className="mb-6 border rounded-md">
+      {/* 그룹 헤더 */}
+      <div className="p-3 flex items-center gap-3 border-b">
+        <Input
+          label="옵션 그룹명"
+          placeholder="예: 색상, 사이즈 등"
+          value={g.name || ""}
+          onChange={(e) =>
+            setFormData((prev) => {
+              const copy = JSON.parse(JSON.stringify(prev));
+              const gg = (copy.additionalInfo.options || []).find((x: any) => x.id === g.id);
+              if (gg) gg.name = e.target.value;
+              return copy;
+            })
+          }
+          fullWidth
+        />
+        <label className="text-sm text-gray-700 inline-flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={!!g.isRequired}
+            onChange={(e) =>
+              setFormData((prev) => {
+                const copy = JSON.parse(JSON.stringify(prev));
+                const gg = (copy.additionalInfo.options || []).find((x: any) => x.id === g.id);
+                if (gg) gg.isRequired = e.target.checked;
+                return copy;
+              })
+            }
+          />
+          필수 그룹
+        </label>
+        <div className="flex-1" />
+        <Button type="button" variant="outline" onClick={() => addOptionValue(g.id)}>값 추가</Button>
+        <Button type="button" variant="ghost" onClick={() => removeOptionGroup(g.id)}>그룹 삭제</Button>
+      </div>
+
+      {/* 값 리스트 */}
+      {(g.values || []).map((v: any) => {
+        const key = `${g.id}-${v.id}`;
+        const open = !!expandedOptionValueIds[key];
+        const selling = Number(v.selling_price || v.sellingPrice || v.price || v.additionalPrice || 0);
+        const optionSupply = Number(v.option_supply_price ?? v.supply_price ?? v.cost_price ?? 0);
+        const margin = Number.isFinite(selling - optionSupply) ? Number((selling - optionSupply).toFixed(2)) : 0;
+
+        return (
+          <div key={v.id} className="p-3 border-t">
+            <div className="flex items-center justify-between">
+              <div className="font-medium text-sm">
+                {(g.name || "옵션")} : {v.value || "(값 없음)"} · 코드: {v.sku || v.code || "-"}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  size="small"
+                  variant="ghost"
+                  onClick={() =>
+                    setExpandedOptionValueIds((prev) => ({ ...prev, [key]: !open }))
+                  }
+                >
+                  {open ? "접기" : "펼치기"}
+                </Button>
+                <Button
+                  type="button"
+                  size="small"
+                  variant="ghost"
+                  onClick={() => removeOptionValue(g.id, v.id)}
+                >
+                  삭제
+                </Button>
+              </div>
+            </div>
+
+            {open && (
+              <div className="mt-3">
+                {/* 1행: 옵션 기본 (필수) */}
+                <GridRow gutter={24}>
+                  <GridCol span={12}>
+                    <Input
+                      label="옵션명 (필수)"
+                      required
+                      placeholder="예: 블랙, L"
+                      value={v.value || ""}
+                      onChange={(e) => updateOptionValue(g.id, v.id, { value: e.target.value })}
+                      fullWidth
+                    />
+                  </GridCol>
+                  <GridCol span={12}>
+                    <Input
+                      label="옵션코드 (필수)"
+                      required
+                      placeholder="내부 옵션코드"
+                      value={v.sku || ""}
+                      onChange={(e) => updateOptionValue(g.id, v.id, { sku: e.target.value })}
+                      fullWidth
+                    />
+                  </GridCol>
+                </GridRow>
+
+                {/* 2행: 바코드 */}
+                <GridRow gutter={24}>
+                  <GridCol span={12}>
+                    <Input
+                      label="바코드번호 (필수)"
+                      required
+                      placeholder="EAN-13/CODE128"
+                      value={v.barcode1 || ""}
+                      onChange={(e) => updateOptionValue(g.id, v.id, { barcode1: e.target.value })}
+                      fullWidth
+                    />
+                  </GridCol>
+                  <GridCol span={12}>
+                    <Input
+                      label="새로운바코드"
+                      placeholder="신규 바코드"
+                      value={v.barcode_new || ""}
+                      onChange={(e) => updateOptionValue(g.id, v.id, { barcode_new: e.target.value })}
+                      fullWidth
+                    />
+                  </GridCol>
+                  <GridCol span={12}>
+                    <Input
+                      label="바코드번호2"
+                      placeholder="서브 바코드 2"
+                      value={v.barcode2 || ""}
+                      onChange={(e) => updateOptionValue(g.id, v.id, { barcode2: e.target.value })}
+                      fullWidth
+                    />
+                  </GridCol>
+                  <GridCol span={12}>
+                    <Input
+                      label="바코드번호3"
+                      placeholder="서브 바코드 3"
+                      value={v.barcode3 || ""}
+                      onChange={(e) => updateOptionValue(g.id, v.id, { barcode3: e.target.value })}
+                      fullWidth
+                    />
+                  </GridCol>
+                </GridRow>
+
+                {/* 3행: 공급처/명칭 */}
+                <GridRow gutter={24}>
+                  <GridCol span={12}>
+                    <Input
+                      label="옵션공급처명"
+                      placeholder="공급처명"
+                      value={v.supplier_name || ""}
+                      onChange={(e) => updateOptionValue(g.id, v.id, { supplier_name: e.target.value })}
+                      fullWidth
+                    />
+                  </GridCol>
+                  <GridCol span={12}>
+                    <Input
+                      label="사입옵션명"
+                      placeholder="실제 매입 옵션명"
+                      value={v.purchase_option_name || ""}
+                      onChange={(e) => updateOptionValue(g.id, v.id, { purchase_option_name: e.target.value })}
+                      fullWidth
+                    />
+                  </GridCol>
+                </GridRow>
+
+                {/* 4행: 가격/마진 */}
+                <GridRow gutter={24}>
+                  <GridCol span={6}>
+                    <Input
+                      label="원가"
+                      type="number"
+                      placeholder="원가"
+                      value={v.cost_price ?? 0}
+                      onChange={(e) => updateOptionValue(g.id, v.id, { cost_price: Number(e.target.value || 0) })}
+                      fullWidth
+                    />
+                  </GridCol>
+                  <GridCol span={6}>
+                    <Input
+                      label="옵션공급가"
+                      type="number"
+                      placeholder="옵션공급가"
+                      value={v.option_supply_price ?? v.supply_price ?? 0}
+                      onChange={(e) => updateOptionValue(g.id, v.id, { option_supply_price: Number(e.target.value || 0) })}
+                      fullWidth
+                    />
+                  </GridCol>
+                  <GridCol span={6}>
+                    <Input
+                      label="판매단가 (필수)"
+                      required
+                      type="number"
+                      placeholder="판매단가"
+                      value={v.selling_price ?? 0}
+                      onChange={(e) => updateOptionValue(g.id, v.id, { selling_price: Number(e.target.value || 0) })}
+                      fullWidth
+                    />
+                  </GridCol>
+                  <GridCol span={6}>
+                    <Input
+                      label="마진금액"
+                      type="number"
+                      value={margin}
+                      onChange={() => {}}
+                      fullWidth
+                      disabled
+                    />
+                  </GridCol>
+                </GridRow>
+
+                {/* 5행: 상태/연동 */}
+                <GridRow gutter={24}>
+                  <GridCol span={6}>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">판매여부 (필수)</label>
+                    <div className="flex items-center gap-3">
+                      <label className="inline-flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={!!v.is_selling}
+                          onChange={(e) => updateOptionValue(g.id, v.id, { is_selling: e.target.checked })}
+                        />
+                        판매중
+                      </label>
+                      <label className="inline-flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={!!v.is_soldout}
+                          onChange={(e) => updateOptionValue(g.id, v.id, { is_soldout: e.target.checked })}
+                        />
+                        품절
+                      </label>
                     </div>
-                  ) : (
-                    <div className="text-gray-500">Variants 없음</div>
-                  )}
+                  </GridCol>
+                  <GridCol span={6}>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">재고연동여부 (필수)</label>
+                    <div className="flex items-center gap-4">
+                      <label className="inline-flex items-center gap-2 text-sm">
+                        <input
+                          type="radio"
+                          name={`stock-linked-${key}`}
+                          checked={!!v.is_stock_linked}
+                          onChange={() => updateOptionValue(g.id, v.id, { is_stock_linked: true })}
+                        />
+                        연동
+                      </label>
+                      <label className="inline-flex items-center gap-2 text-sm">
+                        <input
+                          type="radio"
+                          name={`stock-linked-${key}`}
+                          checked={!v.is_stock_linked}
+                          onChange={() => updateOptionValue(g.id, v.id, { is_stock_linked: false })}
+                        />
+                        미연동
+                      </label>
+                    </div>
+                  </GridCol>
+                  <GridCol span={6}>
+                    <Input
+                      label="관리등급"
+                      placeholder="일반 / 우수 / 특별"
+                      value={v.management_grade || ""}
+                      onChange={(e) => updateOptionValue(g.id, v.id, { management_grade: e.target.value })}
+                      fullWidth
+                    />
+                  </GridCol>
+                  <GridCol span={6}>
+                    <Input
+                      label="비고"
+                      placeholder="비고"
+                      value={v.note || ""}
+                      onChange={(e) => updateOptionValue(g.id, v.id, { note: e.target.value })}
+                      fullWidth
+                    />
+                  </GridCol>
+                </GridRow>
+
+                {/* 6행: 물리/규격 */}
+                <GridRow gutter={24}>
+                  <GridCol span={6}>
+                    <Input
+                      label="가로(cm)"
+                      type="number"
+                      placeholder="가로"
+                      value={v.width_cm ?? 0}
+                      onChange={(e) => updateOptionValue(g.id, v.id, { width_cm: Number(e.target.value || 0) })}
+                      fullWidth
+                    />
+                  </GridCol>
+                  <GridCol span={6}>
+                    <Input
+                      label="세로(cm)"
+                      type="number"
+                      placeholder="세로"
+                      value={v.height_cm ?? 0}
+                      onChange={(e) => updateOptionValue(g.id, v.id, { height_cm: Number(e.target.value || 0) })}
+                      fullWidth
+                    />
+                  </GridCol>
+                  <GridCol span={6}>
+                    <Input
+                      label="높이(cm)"
+                      type="number"
+                      placeholder="높이"
+                      value={v.depth_cm ?? 0}
+                      onChange={(e) => updateOptionValue(g.id, v.id, { depth_cm: Number(e.target.value || 0) })}
+                      fullWidth
+                    />
+                  </GridCol>
+                  <GridCol span={6}>
+                    <Input
+                      label="무게(g)"
+                      type="number"
+                      placeholder="무게"
+                      value={v.weight_g ?? 0}
+                      onChange={(e) => updateOptionValue(g.id, v.id, { weight_g: Number(e.target.value || 0) })}
+                      fullWidth
+                    />
+                  </GridCol>
+                  <GridCol span={6}>
+                    <Input
+                      label="부피(cm³)"
+                      type="number"
+                      placeholder="부피"
+                      value={v.volume_cc ?? 0}
+                      onChange={(e) => updateOptionValue(g.id, v.id, { volume_cc: Number(e.target.value || 0) })}
+                      fullWidth
+                    />
+                  </GridCol>
+                </GridRow>
+
+                {/* 7행: 색상/사이즈/박스 */}
+                <GridRow gutter={24}>
+                  <GridCol span={6}>
+                    <Input
+                      label="색상"
+                      placeholder="예: 블랙"
+                      value={v.color || ""}
+                      onChange={(e) => updateOptionValue(g.id, v.id, { color: e.target.value })}
+                      fullWidth
+                    />
+                  </GridCol>
+                  <GridCol span={6}>
+                    <Input
+                      label="사이즈"
+                      placeholder="예: L"
+                      value={v.size || ""}
+                      onChange={(e) => updateOptionValue(g.id, v.id, { size: e.target.value })}
+                      fullWidth
+                    />
+                  </GridCol>
+                  <GridCol span={6}>
+                    <Input
+                      label="박스당수량"
+                      type="number"
+                      placeholder="박스당수량"
+                      value={v.box_quantity ?? 0}
+                      onChange={(e) => updateOptionValue(g.id, v.id, { box_quantity: Number(e.target.value || 0) })}
+                      fullWidth
+                    />
+                  </GridCol>
+                </GridRow>
+
+                {/* 8행: 제조/소재/유형 등 */}
+                <GridRow gutter={24}>
+                  <GridCol span={6}>
+                    <Input
+                      label="제조원"
+                      placeholder="제조원"
+                      value={v.manufacturer || ""}
+                      onChange={(e) => updateOptionValue(g.id, v.id, { manufacturer: e.target.value })}
+                      fullWidth
+                    />
+                  </GridCol>
+                  <GridCol span={6}>
+                    <Input
+                      label="제조국"
+                      placeholder="제조국"
+                      value={v.manufacturer_country || ""}
+                      onChange={(e) => updateOptionValue(g.id, v.id, { manufacturer_country: e.target.value })}
+                      fullWidth
+                    />
+                  </GridCol>
+                  <GridCol span={6}>
+                    <Input
+                      label="제품소재"
+                      placeholder="제품소재"
+                      value={v.product_material || ""}
+                      onChange={(e) => updateOptionValue(g.id, v.id, { product_material: e.target.value })}
+                      fullWidth
+                    />
+                  </GridCol>
+                  <GridCol span={6}>
+                    <Input
+                      label="제품유형"
+                      placeholder="제품유형"
+                      value={v.product_type || ""}
+                      onChange={(e) => updateOptionValue(g.id, v.id, { product_type: e.target.value })}
+                      fullWidth
+                    />
+                  </GridCol>
+                  <GridCol span={6}>
+                    <Input
+                      label="주의사항"
+                      placeholder="주의사항"
+                      value={v.caution || ""}
+                      onChange={(e) => updateOptionValue(g.id, v.id, { caution: e.target.value })}
+                      fullWidth
+                    />
+                  </GridCol>
+                  <GridCol span={6}>
+                    <Input
+                      label="사용기준"
+                      placeholder="사용기준"
+                      value={v.usage_standard || ""}
+                      onChange={(e) => updateOptionValue(g.id, v.id, { usage_standard: e.target.value })}
+                      fullWidth
+                    />
+                  </GridCol>
+                </GridRow>
+
+                {/* 9행: 판매처 코드 / 해외통화옵션가 */}
+                <GridRow gutter={24}>
+                  <GridCol span={6}>
+                    <Input
+                      label="판매처옵션코드"
+                      placeholder="판매처 옵션코드"
+                      value={v.channel_option_code || ""}
+                      onChange={(e) => updateOptionValue(g.id, v.id, { channel_option_code: e.target.value })}
+                      fullWidth
+                    />
+                  </GridCol>
+                  <GridCol span={6}>
+                    <Input
+                      label="판매처별 옵션코드"
+                      placeholder="판매처별 옵션코드"
+                      value={v.per_channel_option_code || ""}
+                      onChange={(e) => updateOptionValue(g.id, v.id, { per_channel_option_code: e.target.value })}
+                      fullWidth
+                    />
+                  </GridCol>
+                  <GridCol span={6}>
+                    <Input
+                      label="해외통화옵션가"
+                      placeholder="예: JPY/1000"
+                      value={v.overseas_price || ""}
+                      onChange={(e) => updateOptionValue(g.id, v.id, { overseas_price: e.target.value })}
+                      fullWidth
+                    />
+                  </GridCol>
+                </GridRow>
+
+                {/* 10행: 재고/위치 (비활성화) */}
+                <GridRow gutter={24}>
+                  <GridCol span={6}>
+                    <Input
+                      label="현재재고 (비활성화)"
+                      type="number"
+                      value={v.stock ?? 0}
+                      onChange={() => {}}
+                      fullWidth
+                      disabled
+                    />
+                  </GridCol>
+                  <GridCol span={6}>
+                    <Input
+                      label="안전재고 (비활성화)"
+                      type="number"
+                      value={v.safe_stock ?? 0}
+                      onChange={() => {}}
+                      fullWidth
+                      disabled
+                    />
+                  </GridCol>
+                  <GridCol span={12}>
+                    <Input
+                      label="상품위치 (비활성화)"
+                      placeholder="준비중"
+                      value={v.warehouse_location || ""}
+                      onChange={() => {}}
+                      fullWidth
+                      disabled
+                    />
+                  </GridCol>
+                </GridRow>
+
+                {/* 11행: 자동화/미진열출고 */}
+                <GridRow gutter={24}>
+                  <GridCol span={6}>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">발송및출고자동화여부 (비활성화)</label>
+                    <div className="inline-flex items-center gap-2">
+                      <input type="checkbox" checked={!!v.automation_flag} disabled onChange={() => {}} />
+                      <span className="text-xs text-gray-500">준비중</span>
+                    </div>
+                  </GridCol>
+                  <GridCol span={6}>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">미진열출고여부</label>
+                    <div className="inline-flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={!!v.non_display_shipping}
+                        onChange={(e) => updateOptionValue(g.id, v.id, { non_display_shipping: e.target.checked })}
+                      />
+                      <span className="text-xs text-gray-600">진열 없이 출고 가능</span>
+                    </div>
+                  </GridCol>
+                </GridRow>
+
+                {/* 12행: 옵션 메모 1~5 */}
+                <div className="mt-3">
+                  <div className="text-sm font-medium text-gray-700 mb-2">옵션 메모 (1~5)</div>
+                  <GridRow gutter={24}>
+                    {(() => {
+                      const memos = Array.isArray(v.option_memos) ? [...v.option_memos] : ["", "", "", "", ""];
+                      while (memos.length < 5) memos.push("");
+                      return memos.slice(0, 5).map((mv: string, mi: number) => (
+                        <GridCol key={`memo-${mi}`} span={12}>
+                          <Input
+                            label={`옵션메모 ${mi + 1}`}
+                            placeholder="메모 입력"
+                            value={mv || ""}
+                            onChange={(e) => {
+                              const next = [...memos];
+                              next[mi] = e.target.value;
+                              updateOptionValue(g.id, v.id, { option_memos: next });
+                            }}
+                            fullWidth
+                          />
+                        </GridCol>
+                      ));
+                    })()}
+                  </GridRow>
                 </div>
-              </Card>
-              <Card>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  ))}
+</Card>
+              <Card id="pricing-section">
                 <div className="mb-4">
                   <h2 className="text-lg font-bold">가격 정보</h2>
                   <p className="text-sm text-gray-500">
@@ -2775,7 +2825,7 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
                   </GridCol>
                 </GridRow>
               </Card>
-              <Card>
+              <Card id="inventory-section">
                 <div className="mb-4">
                   <h2 className="text-lg font-bold">재고 및 상태</h2>
                   <p className="text-sm text-gray-500">
@@ -2797,7 +2847,7 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
                   </GridCol>
                 </GridRow>
               </Card>
-              <Card>
+              <Card id="activation-section">
                 <div className="mb-4">
                   <h2 className="text-lg font-bold">활성화 여부</h2>
                   <p className="text-sm text-gray-500">
@@ -2818,7 +2868,7 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
                 </GridRow>
               </Card>
               {/* Barcode print settings moved to Barcode Management > Barcode Settings */}
-              <Card>
+              <Card id="advanced-section">
                 <div className="mb-4">
                   <h2 className="text-lg font-bold">고급 설정</h2>
                   <p className="text-sm text-gray-500">
@@ -2866,120 +2916,65 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
                 </div>
               </Card>
               <div className="sticky bottom-0 bg-white py-4 flex justify-end border-t z-10">
-                <Stack direction="row" gap={3}>
-                  <Button
-                    variant="outline"
-                    onClick={() => onNavigate?.("products-list")}
-                  >
-                    취소
-                  </Button>
-                  <Button
-                    variant="primary"
-                    loading={saving}
-                    onClick={handleSave}
-                  >
-                    {saving ? "저장중..." : "물품등록"}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    loading={saving}
-                    onClick={handleSaveAndContinue}
-                  >
-                    {saving ? "처리중..." : "등록후계속"}
-                  </Button>
-                </Stack>
+                <Button
+                  variant="outline"
+                  onClick={() => onNavigate?.("products-list")}
+                >
+                  취소
+                </Button>
               </div>
             </form>
+            </GridCol>
+            <GridCol span={1}>
+              <div></div>
+            </GridCol>
             {/* 사이드 패널 영역 */}
-            <aside className="w-full md:w-80 flex-shrink-0">
-              <Card className="mb-6">
-                <h2 className="text-lg font-bold mb-2">상품 미리보기</h2>
-                <div className="flex flex-col items-center gap-2">
+            <GridCol span={5} className="sticky top-20">
+              <div className="space-y-4">
+                {/* 상품 미리보기 */}
+                <Card>
+                  <h2 className="text-lg font-bold mb-4">상품 미리보기</h2>
+                  <div className="flex flex-col items-center gap-4">
                     {formData.basicInfo.representativeImage ? (
-                    <img
-                      src={formData.basicInfo.representativeImage}
-                      alt="대표 이미지"
-                      className="w-32 h-32 object-cover rounded"
-                    />
-                  ) : (
-                    <div className="w-32 h-32 bg-gray-100 flex items-center justify-center rounded text-gray-400">
-                      이미지 없음
-                    </div>
-                  )}
-                  <div className="text-base font-semibold mt-2">
-                    {formData.basicInfo.productName || "상품명 미입력"}
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    {formData.basicInfo.codes.internal || "상품코드 미입력"}
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    {formData.basicInfo.categoryId || "카테고리 미입력"}
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    {formData.basicInfo.brandId || "브랜드 미입력"}
-                  </div>
-                </div>
-              </Card>
-              <Card>
-                <h2 className="text-lg font-bold mb-2">상품 요약</h2>
-                <ul className="text-sm text-gray-700 space-y-1">
-                  <li>
-                    판매가:{" "}
-                    <span className="font-semibold">
-                      {formData.basicInfo.pricing.sellingPrice
-                        ? `${formData.basicInfo.pricing.sellingPrice.toLocaleString()}원`
-                        : "-"}
-                    </span>
-                  </li>
-                  <li>
-                    재고:{" "}
-                    <span className="font-semibold">
-                      {formData.basicInfo.stock ?? "-"}
-                    </span>
-                  </li>
-                  <li>
-                    상태:{" "}
-                    <span className="font-semibold">
-                      {formData.basicInfo.isSelling ? "판매중" : "판매중지"}
-                    </span>
-                  </li>
-                  <li>
-                    활성화:{" "}
-                    <span className="font-semibold">
-                      {formData.basicInfo.active ? "활성" : "비활성"}
-                    </span>
-                  </li>
-                </ul>
-              </Card>
-              
-              <Card className="mt-4">
-                <h2 className="text-lg font-bold mb-2">External Mall Info</h2>
-                <div className="text-sm text-gray-700 space-y-1">
-                  <div>
-                    External SKU: {formData.basicInfo.externalProductId || "-"}
-                  </div>
-                  <div>
-                    External URL:{" "}
-                    {formData.basicInfo.externalUrl ? (
-                      <a
-                        className="text-blue-600"
-                        href={formData.basicInfo.externalUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        링크
-                      </a>
+                      <img
+                        src={formData.basicInfo.representativeImage}
+                        alt="대표 이미지"
+                        className="w-32 h-32 object-cover rounded-lg border"
+                      />
                     ) : (
-                      "-"
+                      <div className="w-32 h-32 bg-gray-100 flex items-center justify-center rounded-lg border text-gray-400 text-sm">
+                        이미지 없음
+                      </div>
                     )}
+                    <div className="text-center">
+                      <div className="text-base font-semibold text-gray-900">
+                        {formData.basicInfo.productName || "상품명 미입력"}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {formData.basicInfo.codes.internal || "상품코드 미입력"}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {formData.basicInfo.categoryId || "카테고리 미입력"}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {formData.basicInfo.brandId || "브랜드 미입력"}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    Channels: {(formData.basicInfo.codes.channels || []).length}
-                  </div>
-                </div>
-              </Card>
-            </aside>
-          </div>
+                </Card>
+
+                {/* 섹션 앵커 버튼 */}
+                <Card>
+                  <div className="text-sm font-semibold mb-2">빠른 이동</div>
+                  <ul className="space-y-1 text-sm text-gray-700">
+                    <li><a href="#basic-info-section" className="hover:underline">기본 정보</a></li>
+                    <li><a href="#variants-section" className="hover:underline">옵션 / Variants</a></li>
+                  </ul>
+                </Card>
+              </div>
+            </GridCol>
+            <GridCol span={3}><div></div></GridCol>
+          </GridRow>
         </div>
       </Container>
       <SideGuide open={isHelpOpen} onClose={() => setIsHelpOpen(false)} title="상품 등록 도움말">

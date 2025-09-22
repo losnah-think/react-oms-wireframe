@@ -70,27 +70,12 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 }) => {
   // id 추출 우선순위: prop -> Next.js router.query -> query string ?id= -> last path segment -> fallback
   const router = useRouter();
-  const fromRouter = router?.query?.id ? String(router.query.id) : undefined;
-  const fromSearch =
-    typeof window !== "undefined"
-      ? new URLSearchParams(window.location.search).get("id") || undefined
-      : undefined;
-  const fromPath =
-    typeof window !== "undefined"
-      ? ((): string | undefined => {
-          try {
-            const segs = window.location.pathname.split("/").filter(Boolean);
-            if (segs.length === 0) return undefined;
-            // assume last segment is id when path looks like /products/123
-            return segs[segs.length - 1];
-          } catch (e) {
-            return undefined;
-          }
-        })()
-      : undefined;
+  // server-rendered default; real value is populated on client to avoid hydration mismatch
+  const [clientProductId, setClientProductId] = useState<string | null>(null);
+  const initialProductId = propProductId || (router?.query?.id ? String(router.query.id) : undefined) || "1";
 
-  const productId =
-    propProductId || fromRouter || fromSearch || fromPath || "1";
+  // compute a stable productId for rendering: prefer prop/router on server, but allow client override
+  const productId = clientProductId ?? initialProductId;
   const handleBack = () => {
     try {
       if (window && window.history && window.history.length > 1) {
@@ -122,23 +107,9 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   const [showVariantModal, setShowVariantModal] = useState(false);
   const [variantForm, setVariantForm] = useState<any>(null);
   const [editingVariantIndex, setEditingVariantIndex] = useState<number | null>(null);
-  // ---- Option Edit Route Detection (unify to full page, not modal) ----
-  const isOptionRoute = useMemo(() => {
-    if (typeof window === "undefined") return false;
-    return window.location.pathname.includes("/options/");
-  }, [router?.asPath]);
-
-  const optionKey = useMemo(() => {
-    if (typeof window === "undefined") return null;
-    try {
-      const segs = window.location.pathname.split("/").filter(Boolean);
-      const idx = segs.indexOf("options");
-      if (idx >= 0 && segs[idx + 1]) return decodeURIComponent(segs[idx + 1]);
-      return null;
-    } catch {
-      return null;
-    }
-  }, [router?.asPath]);
+  // ---- Option Edit Route Detection (client-only) ----
+  const [isOptionRoute, setIsOptionRoute] = useState(false);
+  const [optionKey, setOptionKey] = useState<string | null>(null);
 
   const currentVariantIndex = useMemo(() => {
     if (!isOptionRoute || !product || !Array.isArray(product.variants) || !optionKey) return -1;
@@ -171,6 +142,77 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const lastSavedDraftRef = useRef<any>(null);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+
+  const downloadCsvTemplate = useCallback((platformId?: string) => {
+    // Simple client-side template generator (keeps parity with ProductCsvUploadPage)
+    let tpl = "";
+    if (platformId === "makeshop") {
+      const headers = [
+        "상품코드",
+        "상품명",
+        "판매가",
+        "카테고리",
+        "브랜드",
+        "재고",
+        "상태",
+        "상품코드(옵션용)",
+        "이미지1",
+        "이미지2",
+      ];
+      tpl = headers.join(",") + "\n" + headers.map(() => "샘플값").join(",");
+    } else if (platformId === "cafe24") {
+      const headers = ["상품코드", "상품명", "판매가", "공급가", "카테고리", "브랜드", "재고수량"];
+      tpl = headers.join(",") + "\n" + headers.map(() => "샘플값").join(",");
+    } else if (platformId === "smartstore") {
+      const headers = ["상품ID", "상품명", "판매가격", "카테고리명", "브랜드명", "대표이미지"];
+      tpl = headers.join(",") + "\n" + headers.map(() => "샘플값").join(",");
+    } else {
+      tpl = "상품코드,상품명,판매가,카테고리,브랜드\n샘플코드,샘플상품,10000,기본카테고리,브랜드A";
+    }
+
+    const blob = new Blob([tpl], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${(platformId || "template")}_template.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }, []);
+
+  // Populate client-only values to avoid SSR/CSR hydration mismatch
+  useEffect(() => {
+    // set clientProductId based on query params or location pathname
+    try {
+      if (typeof window !== "undefined") {
+        const searchId = new URLSearchParams(window.location.search).get("id");
+        if (searchId) setClientProductId(searchId);
+        else {
+          const segs = window.location.pathname.split("/").filter(Boolean);
+          if (segs.length > 0) {
+            const last = segs[segs.length - 1];
+            // if last segment is numeric-like, use it as product id
+            if (/^\d+$/.test(last)) setClientProductId(last);
+          }
+        }
+
+        const isOpt = window.location.pathname.includes("/options/");
+        setIsOptionRoute(isOpt);
+        if (isOpt) {
+          try {
+            const segs = window.location.pathname.split("/").filter(Boolean);
+            const idx = segs.indexOf("options");
+            if (idx >= 0 && segs[idx + 1]) setOptionKey(decodeURIComponent(segs[idx + 1]));
+          } catch (e) {
+            setOptionKey(null);
+          }
+        }
+      }
+    } catch (e) {
+      // no-op
+    }
+  }, []);
 
   // Dropdown options for product-level fields (fetched from mock API)
   const [YEAR_OPTIONS, setYearOptions] = useState<string[]>([]);
@@ -594,6 +636,25 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
       ? formatPrice(value)
       : "-";
 
+  // 할인 미리보기 컴포넌트 (정의는 JSX 바깥에 있어야 함)
+  const PreviewPrice: React.FC<{ price: number; type: string; value: number }> = ({ price, type, value }) => {
+    const calc = (p: number) => {
+      if (!Number.isFinite(p)) return p;
+      if (type === "percent") return Math.max(0, Math.round(p * (1 - Number(value || 0) / 100)));
+      if (type === "amount") return Math.max(0, Math.round(p - Number(value || 0)));
+      return p;
+    };
+    const next = calc(Number(price || 0));
+    if (!Number.isFinite(price)) return <span>-</span>;
+    if (type === "none" || Number(value || 0) === 0) return <span>{formatPrice(Number(price || 0))}</span>;
+    return (
+      <div className="flex items-baseline gap-2">
+        <span className="line-through text-gray-400">{formatPrice(Number(price || 0))}</span>
+        <span className="font-semibold text-green-700">{formatPrice(Number(next || 0))}</span>
+      </div>
+    );
+  };
+
   // If on option edit route, render the dedicated Option Edit Page (unified page navigation)
   if (isOptionRoute) {
     return (
@@ -648,13 +709,25 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                   purchase_name: product.purchase_name || "",
                   shipping_policy: product.shipping_policy || "",
                   hs_code: product.hs_code || "",
-                  box_qty: product.box_qty || "",
+                  box_qty: String(product.box_qty || ""),
                   is_stock_linked: !!(
                     product.variants &&
                     product.variants[0] &&
                     product.variants[0].is_stock_linked
                   ),
                   classification_id: product.classification_id || "",
+                  // --- 할인/적용 관련 ---
+                  discountType: (product.pricing && (product.pricing as any).discountType) || "none", // 'none' | 'percent' | 'amount'
+                  discountValue: Number(
+                    (product.pricing && (product.pricing as any).discountValue) || 0
+                  ),
+                  discountStartAt:
+                    (product.pricing && (product.pricing as any).discountStartAt) || "",
+                  discountEndAt:
+                    (product.pricing && (product.pricing as any).discountEndAt) || "",
+                  discountApplyTo:
+                    (product.pricing && (product.pricing as any).discountApplyTo) || "product", // 'product' | 'variants' | 'both'
+                  applyImmediately: false, // 체크 시 판매단가에 즉시 반영
                 });
                 setShowSettingsModal(true);
               }}
@@ -683,6 +756,11 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               삭제
             </Button>
           </Stack>
+          <div className="ml-2">
+            <Button variant="outline" size="small" onClick={() => setIsHelpOpen(true)}>
+              도움말
+            </Button>
+          </div>
         </div>
 
         {/* 등록/수정 정보 */}
@@ -1962,6 +2040,375 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
         </Modal>
 
         {/* Description Edit Modal */}
+        {/* Product Settings Modal */}
+        <Modal open={showSettingsModal} onClose={() => setShowSettingsModal(false)} title="상품 설정">
+          {settingsForm ? (
+            <div className="space-y-6">
+              {/* 판매 상태 & 연동 */}
+              <div>
+                <div className="text-sm font-semibold text-gray-900 mb-2">판매/상태</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="inline-flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={!!settingsForm.is_selling}
+                      onChange={(e) =>
+                        setSettingsForm((s: any) => ({ ...(s || {}), is_selling: e.target.checked }))
+                      }
+                    />
+                    판매 활성화
+                  </label>
+                  <label className="inline-flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={!!settingsForm.is_soldout}
+                      onChange={(e) =>
+                        setSettingsForm((s: any) => ({ ...(s || {}), is_soldout: e.target.checked }))
+                      }
+                    />
+                    품절 처리
+                  </label>
+                  <label className="inline-flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={!!settingsForm.is_dutyfree}
+                      onChange={(e) =>
+                        setSettingsForm((s: any) => ({ ...(s || {}), is_dutyfree: e.target.checked }))
+                      }
+                    />
+                    면세 상품
+                  </label>
+                  <div className="text-sm">
+                    <div className="text-gray-700 mb-1">재고 연동</div>
+                    <div className="flex items-center gap-4">
+                      <label className="inline-flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="settings-stock-linked"
+                          checked={!!settingsForm.is_stock_linked}
+                          onChange={() =>
+                            setSettingsForm((s: any) => ({ ...(s || {}), is_stock_linked: true }))
+                          }
+                        />
+                        연동
+                      </label>
+                      <label className="inline-flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="settings-stock-linked"
+                          checked={!settingsForm.is_stock_linked}
+                          onChange={() =>
+                            setSettingsForm((s: any) => ({ ...(s || {}), is_stock_linked: false }))
+                          }
+                        />
+                        미연동
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 기본 정책 */}
+              <div>
+                <div className="text-sm font-semibold text-gray-900 mb-2">기본 정책</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="text-sm">
+                    <div className="text-gray-700 mb-1">원산지</div>
+                    <input
+                      className="w-full px-2 py-1 border rounded"
+                      value={settingsForm.origin_country}
+                      onChange={(e) =>
+                        setSettingsForm((s: any) => ({ ...(s || {}), origin_country: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className="text-sm">
+                    <div className="text-gray-700 mb-1">사입상품명</div>
+                    <input
+                      className="w-full px-2 py-1 border rounded"
+                      value={settingsForm.purchase_name}
+                      onChange={(e) =>
+                        setSettingsForm((s: any) => ({ ...(s || {}), purchase_name: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className="text-sm">
+                    <div className="text-gray-700 mb-1">배송비정책</div>
+                    <input
+                      className="w-full px-2 py-1 border rounded"
+                      value={settingsForm.shipping_policy}
+                      onChange={(e) =>
+                        setSettingsForm((s: any) => ({ ...(s || {}), shipping_policy: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className="text-sm">
+                    <div className="text-gray-700 mb-1">HS Code</div>
+                    <input
+                      className="w-full px-2 py-1 border rounded"
+                      value={settingsForm.hs_code}
+                      onChange={(e) =>
+                        setSettingsForm((s: any) => ({ ...(s || {}), hs_code: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className="text-sm">
+                    <div className="text-gray-700 mb-1">박스당수량</div>
+                    <input
+                      type="number"
+                      className="w-full px-2 py-1 border rounded"
+                      value={settingsForm.box_qty}
+                      onChange={(e) =>
+                        setSettingsForm((s: any) => ({ ...(s || {}), box_qty: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className="text-sm">
+                    <div className="text-gray-700 mb-1">분류 ID</div>
+                    <input
+                      className="w-full px-2 py-1 border rounded"
+                      value={settingsForm.classification_id}
+                      onChange={(e) =>
+                        setSettingsForm((s: any) => ({ ...(s || {}), classification_id: e.target.value }))
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 할인 적용 */}
+              <div>
+                <div className="text-sm font-semibold text-gray-900 mb-2">할인</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="text-sm">
+                    <div className="text-gray-700 mb-1">할인 유형</div>
+                    <div className="flex items-center gap-4">
+                      <label className="inline-flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="discount-type"
+                          checked={settingsForm.discountType === "none"}
+                          onChange={() =>
+                            setSettingsForm((s: any) => ({ ...(s || {}), discountType: "none" }))
+                          }
+                        />
+                        없음
+                      </label>
+                      <label className="inline-flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="discount-type"
+                          checked={settingsForm.discountType === "percent"}
+                          onChange={() =>
+                            setSettingsForm((s: any) => ({ ...(s || {}), discountType: "percent" }))
+                          }
+                        />
+                        % 할인
+                      </label>
+                      <label className="inline-flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="discount-type"
+                          checked={settingsForm.discountType === "amount"}
+                          onChange={() =>
+                            setSettingsForm((s: any) => ({ ...(s || {}), discountType: "amount" }))
+                          }
+                        />
+                        금액 할인
+                      </label>
+                    </div>
+                  </div>
+                  <div className="text-sm">
+                    <div className="text-gray-700 mb-1">할인 값</div>
+                    <input
+                      type="number"
+                      className="w-full px-2 py-1 border rounded"
+                      value={settingsForm.discountValue}
+                      onChange={(e) =>
+                        setSettingsForm((s: any) => ({ ...(s || {}), discountValue: Number(e.target.value || 0) }))
+                      }
+                      disabled={settingsForm.discountType === "none"}
+                    />
+                  </div>
+                  <div className="text-sm">
+                    <div className="text-gray-700 mb-1">적용 범위</div>
+                    <div className="flex items-center gap-4">
+                      <label className="inline-flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="discount-apply-to"
+                          checked={settingsForm.discountApplyTo === "product"}
+                          onChange={() =>
+                            setSettingsForm((s: any) => ({ ...(s || {}), discountApplyTo: "product" }))
+                          }
+                        />
+                        상품 대표가
+                      </label>
+                      <label className="inline-flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="discount-apply-to"
+                          checked={settingsForm.discountApplyTo === "variants"}
+                          onChange={() =>
+                            setSettingsForm((s: any) => ({ ...(s || {}), discountApplyTo: "variants" }))
+                          }
+                        />
+                        옵션가
+                      </label>
+                      <label className="inline-flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="discount-apply-to"
+                          checked={settingsForm.discountApplyTo === "both"}
+                          onChange={() =>
+                            setSettingsForm((s: any) => ({ ...(s || {}), discountApplyTo: "both" }))
+                          }
+                        />
+                        둘 다
+                      </label>
+                    </div>
+                  </div>
+                  <div className="text-sm">
+                    <div className="text-gray-700 mb-1">기간(선택)</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="datetime-local"
+                        className="w-full px-2 py-1 border rounded"
+                        value={settingsForm.discountStartAt}
+                        onChange={(e) =>
+                          setSettingsForm((s: any) => ({ ...(s || {}), discountStartAt: e.target.value }))
+                        }
+                      />
+                      <input
+                        type="datetime-local"
+                        className="w-full px-2 py-1 border rounded"
+                        value={settingsForm.discountEndAt}
+                        onChange={(e) =>
+                          setSettingsForm((s: any) => ({ ...(s || {}), discountEndAt: e.target.value }))
+                        }
+                      />
+                    </div>
+                  </div>
+                  <div className="col-span-2">
+                    <label className="inline-flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={!!settingsForm.applyImmediately}
+                        onChange={(e) =>
+                          setSettingsForm((s: any) => ({ ...(s || {}), applyImmediately: e.target.checked }))
+                        }
+                      />
+                      할인가를 즉시 판매단가에 반영
+                    </label>
+                  </div>
+                  {/* 미리보기 */}
+                  <div className="col-span-2">
+                    <div className="text-xs text-gray-500 mb-1">미리보기</div>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="p-2 rounded border bg-gray-50">
+                        <div className="text-gray-600">대표 판매가</div>
+                        <PreviewPrice
+                          price={Number(product?.selling_price || 0)}
+                          type={settingsForm.discountType}
+                          value={Number(settingsForm.discountValue || 0)}
+                        />
+                      </div>
+                      <div className="p-2 rounded border bg-gray-50">
+                        <div className="text-gray-600">첫 번째 옵션가</div>
+                        <PreviewPrice
+                          price={Number(product?.variants?.[0]?.selling_price || 0)}
+                          type={settingsForm.discountType}
+                          value={Number(settingsForm.discountValue || 0)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 액션 */}
+              <div className="flex justify-end gap-2">
+                <Button variant="secondary" onClick={() => setShowSettingsModal(false)}>취소</Button>
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    // 적용 로직
+                    const {
+                      is_selling,
+                      is_soldout,
+                      is_dutyfree,
+                      origin_country,
+                      purchase_name,
+                      shipping_policy,
+                      hs_code,
+                      box_qty,
+                      is_stock_linked,
+                      classification_id,
+                      discountType,
+                      discountValue,
+                      discountStartAt,
+                      discountEndAt,
+                      discountApplyTo,
+                      applyImmediately,
+                    } = settingsForm || {};
+
+                    applyProductPatch((draft) => {
+                      draft.is_selling = !!is_selling;
+                      draft.is_soldout = !!is_soldout;
+                      draft.is_dutyfree = !!is_dutyfree;
+                      draft.origin_country = String(origin_country || "");
+                      draft.purchase_name = String(purchase_name || "");
+                      draft.shipping_policy = String(shipping_policy || "");
+                      draft.hs_code = String(hs_code || "");
+                      draft.box_qty = box_qty ? Number(box_qty) : "";
+                      draft.classification_id = String(classification_id || "");
+
+                      // 재고 연동: 첫 옵션 기준 유지 (기존 로직과 합치)
+                      if (Array.isArray(draft.variants) && draft.variants[0]) {
+                        draft.variants[0].is_stock_linked = !!is_stock_linked;
+                      }
+
+                      // 할인 메타 저장 (표준화)
+                      draft.pricing = {
+                        ...(draft.pricing || {}),
+                        discountType,
+                        discountValue: Number(discountValue || 0),
+                        discountStartAt: String(discountStartAt || ""),
+                        discountEndAt: String(discountEndAt || ""),
+                        discountApplyTo: discountApplyTo || "product",
+                      };
+
+                      // 즉시 반영 옵션
+                      const calc = (p: number) => {
+                        if (!Number.isFinite(p)) return p;
+                        if (discountType === "percent") return Math.max(0, Math.round(p * (1 - Number(discountValue || 0) / 100)));
+                        if (discountType === "amount") return Math.max(0, Math.round(p - Number(discountValue || 0)));
+                        return p;
+                      };
+                      if (applyImmediately && discountType !== "none") {
+                        if (discountApplyTo === "product" || discountApplyTo === "both") {
+                          draft.selling_price = calc(Number(draft.selling_price || 0));
+                        }
+                        if ((discountApplyTo === "variants" || discountApplyTo === "both") && Array.isArray(draft.variants)) {
+                          draft.variants = draft.variants.map((v: any) => ({
+                            ...v,
+                            selling_price: calc(Number(v.selling_price || 0)),
+                          }));
+                        }
+                      }
+                    });
+
+                    setShowSettingsModal(false);
+                  }}
+                >
+                  적용
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-sm text-gray-600">설정 정보를 불러오는 중…</div>
+          )}
+        </Modal>
         <Modal open={showDescEdit} onClose={() => setShowDescEdit(false)} title="상세 설명 편집">
           <div className="space-y-4">
             <div>
@@ -2147,6 +2594,41 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
           </div>
           <SideGuide open={isHelpOpen} onClose={() => setIsHelpOpen(false)} title="상품 등록/수정 도움말">
             <div className="space-y-3 text-sm text-gray-700">
+              <div className="flex gap-2 items-center">
+                <button
+                  className="px-3 py-2 bg-blue-600 text-white rounded text-sm"
+                  onClick={() => (window.location.href = "/products/csv")}
+                >
+                  CSV 상품 등록으로 이동
+                </button>
+                <button
+                  className="px-3 py-2 bg-white border rounded text-sm"
+                  onClick={() => downloadCsvTemplate()}
+                >
+                  샘플 CSV 템플릿 다운로드
+                </button>
+                <button
+                  className="px-3 py-2 bg-white border rounded text-sm"
+                  onClick={() => (window.location.href = "/products/import")}
+                >
+                  외부 쇼핑몰 상품 가져오기
+                </button>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  className="px-3 py-2 bg-white border rounded text-sm"
+                  onClick={() => (window.location.href = "/products/bulk-edit")}
+                >
+                  상품/옵션 일괄 수정으로 이동
+                </button>
+                <button
+                  className="px-3 py-2 bg-white border rounded text-sm"
+                  onClick={() => (window.location.href = "/products/add")}
+                >
+                  개별 상품 등록으로 이동
+                </button>
+              </div>
+              <div className="text-xs text-gray-500">또는 각 항목의 상세 도움말은 해당 페이지에서 확인하세요.</div>
               <div className="overflow-auto">
                 <table className="w-full border-collapse text-sm">
                   <thead>

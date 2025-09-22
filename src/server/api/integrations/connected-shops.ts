@@ -8,15 +8,14 @@ export default async function handler(
     // attempt to load DB-backed helper dynamically
     let listShops: any = null;
     try {
-      // require at runtime so build won't fail when module absent
-      // use an absolute project-root path to avoid webpack resolution issues
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const p = require("path");
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const root = process.cwd();
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const shopsMod = require(p.join(root, "src", "lib", "shops"));
-      listShops = shopsMod?.listShops;
+      if (typeof window === 'undefined') {
+        // server runtime: require using a static server-only path
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const shopsMod = require('../../../lib/shops');
+        listShops = shopsMod?.listShops;
+      } else {
+        listShops = null;
+      }
     } catch (e) {
       listShops = null;
     }
@@ -33,12 +32,14 @@ export default async function handler(
     // fallback to bundling mock integrations only if available
     let mockIntegrations: any[] = [];
     try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const p = require("path");
-      const root = process.cwd();
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const mockMod = require(p.join(root, "src", "data", "mockIntegrations"));
-      mockIntegrations = mockMod?.mockIntegrations || mockMod?.default || [];
+      if (typeof window === 'undefined') {
+        // server runtime: require mock integrations statically
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const mockMod = require('../../../data/mockIntegrations');
+        mockIntegrations = mockMod?.mockIntegrations || mockMod?.default || [];
+      } else {
+        mockIntegrations = [];
+      }
     } catch (e) {
       mockIntegrations = [];
     }

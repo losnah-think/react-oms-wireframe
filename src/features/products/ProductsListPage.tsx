@@ -15,7 +15,6 @@ import {
 } from "../../design-system";
 import TableExportButton from "../../components/common/TableExportButton";
 import HierarchicalSelect from "../../components/common/HierarchicalSelect";
-import Typeahead from "../../components/common/Typeahead";
 import { mockBrands } from '../../data/mockBrands';
 import * as mockSuppliersApi from '../../lib/mockSuppliers';
 import { formatPrice } from "../../utils/productUtils";
@@ -88,17 +87,20 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
   const [selectedDesigner, setSelectedDesigner] = useState<string>("");
   const [selectedRegistrant, setSelectedRegistrant] = useState<string>("");
   const [selectedSeason, setSelectedSeason] = useState<string>("전체");
+  const [selectedYear, setSelectedYear] = useState<string>("전체");
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
   const [malls, setMalls] = useState<any[]>([]);
   const [selectedMall, setSelectedMall] = useState<string>("");
   const [generalSettings, setGeneralSettings] = useState<any>({});
   const [isSupplierManagerOpen, setIsSupplierManagerOpen] = useState(false);
-  const [isSupplierDropdownOpen, setIsSupplierDropdownOpen] = useState(false);
   const [isGroupDropdownOpen, setIsGroupDropdownOpen] = useState(false);
   const [onlyWithShippingPolicy, setOnlyWithShippingPolicy] = useState(false);
   const [compactView, setCompactView] = useState(false);
   const [isBatchHelpOpen, setIsBatchHelpOpen] = useState(false);
   const [isOptionBatchHelpOpen, setIsOptionBatchHelpOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const PAGE_SIZE = 20;
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   // --- Search UX states & helpers ---
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -136,26 +138,26 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
       parts.push({ key: "registrant", label: `등록자: ${selectedRegistrant}` });
     if (selectedSeason && selectedSeason !== "전체")
       parts.push({ key: "season", label: `시즌: ${selectedSeason}` });
+    if (selectedYear && selectedYear !== "전체")
+      parts.push({ key: "year", label: `연도: ${selectedYear}` });
     if ((selectedSuppliers || []).length > 0)
-      parts.push({
-        key: "suppliers",
-        label: `공급처: ${selectedSuppliers.length}`,
-      });
+      parts.push({ key: "suppliers", label: `공급처: ${selectedSuppliers.length}` });
     if ((selectedGroups || []).length > 0)
       parts.push({ key: "groups", label: `분류: ${selectedGroups.length}` });
     if (onlyWithShippingPolicy)
       parts.push({ key: "shipping", label: "배송비정책 있음" });
     if (compactView) parts.push({ key: "compact", label: "간단하게 보기" });
     if (dateFrom || dateTo)
-      parts.push({
-        key: "period",
-        label: `기간: ${dateFrom || "-"}~${dateTo || "-"}`,
-      });
+      parts.push({ key: "period", label: `기간: ${dateFrom || "-"}~${dateTo || "-"}` });
     if (searchTerm) parts.push({ key: "search", label: `검색: ${searchTerm}` });
     return parts;
   }, [
     selectedCategory,
     selectedBrand,
+    selectedDesigner,
+    selectedRegistrant,
+    selectedSeason,
+    selectedYear,
     selectedSuppliers,
     selectedGroups,
     onlyWithShippingPolicy,
@@ -223,6 +225,9 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
           break;
         case "season":
           setSelectedSeason("전체");
+          break;
+        case "year":
+          setSelectedYear("전체");
           break;
         case "compact":
           setCompactView(false);
@@ -648,6 +653,13 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
           ).toString();
           if (!ps || ps !== selectedSeason) return false;
         }
+
+        // year filter
+        if (selectedYear && selectedYear !== "전체") {
+          const createdYear = p.created_at ? new Date(p.created_at).getFullYear().toString() : "";
+          const metaYear = (p.year || p.production_year || p.season_year || "").toString();
+          if (createdYear !== selectedYear && metaYear !== selectedYear) return false;
+        }
         if (q) {
           if (
             !String(p.name || "")
@@ -748,6 +760,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
     dateFrom,
     dateTo,
     selectedGroups,
+    selectedYear,
   ]);
 
   // debounce searchTerm -> debounced
@@ -785,6 +798,9 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
 
   const selectedCount = Object.values(selectedIds).filter(Boolean).length;
 
+  const totalPages = Math.max(1, Math.ceil((filteredProducts || []).length / PAGE_SIZE));
+  const pagedProducts = (filteredProducts || []).slice((currentPage - 1) * PAGE_SIZE, (currentPage - 1) * PAGE_SIZE + PAGE_SIZE);
+
   const toggleRow = (id: string) => {
     setSelectedIds((prev) => {
       const next = { ...prev, [id]: !prev[id] };
@@ -796,15 +812,24 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
     const willSelect = !selectAll;
     setSelectAll(willSelect);
     if (willSelect) {
+      // select only current page items
+      const start = (currentPage - 1) * PAGE_SIZE;
+      const pageItems = (filteredProducts || []).slice(start, start + PAGE_SIZE);
       const selMap = {} as Record<string, boolean>;
-      (filteredProducts || []).forEach((p: any) => {
+      pageItems.forEach((p: any) => {
         selMap[p.id] = true;
       });
-      setSelectedIds(selMap);
+      setSelectedIds((prev) => ({ ...prev, ...selMap }));
     } else {
       setSelectedIds({});
     }
   };
+
+  // clamp currentPage when filteredProducts length changes
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil((filteredProducts || []).length / PAGE_SIZE));
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [filteredProducts, currentPage]);
 
   const handleDeleteSelected = async () => {
     const ids = Object.keys(selectedIds).filter((k) => selectedIds[k]);
@@ -992,7 +1017,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
         {/* 추가 필터: 토글로 접고 펼침 */}
         {showFilters && (
           <div className="border-t pt-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {/* 상품 등록일자 */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1057,150 +1082,121 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
                 </select>
               </div>
 
-              {/* 공급처 */}
+              {/* 공급처 (칩 선택) */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  공급처
-                </label>
-                <div className="relative">
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    aria-haspopup="listbox"
-                    aria-expanded={isSupplierDropdownOpen}
-                    onClick={() => setIsSupplierDropdownOpen((s) => !s)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        setIsSupplierDropdownOpen((s) => !s);
-                      }
-                    }}
-                    className="px-3 py-2 border border-gray-300 rounded-md text-sm bg-white cursor-pointer flex items-center justify-between min-h-[38px]"
+                <label className="block text-sm font-medium text-gray-700 mb-2">공급처</label>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    className={`px-3 py-1.5 rounded-full border text-sm ${selectedSuppliers.length === 0 ? "bg-blue-50 border-blue-200 text-blue-800" : "bg-white border-gray-300 text-gray-700"}`}
+                    onClick={() => setSelectedSuppliers([])}
                   >
-                    <span className={selectedSuppliers.length === 0 ? "text-gray-600" : "text-gray-900"}>
-                      {selectedSuppliers.length === 0 ? "전체" : `${selectedSuppliers.length}개 선택`}
-                    </span>
-                    <svg
-                      className="w-4 h-4 text-gray-400"
-                      viewBox="0 0 20 20"
-                      fill="none"
-                    >
-                      <path
-                        d="M6 8l4 4 4-4"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                  {isSupplierDropdownOpen && (
-                    <div className="absolute z-30 mt-1 w-full bg-white border rounded shadow-lg p-2 max-h-48 overflow-y-auto">
-                      <div
-                        className="flex items-center gap-2 px-2 py-2 hover:bg-gray-50 cursor-pointer rounded"
+                    전체
+                  </button>
+                  {(suppliers || []).map((s: any) => {
+                    const active = (selectedSuppliers || []).includes(s.name);
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        aria-pressed={active}
+                        className={`px-3 py-1.5 rounded-full border text-sm ${active ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"}`}
                         onClick={() => {
-                          setSelectedSuppliers([]);
+                          const set = new Set(selectedSuppliers || []);
+                          if (active) set.delete(s.name);
+                          else set.add(s.name);
+                          setSelectedSuppliers(Array.from(set));
                         }}
                       >
-                        <input
-                          type="checkbox"
-                          readOnly
-                          checked={selectedSuppliers.length === 0}
-                          className="rounded"
-                        />
-                        <div className="text-sm">전체</div>
-                      </div>
-                      <div className="h-px my-1 border-t" />
-                      {(suppliers || []).map((s: any) => (
-                        <label
-                          key={s.id}
-                          className="flex items-center gap-2 px-2 py-2 hover:bg-gray-50 cursor-pointer rounded"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={(selectedSuppliers || []).includes(
-                              s.name,
-                            )}
-                            onChange={(e) => {
-                              const next = new Set(selectedSuppliers || []);
-                              if (e.target.checked) next.add(s.name);
-                              else next.delete(s.name);
-                              setSelectedSuppliers(Array.from(next));
-                            }}
-                            className="rounded"
-                          />
-                          <div className="text-sm">{s.name}</div>
-                        </label>
-                      ))}
-                      <div className="flex justify-end mt-2 pt-2 border-t">
+                        {s.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 디자이너 (드롭다운) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">디자이너</label>
+                <select
+                  id="filter-designer"
+                  value={selectedDesigner}
+                  onChange={(e) => setSelectedDesigner(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
+                >
+                  <option value="">전체</option>
+                  {(designers || []).map((d: any) => (
+                    <option key={d.id} value={d.name}>{d.name}</option>
+                  ))}
+                </select>
+              </div>
+              
+              {/* 시즌 (칩) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">시즌</label>
+                <div className="flex flex-wrap gap-2">
+                  {["전체","SS","FW","AW"].map((s) => {
+                    const active = selectedSeason === s;
+                    return (
+                      <button
+                        key={s}
+                        type="button"
+                        aria-pressed={active}
+                        className={`px-3 py-1.5 rounded-full border text-sm ${active ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"}`}
+                        onClick={() => setSelectedSeason(s)}
+                      >
+                        {s}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 연도 (칩) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">연도</label>
+                <div className="flex flex-wrap gap-2">
+                  {(() => {
+                    const now = new Date().getFullYear();
+                    const years = ["전체", String(now), String(now - 1), String(now - 2), String(now - 3), String(now - 4)];
+                    return years.map((y) => {
+                      const active = selectedYear === y;
+                      return (
                         <button
-                          className="px-3 py-1 border rounded text-sm bg-white hover:bg-gray-50"
-                          onClick={() => setIsSupplierDropdownOpen(false)}
+                          key={y}
+                          type="button"
+                          aria-pressed={active}
+                          className={`px-3 py-1.5 rounded-full border text-sm ${active ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"}`}
+                          onClick={() => setSelectedYear(y)}
                         >
-                          닫기
+                          {y}
                         </button>
-                      </div>
-                    </div>
-                  )}
+                      );
+                    });
+                  })()}
                 </div>
               </div>
 
-              {/* 디자이너 & 시즌 */}
+              {/* 등록자 (드롭다운) */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  디자이너
-                </label>
-                <div className="space-y-2">
-                  <Typeahead
-                    id="filter-designer"
-                    items={(designers || []).map((d: any) => ({
-                      id: d.id,
-                      name: d.name,
-                    }))}
-                    value={selectedDesigner}
-                    onChange={(v) => setSelectedDesigner(v)}
-                    onSelect={(it) => setSelectedDesigner(it.name)}
-                    placeholder="디자이너 검색"
-                  />
-                  <div className="flex items-center gap-2">
-                    <label className="text-sm text-gray-600">시즌:</label>
-                    <select
-                      id="filter-season"
-                      value={selectedSeason}
-                      onChange={(e) => setSelectedSeason(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm flex-1 bg-white hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
-                    >
-                      <option value="전체">전체</option>
-                      <option value="SS">SS</option>
-                      <option value="FW">FW</option>
-                      <option value="AW">AW</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* 등록자 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  등록자
-                </label>
-                <Typeahead
+                <label className="block text-sm font-medium text-gray-700 mb-2">등록자</label>
+                <select
                   id="filter-registrant"
-                  items={(registrants || []).map((r: any) => ({
-                    id: r.id,
-                    name: r.name,
-                  }))}
                   value={selectedRegistrant}
-                  onChange={(v) => setSelectedRegistrant(v)}
-                  onSelect={(it) => setSelectedRegistrant(it.name)}
-                  placeholder="등록자 검색"
-                />
+                  onChange={(e) => setSelectedRegistrant(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
+                >
+                  <option value="">전체</option>
+                  {(registrants || []).map((r: any) => (
+                    <option key={r.id} value={r.name}>{r.name}</option>
+                  ))}
+                </select>
               </div>
 
-              {/* 상품 분류 */}
+              {/* 상품 그룹 */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  상품 분류
+                  상품 그룹
                 </label>
                 <div className="relative">
                   <div
@@ -1283,30 +1279,30 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
                 </div>
               </div>
 
-              {/* 배송비정책 토글 */}
+              {/* 배송비정책 (라디오) */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  배송비정책
-                </label>
-                <div
-                  role="switch"
-                  tabIndex={0}
-                  aria-checked={onlyWithShippingPolicy}
-                  aria-label="배송비정책 있는 상품만 보기"
-                  onClick={() => setOnlyWithShippingPolicy((s) => !s)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      setOnlyWithShippingPolicy((s) => !s);
-                    }
-                  }}
-                  className={`px-4 py-2 rounded-lg border cursor-pointer transition-colors ${
-                    onlyWithShippingPolicy
-                      ? "bg-blue-50 border-blue-200 text-blue-800"
-                      : "bg-gray-50 border-gray-200 text-gray-600"
-                  }`}
-                >
-                  {onlyWithShippingPolicy ? "배송비정책 있는 상품만" : "모든 상품"}
+                <label className="block text-sm font-medium text-gray-700 mb-2">배송비정책</label>
+                <div role="radiogroup" aria-label="배송비정책 선택" className="flex items-center gap-4">
+                  <label className="inline-flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="shippingPolicy"
+                      value="all"
+                      checked={!onlyWithShippingPolicy}
+                      onChange={() => setOnlyWithShippingPolicy(false)}
+                    />
+                    <span>모든 상품</span>
+                  </label>
+                  <label className="inline-flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="shippingPolicy"
+                      value="with"
+                      checked={onlyWithShippingPolicy}
+                      onChange={() => setOnlyWithShippingPolicy(true)}
+                    />
+                    <span>배송비정책 있는 상품만</span>
+                  </label>
                 </div>
               </div>
             </div>
@@ -1321,8 +1317,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
             <div>
               <h2 className="text-xl font-semibold text-gray-800">검색</h2>
               <div className="text-sm text-gray-500">
-                <div className="mt-1">카테고리·브랜드·기간으로 검색하세요</div>
-                <div className="mt-1">기간 필터는 상단 필터 영역에서 설정하세요.</div>
+                <div className="mt-1">상품명, 상품코드로 검색하세요.</div>
               </div>
             </div>
           </div>
@@ -1430,6 +1425,13 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
               aria-label="엑셀 다운로드"
             />
           </div>
+          <button
+            aria-label="도움말"
+            className="px-3 py-2 bg-white border rounded text-sm"
+            onClick={() => setIsHelpOpen(true)}
+          >
+            도움말
+          </button>
           {/* mall select moved next to '선택 외부 송신' button */}
           <button
             aria-label="상품 일괄수정"
@@ -1563,7 +1565,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredProducts.map((p, idx) => (
+              {pagedProducts.map((p, idx) => (
                 <tr
                   key={p.id}
                   role="button"
@@ -1762,6 +1764,28 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
           </table>
         </div>
       </Card>
+
+      {/* Pagination */}
+      <div className="flex items-center justify-between mt-4">
+        <div className="text-sm text-gray-600">총 {filteredProducts.length}개</div>
+        <div className="flex items-center gap-2">
+          <button
+            className="px-3 py-1 border rounded"
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+          >
+            이전
+          </button>
+          <div className="px-3 py-1 border rounded">{currentPage}</div>
+          <button
+            className="px-3 py-1 border rounded"
+            onClick={() => setCurrentPage((p) => p + 1)}
+            disabled={currentPage * PAGE_SIZE >= filteredProducts.length}
+          >
+            다음
+          </button>
+        </div>
+      </div>
 
       {/* Batch edit modal (functional) */}
       {isBatchModalOpen && (
@@ -2120,12 +2144,22 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
         </table>
       </SideGuide>
 
+      {/* 제품 목록 도움말 */}
+      <SideGuide open={isHelpOpen} onClose={() => setIsHelpOpen(false)} title="상품 목록 도움말">
+        <div className="space-y-3">
+          <p className="text-sm text-gray-700">- 필터: 상단에서 카테고리, 브랜드, 시즌, 연도, 공급처 등을 설정하세요.</p>
+          <p className="text-sm text-gray-700">- 검색: 통합검색에서 상품명 또는 상품코드로 찾을 수 있습니다.</p>
+          <p className="text-sm text-gray-700">- 일괄수정: 선택된 상품에 대해 가격/재고/판매상태를 일괄 변경합니다.</p>
+          <p className="text-sm text-gray-700">- 페이징: 하단의 페이지 네비게이션으로 결과 페이지를 이동하세요.</p>
+        </div>
+      </SideGuide>
+
       {/* Category manager modal (opened from filter area) */}
       {isCategoryManagerOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-40">
           <div className="bg-white p-6 rounded shadow-lg w-2/3 max-w-3xl">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold">상품분류 관리</h3>
+              <h3 className="text-lg font-bold">상품 그룹 관리</h3>
               <div className="flex gap-2">
                 <button
                   className="px-3 py-1 border rounded text-sm"

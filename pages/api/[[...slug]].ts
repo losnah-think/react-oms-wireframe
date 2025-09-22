@@ -4,19 +4,8 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
-  const slug = req.query.slug || [];
-  const parts = Array.isArray(slug) ? slug : [String(slug)];
-  const relPath = parts.length ? parts.join("/") : "index";
-
-  // resolve path under src/server/api
-  const target = `../../src/server/api/${relPath}`;
-  try {
-    const mod = await import(target);
-    if (mod && typeof mod.default === "function") {
-      return mod.default(req, res);
-    }
-    return res.status(500).json({ error: "handler not found" });
-  } catch (err: any) {
-    return res.status(404).json({ error: "not found", message: err?.message });
-  }
+  // Dynamic proxying to server-side handlers is disabled in this build to
+  // avoid bundler context warnings and accidental inclusion of non-code files.
+  // Use direct API routes under `/api/*` instead of the catch-all proxy.
+  return res.status(404).json({ error: 'dynamic API proxy disabled' });
 }

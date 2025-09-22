@@ -24,16 +24,25 @@ const ADDR_KEY = 'vendors_fixed_addresses_v1';
 const VP_KEY = 'vendor_products_v1';
 
 const isServer = typeof window === 'undefined';
-const serverStorePath = (() => {
-  if (!isServer) return null;
-  const path = require('path');
-  return path.join(process.cwd(), 'tmp', 'vendors_data.json');
-})();
+let serverStorePath: string | null = null;
+if (isServer) {
+  try {
+    // require at runtime only on server to avoid bundler resolving 'path' in browser builds
+    // use eval('require') to avoid static analysis by bundlers
+    // eslint-disable-next-line @typescript-eslint/no-implied-eval
+    const path = eval("require")('path');
+    serverStorePath = path.join(process.cwd(), 'tmp', 'vendors_data.json');
+  } catch (e) {
+    serverStorePath = null;
+  }
+}
 
 function readServerStore() {
   try {
-    const fs = require('fs');
-    if (!serverStorePath) return null;
+  if (!serverStorePath) return null;
+  // require fs only at runtime on server; use eval to avoid bundler static resolution
+  // eslint-disable-next-line @typescript-eslint/no-implied-eval
+  const fs = eval("require")('fs');
     if (!fs.existsSync(serverStorePath)) return null;
     const raw = fs.readFileSync(serverStorePath, 'utf8');
     return JSON.parse(raw || '{}');
@@ -44,9 +53,14 @@ function readServerStore() {
 
 function writeServerStore(obj: any) {
   try {
-    const fs = require('fs');
+  if (!serverStorePath) return false;
+  // require fs/path only on server at runtime; use eval to avoid bundler static resolution
+  // eslint-disable-next-line @typescript-eslint/no-implied-eval
+  const fs = eval("require")('fs');
+  // eslint-disable-next-line @typescript-eslint/no-implied-eval
+  const path = eval("require")('path');
     const p = serverStorePath as string;
-    const dir = require('path').dirname(p);
+    const dir = path.dirname(p);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(p, JSON.stringify(obj, null, 2), 'utf8');
     return true;
