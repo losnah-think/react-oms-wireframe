@@ -1959,7 +1959,7 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
 
                   <tr>
                     <td className="border px-2 py-1 align-top">관리정보</td>
-                    <td className="border px-2 py-1">상품분류</td>
+                    <td className="border px-2 py-1">상품 분류</td>
                     <td className="border px-2 py-1">- FULGO 상품분류 관리에 등록된 값 입력<br/>- 미입력 시 기본 분류 처리</td>
                   </tr>
                   <tr>
@@ -2244,7 +2244,7 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
                   </GridCol>
                   <GridCol span={12}>
                     <Input
-                      label="분류 경로"
+                      label="상품 분류"
                       placeholder="예: 의류 > 남성 > 셔츠"
                       helperText="구분자는 '>', ',', '/'를 사용할 수 있습니다."
                       value={(formData.basicInfo.classificationPath || []).join(' > ')}
