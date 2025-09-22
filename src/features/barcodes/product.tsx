@@ -16,6 +16,8 @@ type Product = {
   productId?: number;
   title?: string;
   barcode?: string | null;
+  barcodes?: string[];
+  locations?: Array<{ code: string; qty: number }>;
   sku?: string;
   image?: string;
   supplier?: string;
@@ -132,12 +134,21 @@ const ProductBarcodesPage: React.FC = () => {
 
   React.useEffect(() => {
     clientBarcodeStore.initIfNeeded();
+    // One-time reseed from mock data (only run once per dev machine)
+    try {
+      if (!localStorage.getItem("client_reseed_done_v1")) {
+        clientBarcodeStore.reseedFromMock();
+        localStorage.setItem("client_reseed_done_v1", String(Date.now()));
+      }
+    } catch (e) {}
     const rows = clientBarcodeStore.getProducts().map((p: any) => ({
       id: String(p.id),
       productId: p.productId,
       title: p.title,
       sku: p.sku,
       barcode: p.barcode ?? null,
+      barcodes: Array.isArray(p.barcodes) ? p.barcodes.slice() : (p.barcode ? [p.barcode] : []),
+      locations: Array.isArray(p.locations) ? p.locations.map((l:any)=>({ code: String(l.code), qty: Number(l.qty || 0) })) : [],
       image: p.image,
       supplier: p.supplier,
       cost_price: p.cost_price,
@@ -160,6 +171,8 @@ const ProductBarcodesPage: React.FC = () => {
         title: p.title,
         sku: p.sku,
         barcode: p.barcode ?? null,
+        barcodes: Array.isArray(p.barcodes) ? p.barcodes.slice() : (p.barcode ? [p.barcode] : []),
+        locations: Array.isArray(p.locations) ? p.locations.map((l:any)=>({ code: String(l.code), qty: Number(l.qty || 0) })) : [],
         image: p.image,
         supplier: p.supplier,
       }));
@@ -343,13 +356,31 @@ const ProductBarcodesPage: React.FC = () => {
     setShowEditId(id);
   };
 
+  const addBarcodeToProduct = async (productId: string) => {
+    const val = prompt('추가할 바코드 값을 입력하세요 (숫자만)');
+    if (!val) return;
+    const raw = String(val).replace(/\s|-/g, '');
+    // autofill checksum if 12 digits
+    let code = raw;
+    if (/^\d{12}$/.test(raw)) {
+      const check = ean13Checksum(raw);
+      if (check) code = raw + check;
+    }
+    const res = clientBarcodeStore.addProductBarcode(productId, code);
+    if (!res.ok) { alert('바코드 추가 실패: ' + String(res.error || '')); return; }
+    // refresh
+    const next = clientBarcodeStore.getProducts().map((pp:any)=>({ id:String(pp.id), productId: pp.productId, title: pp.title, sku: pp.sku, barcode: pp.barcode ?? null, barcodes: Array.isArray(pp.barcodes)?pp.barcodes.slice(): (pp.barcode ? [pp.barcode]:[]), image: pp.image, supplier: pp.supplier }));
+    setProducts(next); setFiltered(next);
+    alert('바코드가 추가되었습니다');
+  };
+
   const saveEdit = (id: string) => {
     const raw = manualValue.replace(/\s|-/g, "");
     if (/^\d{13}$/.test(raw) && !isValidEan13(raw)) {
       alert("EAN-13 체크섬 불일치");
       return;
     }
-    const updated = products.map((p) => (p.id === id ? { ...p, barcode: manualValue || null } : p));
+    const updated = products.map((p) => (p.id === id ? { ...p, barcode: manualValue || null, barcodes: (!p.barcodes ? [] : p.barcodes) } : p));
     setProducts(updated);
     clientBarcodeStore.updateProductBarcode(id, manualValue || null);
     clientBarcodeStore.appendLog({ ts: new Date().toISOString(), user: "operator", action: "manual-edit", id, value: manualValue });
@@ -419,6 +450,7 @@ const ProductBarcodesPage: React.FC = () => {
   const [conflictList, setConflictList] = React.useState<any[]>([]);
   const [knownLocations, setKnownLocations] = React.useState<Array<{id:number,code:string}>>([]);
   const [selectedLocationForAssign, setSelectedLocationForAssign] = React.useState<string | null>(null);
+  const [newLocInputs, setNewLocInputs] = React.useState<Record<string, { code?: string; qty: number }>>({});
   const [printModalOpen, setPrintModalOpen] = React.useState(false);
   const [printOptions, setPrintOptions] = React.useState({
     size: "50x30",
@@ -447,7 +479,7 @@ const ProductBarcodesPage: React.FC = () => {
     <Container maxWidth="full" centered={false} padding="md">
       <Grid container gutter={[8, 8]} className="mb-4">
           <GridCol span={14} className="">
-          <h1 className="text-2xl font-semibold">상품 위치 바코드 관리</h1>
+          <h1 className="text-2xl font-semibold">상품 바코드 관리</h1>
           <div className="flex items-center gap-2 mt-2">
             <Chip tone="info">총 {stats.total}개</Chip>
             <Chip tone="neutral">미발급 {stats.missing}</Chip>
@@ -657,7 +689,7 @@ const ProductBarcodesPage: React.FC = () => {
                         )}
                       </div>
                     </td>
-                    <td className="p-2 text-sm">
+                    <td className="p-2 text-sm min-w-0">
                       <div className="font-semibold text-blue-700">
                         {p.title ?? "무명 상품"}
                       </div>
@@ -666,12 +698,12 @@ const ProductBarcodesPage: React.FC = () => {
                         {p.variantName ? ` · ${p.variantName}` : ""}
                       </div>
                       {p.externalMall && (
-                        <div className="text-xs text-gray-600 mt-1">
-                          외부몰: {p.externalMall.platform} / SKU:{" "}
+                        <div className="text-xs text-gray-600 mt-1 break-words whitespace-normal">
+                          외부몰: {p.externalMall.platform} / SKU: {" "}
                           {p.externalMall.external_sku}
                         </div>
                       )}
-                      <div className="text-xs text-gray-600 mt-1">
+                      <div className="text-xs text-gray-600 mt-1 whitespace-normal">
                         사이즈: {p.width_cm ?? "—"}×{p.height_cm ?? "—"}×
                         {p.depth_cm ?? "—"} cm · 무게: {p.weight_g ?? "—"} g
                       </div>
@@ -683,30 +715,57 @@ const ProductBarcodesPage: React.FC = () => {
                         onChange={() => toggleSelect(p.id)}
                       />
                     </td>
-                    <td className="p-2 text-sm font-mono text-center">
-                      {p.barcode ? (
-                        <div className="inline-flex flex-col items-center">
-                          <a
-                            href={
-                              p.productId ? `/products/${p.productId}` : `/products/${p.id}`
-                            }
-                            target={OPEN_BARCODE_IN_NEW_TAB ? "_blank" : "_self"}
-                            rel={OPEN_BARCODE_IN_NEW_TAB ? "noopener noreferrer" : undefined}
-                            className="text-blue-600 hover:underline break-words inline-block"
-                            title={`상품 수정으로 이동: ${p.productId ?? p.id}`}
-                          >
-                            {p.barcode}
-                          </a>
-                          <div className="text-xs text-gray-500 mt-1">
-                            {barcodeProductCounts[p.barcode] ?? 0}개 상품
+                    <td className="p-2 text-sm font-mono text-center max-w-[220px] break-words whitespace-normal">
+                        {Array.isArray(p.barcodes) && p.barcodes.length > 0 ? (
+                          <div className="inline-flex flex-col items-center">
+                            {p.barcodes.map((b: string, bi: number) => (
+                              <div key={bi} className="flex items-center gap-2 break-words">
+                                <a
+                                  href={
+                                    p.productId ? `/products/${p.productId}` : `/products/${p.id}`
+                                  }
+                                  target={OPEN_BARCODE_IN_NEW_TAB ? "_blank" : "_self"}
+                                  rel={OPEN_BARCODE_IN_NEW_TAB ? "noopener noreferrer" : undefined}
+                                  className="text-blue-600 hover:underline inline-block break-words max-w-[160px]"
+                                  title={`상품 수정으로 이동: ${p.productId ?? p.id}`}
+                                >
+                                  {b}
+                                </a>
+                                <button className="text-xs text-red-600" onClick={async()=>{
+                                  if(!confirm('바코드를 삭제하시겠습니까?')) return;
+                                  const res = clientBarcodeStore.removeProductBarcode(p.id, b);
+                                  if(!res.ok) { alert('삭제 실패'); return; }
+                                  const next = clientBarcodeStore.getProducts().map((pp:any)=>({ id:String(pp.id), productId: pp.productId, title: pp.title, sku: pp.sku, barcode: pp.barcode ?? null, barcodes: Array.isArray(pp.barcodes)?pp.barcodes.slice(): (pp.barcode ? [pp.barcode]:[]), image: pp.image, supplier: pp.supplier }));
+                                  setProducts(next); setFiltered(next);
+                                }}>삭제</button>
+                              </div>
+                            ))}
                           </div>
-                        </div>
-                      ) : (
-                        "—"
-                      )}
-                      {p.barcode && barcodeCounts[p.barcode] > 1 && (
-                        <div className="text-xs text-yellow-800">중복</div>
-                      )}
+                        ) : (
+                          p.barcode ? (
+                            <div className="inline-flex flex-col items-center">
+                              <a
+                                href={
+                                  p.productId ? `/products/${p.productId}` : `/products/${p.id}`
+                                }
+                                target={OPEN_BARCODE_IN_NEW_TAB ? "_blank" : "_self"}
+                                rel={OPEN_BARCODE_IN_NEW_TAB ? "noopener noreferrer" : undefined}
+                                className="text-blue-600 hover:underline inline-block break-words max-w-[160px]"
+                                title={`상품 수정으로 이동: ${p.productId ?? p.id}`}
+                              >
+                                {p.barcode}
+                              </a>
+                              <div className="text-xs text-gray-500 mt-1">
+                                {barcodeProductCounts[p.barcode] ?? 0}개 상품
+                              </div>
+                            </div>
+                          ) : (
+                            "—"
+                          )
+                        )}
+                        {(Array.isArray(p.barcodes) && p.barcodes.length > 1) && (
+                          <div className="text-xs text-yellow-800">중복</div>
+                        )}
                     </td>
                     <td className="p-2 text-sm min-w-0">
                       <div className="text-green-600 font-medium">단일상품</div>
@@ -730,6 +789,54 @@ const ProductBarcodesPage: React.FC = () => {
                           >
                             수정
                           </Button>
+                        </div>
+                        <div className="flex-shrink-0">
+                          <Button variant="outline" size="small" onClick={()=>addBarcodeToProduct(p.id)}>
+                            바코드 추가
+                          </Button>
+                        </div>
+                        <div className="flex-shrink-0">
+                          <div className="flex items-center gap-2">
+                            <div className="text-xs text-gray-600">위치:</div>
+                            <div>
+                              {(p.locations || []).map((loc:any, li:number)=> (
+                                <div key={li} className="flex items-center gap-2 text-sm">
+                                  <div className="font-mono">{loc.code}</div>
+                                  <input className="border px-2 py-1 w-20 text-sm" type="number" value={String(loc.qty)} onChange={(e)=>{
+                                    const q = Math.max(0, Number(e.target.value) || 0);
+                                    clientBarcodeStore.updateLocationQty(p.id, loc.code, q);
+                                    const next = clientBarcodeStore.getProducts().map((pp:any)=>({ id:String(pp.id), productId: pp.productId, title: pp.title, sku: pp.sku, barcode: pp.barcode ?? null, barcodes: Array.isArray(pp.barcodes)?pp.barcodes.slice(): (pp.barcode ? [pp.barcode]:[]), locations: Array.isArray(pp.locations)? pp.locations.map((l:any)=>({ code: String(l.code), qty: Number(l.qty||0)})) : [], image: pp.image, supplier: pp.supplier }));
+                                    setProducts(next); setFiltered(next);
+                                  }} />
+                                  <button className="text-xs text-red-600" onClick={()=>{
+                                    if(!confirm('위치 바코드를 제거하시겠습니까?')) return;
+                                    clientBarcodeStore.removeLocation(p.id, loc.code);
+                                    const next = clientBarcodeStore.getProducts().map((pp:any)=>({ id:String(pp.id), productId: pp.productId, title: pp.title, sku: pp.sku, barcode: pp.barcode ?? null, barcodes: Array.isArray(pp.barcodes)?pp.barcodes.slice(): (pp.barcode ? [pp.barcode]:[]), locations: Array.isArray(pp.locations)? pp.locations.map((l:any)=>({ code: String(l.code), qty: Number(l.qty||0)})) : [], image: pp.image, supplier: pp.supplier }));
+                                    setProducts(next); setFiltered(next);
+                                  }}>삭제</button>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <select className="border px-2 py-1 text-sm" value={(newLocInputs[p.id] && newLocInputs[p.id].code) || ""} onChange={(e)=> setNewLocInputs(prev=>({ ...prev, [p.id]: { ...(prev[p.id]||{qty:0}), code: e.target.value } }))}>
+                                <option value="">위치 선택</option>
+                                {knownLocations.map((l)=> (
+                                  <option key={l.id} value={l.code}>{l.code}</option>
+                                ))}
+                              </select>
+                              <input className="border px-2 py-1 w-20 text-sm" type="number" value={(newLocInputs[p.id] && String(newLocInputs[p.id].qty)) || "0"} onChange={(e)=> setNewLocInputs(prev=>({ ...prev, [p.id]: { ...(prev[p.id]||{code:''}), qty: Math.max(0, Number(e.target.value) || 0) } }))} />
+                              <Button size="small" onClick={async ()=>{
+                                const inp = newLocInputs[p.id];
+                                if (!inp || !inp.code) { alert('위치를 선택하세요'); return; }
+                                const qty = Number(inp.qty || 0);
+                                const res = clientBarcodeStore.assignLocationQty(p.id, inp.code, qty);
+                                if (!res.ok) { alert('할당 실패: ' + String(res.error || '')); return; }
+                                const next = clientBarcodeStore.getProducts().map((pp:any)=>({ id:String(pp.id), productId: pp.productId, title: pp.title, sku: pp.sku, barcode: pp.barcode ?? null, barcodes: Array.isArray(pp.barcodes)?pp.barcodes.slice(): (pp.barcode ? [pp.barcode]:[]), locations: Array.isArray(pp.locations)? pp.locations.map((l:any)=>({ code: String(l.code), qty: Number(l.qty||0)})) : [], image: pp.image, supplier: pp.supplier }));
+                                setProducts(next); setFiltered(next);
+                                setNewLocInputs(prev=>({ ...prev, [p.id]: { code: '', qty: 0 } }));
+                              }}>위치 할당</Button>
+                            </div>
+                          </div>
                         </div>
                         <div className="flex-shrink-0">
                           <Button

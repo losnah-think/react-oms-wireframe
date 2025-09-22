@@ -35,7 +35,7 @@ export const mockOrders = Array.from({length: 100}, (_, i) => {
     supplier_name: supplier.supplier_name,
     category_id: product.category_id,
     category_name: `카테고리${product.category_id}`,
-    barcode_no: (product.variants && product.variants[0]?.barcode1) || '',
+  barcode_no: (product.variants && (product.variants[0]?.barcodes ? product.variants[0].barcodes[0] : undefined)) || '',
     is_soldout: false,
     orderer: `고객${(i%20)+1}`,
     receipient: `수령인${(i%20)+1}`,

@@ -17,6 +17,8 @@ import {
   getStockStatus,
 } from "../../utils/productUtils";
 import OptionEditPage from "./OptionEditPage";
+import MarketplaceSalesPanel from '../../components/marketplace/MarketplaceSalesPanel';
+import { clientBarcodeStore } from "../../lib/clientBarcodeStore";
 
 const DEFAULT_COMPLIANCE = {
   productSerialNumber: '',
@@ -89,6 +91,18 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
   const productId =
     propProductId || fromRouter || fromSearch || fromPath || "1";
+  const handleBack = () => {
+    try {
+      if (window && window.history && window.history.length > 1) {
+        window.history.back();
+        return;
+      }
+    } catch (e) {}
+    try {
+      // fallback to product list
+      window.location.href = "/products";
+    } catch (e) {}
+  };
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [settingsForm, setSettingsForm] = useState<any>(null);
   // editing: true = form editable, false = read-only
@@ -944,6 +958,9 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                         ) : (
                           "-"
                         )}
+                      </div>
+                      <div className="sm:col-span-2 lg:col-span-3 mt-4">
+                        <MarketplaceSalesPanel product={product} />
                       </div>
                     </div>
                   </td>
@@ -1993,8 +2010,9 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             )}
             <div className="flex justify-end gap-2">
               <Button variant="secondary" onClick={() => setShowVariantModal(false)}>취소</Button>
-              <Button variant="primary" onClick={() => {
+              <Button variant="primary" onClick={async () => {
                 if (editingVariantIndex === null || !product) { setShowVariantModal(false); return; }
+                // update local product state
                 setProduct((p:any) => {
                   const copy = JSON.parse(JSON.stringify(p));
                   copy.variants = copy.variants || [];
@@ -2004,6 +2022,17 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                   };
                   return normalizeProduct(copy);
                 });
+
+                // persist barcode change to clientBarcodeStore so barcode pages stay in sync
+                try {
+                  const updatedVariant = variantForm || {};
+                  const barcodeValue = updatedVariant.barcode1 || updatedVariant.barcode || null;
+                  const storeId = updatedVariant.id ? String(updatedVariant.id) + `-${product.id}` : String(product.id);
+                  clientBarcodeStore.updateProductBarcode(storeId, barcodeValue);
+                } catch (e) {
+                  console.warn("clientBarcodeStore update failed", e);
+                }
+
                 setShowVariantModal(false);
                 setToast('옵션이 업데이트되었습니다.');
               }}>저장</Button>

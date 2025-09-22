@@ -10,6 +10,7 @@ import {
   GridCol,
 } from "../../design-system";
 import SideGuide from "../../components/SideGuide";
+import HelpDrawer from "../../components/ui/HelpDrawer";
 
 interface Platform {
   id: string;
@@ -842,22 +843,25 @@ const ProductCsvUploadPage: React.FC = () => {
           </div>
         )}
 
-        {/* Help / 가이드 패널 */}
-        <div className="bg-white border rounded-lg p-4 mb-6">
-          <h3 className="text-lg font-semibold mb-2">CSV 업로드 도움말</h3>
+        {/* Help / 가이드 토글 (드로어로 이동) */}
+        <div className="flex items-center justify-end mb-4">
+          <button
+            className="px-3 py-2 bg-white border rounded text-sm"
+            onClick={() => setIsHelpOpen(true)}
+          >
+            CSV 도움말
+          </button>
+        </div>
+
+        <HelpDrawer open={isHelpOpen} onClose={() => setIsHelpOpen(false)} title="CSV 업로드 도움말">
           <ul className="list-disc pl-5 text-sm text-gray-600 space-y-1">
             <li>지원 형식은 UTF-8 인코딩의 CSV입니다.</li>
-            <li>
-              필수 필드(플랫폼별)를 반드시 매핑하세요. 매핑이 없으면 업로드할 수
-              없습니다.
-            </li>
-            <li>이미지 필드는 URL을 사용할 경우 업로드 옵션을 체크하세요.</li>
-            <li>
-              복잡한 CSV(따옴표 포함, 개행 포함)는 자동 파서가 처리하지만 이상이
-              있으면 템플릿을 이용하세요.
-            </li>
+            <li>필수 필드(플랫폼별)를 반드시 매핑하세요. 매핑이 없으면 업로드할 수 없습니다.</li>
+            <li>이미지 필드는 URL을 사용할 경우 '이미지 필드 URL로 처리' 옵션을 체크하세요.</li>
+            <li>복잡한 CSV(따옴표 포함, 개행 포함)는 자동 파서가 처리하지만 이상이 있으면 템플릿을 이용하세요.</li>
+            <li>템플릿 다운로드 버튼을 사용해 플랫폼별 샘플 헤더를 받아보세요.</li>
           </ul>
-        </div>
+        </HelpDrawer>
 
         {/* inline toast */}
         {message && (

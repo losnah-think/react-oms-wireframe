@@ -351,10 +351,7 @@ const OptionEditPage: React.FC<OptionEditPageProps> = ({
       optionMemo5: variant.extra_fields?.option_memo5 || variant.option_memo5 || "",
       englishOptionName: variant.extra_fields?.english_option_name || variant.english_option_name || "",
       foreignCurrencyPrice: toStringValue(variant.extra_fields?.foreign_currency_price ?? variant.foreign_currency_price ?? ""),
-      // flags
-      hiddenRelease: Boolean(variant.hidden_release ?? variant.extra_fields?.hidden_release ?? false),
-      preventBundle: Boolean(variant.prevent_bundle ?? variant.extra_fields?.prevent_bundle ?? false),
-      autoScan: Boolean(variant.auto_scan ?? variant.extra_fields?.auto_scan ?? false),
+  // flags are already set above (avoid duplicate keys)
     });
   }, [variant]);
 

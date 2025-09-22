@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import * as React from "react";
 import "@/App.css";
 import "react-quill/dist/quill.snow.css";
 import type { AppProps } from "next/app";
@@ -9,6 +9,29 @@ import { ToastProvider } from "@/components/ui/Toast";
 import UrlBanner from "@/components/UrlBanner";
 import Layout from "@/components/layout/Layout";
 import { useRouter } from "next/router";
+// (React already imported above via "use client")
+
+function AutoReseedClient() {
+  React.useEffect(() => {
+    try {
+  if (typeof window === 'undefined') return;
+  // only run once per browser
+      // `__clientBarcodeStore` is exposed in clientBarcodeStore module
+      // call reseedNow if available
+      // @ts-ignore
+      // @ts-ignore
+      if ((window as any).__clientBarcodeStore && typeof (window as any).__clientBarcodeStore.reseedNow === 'function') {
+        // give some time for app to initialize
+        setTimeout(() => {
+          try { // @ts-ignore
+            (window as any).__clientBarcodeStore.reseedNow();
+          } catch (e) {}
+        }, 500);
+      }
+    } catch (e) {}
+  }, []);
+  return null;
+}
 
 export default function App({ Component, pageProps }: AppProps) {
   // Keep pageProps intact so pages can read `pageProps.session` if they rely
@@ -26,6 +49,8 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <SessionProvider session={(pageProps as any).session}>
       <ToastProvider>
+        {/* Auto reseed client mock barcode data once per browser */}
+        <AutoReseedClient />
         <UrlBanner />
         <a href="#main-content" className="skip-link">
           Skip to content

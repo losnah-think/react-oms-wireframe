@@ -1415,9 +1415,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
           <button
             aria-label="상품 일괄수정"
             className="px-3 py-2 bg-white border rounded text-sm"
-            onClick={() => {
-              setIsBatchModalOpen(true);
-            }}
+            onClick={openBatchEdit}
           >
             상품 일괄수정
           </button>
@@ -1434,9 +1432,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
           <button
             aria-label="옵션 일괄수정"
             className="px-3 py-2 bg-white border rounded text-sm"
-            onClick={() => {
-              setIsOptionBatchModalOpen(true);
-            }}
+            onClick={openOptionBatchEdit}
           >
             옵션 일괄수정
           </button>

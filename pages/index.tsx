@@ -300,15 +300,7 @@ export default function Home(props: any) {
         <LoginPage />
       ) : (
         <>
-          {!(
-            !sessionExists &&
-            (process.env.NEXT_PUBLIC_HIDE_LOGIN === "1" ||
-              process.env.NODE_ENV !== "production")
-          ) && (
-            <div className="px-4 py-3">
-              <Breadcrumbs />
-            </div>
-          )}
+          {/* Breadcrumbs are rendered in the global Layout */}
           {renderCurrentPage()}
         </>
       )}

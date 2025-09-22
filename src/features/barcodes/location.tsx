@@ -13,6 +13,7 @@ const LocationBarcodesPage: React.FC = () => {
   const [tab, setTab] = React.useState<'list' | 'upload'>('list');
   const [query, setQuery] = React.useState("");
   const [rows, setRows] = React.useState<Row[]>(SAMPLE);
+  const [clientProducts, setClientProducts] = React.useState<any[]>([]);
   const [selected, setSelected] = React.useState<Record<number, boolean>>({});
   const [editingId, setEditingId] = React.useState<number | null>(null);
   const [editingValue, setEditingValue] = React.useState<string>("");
@@ -106,9 +107,13 @@ const LocationBarcodesPage: React.FC = () => {
     clientBarcodeStore.initIfNeeded();
     const next = clientBarcodeStore.getLocationBarcodes();
     if (Array.isArray(next) && next.length > 0) setRows(next);
+    const cp = clientBarcodeStore.getProducts() || [];
+    setClientProducts(cp);
     const handler = (e: any) => {
       const d = clientBarcodeStore.getLocationBarcodes();
       setRows(d || []);
+      const cp2 = clientBarcodeStore.getProducts() || [];
+      setClientProducts(cp2);
     };
     window.addEventListener("clientBarcodesChanged", handler);
     return () => window.removeEventListener("clientBarcodesChanged", handler);
@@ -133,10 +138,21 @@ const LocationBarcodesPage: React.FC = () => {
         }
       }
     });
+    // include client-side assignments: some products may be assigned to a location code
+    try {
+      (clientProducts || []).forEach((p: any) => {
+        const code = p.barcode;
+        if (!code) return;
+        const prodId = String(p.productId ?? p.id ?? '');
+        if (!prodId) return;
+        map[code] = map[code] || new Set();
+        map[code].add(prodId);
+      });
+    } catch (e) {}
     const out: Record<string, number> = {};
     Object.keys(map).forEach((k) => (out[k] = map[k].size));
     return out;
-  }, []);
+  }, [clientProducts]);
 
 
   return (
@@ -190,6 +206,7 @@ const LocationBarcodesPage: React.FC = () => {
               <button className="px-3 py-2 border rounded">위치코드 그룹</button>
               <button className="px-3 py-2 border rounded" onClick={() => setTab('upload')}>엑셀 업로드</button>
               <button className="px-3 py-2 border rounded">엑셀 내보내기</button>
+              <button className="px-3 py-2 border rounded text-red-600">선택 삭제</button>
             </div>
             <div className="text-sm text-gray-600">총 {rows.length}건</div>
           </div>

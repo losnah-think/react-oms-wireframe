@@ -1,6 +1,7 @@
 import React from 'react';
 import { useRouter } from 'next/router';
 import { Container, Card, Button, Stack } from '@/design-system/components';
+import { clientBarcodeStore } from '../../lib/clientBarcodeStore';
 
 interface OptionEditPageProps {
   product: any;
@@ -36,6 +37,13 @@ const OptionEditPage: React.FC<OptionEditPageProps> = ({
   const handleSave = () => {
     // Placeholder save: in the real app this should call the parent's save/update flow
     // For now just navigate back to the product detail page after 'saving'
+    try {
+      const barcodeValue = v.barcode ?? v.barcode1 ?? null;
+      const storeId = v.id ? String(v.id) + `-${product?.id}` : String(product?.id ?? '');
+      clientBarcodeStore.updateProductBarcode(storeId, barcodeValue);
+    } catch (e) {
+      console.warn('failed to save barcode to client store', e);
+    }
     backToDetail();
   };
 
