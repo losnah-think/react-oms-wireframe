@@ -527,6 +527,16 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
     formData.basicInfo.pricing?.supplyPrice,
   ]);
 
+  const formatMoney = (n?: number) => {
+    const num = Number(n ?? 0);
+    if (!Number.isFinite(num)) return "—";
+    try {
+      return new Intl.NumberFormat("ko-KR").format(num);
+    } catch {
+      return String(num);
+    }
+  };
+
   useEffect(() => {
     if (!formData.basicInfo.categoryId) return;
     if (Array.isArray(formData.basicInfo.classificationPath) && formData.basicInfo.classificationPath.length) return;
@@ -841,65 +851,7 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
     }
   };
 
-  const handleSaveAndContinue = async () => {
-    setSaving(true);
-    try {
-      // basic validation
-      if (
-        !formData.basicInfo.productName ||
-        !formData.basicInfo.codes.internal ||
-        !formData.basicInfo.representativeImage ||
-        Number(
-          formData.basicInfo.representativeSellingPrice ||
-            formData.basicInfo.pricing.sellingPrice ||
-            0,
-        ) <= 0 ||
-        Number(
-          formData.basicInfo.representativeSupplyPrice ||
-            formData.basicInfo.pricing.supplyPrice ||
-            0,
-        ) <= 0
-      ) {
-        setToastMessage("필수 항목을 입력하세요.");
-        setSaving(false);
-        return;
-      }
-      // persist to mockProducts API so the demo list picks it up
-      const payload = mapFormToMockProduct(formData);
-      const res = await fetch('/api/mock/products', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error('API 응답 실패');
-      onSave?.(formData);
-      setToastMessage("상품이 저장되었습니다. 계속 등록하실 수 있습니다.");
-      // reset form but preserve commonly reused selectors (brand, supplier, category)
-      setFormData((prev) => {
-        const preserved = {
-          basicInfo: {
-            brandId:
-              prev.basicInfo?.brandId || initialFormData.basicInfo.brandId,
-            supplierId:
-              prev.basicInfo?.supplierId ||
-              initialFormData.basicInfo.supplierId,
-            categoryId:
-              prev.basicInfo?.categoryId ||
-              initialFormData.basicInfo.categoryId,
-            codes: { ...initialFormData.basicInfo.codes },
-          },
-          additionalInfo: { ...initialFormData.additionalInfo },
-          validation: { ...initialFormData.validation },
-        } as ProductFormData;
-        // ensure codes.internal is cleared
-        preserved.basicInfo.codes.internal = "";
-        // barcodeSettings moved to central settings page; nothing to preserve here
-        return preserved;
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
+  // handleSaveAndContinue removed: list-create UI does not support per-item save-and-continue
 
   // Map the form data shape to the demo `mockProducts` product shape
   const mapFormToMockProduct = (fd: any) => {
@@ -1917,7 +1869,7 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
             <GridCol span={12}>
               {/* 메인 폼 영역 */}
               <form className="space-y-6">
-              <Card id="basic-info-section">
+              <Card>
                 <div className="mb-4">
                   <h2 className="text-lg font-bold">기본 정보</h2>
                   <p className="text-sm text-gray-500">
@@ -2234,7 +2186,7 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
                 </GridRow>
               </Card>
               {/* 옵션 / Variants */}
-              <Card id="variants-section" className="mt-6">
+              <Card className="mt-6">
   <div className="mb-4">
     <h2 className="text-lg font-bold">옵션 / Variants</h2>
     <p className="text-sm text-gray-500">
@@ -2925,6 +2877,123 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
               </div>
             </form>
             </GridCol>
+            <GridCol span={5}>
+              <Card padding="md" className="sticky top-20">
+                <div className="mb-3">
+                  <h3 className="text-base font-bold text-gray-900">상품 정보 미리보기</h3>
+                  <p className="text-xs text-gray-500">왼쪽 입력값이 실시간으로 반영됩니다.</p>
+                </div>
+
+                {/* 대표 이미지 */}
+                <div className="w-full aspect-[4/3] bg-gray-100 rounded overflow-hidden mb-3">
+                  <img
+                    src={
+                      formData.basicInfo.representativeImage ||
+                      (Array.isArray(formData.basicInfo.images) && formData.basicInfo.images[0]) ||
+                      `https://picsum.photos/seed/${formData.basicInfo.productCode || 'placeholder'}/800/600`
+                    }
+                    alt={formData.basicInfo.productName || "상품 이미지"}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src =
+                        `https://picsum.photos/seed/${formData.basicInfo.productCode || 'placeholder'}/800/600`;
+                    }}
+                  />
+                </div>
+
+                {/* 이름 + 가격 */}
+                <div className="mb-2">
+                  <div className="text-sm text-gray-600">상품명</div>
+                  <div className="text-lg font-semibold text-gray-900 truncate" title={formData.basicInfo.productName || ""}>
+                    {formData.basicInfo.productName || "(이름 없음)"}
+                  </div>
+                </div>
+                <div className="mb-3">
+                  <div className="text-sm text-gray-600">대표 판매가</div>
+                  <div className="text-xl font-bold">
+                    {formatMoney(
+                      Number(
+                        formData.basicInfo.representativeSellingPrice ||
+                        formData.basicInfo.pricing?.sellingPrice ||
+                        0
+                      )
+                    )}
+                  </div>
+                </div>
+
+                {/* 상태 뱃지 */}
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {formData.basicInfo.isSelling ? (
+                    <span className="px-2 py-0.5 rounded bg-green-100 text-green-800 text-xs">판매중</span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-700 text-xs">판매중지</span>
+                  )}
+                  {formData.basicInfo.isOutOfStock ? (
+                    <span className="px-2 py-0.5 rounded bg-red-100 text-red-700 text-xs">품절</span>
+                  ) : null}
+                  {formData.basicInfo.isTaxExempt ? (
+                    <span className="px-2 py-0.5 rounded bg-yellow-100 text-yellow-800 text-xs">면세</span>
+                  ) : null}
+                </div>
+
+                {/* 핵심 정보 요약 */}
+                <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
+                  <div className="text-gray-500">내부코드</div>
+                  <div className="text-gray-900 break-all">{formData.basicInfo.codes?.internal || "-"}</div>
+
+                  <div className="text-gray-500">브랜드</div>
+                  <div className="text-gray-900 break-all">{formData.basicInfo.brandId || "-"}</div>
+
+                  <div className="text-gray-500">공급사</div>
+                  <div className="text-gray-900 break-all">{formData.basicInfo.supplierId || "-"}</div>
+
+                  <div className="text-gray-500">카테고리</div>
+                  <div className="text-gray-900 break-all">
+                    {(formData.basicInfo.classificationPath || []).join(" > ") || formData.basicInfo.productCategory || "-"}
+                  </div>
+
+                  <div className="text-gray-500">대표 공급가</div>
+                  <div className="text-gray-900">
+                    {formatMoney(
+                      Number(
+                        formData.basicInfo.representativeSupplyPrice ||
+                        formData.basicInfo.pricing?.supplyPrice ||
+                        0
+                      )
+                    )}
+                  </div>
+
+                  <div className="text-gray-500">마진금액</div>
+                  <div className="text-gray-900">{formatMoney(Number(productMarginAmount || 0))}</div>
+                </div>
+
+                {/* 첫 번째 옵션 스냅샷 */}
+                <div className="mt-4">
+                  <div className="text-sm font-semibold text-gray-900 mb-1">첫 번째 옵션</div>
+                  {Array.isArray(formData.additionalInfo.options) &&
+                  formData.additionalInfo.options[0] &&
+                  Array.isArray(formData.additionalInfo.options[0].values) &&
+                  formData.additionalInfo.options[0].values[0] ? (
+                    (() => {
+                      const firstVal = formData.additionalInfo.options[0].values[0] as any;
+                      const sell =
+                        Number(firstVal.selling_price ?? firstVal.sellingPrice ?? firstVal.price ?? firstVal.additionalPrice ?? 0);
+                      return (
+                        <div className="text-sm text-gray-700 space-y-1">
+                          <div>옵션명: <strong>{firstVal.value || '-'}</strong></div>
+                          <div>옵션코드: {firstVal.sku || firstVal.code || '-'}</div>
+                          <div>바코드: {firstVal.barcode1 || '-'}</div>
+                          <div>판매가: {formatMoney(sell)}</div>
+                          <div>재고: {Number(firstVal.stock || 0).toLocaleString()}개</div>
+                        </div>
+                      );
+                    })()
+                  ) : (
+                    <div className="text-sm text-gray-500">옵션이 없습니다.</div>
+                  )}
+                </div>
+              </Card>
+            </GridCol>
             <GridCol span={1}>
               <div></div>
             </GridCol>
@@ -2963,12 +3032,11 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
                   </div>
                 </Card>
 
-                {/* 섹션 앵커 버튼 */}
+                {/* 섹션 앵커 버튼 (목록 생성용) */}
                 <Card>
                   <div className="text-sm font-semibold mb-2">빠른 이동</div>
                   <ul className="space-y-1 text-sm text-gray-700">
-                    <li><a href="#basic-info-section" className="hover:underline">기본 정보</a></li>
-                    <li><a href="#variants-section" className="hover:underline">옵션 / Variants</a></li>
+                    <li><a href="#list-table" className="hover:underline">목록 테이블로 이동</a></li>
                   </ul>
                 </Card>
               </div>

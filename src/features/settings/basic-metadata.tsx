@@ -66,8 +66,8 @@ export default function BasicMetadataSettings({
     return initialTab;
   })();
 
-  const activeTab = initialTabFromQuery;
-  const isAllView = true;
+  const [activeTab, setActiveTab] = useState<BasicMetadataTab>(initialTabFromQuery);
+  const isAllView = activeTab === "brands"; // legacy placeholder; not used heavily
   const [page, setPage] = useState<number>(() =>
     Number(
       (typeof window !== "undefined" &&
@@ -119,6 +119,17 @@ export default function BasicMetadataSettings({
   const [editingBrandId, setEditingBrandId] = useState<string | null>(null);
   const [editingBrandName, setEditingBrandName] = useState("");
 
+  // Modal states
+  const [isAddBrandOpen, setIsAddBrandOpen] = useState(false);
+  const [isAddYearOpen, setIsAddYearOpen] = useState(false);
+  const [isAddSeasonOpen, setIsAddSeasonOpen] = useState(false);
+
+  // new values used by modals
+  const [modalBrandName, setModalBrandName] = useState("");
+  const [modalYearName, setModalYearName] = useState("");
+  const [modalSeasonName, setModalSeasonName] = useState("");
+  const [modalSeasonYear, setModalSeasonYear] = useState<string>(newSeasonYear || "");
+
   useEffect(() => {
     localStorage.setItem(LS_KEYS.BRANDS, JSON.stringify(brands));
   }, [brands]);
@@ -129,11 +140,13 @@ export default function BasicMetadataSettings({
     localStorage.setItem(LS_KEYS.SEASONS, JSON.stringify(seasons));
   }, [seasons]);
 
-  const addBrand = () => {
-    const val = newBrand.trim();
-    if (!val) return;
-    setBrands((s) => [{ id: makeId("b"), name: val }, ...s]);
+  const addBrand = (val?: string) => {
+    const v = (val ?? newBrand).trim();
+    if (!v) return;
+    setBrands((s) => [{ id: makeId("b"), name: v }, ...s]);
     setNewBrand("");
+    setModalBrandName("");
+    setIsAddBrandOpen(false);
   };
 
   const startEditBrand = (b: Brand) => {
@@ -161,10 +174,12 @@ export default function BasicMetadataSettings({
     setBrands((s) => s.filter((x) => x.id !== id));
 
   const addYear = () => {
-    const val = newYear.trim();
+    const val = modalYearName.trim() || newYear.trim();
     if (!val) return;
     setYears((s) => [{ id: makeId("y"), name: val }, ...s]);
     setNewYear("");
+    setModalYearName("");
+    setIsAddYearOpen(false);
   };
   const removeYear = (id: string) => {
     // when removing a year, also clear yearId from seasons
@@ -175,22 +190,21 @@ export default function BasicMetadataSettings({
   };
 
   const addSeason = () => {
-    const val = newSeason.trim();
+    const val = modalSeasonName.trim() || newSeason.trim();
+    const yearId = modalSeasonYear || newSeasonYear;
     if (!val) return;
-    if (!newSeasonYear) {
-      // require year selection
-      // simple inline feedback for now
+    if (!yearId) {
       window.alert("새 시즌을 추가하려면 연도를 선택하세요.");
       return;
     }
     setSeasons((s) => [
-      { id: makeId("s"), name: val, yearId: newSeasonYear },
+      { id: makeId("s"), name: val, yearId },
       ...s,
     ]);
     setNewSeason("");
-    // reset to first year to keep select stable
-    const currentYears = loadOrDefault<Year[]>(LS_KEYS.YEARS, defaultYears);
-    setNewSeasonYear(currentYears[0]?.id || "");
+    setModalSeasonName("");
+    setModalSeasonYear("");
+    setIsAddSeasonOpen(false);
   };
   const removeSeason = (id: string) =>
     setSeasons((s) => s.filter((x) => x.id !== id));
@@ -227,18 +241,13 @@ export default function BasicMetadataSettings({
             <Input
               placeholder="검색"
               value={brandSearch}
-            onChange={(e: any) => setBrandSearch(e.target.value)}
-          />
-          <Input
-            placeholder="새 브랜드"
-            value={newBrand}
-            onChange={(e: any) => setNewBrand(e.target.value)}
-            className="w-64"
-          />
-          <Button variant="primary" onClick={addBrand}>
-            추가
-          </Button>
-        </div>
+              onChange={(e: any) => setBrandSearch(e.target.value)}
+            />
+            <div className="flex-1" />
+            <Button variant="primary" onClick={() => setIsAddBrandOpen(true)}>
+              브랜드 추가
+            </Button>
+          </div>
         <div className="flex items-center gap-2">
           <label className="text-sm">정렬:</label>
           <select
@@ -340,13 +349,9 @@ export default function BasicMetadataSettings({
         <Card padding="md">
           <h2 className="text-lg font-medium mb-2">연도</h2>
           <div className="flex gap-2 mb-2">
-            <Input
-              placeholder="새 연도 (예: 2026)"
-              value={newYear}
-              onChange={(e: any) => setNewYear(e.target.value)}
-            />
-            <Button variant="primary" onClick={addYear}>
-              추가
+            <div className="flex-1" />
+            <Button variant="primary" onClick={() => setIsAddYearOpen(true)}>
+              연도 추가
             </Button>
           </div>
           <div className="mt-3 space-y-2 max-h-80 overflow-auto">
@@ -399,30 +404,16 @@ export default function BasicMetadataSettings({
   const renderSeasonsSection = () => (
     <Card padding="md" className="space-y-3">
       <div className="flex gap-2 mb-3 items-center">
-        <Input
-          placeholder="새 시즌 (예: SS, FW)"
-          value={newSeason}
-          onChange={(e: any) => setNewSeason(e.target.value)}
-          className="w-48"
-        />
-        <select
-          className="rounded border p-2 w-44"
-          value={newSeasonYear}
-          onChange={(e) => setNewSeasonYear(e.target.value)}
-        >
-          <option value="">연도 선택</option>
-          {years.map((y) => (
-            <option key={y.id} value={y.id}>
-              {y.name}
-            </option>
-          ))}
-        </select>
+        <div className="flex-1" />
         <Button
           variant="primary"
-          onClick={addSeason}
-          disabled={!newSeason.trim() || !newSeasonYear}
+          onClick={() => {
+            setModalSeasonName("");
+            setModalSeasonYear(newSeasonYear || (years[0] && years[0].id) || "");
+            setIsAddSeasonOpen(true);
+          }}
         >
-          추가
+          시즌 추가
         </Button>
       </div>
 
@@ -464,6 +455,61 @@ export default function BasicMetadataSettings({
     const url = window.location.pathname + "?" + params.toString();
     router.replace(url, undefined, { shallow: true }).catch(() => {});
   }, [activeTab, page, perPage, sortBy, sortDir]);
+
+  // Modals JSX
+  const AddBrandModal = () => (
+    isAddBrandOpen ? (
+      <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="absolute inset-0 bg-black opacity-30" onClick={() => setIsAddBrandOpen(false)} />
+        <div className="bg-white rounded shadow-lg p-6 w-full max-w-md z-10">
+          <h3 className="text-lg font-medium mb-3">브랜드 추가</h3>
+          <Input value={modalBrandName} onChange={(e: any) => setModalBrandName(e.target.value)} placeholder="브랜드명" />
+          <div className="mt-4 flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setIsAddBrandOpen(false)}>취소</Button>
+            <Button variant="primary" onClick={() => addBrand(modalBrandName)}>저장</Button>
+          </div>
+        </div>
+      </div>
+    ) : null
+  );
+
+  const AddYearModal = () => (
+    isAddYearOpen ? (
+      <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="absolute inset-0 bg-black opacity-30" onClick={() => setIsAddYearOpen(false)} />
+        <div className="bg-white rounded shadow-lg p-6 w-full max-w-md z-10">
+          <h3 className="text-lg font-medium mb-3">연도 추가</h3>
+          <Input value={modalYearName} onChange={(e: any) => setModalYearName(e.target.value)} placeholder="연도 (예: 2026)" />
+          <div className="mt-4 flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setIsAddYearOpen(false)}>취소</Button>
+            <Button variant="primary" onClick={addYear}>저장</Button>
+          </div>
+        </div>
+      </div>
+    ) : null
+  );
+
+  const AddSeasonModal = () => (
+    isAddSeasonOpen ? (
+      <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="absolute inset-0 bg-black opacity-30" onClick={() => setIsAddSeasonOpen(false)} />
+        <div className="bg-white rounded shadow-lg p-6 w-full max-w-md z-10">
+          <h3 className="text-lg font-medium mb-3">시즌 추가</h3>
+          <Input value={modalSeasonName} onChange={(e: any) => setModalSeasonName(e.target.value)} placeholder="시즌명 (예: SS)" />
+          <select className="w-full mt-3 p-2 border rounded" value={modalSeasonYear} onChange={(e) => setModalSeasonYear(e.target.value)}>
+            <option value="">연도 선택</option>
+            {years.map((y) => (
+              <option key={y.id} value={y.id}>{y.name}</option>
+            ))}
+          </select>
+          <div className="mt-4 flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setIsAddSeasonOpen(false)}>취소</Button>
+            <Button variant="primary" onClick={addSeason}>저장</Button>
+          </div>
+        </div>
+      </div>
+    ) : null
+  );
 
   return (
     <Container maxWidth="full" centered={false} padding="md">

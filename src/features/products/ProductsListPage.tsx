@@ -5,6 +5,7 @@ import React, {
   useRef,
   useCallback,
 } from "react";
+import { useRouter } from "next/router";
 import {
   Container,
   Card,
@@ -12,6 +13,7 @@ import {
   Stack,
   GridRow,
   GridCol,
+  Badge
 } from "../../design-system";
 import TableExportButton from "../../components/common/TableExportButton";
 import HierarchicalSelect from "../../components/common/HierarchicalSelect";
@@ -51,6 +53,7 @@ const normalizeProducts = (list: any[]): any[] =>
   });
 
 const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
+  const router = useRouter();
   const [products, setProducts] = useState<any[]>([]);
   const [productFilterOptions, setProductFilterOptions] = useState<any>({
     brands: [],
@@ -64,6 +67,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  const [isClient, setIsClient] = useState(false);
   const [debounced, setDebounced] = useState(searchTerm);
   const debounceRef = useRef<number | null>(null);
   const [selectedCategory, setSelectedCategory] = useState("전체");
@@ -101,6 +105,11 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const PAGE_SIZE = 20;
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+  // UI states for enhanced list behavior
+  const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
+  const [barcodeDrawerOpenFor, setBarcodeDrawerOpenFor] = useState<string | null>(null);
+  const [copyHintFor, setCopyHintFor] = useState<string | null>(null);
 
   // --- Search UX states & helpers ---
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -178,6 +187,28 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
       return next;
     });
   }, []);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  const showInitialPlaceholder = !isClient;
+
+  const initialPlaceholderBlock = showInitialPlaceholder ? (
+    <div className="mb-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">상품 목록</h1>
+        </div>
+        <div className="text-right">
+          <div className="text-gray-600 mt-1 text-lg">
+            총 <span className="font-bold text-blue-600">0</span>개 상품
+          </div>
+          <div className="text-gray-400 text-base">(로딩 중)</div>
+        </div>
+      </div>
+    </div>
+  ) : null;
 
   const executeSearch = useCallback(
     (value?: string) => {
@@ -763,6 +794,54 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
     selectedYear,
   ]);
 
+  // Helpers
+  const formatNumber = (n: number | undefined | null) => {
+    if (n === null || n === undefined || Number.isNaN(Number(n))) return "—";
+    return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  };
+  const relativeTime = (iso?: string | null) => {
+    if (!iso) return "—";
+    try {
+      const d = new Date(iso);
+      const diff = Date.now() - d.getTime();
+      const mins = Math.floor(diff / 60000);
+      if (mins < 1) return "방금 전";
+      if (mins < 60) return `${mins}분 전`;
+      const hours = Math.floor(mins / 60);
+      if (hours < 24) return `${hours}시간 전`;
+      const days = Math.floor(hours / 24);
+      return `${days}일 전`;
+    } catch (e) {
+      return "—";
+    }
+  };
+
+  const stockChipClass = (qty: number | undefined | null) => {
+    if (qty === null || qty === undefined) return "inline-flex items-center px-2 py-0.5 rounded-full text-sm bg-gray-100 text-gray-700 border border-gray-300";
+    if (qty === 0) return "inline-flex items-center px-2 py-0.5 rounded-full text-sm border border-red-400 text-red-600 bg-red-50";
+    if (qty <= 5) return "inline-flex items-center px-2 py-0.5 rounded-full text-sm border border-orange-300 text-orange-700 bg-orange-50";
+    return "inline-flex items-center px-2 py-0.5 rounded-full text-sm bg-gray-100 text-gray-800 border border-gray-200";
+  };
+
+  const toggleExpand = (id: string) => {
+    setExpandedRows((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const copyToClipboard = async (text: string, id: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyHintFor(id);
+      setTimeout(() => setCopyHintFor(null), 1500);
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  // layout measurements (px) for sticky columns
+  const CHECKBOX_WIDTH = 56; // checkbox column width (approx px)
+  const THUMBNAIL_COMPACT = 48; // compact thumb
+  const THUMBNAIL_LARGE = 120; // large thumb per request
+
   // debounce searchTerm -> debounced
   useEffect(() => {
     if (debounceRef.current) window.clearTimeout(debounceRef.current);
@@ -806,6 +885,49 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
       const next = { ...prev, [id]: !prev[id] };
       return next;
     });
+  };
+
+  const navigateToProduct = (id: string) => {
+    if (!id) return;
+    if (onNavigate) {
+      onNavigate("products-edit", id);
+      return;
+    }
+    const nextPath = `/products/${encodeURIComponent(String(id))}`;
+    try {
+      router?.push?.(nextPath);
+    } catch {
+      if (typeof window !== "undefined") window.location.href = nextPath;
+    }
+  };
+
+  const handleVariantNavigate = (
+    event: React.MouseEvent<HTMLElement, MouseEvent>,
+    variant: any,
+    index: number,
+    pid: string,
+  ) => {
+    if (!variant) return;
+    const target = event.target as HTMLElement | null;
+    if (target && target.closest("input, button, a, textarea, select, [role='button']")) {
+      return;
+    }
+    const prodId = pid;
+    if (!prodId) return;
+    const resolvedVariantId =
+      variant.id ??
+      variant.variant_id ??
+      variant.code ??
+      variant.option_code ??
+      variant.barcode1 ??
+      variant.barcode ??
+      `index-${index}`;
+    const nextPath = `/products/${encodeURIComponent(String(prodId))}/options/${encodeURIComponent(String(resolvedVariantId))}`;
+    try {
+      router?.push?.(nextPath);
+    } catch (err) {
+      if (typeof window !== "undefined") window.location.href = nextPath;
+    }
   };
 
   const toggleSelectAll = () => {
@@ -928,6 +1050,67 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
     setSelling: "unchanged",
   });
 
+  // Modal state for confirming external send target
+  const [isSendModalOpen, setIsSendModalOpen] = useState(false);
+  const [pendingSendIds, setPendingSendIds] = useState<string[]>([]);
+  const [pendingSendMall, setPendingSendMall] = useState<string>(selectedMall || "");
+  const sendModalRef = useRef<HTMLDivElement | null>(null);
+  const sendModalSelectRef = useRef<HTMLSelectElement | null>(null);
+  const prevActiveElementRef = useRef<HTMLElement | null>(null);
+
+  // When modal opens, manage focus and default mall selection
+  useEffect(() => {
+    if (!isSendModalOpen) return;
+    // save previously focused element to restore later
+    prevActiveElementRef.current = document.activeElement as HTMLElement | null;
+    // if no mall chosen but only one mall exists, pick it
+    if ((!pendingSendMall || pendingSendMall === "") && Array.isArray(malls) && malls.length === 1) {
+      setPendingSendMall(malls[0].id);
+    }
+    // focus the select after a tick
+    const t = setTimeout(() => {
+      sendModalSelectRef.current?.focus();
+    }, 50);
+
+    // key handling: ESC to close, Tab trap
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setIsSendModalOpen(false);
+      }
+      if (e.key === "Tab") {
+        // simple focus trap
+        const container = sendModalRef.current;
+        if (!container) return;
+        const focusable = Array.from(
+          container.querySelectorAll<HTMLElement>(
+            'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])',
+          ),
+        ).filter((el) => el.offsetParent !== null);
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        const active = document.activeElement as HTMLElement | null;
+        if (!e.shiftKey && active === last) {
+          e.preventDefault();
+          first.focus();
+        } else if (e.shiftKey && active === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      clearTimeout(t);
+      document.removeEventListener("keydown", onKey);
+      // restore previous focus
+      try {
+        prevActiveElementRef.current?.focus();
+      } catch {}
+    };
+  }, [isSendModalOpen, pendingSendMall, malls]);
+
   // Option batch form state
   const [optionBatchForm, setOptionBatchForm] = useState<{
     priceDelta: string;
@@ -936,25 +1119,28 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
 
   return (
     <Container maxWidth="full" padding="md" className="bg-gray-50 min-h-screen">
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">상품 목록</h1>
-          </div>
-          <div className="text-right">
-            <div className="text-gray-600 mt-1 text-lg">
-              총{" "}
-              <span className="font-bold text-blue-600">
-                {filteredProducts.length}
-              </span>
-              개 상품
+      {initialPlaceholderBlock}
+      {!showInitialPlaceholder && (
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">상품 목록</h1>
             </div>
-            <div className="text-gray-400 text-base">
-              (전체 {products.length}개)
+            <div className="text-right">
+              <div className="text-gray-600 mt-1 text-lg">
+                총{" "}
+                <span className="font-bold text-blue-600">
+                  {filteredProducts.length}
+                </span>
+                개 상품
+              </div>
+              <div className="text-gray-400 text-base">
+                (전체 {products.length}개)
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       <Card padding="lg" className="mb-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
@@ -1310,6 +1496,50 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
         )}
       </Card>
 
+      {/* Send confirmation modal */}
+      {isSendModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) { setIsSendModalOpen(false); setPendingSendIds([]); } }}
+        >
+          <div ref={(el) => { sendModalRef.current = el }} className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+            <h3 className="text-lg font-bold mb-4">외부 송신 대상 쇼핑몰 선택</h3>
+            <div className="mb-4">
+              <label className="block text-sm text-gray-700 mb-2">대상 쇼핑몰</label>
+              <select
+                ref={(el) => { sendModalSelectRef.current = el }}
+                value={pendingSendMall}
+                onChange={(e) => setPendingSendMall(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              >
+                <option value="">쇼핑몰 선택</option>
+                {(malls || []).map((m: any) => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                className="px-4 py-2 bg-white border rounded"
+                onClick={() => { setIsSendModalOpen(false); setPendingSendIds([]); }}
+              >
+                취소
+              </button>
+              <button
+                className="px-4 py-2 bg-blue-600 text-white rounded"
+                onClick={async () => {
+                  await handleExternalSend(pendingSendIds, pendingSendMall || undefined);
+                  setIsSendModalOpen(false);
+                  setPendingSendIds([]);
+                }}
+              >
+                전송
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 검색 섹션: 항상 노출 (moved back under filters) */}
       <Card padding="lg" className="mb-6 shadow-sm">
         <div className="space-y-4 bg-white rounded-md">
@@ -1474,12 +1704,12 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
             <button
               aria-label="선택 외부 송신"
               className="px-3 py-2 bg-white border rounded text-sm"
-              onClick={() =>
-                handleExternalSend(
-                  Object.keys(selectedIds).filter((k) => selectedIds[k]),
-                  selectedMall,
-                )
-              }
+              onClick={() => {
+                const ids = Object.keys(selectedIds).filter((k) => selectedIds[k]);
+                setPendingSendIds(ids);
+                setPendingSendMall(selectedMall || "");
+                setIsSendModalOpen(true);
+              }}
             >
               선택 외부 송신
             </button>
@@ -1537,229 +1767,232 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
           <table className="min-w-full min-w-0">
             <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
               <tr>
-                <th className="px-6 py-4">
+                <th className="px-6 py-4 text-center align-middle">
                   <input
                     type="checkbox"
                     checked={selectAll}
                     onChange={toggleSelectAll}
                   />
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700">
-                  상품정보
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700">
-                  카테고리/브랜드
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700">
-                  재고
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700">
-                  가격
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700">
-                  등록일
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700">
-                  액션
-                </th>
+                <th className="px-6 py-4 text-center align-middle text-xs font-bold text-gray-700">상품정보</th>
+                <th className="px-6 py-4 text-center align-middle text-xs font-bold text-gray-700">카테고리/브랜드</th>
+                <th className="px-6 py-4 text-center align-middle text-xs font-bold text-gray-700">재고</th>
+                <th className="px-6 py-4 text-center align-middle text-xs font-bold text-gray-700">가격</th>
+                <th className="px-6 py-4 text-center align-middle text-xs font-bold text-gray-700">등록일</th>
+                <th className="px-6 py-4 text-center align-middle text-xs font-bold text-gray-700">액션</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {pagedProducts.map((p, idx) => (
-                <tr
-                  key={p.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => {
-                    if (onNavigate) onNavigate("products-edit", String(p.id));
-                    else window.location.href = `/products/${p.id}`;
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      if (onNavigate) onNavigate("products-edit", String(p.id));
-                      else window.location.href = `/products/${p.id}`;
-                    }
-                  }}
-                  className={`hover:bg-gray-50 cursor-pointer ${compactView ? "text-sm" : ""}`}
-                >
-                  <td
-                    className={`${compactView ? "px-3 py-2" : "px-4 py-6"}`}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={!!selectedIds[p.id]}
-                      onChange={() => toggleRow(String(p.id))}
-                    />
-                  </td>
-                  <td className={`${compactView ? "px-3 py-2" : "px-6 py-6"}`}>
-                    <div
-                      className={`flex items-start ${compactView ? "gap-2" : "gap-4"}`}
-                    >
-                      <div
-                        className={`${compactView ? "w-12 h-10" : "w-20 h-16"} bg-gray-100 rounded overflow-hidden flex-shrink-0`}
-                      >
-                        <img
-                          src={
-                            Array.isArray(p.images) && p.images[0]
-                              ? p.images[0]
-                              : "https://via.placeholder.com/160x120?text=No+Image"
-                          }
-                          alt={p.name || "thumbnail"}
-                          className={`w-full h-full object-cover`}
+              {pagedProducts.map((p, idx) => {
+                const prodId = String(p.id);
+                const totalStock = Array.isArray(p.variants)
+                  ? p.variants.reduce((s: number, v: any) => s + (v.stock || 0), 0)
+                  : p.stock || 0;
+                const barcodeCount = Array.isArray(p.variants)
+                  ? p.variants.reduce((c: number, v: any) => c + ((v.barcodes && v.barcodes.length) || 0), 0)
+                  : (p.barcodes ? p.barcodes.length : 0) || 0;
+                return (
+                  <React.Fragment key={prodId}>
+                      <tr
+                        className={`hover:bg-gray-50 ${compactView ? "text-sm" : ""} cursor-pointer`}
+                        onClick={(e) => {
+                          const t = e.target as HTMLElement | null;
+                          if (t && t.closest("input, button, a, textarea, select, [role='button']")) return;
+                          navigateToProduct(prodId);
+                        }}
+                      > 
+                        <td
+                          className={`px-4 py-4 sticky left-0 z-20 bg-white`} 
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                        <input
+                          type="checkbox"
+                          checked={!!selectedIds[p.id]}
+                          onChange={() => toggleRow(prodId)}
                         />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div
-                              className={`${compactView ? "text-xs text-gray-500" : "text-sm text-gray-400"}`}
-                            >
-                              #{String(p.id || "").padStart(3, "0")}
-                            </div>
-                            <div
-                              className={`${compactView ? "font-medium" : "font-bold"}`}
-                            >
-                              {p.name || "-"}
-                            </div>
-                            {!compactView && (
-                              <div className="text-sm text-gray-600">
-                                {p.code || "-"}
-                              </div>
-                            )}
-                          </div>
-                          <div
-                            className={`text-sm ${compactView ? "text-gray-600" : "text-gray-500"}`}
-                          >
-                            {(p.is_stock_managed ||
-                              (Array.isArray(p.variants) &&
-                                p.variants.length > 0)) && (
-                              <span
-                                className={`px-2 py-0.5 rounded ${compactView ? "bg-blue-50 text-blue-700 text-xs" : "bg-blue-100 text-blue-800 text-xs"}`}
-                              >
-                                재고관리
-                              </span>
-                            )}
-                            {p.is_selling === false ? (
-                              <span
-                                className={`${compactView ? "ml-1 px-2 py-0.5 rounded bg-gray-100 text-gray-700 text-xs" : "ml-2 px-2 py-0.5 rounded bg-gray-100 text-gray-700 text-xs"}`}
-                              >
-                                판매중지
-                              </span>
+                      </td>
+
+                      <td className={`px-4 py-4 sticky left-[72px] z-10 bg-white`}>
+                        <div className="flex items-center gap-3">
+                          <div className={`${compactView ? "w-12 h-10" : "w-[120px] h-[120px]"} bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center`}> 
+                            {Array.isArray(p.images) && p.images[0] ? (
+                              <img src={p.images[0]} alt={p.name || "thumbnail"} className="w-full h-full object-cover object-center" />
                             ) : (
-                              <span
-                                className={`${compactView ? "ml-1 px-2 py-0.5 rounded bg-green-50 text-green-700 text-xs" : "ml-2 px-2 py-0.5 rounded bg-green-100 text-green-800 text-xs"}`}
-                              >
-                                판매중
-                              </span>
-                            )}
-                            {p.is_soldout && (
-                              <span
-                                className={`${compactView ? "ml-1 px-2 py-0.5 rounded bg-red-50 text-red-700 text-xs" : "ml-2 px-2 py-0.5 rounded bg-red-100 text-red-800 text-xs"}`}
-                              >
-                                품절
-                              </span>
+                              <div className="text-gray-400">📦</div>
                             )}
                           </div>
                         </div>
+                      </td>
 
-                        {!compactView && (
-                          <div className="mt-2 text-sm text-gray-600">
-                            <div>
-                              사입상품명 | {p.purchase_name || "미입력"}
+                      <td className={`px-6 py-4`}>
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <button
+                                aria-label={expandedRows[prodId] ? "옵션 접기" : "옵션 펼치기"}
+                                onClick={(e) => { e.stopPropagation(); toggleExpand(prodId); }}
+                                className="p-1 rounded hover:bg-gray-100"
+                              >
+                                <svg className={`w-4 h-4 transform ${expandedRows[prodId] ? "rotate-90" : "rotate-0"}`} viewBox="0 0 24 24" fill="none">
+                                  <path d="M8 5v14l11-7z" fill="currentColor" />
+                                </svg>
+                              </button>
+                              <div className="text-xs text-gray-500">#{String(p.id || "").padStart(3, "0")}</div>
+                              <div className="font-bold truncate" title={p.name || "이름 미입력"}>
+                                {p.name || <span className="text-gray-400">이름 미입력</span>}
+                              </div>
                             </div>
-                            <div className="mt-1">
-                              판매 |{" "}
-                              {formatPrice(p.selling_price ?? p.price ?? 0)}{" "}
-                              &nbsp; 원가 | {formatPrice(p.cost_price ?? 0)}
-                            </div>
-                            <div className="mt-1">
-                              공급처 | {p.supplier_name || "자사"} &nbsp; |
-                              &nbsp; (--)
+                            <div className="mt-1 text-sm text-gray-600 flex items-center gap-2">
+                              <code className="font-mono text-sm text-gray-700 truncate">{p.code || "—"}</code>
+                              {p.code ? (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); copyToClipboard(String(p.code), prodId); }}
+                                  className="ml-2 text-xs text-gray-500 hover:text-gray-800"
+                                  aria-label="코드 복사"
+                                >
+                                  복사
+                                </button>
+                              ) : (
+                                <span className="text-gray-400 text-xs">코드 미입력</span>
+                              )}
+                              {copyHintFor === prodId && (
+                                <span className="text-green-600 text-xs ml-2">복사됨</span>
+                              )}
                             </div>
                           </div>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-                  <td className={`${compactView ? "px-3 py-2" : "px-6 py-6"}`}>
-                    <div className={`${compactView ? "text-sm" : "text-sm"}`}>
-                      {p.classification ||
-                        p.group ||
-                        categoryNames[p.category_id] ||
-                        "미입력"}
-                    </div>
-                    {p.brand ? (
-                      <div
-                        className={`${compactView ? "text-xs text-gray-500 mt-1" : "text-sm text-gray-600 mt-1"}`}
-                      >
-                        {p.brand}
-                      </div>
-                    ) : null}
-                    {!compactView && (
-                      <div className="text-sm text-gray-600 mt-2">
-                        상품코드 | {p.code || "미입력"}
-                      </div>
+
+                          <div className="ml-4 text-right flex flex-col items-end gap-2">
+                            <div>
+                              {p.is_selling === false ? (
+                                <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-700 text-xs">판매중지</span>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded bg-green-50 text-green-700 text-xs">판매중</span>
+                              )}
+                              {p.is_active === false ? (
+                                <span className="px-2 py-0.5 rounded ml-1 bg-gray-100 text-gray-700 text-xs">비활성</span>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded ml-1 bg-blue-50 text-blue-700 text-xs">활성</span>
+                              )}
+                            </div>
+                            <div className="text-sm font-medium">{formatPrice(p.selling_price ?? p.price ?? 0)}</div>
+                          </div>
+                        </div>
+
+                        <div className="mt-2 flex items-center gap-3 text-sm">
+                          <div className={stockChipClass(totalStock)} title={totalStock === null ? "재고 확인 필요" : `재고 ${totalStock}`}>
+                            {totalStock === null || totalStock === undefined ? "재고 확인 필요" : totalStock}
+                          </div>
+                          <div className="inline-flex items-center px-2 py-0.5 rounded-full text-sm bg-gray-50 text-gray-700 border border-gray-200">
+                            <svg className="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="none"><path d="M3 3h18v4H3zM3 7v14h18V7H3z" fill="currentColor"/></svg>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setBarcodeDrawerOpenFor(prodId); }}
+                              className="text-sm text-gray-700"
+                            >
+                              바코드 {barcodeCount > 0 ? `· ${barcodeCount}` : "· 없음"}
+                            </button>
+                          </div>
+                          <div className="text-sm text-gray-500">{p.brand || <span className="text-gray-400">브랜드 미등록</span>}</div>
+                          <div className="text-sm text-yellow-600 ml-1">{p.category_name || p.classification || p.group || <span className="text-yellow-700">카테고리 미지정</span>}</div>
+                        </div>
+                      </td>
+
+                      <td className={`px-6 py-4 text-right`}> 
+                        <div className={stockChipClass(totalStock)}>{totalStock === null || totalStock === undefined ? "재고 확인 필요" : totalStock}</div>
+                      </td>
+
+                      <td className={`px-6 py-4 text-right font-medium`}>{formatPrice(p.selling_price ?? p.price ?? 0)}</td>
+
+                      <td className={`px-6 py-4`}>
+                        <div title={p.created_at ? new Date(p.created_at).toLocaleString() : "기록 없음"}>
+                          {relativeTime(p.created_at)}
+                        </div>
+                      </td>
+
+                      <td className={`px-6 py-4`} onClick={(e) => e.stopPropagation()}>
+                        <div className="flex gap-2 justify-end">
+                          <Button variant="ghost" size="small" onClick={() => { if (onNavigate) onNavigate("products-edit", prodId); else window.location.href = `/products/${prodId}`; }}>편집</Button>
+                            <Button variant="primary" size="small" onClick={() => { setPendingSendIds([prodId]); setPendingSendMall(selectedMall || ""); setIsSendModalOpen(true); }}>외부 송신</Button>
+                          <Button variant="danger" size="small" onClick={() => { if (!confirm("정말 이 상품을 휴지통으로 이동하시겠습니까?")) return; softDeleteOne(prodId); }}>삭제</Button>
+                        </div>
+                      </td>
+                    </tr>
+
+                    {expandedRows[prodId] && (
+                      <tr className="bg-gray-50">
+                        <td colSpan={8} className="px-6 py-4">
+                          <div className="overflow-auto">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="text-left text-xs text-gray-600 border-b">
+                                  <th className="py-2">옵션명 / 코드</th>
+                                  <th className="py-2">판매상태 / 재고</th>
+                                  <th className="py-2">위치 바코드</th>
+                                  <th className="py-2">바코드</th>
+                                  <th className="py-2">규격·중량</th>
+                                  <th className="py-2">최종수정일</th>
+                                  <th className="py-2">작업</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {(Array.isArray(p.variants) && p.variants.length > 0) ? p.variants.map((v: any, vIdx: number) => (
+                                  <tr key={String(v.id || v.sku || vIdx)} className="border-b cursor-pointer" onClick={(e) => handleVariantNavigate(e, v, vIdx, prodId)}>
+                                    <td className="py-2">
+                                      <div className="font-medium">{v.name || "옵션명 미입력"}</div>
+                                      <div className="text-xs text-gray-500">{v.code || "—"}</div>
+                                    </td>
+                                    <td className="py-2">
+                                      <div className="flex items-center gap-2">
+                                        <button className={`px-2 py-0.5 rounded ${v.is_selling === false ? "bg-gray-100 text-gray-700" : "bg-green-50 text-green-700"}`} onClick={() => {
+                                          // toggle variant selling
+                                          setProducts((prev) => (prev || []).map((pp: any) => {
+                                            if (String(pp.id) !== prodId) return pp;
+                                            return {
+                                              ...pp,
+                                              variants: (pp.variants || []).map((vv: any) => vv === v ? { ...vv, is_selling: !vv.is_selling } : vv),
+                                            };
+                                          }));
+                                        }}>{v.is_selling === false ? "상태 미확인" : "판매중"}</button>
+                                        <input type="number" value={v.stock ?? 0} onChange={(e) => {
+                                          const nv = Number(e.target.value || 0);
+                                          setProducts((prev) => (prev || []).map((pp: any) => {
+                                            if (String(pp.id) !== prodId) return pp;
+                                            return {
+                                              ...pp,
+                                              variants: (pp.variants || []).map((vv: any) => vv === v ? { ...vv, stock: nv } : vv),
+                                            };
+                                          }));
+                                        }} className="w-20 px-2 py-1 border rounded" />
+                                      </div>
+                                    </td>
+                                    <td className="py-2">{v.location_barcode || <span className="text-yellow-700">미지정</span>}</td>
+                                    <td className="py-2">
+                                      <div className="flex items-center gap-2">
+                                        {(v.barcodes || []).slice(0,2).map((b: any, i: number) => (
+                                          <div key={i} className="text-sm text-gray-700">{b}</div>
+                                        ))}
+                                        {((v.barcodes || []).length || 0) > 2 && <div className="text-xs text-gray-500">+{(v.barcodes || []).length - 2}</div>}
+                                        {((v.barcodes || []).length || 0) === 0 && <div className="text-gray-400">없음</div>}
+                                        <button className="ml-2 text-xs text-blue-600" onClick={() => setBarcodeDrawerOpenFor(prodId)}>관리</button>
+                                      </div>
+                                    </td>
+                                    <td className="py-2">{(v.dimensions && `${v.dimensions.width || ""}×${v.dimensions.height || ""}×${v.dimensions.depth || ""}`) || (v.weight ? `${v.weight}g` : "—")}</td>
+                                    <td className="py-2">{relativeTime(v.updated_at || v.modified_at)}</td>
+                                    <td className="py-2"><button className="text-xs text-gray-700">저장</button></td>
+                                  </tr>
+                                )) : (
+                                  <tr>
+                                    <td colSpan={7} className="py-6 text-center text-gray-500">옵션 정보가 없습니다.</td>
+                                  </tr>
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+                        </td>
+                      </tr>
                     )}
-                    {!compactView && (
-                      <div className="text-sm text-gray-600 mt-1">
-                        배송비정책 | {p.shipping_policy || "미지정"}
-                      </div>
-                    )}
-                  </td>
-                  <td
-                    className={`${compactView ? "px-3 py-2 text-center" : "px-6 py-6"}`}
-                  >
-                    {Array.isArray(p.variants)
-                      ? p.variants.reduce(
-                          (s: number, v: any) => s + (v.stock || 0),
-                          0,
-                        )
-                      : p.stock || 0}
-                  </td>
-                  <td
-                    className={`${compactView ? "px-3 py-2 text-right font-medium" : "px-6 py-6"}`}
-                  >
-                    {formatPrice(p.selling_price ?? p.price ?? 0)}
-                  </td>
-                  <td className={`${compactView ? "px-3 py-2" : "px-6 py-6"}`}>
-                    {p.created_at
-                      ? `${new Date(p.created_at).toLocaleDateString("ko-KR")} ${new Date(p.created_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}`
-                      : "-"}
-                  </td>
-                  <td className={`${compactView ? "px-3 py-2" : "px-6 py-6"}`}>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleExternalSend([String(p.id)], selectedMall);
-                        }}
-                      >
-                        외부 송신
-                      </Button>
-                      <Button
-                        variant="danger"
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (
-                            !confirm(
-                              "정말 이 상품을 휴지통으로 이동하시겠습니까?",
-                            )
-                          )
-                            return;
-                          softDeleteOne(String(p.id));
-                        }}
-                      >
-                        삭제
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                  </React.Fragment>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -2420,6 +2653,18 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
           </div>
         </div>
       )}
+      <SideGuide open={!!barcodeDrawerOpenFor} onClose={() => setBarcodeDrawerOpenFor(null)} title="바코드 관리">
+        <div className="space-y-3">
+          {barcodeDrawerOpenFor ? (
+            <div>
+              <div className="text-sm text-gray-700">상품 ID: {barcodeDrawerOpenFor}</div>
+              <div className="mt-2 text-sm text-gray-600">여기에서 바코드를 확인하고 추가/편집합니다. (모의 데이터)</div>
+            </div>
+          ) : (
+            <div className="text-sm text-gray-500">바코드를 볼 상품을 선택하세요.</div>
+          )}
+        </div>
+      </SideGuide>
     </Container>
   );
 };

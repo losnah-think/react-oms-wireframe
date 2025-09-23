@@ -6,6 +6,8 @@ import {
   Badge,
   Stack,
   Modal,
+  GridRow,
+  GridCol,
 } from "../../design-system";
 import SideGuide from "../../components/SideGuide";
 import Toast from "../../components/Toast";
@@ -72,7 +74,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   const router = useRouter();
   // server-rendered default; real value is populated on client to avoid hydration mismatch
   const [clientProductId, setClientProductId] = useState<string | null>(null);
-  const initialProductId = propProductId || (router?.query?.id ? String(router.query.id) : undefined) || "1";
+  const initialProductId = propProductId || (router?.query?.id ? String(router.query.id) : undefined);
 
   // compute a stable productId for rendering: prefer prop/router on server, but allow client override
   const productId = clientProductId ?? initialProductId;
@@ -96,6 +98,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
   const [product, setProduct] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isClient, setIsClient] = useState(false);
   const [classificationNames, setClassificationNames] = useState<
     Record<string, string>
   >({});
@@ -107,6 +110,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   const [showVariantModal, setShowVariantModal] = useState(false);
   const [variantForm, setVariantForm] = useState<any>(null);
   const [editingVariantIndex, setEditingVariantIndex] = useState<number | null>(null);
+  const [previewVariant, setPreviewVariant] = useState<any | null>(null);
   // ---- Option Edit Route Detection (client-only) ----
   const [isOptionRoute, setIsOptionRoute] = useState(false);
   const [optionKey, setOptionKey] = useState<string | null>(null);
@@ -212,6 +216,11 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     } catch (e) {
       // no-op
     }
+  }, []);
+
+  useEffect(() => {
+    // mark when client mount is complete to keep SSR/CSR markup stable
+    setIsClient(true);
   }, []);
 
   // Dropdown options for product-level fields (fetched from mock API)
@@ -340,6 +349,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
 
   useEffect(() => {
+    if (!productId) return;
     let mounted = true;
     setLoading(true);
     console.debug("[ProductDetailPage] fetching product id=", productId);
@@ -477,7 +487,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     }
   };
 
-  if (loading) {
+  if (!isClient || loading) {
     return (
       <Container maxWidth="6xl" padding="lg">
         <div className="text-center py-12">로딩 중...</div>
@@ -763,6 +773,11 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
           </div>
         </div>
 
+        {/* 24-Grid Layout 시작: 3 / 12 / 1 / 5 / 3 */}
+        <GridRow gutter={24}>
+          <GridCol span={3}><div></div></GridCol>
+          <GridCol span={12}>
+
         {/* 등록/수정 정보 */}
         <Card padding="md" className="mb-6">
           <div className="flex justify-between items-center">
@@ -911,44 +926,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
                       <div>상품ID: {product.id}</div>
                       <div>
-                        자체상품코드:{" "}
-                        {editing ? (
-                          <input
-                            className="px-2 py-1 border rounded"
-                            value={product.code || ""}
-                            onChange={(e) =>
-                              setProduct((p: any) => ({
-                                ...(p || {}),
-                                code: e.target.value,
-                                codes: p?.codes
-                                  ? { ...p.codes, internal: e.target.value }
-                                  : p?.codes,
-                              }))
-                            }
-                          />
-                        ) : (
-                          internalProductCode || "-"
-                        )}
-                      </div>
-                      <div>
-                        카페24상품코드:{" "}
-                        {editing ? (
-                          <input
-                            className="px-2 py-1 border rounded"
-                            value={cafe24ProductCode || ""}
-                            onChange={(e) =>
-                              setProduct((p: any) => ({
-                                ...(p || {}),
-                                cafe24_product_code: e.target.value,
-                                codes: p?.codes
-                                  ? { ...p.codes, cafe24: e.target.value }
-                                  : p?.codes,
-                              }))
-                            }
-                          />
-                        ) : (
-                          cafe24ProductCode || "-"
-                        )}
+        
                       </div>
                       <div>
                         상품 연도:{" "}
@@ -1568,6 +1546,8 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                         onClick={(event) =>
                           handleVariantNavigate(event, variant, vIdx)
                         }
+                        onMouseEnter={() => setPreviewVariant(variant)}
+                        onMouseLeave={() => setPreviewVariant(null)}
                       >
                         <td className="px-4 py-3 font-semibold text-gray-900">
                           {editing ? (
@@ -2581,6 +2561,73 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
         </Modal>
 
         {/* (상품 설명 수정 모달 제거) */}
+          </GridCol>
+          <GridCol span={1}><div></div></GridCol>
+          <GridCol span={5}>
+            <div className="sticky top-24">
+              <Card padding="md" className="shadow">
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-20 h-20 bg-gray-100 rounded overflow-hidden flex-shrink-0">
+                    <img
+                      src={Array.isArray(product.images) && product.images[0] ? product.images[0] : `https://picsum.photos/seed/${product.id || 'preview'}/300/300`}
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                      onError={(e)=>{(e.target as HTMLImageElement).src = `https://picsum.photos/seed/${product.id || 'preview'}/300/300`}}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-xs text-gray-500">상품명</div>
+                        <div className="font-semibold">{product.name || '-'}</div>
+                        <div className="text-xs text-gray-500 mt-1">브랜드</div>
+                        <div className="text-sm">{product.brand || '-'}</div>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <div className="flex gap-2">
+                          {product.is_soldout && (
+                            <span className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded">품절</span>
+                          )}
+                          {product.is_selling ? (
+                            <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded">판매중</span>
+                          ) : (
+                            <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">비판매</span>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs text-gray-500">시중가</div>
+                          <div className="text-sm text-gray-800">{formatPriceOrDash(marketPriceValue)}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <div className="text-xs text-gray-500">판매가</div>
+                        <div className="text-lg font-bold text-green-700">
+                          <PreviewPrice
+                            price={Number(product.selling_price || 0)}
+                            type={(product.pricing && (product.pricing as any).discountType) || 'none'}
+                            value={(product.pricing && (product.pricing as any).discountValue) || 0}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500">총재고</div>
+                        <div>
+                          {product.variants
+                            ? (product.variants as any[]).reduce((s: number, v: any) => s + (v.stock || 0), 0).toLocaleString()
+                            : '0'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </GridCol>
+          <GridCol span={3}><div></div></GridCol>
+        </GridRow>
       </Container>
       {toast && <Toast message={toast} onClose={() => setToast(null)} />}
           <div className="fixed right-6 bottom-6 z-50">
