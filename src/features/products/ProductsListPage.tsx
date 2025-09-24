@@ -1128,6 +1128,35 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
   return (
     <Container maxWidth="full" padding="md" className="bg-gray-50 min-h-screen">
 
+      {/* Top search band: minimal, server-safe wrapper for moving the search input later */}
+      <div className="w-full bg-white shadow-sm mb-6">
+        <div className="max-w-screen-xl mx-auto px-4 py-4">
+          <div className="flex items-center">
+            <label className="w-40 text-sm text-gray-700">통합검색</label>
+            <div className="relative flex-1">
+              <input
+                id="product-search-input-top"
+                type="text"
+                placeholder="상품명, 상품코드로 검색 (단축키: ⌘/Ctrl+K, /)"
+                value={searchTerm}
+                onChange={(e) => { setSearchTerm(e.target.value); setIsSuggestionsOpen(true); }}
+                onFocus={() => { setIsSearchFocused(true); setIsSuggestionsOpen(true); }}
+                onBlur={() => { setIsSearchFocused(false); setTimeout(() => setIsSuggestionsOpen(false), 150); }}
+                className={`w-full pl-4 pr-10 py-3 text-lg border rounded-md ${isSearchFocused ? "ring-2 ring-blue-300 border-blue-400" : "border-gray-300"}`}
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700 px-3 py-1 bg-blue-600 text-white rounded"
+                onClick={() => { setDebounced(searchTerm); addRecentQuery(searchTerm); setIsSuggestionsOpen(false); }}
+              >
+                검색
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
       <Card padding="lg" className="mb-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">

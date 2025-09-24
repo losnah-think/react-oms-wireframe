@@ -30,29 +30,64 @@ const BulkEditPage: React.FC = () => {
     if (!f) return;
     setFileName(f.name);
     const buf = await f.arrayBuffer();
-    const wb = XLSX.read(buf, { type: "array" });
-    const sheetName = wb.SheetNames[0];
-    const sheet = wb.Sheets[sheetName];
-    const json = XLSX.utils.sheet_to_json<Row>(sheet, { defval: "" });
-    setRows(json);
-    setHeaders(guessHeaders(json));
-    setPreviewChanges(json.slice(0, 50));
-    setErrors([]);
+    const name = (f.name || '').toLowerCase();
+    try {
+      // If CSV, try decoding with multiple encodings (utf-8, then euc-kr)
+      if (name.endsWith('.csv') || f.type === 'text/csv') {
+        const tryEncodings = ['utf-8', 'euc-kr'];
+        let parsed: Row[] | null = null;
+        for (const enc of tryEncodings) {
+          try {
+            // Some browsers support 'euc-kr' label in TextDecoder
+            const decoder = new TextDecoder(enc as any);
+            let str = decoder.decode(buf as ArrayBuffer);
+            // remove BOM if present
+            if (str.charCodeAt(0) === 0xfeff) str = str.slice(1);
+            const wb = XLSX.read(str, { type: 'string' });
+            const sheetName = wb.SheetNames[0];
+            const sheet = wb.Sheets[sheetName];
+            const json = XLSX.utils.sheet_to_json<Row>(sheet, { defval: '' });
+            // basic heuristic: consider it parsed if we got at least one row
+            if (Array.isArray(json) && json.length > 0) {
+              parsed = json;
+              break;
+            }
+          } catch (e) {
+            // try next encoding
+          }
+        }
+        if (!parsed) {
+          setErrors(['CSV 파일을 읽을 수 없습니다. 인코딩을 확인하세요 (UTF-8 또는 EUC-KR 권장).']);
+          setRows([]);
+          setHeaders([]);
+          setPreviewChanges([]);
+          return;
+        }
+        setRows(parsed);
+        setHeaders(guessHeaders(parsed));
+        setPreviewChanges(parsed.slice(0, 50));
+        setErrors([]);
+        return;
+      }
+
+      // For Excel (.xlsx/.xls) use ArrayBuffer read
+      const wb = XLSX.read(buf, { type: 'array' });
+      const sheetName = wb.SheetNames[0];
+      const sheet = wb.Sheets[sheetName];
+      const json = XLSX.utils.sheet_to_json<Row>(sheet, { defval: '' });
+      setRows(json);
+      setHeaders(guessHeaders(json));
+      setPreviewChanges(json.slice(0, 50));
+      setErrors([]);
+    } catch (err) {
+      setErrors(['파일을 처리하는 도중 오류가 발생했습니다. 파일 형식과 인코딩을 확인하세요.']);
+      setRows([]);
+      setHeaders([]);
+      setPreviewChanges([]);
+    }
   };
 
-  const handleApply = () => {
-    // For now: apply preview changes to rows (mock) and present a success message
-    setRows((prev) => {
-      // In a real implementation we'd send mapped updates to the API
-      return prev.map((r) => {
-        const match = previewChanges.find(
-          (p) => p.id && r.id && String(p.id) === String(r.id),
-        );
-        return match ? { ...r, ...match } : r;
-      });
-    });
-    alert("미리보기 변경이 로컬에 적용되었습니다. (모의 적용)");
-  };
+  // 미리보기 적용 기능 제거: 사용자는 파일 업로드/편집 후 직접 '수정 송신'을 사용합니다.
 
   const handleDownload = () => {
     const ws = XLSX.utils.json_to_sheet(rows);
@@ -66,6 +101,83 @@ const BulkEditPage: React.FC = () => {
     a.download = `products-updated-${Date.now()}.xlsx`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const loadCurrentProducts = async () => {
+    try {
+      // Try server API first
+      const resp = await fetch('/api/products?limit=1000', { cache: 'no-store' });
+      if (resp.ok) {
+        const json = await resp.json();
+        const list = Array.isArray(json.products) ? json.products : (Array.isArray(json) ? json : []);
+        setRows(list);
+        setHeaders(guessHeaders(list));
+        setPreviewChanges(list.slice(0, 50));
+        setFileName('server-products.json');
+        setErrors([]);
+        return;
+      }
+    } catch (e) {
+      // ignore and fall back to localStorage
+    }
+
+    try {
+      const raw = localStorage.getItem('products_local_v1');
+      if (raw) {
+        const list = JSON.parse(raw);
+        setRows(list);
+        setHeaders(guessHeaders(list));
+        setPreviewChanges(list.slice(0, 50));
+        setFileName('local-products.json');
+        setErrors([]);
+        return;
+      }
+    } catch (e) {
+      setErrors(['Failed to load products from localStorage']);
+    }
+
+    setErrors(['No products available to load']);
+  };
+
+  const sendUpdates = async () => {
+    // Collect changed rows (simple diff by id)
+    const changed = previewChanges.filter((p) => p && p.id);
+    if (changed.length === 0) {
+      alert('변경된 항목이 없습니다.');
+      return;
+    }
+
+    try {
+      const resp = await fetch('/api/products/bulk-update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: changed }),
+      });
+      if (resp.ok) {
+        alert('상품 수정이 서버에 전송되었습니다.');
+        // notify other windows
+        window.dispatchEvent(new Event('products:updated'));
+        return;
+      }
+      // fallback
+    } catch (e) {
+      // fallback to localStorage
+    }
+
+    try {
+      // merge into localStorage products_local_v1 by id
+      const raw = localStorage.getItem('products_local_v1');
+      const existing = raw ? JSON.parse(raw) : [];
+      const map: Record<string, any> = {};
+      (existing || []).forEach((r: any) => { map[String(r.id)] = r; });
+      (changed || []).forEach((r: any) => { if (r && r.id) map[String(r.id)] = { ...(map[String(r.id)] || {}), ...r }; });
+      const merged = Object.values(map);
+      localStorage.setItem('products_local_v1', JSON.stringify(merged));
+      window.dispatchEvent(new Event('products:updated'));
+      alert('변경 사항이 로컬에 저장되었습니다. (서버 전송 실패 시 대체 동작)');
+    } catch (e) {
+      alert('송신 실패: 저장할 수 없습니다.');
+    }
   };
 
   const handleCellEdit = (idx: number, key: string, value: string) => {
@@ -176,11 +288,14 @@ const BulkEditPage: React.FC = () => {
             </div>
 
             <div className="mt-4 flex gap-2">
-              <Button variant="primary" onClick={handleApply}>
-                미리보기 적용 (모의)
-              </Button>
               <Button variant="outline" onClick={handleDownload}>
                 현재 데이터 다운로드
+              </Button>
+              <Button variant="outline" onClick={loadCurrentProducts}>
+                현재 상품 불러오기
+              </Button>
+              <Button variant="primary" onClick={sendUpdates}>
+                수정 송신
               </Button>
             </div>
           </Card>
