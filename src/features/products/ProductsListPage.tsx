@@ -67,7 +67,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
-  const [isClient, setIsClient] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [debounced, setDebounced] = useState(searchTerm);
   const debounceRef = useRef<number | null>(null);
   const [selectedCategory, setSelectedCategory] = useState("전체");
@@ -189,10 +189,10 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
   }, []);
 
   useEffect(() => {
-    setIsClient(true);
+    setMounted(true);
   }, []);
 
-  const showInitialPlaceholder = !isClient;
+  const showInitialPlaceholder = !mounted;
 
   const initialPlaceholderBlock = showInitialPlaceholder ? (
     <div className="mb-6">
@@ -1117,30 +1117,16 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
     stockDelta: string;
   }>({ priceDelta: "", stockDelta: "" });
 
+  if (!mounted) {
+    return (
+      <Container maxWidth="full" padding="md" className="bg-gray-50 min-h-screen">
+        {initialPlaceholderBlock}
+      </Container>
+    );
+  }
+
   return (
     <Container maxWidth="full" padding="md" className="bg-gray-50 min-h-screen">
-      {initialPlaceholderBlock}
-      {!showInitialPlaceholder && (
-        <div className="mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">상품 목록</h1>
-            </div>
-            <div className="text-right">
-              <div className="text-gray-600 mt-1 text-lg">
-                총{" "}
-                <span className="font-bold text-blue-600">
-                  {filteredProducts.length}
-                </span>
-                개 상품
-              </div>
-              <div className="text-gray-400 text-base">
-                (전체 {products.length}개)
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       <Card padding="lg" className="mb-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
