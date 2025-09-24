@@ -702,7 +702,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               aria-pressed={!editing}
               onClick={() => setEditing((s) => !s)}
               className="font-medium"
-              title={editing ? "편집 잠금" : "편집 가능"}
+              title={editing ? "편집 잠금" : "편집 가능"} 
             >
               {editing ? "잠금" : "수정"}
             </Button>
@@ -2467,98 +2467,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
           </div>
         </Modal>
 
-        {/* 상품 설정 모달 */}
-        <Modal
-          open={showSettingsModal}
-          onClose={() => setShowSettingsModal(false)}
-          title="상품 설정"
-        >
-          <div className="space-y-4">
-            <div className="font-bold text-lg">OMS 상품 설정</div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <div className="text-sm text-gray-600 mb-1">활성화</div>
-                {/* 활성화 상태는 mockProducts에 없음 */}
-              </div>
-              <div>
-                <div className="text-sm text-gray-600 mb-1">판매중</div>
-                {/* 판매중 상태는 mockProducts에 없음 */}
-              </div>
-              <div>
-                <div className="text-sm text-gray-600 mb-1">품절</div>
-                {/* 품절 상태는 mockProducts에 없음 */}
-              </div>
-              <div>
-                <div className="text-sm text-gray-600 mb-1">면세여부</div>
-                <div className="font-semibold">
-                  {editing ? (
-                    <select
-                      value={product.is_dutyfree ? "1" : "0"}
-                      onChange={(e) =>
-                        setProduct((p: any) => ({
-                          ...(p || {}),
-                          is_dutyfree: e.target.value === "1",
-                        }))
-                      }
-                      className="px-2 py-1 border rounded"
-                    >
-                      <option value="1">면세</option>
-                      <option value="0">과세</option>
-                    </select>
-                  ) : product.is_dutyfree ? (
-                    "면세"
-                  ) : (
-                    "과세"
-                  )}
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 mt-6">
-              <Button
-                variant="secondary"
-                onClick={() => setShowSettingsModal(false)}
-              >
-                닫기
-              </Button>
-              <Button
-                variant="primary"
-                onClick={() => {
-                  // apply settingsForm to product (local state)
-                  if (settingsForm) {
-                    setProduct((prev: any) => ({
-                      ...(prev || {}),
-                      is_selling: !!settingsForm.is_selling,
-                      is_soldout: !!settingsForm.is_soldout,
-                      is_dutyfree: !!settingsForm.is_dutyfree,
-                      origin_country: settingsForm.origin_country,
-                      purchase_name: settingsForm.purchase_name,
-                      shipping_policy: settingsForm.shipping_policy,
-                      hs_code: settingsForm.hs_code,
-                      box_qty: settingsForm.box_qty,
-                      classification_id: settingsForm.classification_id,
-                      // propagate stock link to first variant if present
-                      variants: prev?.variants
-                        ? prev.variants.map((v: any, i: number) =>
-                            i === 0
-                              ? {
-                                  ...(v || {}),
-                                  is_stock_linked:
-                                    !!settingsForm.is_stock_linked,
-                                }
-                              : v,
-                          )
-                        : prev?.variants,
-                    }));
-                  }
-                  setShowSettingsModal(false);
-                  setToast("상품 설정이 저장되었습니다.");
-                }}
-              >
-                저장
-              </Button>
-            </div>
-          </div>
-        </Modal>
+        {/* 중복된 기본 상품 설정 모달(제거됨) */}
 
         {/* (상품 설명 수정 모달 제거) */}
           </GridCol>
