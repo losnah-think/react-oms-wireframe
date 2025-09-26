@@ -26,6 +26,18 @@ const BulkEditPage: React.FC = () => {
   const [previewChanges, setPreviewChanges] = useState<Row[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
 
+  // 자동 리디렉트: deprecated 안내 후 상품 목록으로 이동
+  useEffect(() => {
+    const t = setTimeout(() => {
+      try {
+        window.location.replace('/products');
+      } catch (e) {
+        // ignore
+      }
+    }, 5000);
+    return () => clearTimeout(t);
+  }, []);
+
   const onFile = async (f: File | null) => {
     if (!f) return;
     setFileName(f.name);
@@ -190,7 +202,22 @@ const BulkEditPage: React.FC = () => {
 
   return (
     <Container maxWidth="full" centered={false} padding="md">
-      <h1 className="text-2xl font-bold mb-4">상품/옵션 일괄수정</h1>
+      <div className="mb-4">
+        <div className="rounded-md bg-yellow-50 border border-yellow-200 p-4">
+          <h2 className="text-lg font-semibold">기능 폐지 안내</h2>
+          <p className="mt-2 text-sm text-gray-700">
+            '상품/옵션 일괄수정' 페이지는 더 이상 메뉴에서 접근하지 않습니다.
+            이 페이지는 유지보수 중이며, 곧 완전 제거되거나 대체 기능으로
+            이전될 예정입니다. 5초 후 자동으로 상품 목록으로 이동합니다.
+          </p>
+          <div className="mt-3">
+            <a href="/products" className="text-sm text-blue-600 underline">
+              지금 상품 목록으로 이동하기
+            </a>
+          </div>
+        </div>
+      </div>
+      <h1 className="text-2xl font-bold mb-4">상품/옵션 일괄수정 (Deprecated)</h1>
 
       <div className="mb-4">
         <div className="flex items-center gap-2">
