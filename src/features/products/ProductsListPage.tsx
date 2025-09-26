@@ -77,8 +77,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
   const [selectedIds, setSelectedIds] = useState<Record<string, boolean>>({});
   const [selectAll, setSelectAll] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
-  const [isOptionBatchModalOpen, setIsOptionBatchModalOpen] = useState(false);
+  // batch edit UI removed
   const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
   const [localClassifications, setLocalClassifications] = useState<any[]>([]);
   const [newCategoryName, setNewCategoryName] = useState("");
@@ -100,8 +99,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
   const [isGroupDropdownOpen, setIsGroupDropdownOpen] = useState(false);
   const [onlyWithShippingPolicy, setOnlyWithShippingPolicy] = useState(false);
   const [compactView, setCompactView] = useState(false);
-  const [isBatchHelpOpen, setIsBatchHelpOpen] = useState(false);
-  const [isOptionBatchHelpOpen, setIsOptionBatchHelpOpen] = useState(false);
+  // batch help removed
   const [currentPage, setCurrentPage] = useState<number>(1);
   const PAGE_SIZE = 20;
   const [isHelpOpen, setIsHelpOpen] = useState(false);
@@ -1027,12 +1025,16 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
   };
 
   const openBatchEdit = () => {
-    if (onNavigate) onNavigate("products-bulk-edit");
-    else window.location.href = "/products/bulk-edit?tab=product";
+    // Bulk-edit removed: fallback to product list or show a toast
+    setToastMessage("일괄 수정 기능은 현재 제공되지 않습니다.");
+    if (onNavigate) onNavigate("products");
+    else try { window.location.href = "/products"; } catch (e) {}
   };
   const openOptionBatchEdit = () => {
-    if (onNavigate) onNavigate("products-bulk-edit");
-    else window.location.href = "/products/bulk-edit?tab=option";
+    // Bulk-edit removed: fallback to product list or show a toast
+    setToastMessage("옵션 일괄 수정 기능은 현재 제공되지 않습니다.");
+    if (onNavigate) onNavigate("products");
+    else try { window.location.href = "/products"; } catch (e) {}
   };
 
   // Batch edit form state
@@ -1128,33 +1130,110 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
   return (
     <Container maxWidth="full" padding="md" className="bg-gray-50 min-h-screen">
 
-      {/* Top search band: minimal, server-safe wrapper for moving the search input later */}
-      <div className="w-full bg-white shadow-sm mb-6">
-        <div className="max-w-screen-xl mx-auto px-4 py-4">
-          <div className="flex items-center">
+      {/* 검색 섹션: 항상 노출 */}
+      <Card padding="lg" className="mb-6 shadow-sm">
+        <div className="space-y-4 bg-white rounded-md">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-800">검색</h2>
+              <div className="text-sm text-gray-500">
+                <div className="mt-1">상품명, 상품코드로 검색하세요.</div>
+              </div>
+            </div>
+          </div>
+          {/* 통합검색 입력 */}
+
+          <div className="flex items-center gap-4 w-full">
             <label className="w-40 text-sm text-gray-700">통합검색</label>
             <div className="relative flex-1">
-              <input
-                id="product-search-input-top"
-                type="text"
-                placeholder="상품명, 상품코드로 검색 (단축키: ⌘/Ctrl+K, /)"
-                value={searchTerm}
-                onChange={(e) => { setSearchTerm(e.target.value); setIsSuggestionsOpen(true); }}
-                onFocus={() => { setIsSearchFocused(true); setIsSuggestionsOpen(true); }}
-                onBlur={() => { setIsSearchFocused(false); setTimeout(() => setIsSuggestionsOpen(false), 150); }}
-                className={`w-full pl-4 pr-10 py-3 text-lg border rounded-md ${isSearchFocused ? "ring-2 ring-blue-300 border-blue-400" : "border-gray-300"}`}
-              />
-              <button
-                type="button"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700 px-3 py-1 bg-blue-600 text-white rounded"
-                onClick={() => { setDebounced(searchTerm); addRecentQuery(searchTerm); setIsSuggestionsOpen(false); }}
-              >
-                검색
-              </button>
+              <div className="flex items-center">
+                <div className="relative flex-1">
+                  <input
+                    id="product-search-input"
+                    role="combobox"
+                    aria-expanded={isSuggestionsOpen}
+                    aria-autocomplete="list"
+                    aria-controls="product-search-suggestions"
+                    type="text"
+                    placeholder="상품명, 상품코드로 검색 (단축키: ⌘/Ctrl+K, /)"
+                    value={searchTerm}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      setIsSuggestionsOpen(true);
+                    }}
+                    onFocus={() => {
+                      setIsSearchFocused(true);
+                      setIsSuggestionsOpen(true);
+                    }}
+                    onBlur={() => {
+                      setIsSearchFocused(false);
+                      setTimeout(() => setIsSuggestionsOpen(false), 150);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") executeSearch();
+                      if (e.key === "Escape") {
+                        setIsSuggestionsOpen(false);
+                        (e.target as HTMLInputElement).blur();
+                      }
+                      if (e.key === "ArrowDown") {
+                        e.preventDefault();
+                        setHighlightedSuggestionIndex((prev) =>
+                          Math.min(prev + 1, recentQueries.length - 1),
+                        );
+                      }
+                      if (e.key === "ArrowUp") {
+                        e.preventDefault();
+                        setHighlightedSuggestionIndex((prev) => Math.max(prev - 1, 0));
+                      }
+                    }}
+                    className={`w-full pl-4 pr-10 py-3 text-lg border rounded-md ${isSearchFocused ? "ring-2 ring-blue-300 border-blue-400" : "border-gray-300"}`}
+                  />
+                  {searchTerm && (
+                    <button
+                      type="button"
+                      aria-label="검색어 지우기"
+                      onClick={clearSearch}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 px-2"
+                    >
+                      ×
+                    </button>
+                  )}
+                  {isSuggestionsOpen && recentQueries.length > 0 && (
+                    <ul
+                      id="product-search-suggestions"
+                      role="listbox"
+                      className="absolute z-20 mt-1 w-full bg-white border rounded shadow"
+                    >
+                      {recentQueries.map((q, i) => (
+                        <li
+                          role="option"
+                          aria-selected={i === highlightedSuggestionIndex}
+                          key={q}
+                          className="px-3 py-2 hover:bg-gray-50 cursor-pointer"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setSearchTerm(q);
+                            executeSearch(q);
+                          }}
+                        >
+                          {q}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  className="ml-3 px-4 py-3 bg-blue-600 text-white rounded"
+                  onClick={() => executeSearch()}
+                >
+                  검색
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </Card>
 
 
       <Card padding="lg" className="mb-6 shadow-sm">
@@ -1555,110 +1634,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
         </div>
       )}
 
-      {/* 검색 섹션: 항상 노출 (moved back under filters) */}
-      <Card padding="lg" className="mb-6 shadow-sm">
-        <div className="space-y-4 bg-white rounded-md">
-          <div className="flex items-center justify-between mb-2">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-800">검색</h2>
-              <div className="text-sm text-gray-500">
-                <div className="mt-1">상품명, 상품코드로 검색하세요.</div>
-              </div>
-            </div>
-          </div>
-          {/* 검색 내부 상단 필드들은 필터로 이동함 */}
-
-          <div className="flex items-center gap-4 w-full">
-            <label className="w-40 text-sm text-gray-700">통합검색</label>
-            <div className="relative flex-1">
-              <div className="flex items-center">
-                <div className="relative flex-1">
-                  <input
-                    id="product-search-input"
-                    role="combobox"
-                    aria-expanded={isSuggestionsOpen}
-                    aria-autocomplete="list"
-                    aria-controls="product-search-suggestions"
-                    type="text"
-                    placeholder="상품명, 상품코드로 검색 (단축키: ⌘/Ctrl+K, /)"
-                    value={searchTerm}
-                    onChange={(e) => {
-                      setSearchTerm(e.target.value);
-                      setIsSuggestionsOpen(true);
-                    }}
-                    onFocus={() => {
-                      setIsSearchFocused(true);
-                      setIsSuggestionsOpen(true);
-                    }}
-                    onBlur={() => {
-                      setIsSearchFocused(false);
-                      setTimeout(() => setIsSuggestionsOpen(false), 150);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") executeSearch();
-                      if (e.key === "Escape") {
-                        setIsSuggestionsOpen(false);
-                        (e.target as HTMLInputElement).blur();
-                      }
-                      if (e.key === "ArrowDown") {
-                        e.preventDefault();
-                        setHighlightedSuggestionIndex((prev) =>
-                          Math.min(prev + 1, recentQueries.length - 1),
-                        );
-                      }
-                      if (e.key === "ArrowUp") {
-                        e.preventDefault();
-                        setHighlightedSuggestionIndex((prev) => Math.max(prev - 1, 0));
-                      }
-                    }}
-                    className={`w-full pl-4 pr-10 py-3 text-lg border rounded-md ${isSearchFocused ? "ring-2 ring-blue-300 border-blue-400" : "border-gray-300"}`}
-                  />
-                  {searchTerm && (
-                    <button
-                      type="button"
-                      aria-label="검색어 지우기"
-                      onClick={clearSearch}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 px-2"
-                    >
-                      ×
-                    </button>
-                  )}
-                  {isSuggestionsOpen && recentQueries.length > 0 && (
-                    <ul
-                      id="product-search-suggestions"
-                      role="listbox"
-                      className="absolute z-20 mt-1 w-full bg-white border rounded shadow"
-                    >
-                      {recentQueries.map((q, i) => (
-                        <li
-                          role="option"
-                          aria-selected={i === highlightedSuggestionIndex}
-                          key={q}
-                          className="px-3 py-2 hover:bg-gray-50 cursor-pointer"
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            setSearchTerm(q);
-                            executeSearch(q);
-                          }}
-                        >
-                          {q}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  className="ml-3 px-4 py-3 bg-blue-600 text-white rounded"
-                  onClick={() => executeSearch()}
-                >
-                  검색
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Card>
+      {/* Duplicate search block removed — unified search is shown above */}
 
       {/* Action toolbar (Excel, batch edit, option batch edit, delete, sort) */}
       <div className="flex items-center justify-between mb-4">
@@ -1678,30 +1654,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
             도움말
           </button>
           {/* mall select moved next to '선택 외부 송신' button */}
-          <button
-            aria-label="상품 일괄수정"
-            className="px-3 py-2 bg-white border rounded text-sm"
-            onClick={openBatchEdit}
-          >
-            상품 일괄수정
-          </button>
-          <button
-            aria-label="파일 업로드 일괄수정"
-            className="px-3 py-2 bg-white border rounded text-sm"
-            onClick={() => {
-              if (onNavigate) onNavigate("products-csv");
-              else window.location.href = "/products/csv";
-            }}
-          >
-            파일 업로드 일괄수정
-          </button>
-          <button
-            aria-label="옵션 일괄수정"
-            className="px-3 py-2 bg-white border rounded text-sm"
-            onClick={openOptionBatchEdit}
-          >
-            옵션 일괄수정
-          </button>
+          {/* Bulk-edit buttons removed per request: 상품 일괄수정, 파일 업로드 일괄수정, 옵션 일괄수정 */}
           <div className="flex items-center gap-2">
             <label className="sr-only">전송 쇼핑몰 선택</label>
             <select
@@ -2036,361 +1989,14 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
       </div>
 
       {/* Batch edit modal (functional) */}
-      {isBatchModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-40">
-          <div className="bg-white p-6 rounded shadow-lg w-1/2">
-            <h3 className="text-lg font-bold mb-4">상품 일괄수정 <Button variant="outline" size="small" onClick={() => setIsBatchHelpOpen(true)}>도움말</Button></h3>
-            <p className="text-sm text-gray-600 mb-4">
-              선택된 상품 수: {selectedCount}
-            </p>
+      {/* 상품 일괄수정 모달 삭제 */}
 
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-sm text-gray-700">가격 변경</label>
-                <div className="flex items-center gap-2 mt-2">
-                  <select
-                    value={batchForm.priceMode}
-                    onChange={(e) =>
-                      setBatchForm((f) => ({
-                        ...f,
-                        priceMode: e.target.value as any,
-                      }))
-                    }
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
-                  >
-                    <option value="none">변경 없음</option>
-                    <option value="set">금액 설정</option>
-                    <option value="inc">금액 증가(+)</option>
-                    <option value="dec">금액 감소(-)</option>
-                    <option value="pct">비율 변경(%)</option>
-                  </select>
-                  <input
-                    className="px-3 py-1 border rounded w-full"
-                    value={batchForm.priceValue}
-                    onChange={(e) =>
-                      setBatchForm((f) => ({
-                        ...f,
-                        priceValue: e.target.value,
-                      }))
-                    }
-                    placeholder="예: 1000 또는 10(%)"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-700">재고 변경</label>
-                <div className="flex items-center gap-2 mt-2">
-                  <select
-                    value={batchForm.stockMode}
-                    onChange={(e) =>
-                      setBatchForm((f) => ({
-                        ...f,
-                        stockMode: e.target.value as any,
-                      }))
-                    }
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
-                  >
-                    <option value="none">변경 없음</option>
-                    <option value="set">수량 설정</option>
-                    <option value="inc">증가(+)</option>
-                    <option value="dec">감소(-)</option>
-                  </select>
-                  <input
-                    className="px-3 py-1 border rounded w-full"
-                    value={batchForm.stockValue}
-                    onChange={(e) =>
-                      setBatchForm((f) => ({
-                        ...f,
-                        stockValue: e.target.value,
-                      }))
-                    }
-                    placeholder="예: 10"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-sm text-gray-700">
-                판매상태 변경
-              </label>
-              <select
-                value={batchForm.setSelling}
-                onChange={(e) =>
-                  setBatchForm((f) => ({
-                    ...f,
-                    setSelling: e.target.value as any,
-                  }))
-                }
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
-              >
-                <option value="unchanged">변경 없음</option>
-                <option value="selling">판매중으로 설정</option>
-                <option value="not-selling">판매중지로 설정</option>
-              </select>
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <button
-                className="px-3 py-1 border rounded"
-                onClick={() => setIsBatchModalOpen(false)}
-              >
-                취소
-              </button>
-              <button
-                className="px-3 py-1 bg-blue-600 text-white rounded"
-                onClick={() => {
-                  // apply batch changes locally
-                  const ids = Object.keys(selectedIds).filter(
-                    (k) => selectedIds[k],
-                  );
-                  if (ids.length === 0) {
-                    setToastMessage("적용할 상품을 선택하세요");
-                    return;
-                  }
-                  setProducts((prev) => {
-                    const next = prev.map((p) => {
-                      if (!ids.includes(String(p.id))) return p;
-                      const copy = { ...p };
-                      // price
-                      if (
-                        batchForm.priceMode !== "none" &&
-                        batchForm.priceValue !== ""
-                      ) {
-                        const v = Number(batchForm.priceValue);
-                        if (!isNaN(v)) {
-                          const cur = Number(
-                            copy.selling_price ?? copy.price ?? 0,
-                          );
-                          switch (batchForm.priceMode) {
-                            case "set":
-                              copy.selling_price = v;
-                              break;
-                            case "inc":
-                              copy.selling_price = cur + v;
-                              break;
-                            case "dec":
-                              copy.selling_price = Math.max(0, cur - v);
-                              break;
-                            case "pct":
-                              copy.selling_price = Math.round(
-                                cur * (1 + v / 100),
-                              );
-                              break;
-                          }
-                        }
-                      }
-                      // stock (for products without variants, or adjust each variant)
-                      if (
-                        batchForm.stockMode !== "none" &&
-                        batchForm.stockValue !== ""
-                      ) {
-                        const sVal = Number(batchForm.stockValue);
-                        if (!isNaN(sVal)) {
-                          if (
-                            Array.isArray(copy.variants) &&
-                            copy.variants.length > 0
-                          ) {
-                            copy.variants = copy.variants.map((nv: any) => {
-                              const nvCopy = { ...(nv || {}) };
-                              const cur = Number(nvCopy.stock || 0);
-                              switch (batchForm.stockMode) {
-                                case "set":
-                                  nvCopy.stock = sVal;
-                                  break;
-                                case "inc":
-                                  nvCopy.stock = cur + sVal;
-                                  break;
-                                case "dec":
-                                  nvCopy.stock = Math.max(0, cur - sVal);
-                                  break;
-                              }
-                              return nvCopy;
-                            });
-                          } else {
-                            const cur = Number(copy.stock || 0);
-                            switch (batchForm.stockMode) {
-                              case "set":
-                                copy.stock = sVal;
-                                break;
-                              case "inc":
-                                copy.stock = cur + sVal;
-                                break;
-                              case "dec":
-                                copy.stock = Math.max(0, cur - sVal);
-                                break;
-                            }
-                          }
-                        }
-                      }
-                      // selling status
-                      if (batchForm.setSelling === "selling")
-                        copy.is_selling = true;
-                      if (batchForm.setSelling === "not-selling")
-                        copy.is_selling = false;
-                      return copy;
-                    });
-                    return next;
-                  });
-                  setIsBatchModalOpen(false);
-                  setToastMessage("상품 일괄수정이 적용되었습니다.");
-                }}
-              >
-                적용
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <SideGuide open={isBatchHelpOpen} onClose={() => setIsBatchHelpOpen(false)} title="상품 일괄수정 도움말">
-        <table className="table-auto border-collapse border border-gray-300">
-          <thead>
-            <tr>
-              <th className="border border-gray-300 px-4 py-2">기능</th>
-              <th className="border border-gray-300 px-4 py-2">설명</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td className="border border-gray-300 px-4 py-2">가격 변경</td>
-              <td className="border border-gray-300 px-4 py-2">선택된 상품의 가격을 설정, 증가, 감소 또는 비율로 변경합니다.</td>
-            </tr>
-            <tr>
-              <td className="border border-gray-300 px-4 py-2">재고 변경</td>
-              <td className="border border-gray-300 px-4 py-2">선택된 상품의 재고 수량을 설정, 증가 또는 감소합니다.</td>
-            </tr>
-            <tr>
-              <td className="border border-gray-300 px-4 py-2">판매상태 변경</td>
-              <td className="border border-gray-300 px-4 py-2">상품을 판매중 또는 판매중지로 설정합니다.</td>
-            </tr>
-          </tbody>
-        </table>
-      </SideGuide>
+      {/* 상품 일괄수정 도움말 삭제 */}
 
       {/* Option batch edit modal (functional) */}
-      {isOptionBatchModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-40">
-          <div className="bg-white p-6 rounded shadow-lg w-1/2">
-            <h3 className="text-lg font-bold mb-4">옵션 일괄수정 <Button variant="outline" size="small" onClick={() => setIsOptionBatchHelpOpen(true)}>도움말</Button></h3>
-            <p className="text-sm text-gray-600 mb-4">
-              선택된 상품 수: {selectedCount}
-            </p>
+      {/* 옵션 일괄수정 모달 삭제 */}
 
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-sm text-gray-700">
-                  옵션 가격 증감
-                </label>
-                <input
-                  className="px-3 py-1 border rounded w-full mt-2"
-                  placeholder="예: +100 또는 -50"
-                  value={optionBatchForm.priceDelta}
-                  onChange={(e) =>
-                    setOptionBatchForm((f) => ({
-                      ...f,
-                      priceDelta: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-700">
-                  옵션 재고 증감
-                </label>
-                <input
-                  className="px-3 py-1 border rounded w-full mt-2"
-                  placeholder="예: +10 또는 -5"
-                  value={optionBatchForm.stockDelta}
-                  onChange={(e) =>
-                    setOptionBatchForm((f) => ({
-                      ...f,
-                      stockDelta: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <button
-                className="px-3 py-1 border rounded"
-                onClick={() => setIsOptionBatchModalOpen(false)}
-              >
-                취소
-              </button>
-              <button
-                className="px-3 py-1 bg-blue-600 text-white rounded"
-                onClick={() => {
-                  const ids = Object.keys(selectedIds).filter(
-                    (k) => selectedIds[k],
-                  );
-                  if (ids.length === 0) {
-                    setToastMessage("적용할 상품을 선택하세요");
-                    return;
-                  }
-                  setProducts((prev) =>
-                    prev.map((p) => {
-                      if (!ids.includes(String(p.id))) return p;
-                      const copy = { ...p };
-                      if (
-                        Array.isArray(copy.variants) &&
-                        copy.variants.length
-                      ) {
-                        copy.variants = copy.variants.map((v: any) => {
-                          const vcopy = { ...(v || {}) };
-                          if (optionBatchForm.priceDelta) {
-                            const pd = Number(optionBatchForm.priceDelta);
-                            if (!isNaN(pd))
-                              vcopy.selling_price =
-                                Number(vcopy.selling_price || 0) + pd;
-                          }
-                          if (optionBatchForm.stockDelta) {
-                            const sd = Number(optionBatchForm.stockDelta);
-                            if (!isNaN(sd))
-                              vcopy.stock = Math.max(
-                                0,
-                                Number(vcopy.stock || 0) + sd,
-                              );
-                          }
-                          return vcopy;
-                        });
-                      }
-                      return copy;
-                    }),
-                  );
-                  setIsOptionBatchModalOpen(false);
-                  setToastMessage("옵션 일괄수정이 적용되었습니다.");
-                }}
-              >
-                적용
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <SideGuide open={isOptionBatchHelpOpen} onClose={() => setIsOptionBatchHelpOpen(false)} title="옵션 일괄수정 도움말">
-        <table className="table-auto border-collapse border border-gray-300">
-          <thead>
-            <tr>
-              <th className="border border-gray-300 px-4 py-2">기능</th>
-              <th className="border border-gray-300 px-4 py-2">설명</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td className="border border-gray-300 px-4 py-2">옵션 가격 증감</td>
-              <td className="border border-gray-300 px-4 py-2">선택된 상품의 옵션 가격을 증가 또는 감소합니다. 예: +100 또는 -50</td>
-            </tr>
-            <tr>
-              <td className="border border-gray-300 px-4 py-2">옵션 재고 증감</td>
-              <td className="border border-gray-300 px-4 py-2">선택된 상품의 옵션 재고를 증가 또는 감소합니다. 예: +10 또는 -5</td>
-            </tr>
-          </tbody>
-        </table>
-      </SideGuide>
+      {/* 옵션 일괄수정 도움말 삭제 */}
 
       {/* 제품 목록 도움말 */}
       <SideGuide open={isHelpOpen} onClose={() => setIsHelpOpen(false)} title="상품 목록 도움말">
