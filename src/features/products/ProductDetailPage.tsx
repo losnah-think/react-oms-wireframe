@@ -246,6 +246,9 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   const [YEAR_OPTIONS, setYearOptions] = useState<string[]>([]);
   const [SEASON_OPTIONS, setSeasonOptions] = useState<string[]>([]);
   const [BRAND_OPTIONS, setBrandOptions] = useState<string[]>([]);
+  const [SUPPLIER_OPTIONS, setSupplierOptions] = useState<string[]>([]);
+  const [DESIGNER_OPTIONS, setDesignerOptions] = useState<string[]>([]);
+  const [REGISTERER_OPTIONS, setRegistererOptions] = useState<string[]>([]);
 
   const normalizeProduct = useCallback((input: any) => {
     if (!input) return null;
@@ -364,6 +367,18 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
       setYearOptions(body.years || []);
       setSeasonOptions(body.seasons || []);
       setBrandOptions(body.brands || []);
+      // populate additional option lists when available
+      try {
+        setSupplierOptions(body.suppliers || body.supplierNames || []);
+      } catch (e) {
+        /* noop */
+      }
+      try {
+        setDesignerOptions(body.designers || []);
+      } catch (e) {}
+      try {
+        setRegistererOptions(body.users || body.registerers || []);
+      } catch (e) {}
     }).
     catch(() => {
       if (!mounted) return;
@@ -371,6 +386,10 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
       setYearOptions(Array.from({ length: 10 }).map((_, i) => String(now - 5 + i)));
       setSeasonOptions([t('msg_0004'), "SS", "FW", "SPRING", "SUMMER", "AUTUMN", "WINTER"]);
       setBrandOptions([t('msg_0005'), t('msg_0006'), t('msg_0007'), t('msg_0008')]);
+      // fallback defaults for newly added option lists
+      setSupplierOptions(["자사", "공급처A", "공급처B"]);
+      setDesignerOptions(["(미지정)", "홍길동", "김디자이너"]);
+      setRegistererOptions(["(미기재)", "김PM", "이담당"]);
     });
     return () => {
       mounted = false;

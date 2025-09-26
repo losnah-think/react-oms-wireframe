@@ -19,7 +19,6 @@ interface Platform {
   description: string;
   detectionKeywords: string[];
   requiredFields: string[];
-  confidence: number;
   matchedKeywords?: string[];
 }
 
@@ -62,7 +61,16 @@ const ProductCsvUploadPage: React.FC = () => {
   const [detectedPlatform, setDetectedPlatform] = useState<Platform | null>(
     null,
   );
-  const [detectionConfidence, setDetectionConfidence] = useState<number>(0);
+  // Validation errors: { rowIndex: { fieldName: errorMsg } }
+  const [validationErrors, setValidationErrors] = useState<Record<number, Record<string, string>>>({});
+  // Track preview editable data as array of objects, each with field names as keys
+  const [previewRows, setPreviewRows] = useState<any[]>([]);
+  // 전체 편집 모드 토글
+  const [fullEditMode, setFullEditMode] = useState<boolean>(false);
+  // Track created/updated counts after upload
+  const [createdCount, setCreatedCount] = useState<number>(0);
+  const [updatedCount, setUpdatedCount] = useState<number>(0);
+
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [isUploading, setIsUploading] = useState<boolean>(false);
@@ -168,7 +176,6 @@ const ProductCsvUploadPage: React.FC = () => {
         "상품설명",
       ],
       requiredFields: ["상품코드", "상품명", "판매가"],
-      confidence: 0,
     },
     {
       id: "cafe24",
@@ -185,7 +192,6 @@ const ProductCsvUploadPage: React.FC = () => {
         "재고수량",
       ],
       requiredFields: ["상품코드", "상품명", "판매가"],
-      confidence: 0,
     },
     {
       id: "wiseamall",
@@ -201,7 +207,6 @@ const ProductCsvUploadPage: React.FC = () => {
         "상품이미지",
       ],
       requiredFields: ["상품명", "가격", "분류"],
-      confidence: 0,
     },
     {
       id: "smartstore",
@@ -217,7 +222,6 @@ const ProductCsvUploadPage: React.FC = () => {
         "대표이미지",
       ],
       requiredFields: ["상품명", "판매가격", "카테고리명"],
-      confidence: 0,
     },
     {
       id: "makeshop",
@@ -234,7 +238,6 @@ const ProductCsvUploadPage: React.FC = () => {
         "상태",
       ],
       requiredFields: ["상품명", "판매가", "카테고리"],
-      confidence: 0,
     },
     {
       id: "godo5",
@@ -250,7 +253,6 @@ const ProductCsvUploadPage: React.FC = () => {
         "브랜드",
       ],
       requiredFields: ["상품명", "판매가격", "상품분류"],
-      confidence: 0,
     },
   ];
 
@@ -333,26 +335,17 @@ const ProductCsvUploadPage: React.FC = () => {
     setUploadHistory(mockHistory);
   }, []);
 
-  // 플랫폼 자동 감지 함수
+  // 플랫폼 자동 감지 함수(리팩토링)
   const detectPlatform = (columns: string[]) => {
-    const updatedPlatforms = platforms.map((platform) => {
-      const matches = platform.detectionKeywords.filter((keyword) =>
-        columns.some((col) =>
-          col.toLowerCase().includes(keyword.toLowerCase()),
-        ),
-      );
-      const confidence = Math.round(
-        (matches.length / platform.detectionKeywords.length) * 100,
-      );
-      return { ...platform, confidence, matchedKeywords: matches };
-    });
-
-    // 가장 높은 신뢰도를 가진 플랫폼 찾기
-    const bestMatch = updatedPlatforms.reduce((prev, current) =>
-      current.confidence > prev.confidence ? current : prev,
+    const matches = platforms.filter(p =>
+      p.detectionKeywords.some(k =>
+        columns.some(col => col.toLowerCase().includes(k.toLowerCase()))
+      )
     );
-
-    return { platforms: updatedPlatforms, bestMatch };
+    if (matches.length === 1) {
+      return matches[0];
+    }
+    return null;
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -365,10 +358,12 @@ const ProductCsvUploadPage: React.FC = () => {
     }
 
     setUploadedFile(file);
-    setUploadedFile(file);
     setIsAnalyzing(true);
     setDetectedPlatform(null);
     setPreviewData([]);
+    setPreviewRows([]);
+    setValidationErrors({});
+    setShowPlatformSelector(false);
 
     // CSV 파일 분석
     const reader = new FileReader();
@@ -389,7 +384,14 @@ const ProductCsvUploadPage: React.FC = () => {
 
       // 플랫폼 자동 감지
       setTimeout(() => {
-        const detection = detectPlatform(headers);
+        const detected = detectPlatform(headers);
+        if (detected) {
+          setDetectedPlatform({ ...detected });
+          setShowPlatformSelector(false);
+        } else {
+          setDetectedPlatform(null);
+          setShowPlatformSelector(true);
+        }
 
         setFileAnalysis({
           fileName: file.name,
@@ -401,16 +403,48 @@ const ProductCsvUploadPage: React.FC = () => {
         });
 
         setPreviewData([headers, ...dataRows]);
-        setDetectedPlatform(detection.bestMatch);
-        setDetectionConfidence(detection.bestMatch.confidence);
-
-        // 신뢰도가 낮으면 수동 선택 옵션 표시
-        if (detection.bestMatch.confidence < 70) {
-          setShowPlatformSelector(true);
+        // Build editable previewRows (array of objects)
+        const previewObjs: any[] = [];
+        for (let i = 1; i < Math.min(6, rows.length); ++i) {
+          const obj: any = {};
+          headers.forEach((h, idx) => {
+            obj[h] = rows[i][idx] ?? "";
+          });
+          previewObjs.push(obj);
         }
-
+        // Validate preview rows
+        const errors: Record<number, Record<string, string>> = {};
+        previewObjs.forEach((row, idx) => {
+          const rowErrors: Record<string, string> = {};
+          // 상품명 missing
+          if (!row["상품명"] || row["상품명"].trim() === "") {
+            rowErrors["상품명"] = "상품명은 필수입니다.";
+          }
+          // 상품코드 missing → generate
+          if (!row["상품코드"] || row["상품코드"].trim() === "") {
+            // Generate code
+            const today = new Date();
+            const ymd = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
+            row["상품코드"] = `PRD-${ymd}-${idx + 1}`;
+          }
+          // 판매가 missing
+          if (!row["판매가"] || row["판매가"].trim() === "") {
+            rowErrors["판매가"] = "판매가는 필수입니다.";
+          }
+          // 브랜드 missing
+          if (!row["브랜드"] || row["브랜드"].trim() === "") {
+            rowErrors["브랜드"] = "브랜드는 필수입니다.";
+          } else if (typeof row["브랜드"] === "string" && row["브랜드"].includes(";")) {
+            row["브랜드"] = row["브랜드"].split(";").map((b: string) => b.trim()).filter(Boolean);
+          }
+          if (Object.keys(rowErrors).length > 0) {
+            errors[idx] = rowErrors;
+          }
+        });
+        setPreviewRows(previewObjs);
+        setValidationErrors(errors);
         setIsAnalyzing(false);
-      }, 1500); // 분석 시뮬레이션
+      }, 800); // 분석 시뮬레이션
     };
 
     reader.readAsText(file, "UTF-8");
@@ -442,10 +476,18 @@ const ProductCsvUploadPage: React.FC = () => {
     if (platform) {
       setSelectedPlatform(platformId);
       setDetectedPlatform(platform);
-      setDetectionConfidence(100); // 수동 선택은 100% 신뢰도
       setShowPlatformSelector(false);
     }
   };
+
+  // 임시: 기존 상품코드 목록 (실제 구현시 서버에서 받아옴)
+  const existingProductCodes = React.useMemo(() => [
+    "PRD-20240601-1",
+    "PRD-20240601-2",
+    "PRD-20240601-3",
+    "PRD-20240601-4",
+    "PRD-20240601-5",
+  ], []);
 
   const handleUpload = async () => {
     if (!uploadedFile) return;
@@ -466,6 +508,8 @@ const ProductCsvUploadPage: React.FC = () => {
 
     setIsUploading(true);
     setUploadProgress(0);
+    setCreatedCount(0);
+    setUpdatedCount(0);
 
     // 업로드 진행률 시뮬레이션
     const progressInterval = setInterval(() => {
@@ -478,37 +522,43 @@ const ProductCsvUploadPage: React.FC = () => {
       });
     }, 200);
 
-    // 실제 업로드 로직 시뮬레이션
+    // 실제 업로드 로직: 상품코드 기준 생성/수정 건수 계산
     setTimeout(() => {
       clearInterval(progressInterval);
       setUploadProgress(100);
 
-      // 업로드 결과 시뮬레이션
-      const totalRows = Math.floor(Math.random() * 100) + 50;
-      const successRows = Math.floor(totalRows * (0.85 + Math.random() * 0.1));
-      const errorRows = totalRows - successRows;
+      // Use previewRows for this simulation
+      let created = 0;
+      let updated = 0;
+      let errors: { row: number, field: string, message: string }[] = [];
+      for (let i = 0; i < previewRows.length; ++i) {
+        const row = previewRows[i];
+        const code = row["상품코드"];
+        if (existingProductCodes.includes(code)) {
+          updated++;
+        } else {
+          created++;
+        }
+        // Also collect validation errors
+        if (validationErrors[i]) {
+          Object.entries(validationErrors[i]).forEach(([field, msg]) => {
+            errors.push({
+              row: i + 2, // +2 to match CSV row (header + 1-based)
+              field,
+              message: msg,
+            });
+          });
+        }
+      }
+      setCreatedCount(created);
+      setUpdatedCount(updated);
 
       const results: UploadResults = {
-        total: totalRows,
-        success: successRows,
-        error: errorRows,
+        total: previewRows.length,
+        success: previewRows.length - errors.length,
+        error: errors.length,
         batchNumber: `BATCH_${new Date().getFullYear()}_${String(uploadHistory.length + 1).padStart(3, "0")}`,
-        errors:
-          errorRows > 0
-            ? [
-                {
-                  row: 3,
-                  field: "상품명",
-                  message: "필수 항목이 비어있습니다",
-                },
-                { row: 7, field: "가격", message: "잘못된 가격 형식입니다" },
-                {
-                  row: 12,
-                  field: "카테고리",
-                  message: "존재하지 않는 카테고리입니다",
-                },
-              ]
-            : [],
+        errors,
       };
 
       setUploadResults(results);
@@ -532,7 +582,7 @@ const ProductCsvUploadPage: React.FC = () => {
       }
 
       setIsUploading(false);
-    }, 3000);
+    }, 1200);
   };
 
   const resetUpload = () => {
@@ -540,9 +590,13 @@ const ProductCsvUploadPage: React.FC = () => {
     setUploadedFile(null);
     setDetectedPlatform(null);
     setPreviewData([]);
+    setPreviewRows([]);
     setFileAnalysis(null);
     setShowPlatformSelector(false);
     setUploadProgress(0);
+    setCreatedCount(0);
+    setUpdatedCount(0);
+    setValidationErrors({});
   };
 
   return (
@@ -775,7 +829,6 @@ const ProductCsvUploadPage: React.FC = () => {
             <h2 className="text-lg font-semibold text-gray-900 mb-4">
               2. 플랫폼 감지 결과
             </h2>
-
             <div className="flex items-center justify-between p-4 border rounded-lg bg-blue-50 border-blue-200">
               <div className="flex items-center">
                 <span className="text-3xl mr-4">{detectedPlatform.logo}</span>
@@ -786,60 +839,15 @@ const ProductCsvUploadPage: React.FC = () => {
                   <div className="text-sm text-gray-600">
                     {detectedPlatform.description}
                   </div>
-                  <div className="flex items-center mt-1">
-                    <span className="text-sm text-gray-500 mr-2">
-                      감지 신뢰도:
-                    </span>
-                    <div className="flex items-center">
-                      <div className="w-20 bg-gray-200 rounded-full h-2 mr-2">
-                        <div
-                          className={`h-2 rounded-full ${
-                            detectionConfidence >= 80
-                              ? "bg-green-500"
-                              : detectionConfidence >= 60
-                                ? "bg-yellow-500"
-                                : "bg-red-500"
-                          }`}
-                          style={{ width: `${detectionConfidence}%` }}
-                        ></div>
-                      </div>
-                      <span
-                        className={`text-sm font-medium ${
-                          detectionConfidence >= 80
-                            ? "text-green-600"
-                            : detectionConfidence >= 60
-                              ? "text-yellow-600"
-                              : "text-red-600"
-                        }`}
-                      >
-                        {detectionConfidence}%
-                      </span>
-                    </div>
-                  </div>
                 </div>
               </div>
-
-              {detectionConfidence < 80 && (
-                <button
-                  onClick={() => setShowPlatformSelector(true)}
-                  className="px-4 py-2 text-sm text-blue-600 border border-blue-300 rounded hover:bg-blue-50"
-                >
-                  다른 플랫폼 선택
-                </button>
-              )}
+              <button
+                onClick={() => setShowPlatformSelector(true)}
+                className="px-4 py-2 text-sm text-blue-600 border border-blue-300 rounded hover:bg-blue-50"
+              >
+                다른 플랫폼 선택
+              </button>
             </div>
-
-            {detectionConfidence < 70 && (
-              <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-                <div className="flex">
-                  <div className="text-yellow-400 mr-2">□</div>
-                  <div className="text-sm text-yellow-800">
-                    플랫폼 감지 신뢰도가 낮습니다. 수동으로 올바른 플랫폼을
-                    선택해주세요.
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
@@ -1129,10 +1137,18 @@ const ProductCsvUploadPage: React.FC = () => {
         {/* 파일 미리보기 */}
         {previewData.length > 0 && detectedPlatform && (
           <div className="bg-white border rounded-lg p-6 mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              4. 파일 미리보기
-            </h2>
-
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">
+                4. 파일 미리보기
+              </h2>
+              <button
+                className={`px-4 py-2 text-sm rounded border ${fullEditMode ? "bg-blue-100 text-blue-700 border-blue-300" : "bg-white text-gray-700 border-gray-300"} ml-2`}
+                onClick={() => setFullEditMode((prev) => !prev)}
+                type="button"
+              >
+                {fullEditMode ? "미리보기 모드" : "전체 편집 모드"}
+              </button>
+            </div>
             <div className="overflow-x-auto max-w-full">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
@@ -1148,14 +1164,87 @@ const ProductCsvUploadPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {previewData.slice(1, 6).map((row, rowIndex) => (
+                  {(fullEditMode ? previewRows : previewRows.slice(0, 5)).map((row, rowIndex) => (
                     <tr key={rowIndex}>
-                      {row.map((cell, cellIndex) => (
+                      {previewData[0].map((header, cellIndex) => (
                         <td
                           key={cellIndex}
                           className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
                         >
-                          {cell}
+                          <div>
+                            <input
+                              className="border rounded px-2 py-1 text-sm w-full"
+                              value={
+                                Array.isArray(row[header])
+                                  ? row[header].join(";")
+                                  : (row[header] ?? "")
+                              }
+                              onChange={e => {
+                                const val = e.target.value;
+                                setPreviewRows(prev => {
+                                  const newRows = [...prev];
+                                  // If 브랜드, handle array split
+                                  if (header === "브랜드" && val.includes(";")) {
+                                    newRows[rowIndex][header] = val.split(";").map(s => s.trim()).filter(Boolean);
+                                  } else {
+                                    newRows[rowIndex][header] = val;
+                                  }
+                                  // revalidate this field
+                                  setValidationErrors(prevErrs => {
+                                    const errs = { ...prevErrs };
+                                    const rowErrs = { ...(errs[rowIndex] || {}) };
+                                    // 상품명
+                                    if (header === "상품명") {
+                                      if (!val || val.trim() === "") {
+                                        rowErrs["상품명"] = "상품명은 필수입니다.";
+                                      } else {
+                                        delete rowErrs["상품명"];
+                                      }
+                                    }
+                                    // 상품코드
+                                    if (header === "상품코드") {
+                                      if (!val || val.trim() === "") {
+                                        // Generate code
+                                        const today = new Date();
+                                        const ymd = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
+                                        newRows[rowIndex][header] = `PRD-${ymd}-${rowIndex + 1}`;
+                                      }
+                                    }
+                                    // 판매가
+                                    if (header === "판매가") {
+                                      if (!val || val.trim() === "") {
+                                        rowErrs["판매가"] = "판매가는 필수입니다.";
+                                      } else {
+                                        delete rowErrs["판매가"];
+                                      }
+                                    }
+                                    // 브랜드
+                                    if (header === "브랜드") {
+                                      if (!val || val.trim() === "") {
+                                        rowErrs["브랜드"] = "브랜드는 필수입니다.";
+                                      } else {
+                                        delete rowErrs["브랜드"];
+                                      }
+                                    }
+                                    // Clean up empty error object
+                                    if (Object.keys(rowErrs).length === 0) {
+                                      delete errs[rowIndex];
+                                    } else {
+                                      errs[rowIndex] = rowErrs;
+                                    }
+                                    return errs;
+                                  });
+                                  return newRows;
+                                });
+                              }}
+                              type="text"
+                            />
+                            {validationErrors[rowIndex] && validationErrors[rowIndex][header] && (
+                              <div className="text-red-500 text-xs mt-1">
+                                {validationErrors[rowIndex][header]}
+                              </div>
+                            )}
+                          </div>
                         </td>
                       ))}
                     </tr>
@@ -1163,10 +1252,12 @@ const ProductCsvUploadPage: React.FC = () => {
                 </tbody>
               </table>
             </div>
-
             <div className="mt-4 flex items-center justify-between">
               <div className="text-sm text-gray-500">
-                * 상위 5개 행만 미리보기로 표시됩니다.
+                {fullEditMode
+                  ? "* 전체 시트를 편집할 수 있습니다."
+                  : "* 상위 5개 행만 미리보기로 표시됩니다. 전체 편집 모드로 전환하려면 버튼을 클릭하세요."
+                }
               </div>
               {detectedPlatform && (
                 <button
@@ -1214,7 +1305,7 @@ const ProductCsvUploadPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
               <div className="text-center p-4 bg-blue-50 rounded-lg">
                 <div className="text-2xl font-bold text-blue-600">
                   {uploadResults.total}
@@ -1232,6 +1323,18 @@ const ProductCsvUploadPage: React.FC = () => {
                   {uploadResults.error}
                 </div>
                 <div className="text-sm text-red-600">등록 실패</div>
+              </div>
+              <div className="text-center p-4 bg-purple-50 rounded-lg">
+                <div className="text-2xl font-bold text-purple-600">
+                  {createdCount}
+                </div>
+                <div className="text-sm text-purple-600">생성된 건수</div>
+              </div>
+              <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                <div className="text-2xl font-bold text-yellow-600">
+                  {updatedCount}
+                </div>
+                <div className="text-sm text-yellow-600">수정된 건수</div>
               </div>
             </div>
 
@@ -1278,26 +1381,26 @@ const ProductCsvUploadPage: React.FC = () => {
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {platforms.map((platform) => (
-                <div
-                  key={platform.id}
-                  className="p-4 border border-gray-200 rounded-lg"
-                >
-                  <div className="flex items-center mb-2">
-                    <span className="text-xl mr-2">{platform.logo}</span>
-                    <div className="font-medium text-gray-900 text-sm">
-                      {platform.name}
+                  {platforms.map((platform) => (
+                    <div
+                      key={platform.id}
+                      className="p-4 border border-gray-200 rounded-lg"
+                    >
+                      <div className="flex items-center mb-2">
+                        <span className="text-xl mr-2">{platform.logo}</span>
+                        <div className="font-medium text-gray-900 text-sm">
+                          {platform.name}
+                        </div>
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {platform.description}
+                      </div>
+                      <div className="text-xs text-gray-400 mt-1">
+                        자동 감지 키워드:{" "}
+                        {platform.detectionKeywords.slice(0, 3).join(", ")}
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {platform.description}
-                  </div>
-                  <div className="text-xs text-gray-400 mt-1">
-                    자동 감지 키워드:{" "}
-                    {platform.detectionKeywords.slice(0, 3).join(", ")}
-                  </div>
-                </div>
-              ))}
+                  ))}
             </div>
 
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
