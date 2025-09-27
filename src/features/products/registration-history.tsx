@@ -11,7 +11,7 @@ type Row = {
   failed: number;
 };
 
-const PLATFORMS = ["카페24", "메이크샵", "고도몰", "스마트스토어"];
+const PLATFORMS = ["카페24", "메이크샵", "고도몰", "스마트스토어","위사몰","CSV"];
 
 const mkDate = (d: Date) => d.toISOString().slice(0, 10);
 

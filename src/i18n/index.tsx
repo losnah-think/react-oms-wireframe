@@ -1,15 +1,11 @@
-import React from "react";
-
-// Minimal fallback i18n hook used during partial migration.
-// Returns a t() function that echoes keys when no real translations are available.
-
+// stub: i18n removed. If any code still imports useT, this stub will
+// throw at runtime to make the remaining import visible during testing.
 export function useT() {
-  const t = React.useCallback((key: string, ...args: any[]) => {
-    // very naive: if key looks like msg_xxxx, return a placeholder mapping,
-    // otherwise return key itself. This prevents build-time crashes and keeps
-    // runtime output readable until a full i18n system is restored.
-    if (!key) return "";
-    return String(key);
-  }, []);
-  return t;
+  return function t(key: string) {
+    if (typeof key === 'string' && key.startsWith('msg_')) {
+      // indicate missing mapping
+      throw new Error(`i18n token used at runtime: ${key}`);
+    }
+    return String(key || '');
+  };
 }

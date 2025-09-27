@@ -21,7 +21,7 @@ import {
 import OptionEditPage from "./OptionEditPage";
 import MarketplaceSalesPanel from '../../components/marketplace/MarketplaceSalesPanel';
 import { clientBarcodeStore } from "../../lib/clientBarcodeStore";
-import { useT } from '../../i18n';
+// i18n removed: strings are inlined per project convention
 
 
 const DEFAULT_COMPLIANCE = {
@@ -86,7 +86,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 }) => {
   // router and client-side id handling
   const router = useRouter();
-  const t = useT();
+  // i18n removed: use direct literals
   const [clientProductId, setClientProductId] = useState<string | null>(null);
   const initialProductId = propProductId || (router?.query?.id ? String(router.query.id) : undefined);
 
@@ -166,26 +166,26 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     let tpl = "";
     if (platformId === "makeshop") {
       const headers = [
-      t('msg_0883'),
-      t('msg_0833'),
-      t('msg_0884'),
-      t('msg_0886'),
-      t('msg_0887'),
-      t('msg_0410'),
-      t('msg_0902'),
-      t('msg_0925'),
-      t('msg_0926'),
-      t('msg_0927')];
+      '상품ID',
+      '상품명',
+      '상품코드',
+      '판매가',
+      '공급가',
+      '재고',
+      '이미지URL',
+      '옵션1',
+      '옵션2',
+      '옵션3'];
 
-      tpl = headers.join(t('msg_0928')).join(",");
+      tpl = headers.join(",") + "\n";
     } else if (platformId === "cafe24") {
-      const headers = [t('msg_0883'), t('msg_0833'), t('msg_0884'), t('msg_0885'), t('msg_0886'), t('msg_0887'), t('msg_0888')];
-      tpl = headers.join(t('msg_0928')).join(",");
+      const headers = ['상품ID', '상품명', '상품코드', '옵션', '판매가', '공급가', '재고'];
+      tpl = headers.join(",") + "\n";
     } else if (platformId === "smartstore") {
-      const headers = [t('msg_0896'), t('msg_0833'), t('msg_0897'), t('msg_0898'), t('msg_0899'), t('msg_0900')];
-      tpl = headers.join(t('msg_0928')).join(",");
+      const headers = ['상품번호', '상품명', '옵션명', '옵션코드', '판매가', '재고'];
+      tpl = headers.join(",") + "\n";
     } else {
-      tpl = t('msg_0932');
+      tpl = '템플릿 없음';
     }
 
     const blob = new Blob([tpl], { type: "text/csv;charset=utf-8;" });
@@ -384,8 +384,8 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
       if (!mounted) return;
       const now = new Date().getFullYear();
       setYearOptions(Array.from({ length: 10 }).map((_, i) => String(now - 5 + i)));
-      setSeasonOptions([t('msg_0004'), "SS", "FW", "SPRING", "SUMMER", "AUTUMN", "WINTER"]);
-      setBrandOptions([t('msg_0005'), t('msg_0006'), t('msg_0007'), t('msg_0008')]);
+  setSeasonOptions(['선택안함', "SS", "FW", "SPRING", "SUMMER", "AUTUMN", "WINTER"]);
+  setBrandOptions(['선택안함', '브랜드A', '브랜드B', '브랜드C']);
       // fallback defaults for newly added option lists
       setSupplierOptions(["자사", "공급처A", "공급처B"]);
       setDesignerOptions(["(미지정)", "홍길동", "김디자이너"]);
@@ -421,7 +421,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             cost_price: 0,
             images: [],
             variants: [],
-            description: t('msg_0933')
+            description: '이미지 목록'
           }) || null
         );
         return;
@@ -446,7 +446,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
           cost_price: 0,
           images: [],
           variants: [],
-          description: t('msg_0934')
+          description: '상세설명'
         }) || null
       );
     }).
@@ -536,10 +536,10 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     }
   };
 
-  if (!isClient || loading) {
+    if (!isClient || loading) {
     return (
       <Container maxWidth="6xl" padding="lg">
-        <div className="text-center py-12">{t("msg_1424")}</div>
+        <div className="text-center py-12">{'로딩 중...'}</div>
       </Container>);
 
   }
@@ -754,9 +754,9 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 aria-pressed={!editing}
                 onClick={() => setEditing((s) => !s)}
                 className="font-medium"
-                title={editing ? t('msg_0935') : t('msg_0936')}>
+        title={editing ? '변경사항 저장' : '편집 모드로 전환'}>
 
-                    {editing ? t('msg_0937') : t('msg_0655')}
+          {editing ? '저장' : '편집'}
                   </Button>
                   <Button
                 variant="outline"
@@ -792,14 +792,14 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                     applyImmediately: false
                   });
                   setShowSettingsModal(true);
-                }}>{t("msg_0950")}
+                }}>{'설정'}
 
 
               </Button>
                   <Button
                 variant="danger"
                 onClick={() => {
-                  if (!confirm(t('msg_0938')))
+                  if (!confirm('이 상품을 삭제하시겠습니까?'))
                   return;
                   try {
                     const raw = localStorage.getItem("trashed_products_v1");
@@ -812,7 +812,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                   } catch (e) {}
                   if (onNavigate) onNavigate("products-list");else
                   window.location.href = "/products";
-                }}>{t("msg_0227")}
+                }}>{'삭제'}
 
 
               </Button>
@@ -822,7 +822,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             </Stack>
           {!createMode &&
           <div className="ml-2">
-              <Button variant="outline" size="small" onClick={() => setIsHelpOpen(true)}>{t("msg_0223")}
+              <Button variant="outline" size="small" onClick={() => setIsHelpOpen(true)}>{'도움말'}
 
             </Button>
             </div>
@@ -912,8 +912,8 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                     {/* URL input for representative image: supports entering a direct image URL (used in create mode) */}
                     {(editing || createMode) &&
                         <div className="mt-2">
-                        <input
-                            placeholder={t('msg_0939')}
+            <input
+              placeholder={'이미지 URL 입력'}
                             className="w-full px-2 py-1 border rounded"
                             value={Array.isArray(product?.images) && product.images[0] || ""}
                             onChange={(e) => {
@@ -932,7 +932,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 </tr>
 
                 <tr className="border-b">
-                  <td className="px-4 py-3 text-sm text-gray-600">{t("msg_0833")}</td>
+                  <td className="px-4 py-3 text-sm text-gray-600">{'상품명'}</td>
                   <td className="px-4 py-3 font-semibold text-gray-900">
                     {editing ?
                         <input
@@ -1081,7 +1081,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                                 key={`${code.channelId || code.channelName || idx}-${code.code}`}
                                 variant="neutral">
 
-                                {code.channelName || code.channelId || t('msg_0112')}
+                                {code.channelName || code.channelId || '채널'}
                                 {code.code ? `: ${code.code}` : ""}
                               </Badge>
                               )}
@@ -1318,11 +1318,11 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                   <td className="px-4 py-3 text-gray-700 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                     <div>
                       공급처:{" "}
-                      <strong>{product?.supplier_name || t('msg_0012')}</strong>
+                      <strong>{product?.supplier_name || '자사'}</strong>
                     </div>
                     <div>
                       원산지:{" "}
-                      {editing ?
+                          {editing ?
                           <input
                             className="px-2 py-1 border rounded"
                             value={product.origin_country || ""}
@@ -1334,7 +1334,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                             } /> :
 
 
-                          product?.origin_country || t('msg_0331')
+                          product?.origin_country || '미지정'
                           }
                     </div>
                     <div>
@@ -1351,7 +1351,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                             } /> :
 
 
-                          product?.purchase_name || t('msg_0940')
+                          product?.purchase_name || '미기재'
                           }
                     </div>
                     <div>
@@ -1368,7 +1368,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                             } /> :
 
 
-                          product?.shipping_policy || t('msg_0331')
+                          product?.shipping_policy || '미지정'
                           }
                     </div>
                     <div>
@@ -1434,15 +1434,15 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                             }
                             className="px-2 py-1 border rounded">
 
-                          <option value="1">{t("msg_0941")}</option>
-                          <option value="0">{t("msg_0942")}</option>
+                          <option value="1">{'연동'}</option>
+                          <option value="0">{'미연동'}</option>
                         </select> :
-                          product.variants &&
-                          product.variants[0] &&
-                          product.variants[0].is_stock_linked ?
-                          t('msg_0941') :
+          product.variants &&
+          product.variants[0] &&
+          product.variants[0].is_stock_linked ?
+          '연동' :
 
-                          t('msg_0942')
+          '미연동'
                           }
                     </div>
                     <div>
@@ -1465,14 +1465,14 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
                           classificationNames[product.classification_id] ||
                           product.classification ||
-                          t('msg_0331')
+                          '미지정'
                           }
                     </div>
                     <div>
                       외부몰 데이터:{" "}
                       {product.externalMall?.platform ||
                           product.externalMall?.platformName ||
-                          t('msg_0943')}
+                          '없음'}
                     </div>
                     <div>
                       혼용률:{" "}
@@ -1594,7 +1594,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                         });
                         return normalizeProduct(copy);
                       });
-                      setToast(t('msg_0944'))
+                      setToast('옵션이 추가되었습니다')
                     }}>
 
                   옵션 추가
@@ -1605,13 +1605,13 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
           <div className="overflow-x-auto">
             <table className="min-w-full border border-gray-200 rounded-lg overflow-hidden min-w-0">
               <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-2 text-left text-xs font-bold text-gray-700">{t("msg_1157")}
+        <tr>
+          <th className="px-4 py-2 text-left text-xs font-bold text-gray-700">옵션명
 
-                      </th>
-                  <th className="px-4 py-2 text-left text-xs font-bold text-gray-700">{t("msg_1410")}
+            </th>
+          <th className="px-4 py-2 text-left text-xs font-bold text-gray-700">옵션코드
 
-                      </th>
+            </th>
                   <th className="px-4 py-2 text-left text-xs font-bold text-gray-700">
                     바코드1
                   </th>
@@ -1621,27 +1621,27 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                   <th className="px-4 py-2 text-left text-xs font-bold text-gray-700">
                     바코드3
                   </th>
-                  <th className="px-4 py-2 text-right text-xs font-bold text-gray-700">{t("msg_0884")}
+          <th className="px-4 py-2 text-right text-xs font-bold text-gray-700">판매가
 
-                      </th>
-                  <th className="px-4 py-2 text-right text-xs font-bold text-gray-700">{t("msg_1163")}
+            </th>
+          <th className="px-4 py-2 text-right text-xs font-bold text-gray-700">원가
 
-                      </th>
-                  <th className="px-4 py-2 text-right text-xs font-bold text-gray-700">{t("msg_0885")}
+            </th>
+          <th className="px-4 py-2 text-right text-xs font-bold text-gray-700">공급가
 
-                      </th>
+            </th>
                   <th className="px-4 py-2 text-right text-xs font-bold text-gray-700">
                     마진
                   </th>
-                  <th className="px-4 py-2 text-right text-xs font-bold text-gray-700">{t("msg_0410")}
+          <th className="px-4 py-2 text-right text-xs font-bold text-gray-700">재고
 
-                      </th>
-                  <th className="px-4 py-2 text-left text-xs font-bold text-gray-700">{t("msg_1075")}
+            </th>
+          <th className="px-4 py-2 text-left text-xs font-bold text-gray-700">창고위치
 
-                      </th>
-                  <th className="px-4 py-2 text-center text-xs font-bold text-gray-700">{t("msg_0902")}
+            </th>
+          <th className="px-4 py-2 text-center text-xs font-bold text-gray-700">상태
 
-                      </th>
+            </th>
                 </tr>
               </thead>
               <tbody>
@@ -1855,21 +1855,21 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                         <td className="px-4 py-3 text-center">
                           <div className="flex items-center gap-1 justify-center">
                             {variant.is_selling ?
-                            <span className="px-2 py-0.5 rounded bg-green-100 text-green-800 text-xs">{t("msg_0406")}
+                            <span className="px-2 py-0.5 rounded bg-green-100 text-green-800 text-xs">{'판매중'}
 
                             </span> :
 
-                            <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-600 text-xs">{t("msg_0407")}
+                            <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-600 text-xs">{'판매중지'}
 
                             </span>
                             }
                             {variant.is_soldout ?
-                            <span className="px-2 py-0.5 rounded bg-red-100 text-red-800 text-xs">{t("msg_0413")}
+                            <span className="px-2 py-0.5 rounded bg-red-100 text-red-800 text-xs">{'품절'}
 
                             </span> :
                             null}
                             {variant.is_for_sale === false ?
-                            <span className="px-2 py-0.5 rounded bg-yellow-100 text-yellow-800 text-xs">{t("msg_0814")}
+                            <span className="px-2 py-0.5 rounded bg-yellow-100 text-yellow-800 text-xs">{'예약판매'}
 
                             </span> :
                             null}
@@ -1907,7 +1907,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                       onClick={() => {
                         setDescEditValue(product.description || "");
                         setShowDescEdit(true);
-                      }}>{t("msg_0951")}
+                      }}>{'상세 설명 편집'}
 
 
                     </Button>
@@ -2031,11 +2031,11 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               외부몰 데이터:{" "}
               {product.externalMall?.platform ||
                   product.externalMall?.platformName ||
-                  t('msg_0943')}
+                  '없음'}
             </div>
           </div>
           <div className="mt-4">
-            <div className="text-sm text-gray-600 mb-2">{t("msg_1183")}</div>
+            <div className="text-sm text-gray-600 mb-2">{'간단설명'}</div>
             <ul className="list-disc pl-5 text-sm text-gray-700">
               {editing ?
                   <li>
@@ -2069,7 +2069,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                       <Button variant="outline" size="small" onClick={() => {
                         // toggle preview content by re-sanitizing
                         setProduct((p: any) => ({ ...p, description: String(p.description || '') }));
-                        setToast(t('msg_0945'))
+                        setToast('이미지 저장 완료')
                       }}>미리보기 갱신</Button>
                       }
                   </div>
@@ -2081,7 +2081,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                     <Button variant="outline" size="small" onClick={() => {
                       // restore from last saved draft or original
                       handleCancelRestore();
-                    }}>{t("msg_0546")}</Button>
+                    }}>{'취소'}</Button>
                     <Button variant="primary" size="small" onClick={() => {
                       try {
                         const key = `product_draft_${product.id}`;
@@ -2090,11 +2090,11 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                         localStorage.setItem(key, JSON.stringify(payload));
                         lastSavedDraftRef.current = payload;
                         setSaveStatus('saved');
-                        setToast(t('msg_0946'))
+                        setToast('변경사항 저장 완료')
                       } catch (e) {
-                        setToast(t('msg_0947'))
+                        setToast('저장 실패')
                       }
-                    }}>{t("msg_0351")}</Button>
+                    }}>{'저장'}</Button>
                   </div>
                   }
                 {!hidePreview && !createMode &&
@@ -2118,14 +2118,14 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
         </Card>
 
         {/* Image Management Modal */}
-        <Modal open={showImageModal} onClose={() => setShowImageModal(false)} title={t('msg_0948')}>
+  <Modal open={showImageModal} onClose={() => setShowImageModal(false)} title={'이미지 편집'}>
           <div className="space-y-4">
             <div>
               <div className="text-sm text-gray-600 mb-1">이미지 목록 (URL)</div>
               {imageListDraft.map((url, i) =>
                   <div key={i} className="flex items-center gap-2 mb-2">
                   <input className="flex-1 px-2 py-1 border rounded" value={url} onChange={(e) => setImageListDraft((s) => {const c = s.slice();c[i] = e.target.value;return c;})} />
-                  <button className="text-red-500" onClick={() => setImageListDraft((s) => s.filter((_, idx) => idx !== i))}>{t("msg_0227")}</button>
+                  <button className="text-red-500" onClick={() => setImageListDraft((s) => s.filter((_, idx) => idx !== i))}>{'삭제'}</button>
                 </div>
                   )}
               <div className="flex gap-2">
@@ -2134,15 +2134,15 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setShowImageModal(false)}>{t("msg_0546")}</Button>
-              <Button variant="primary" onClick={() => {setProduct((p: any) => ({ ...(p || {}), images: imageListDraft }));setShowImageModal(false);setToast(t('msg_0949')); try {localStorage.setItem(`product_draft_${product.id}`, JSON.stringify({ images: imageListDraft, description: descEditValue }));} catch (e) {}}}>{t("msg_0351")}</Button>
+              <Button variant="secondary" onClick={() => setShowImageModal(false)}>{'취소'}</Button>
+              <Button variant="primary" onClick={() => {setProduct((p: any) => ({ ...(p || {}), images: imageListDraft }));setShowImageModal(false);setToast('이미지 저장됨'); try {localStorage.setItem(`product_draft_${product.id}`, JSON.stringify({ images: imageListDraft, description: descEditValue }));} catch (e) {}}}>{'저장'}</Button>
             </div>
           </div>
         </Modal>
 
         {/* Description Edit Modal */}
         {/* Product Settings Modal */}
-        <Modal open={showSettingsModal} onClose={() => setShowSettingsModal(false)} title={t('msg_0950')}>
+  <Modal open={showSettingsModal} onClose={() => setShowSettingsModal(false)} title={'설정'}>
           {settingsForm ?
               <div className="space-y-6">
               {/* 판매 상태 & 연동 */}
@@ -2189,7 +2189,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                             checked={!!settingsForm.is_stock_linked}
                             onChange={() =>
                             setSettingsForm((s: any) => ({ ...(s || {}), is_stock_linked: true }))
-                            } />{t("msg_0941")}
+                            } />{'연동'}
 
 
                         </label>
@@ -2200,7 +2200,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                             checked={!settingsForm.is_stock_linked}
                             onChange={() =>
                             setSettingsForm((s: any) => ({ ...(s || {}), is_stock_linked: false }))
-                            } />{t("msg_0942")}
+                            } />{'미연동'}
 
 
                         </label>
@@ -2279,7 +2279,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
               {/* 할인 적용 */}
               <div>
-                <div className="text-sm font-semibold text-gray-900 mb-2">{t("msg_0536")}</div>
+                <div className="text-sm font-semibold text-gray-900 mb-2">{'추가 정보'}</div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="text-sm">
                     <div className="text-gray-700 mb-1">할인 유형</div>
@@ -2291,7 +2291,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                             checked={settingsForm.discountType === "none"}
                             onChange={() =>
                             setSettingsForm((s: any) => ({ ...(s || {}), discountType: "none" }))
-                            } />{t("msg_0943")}
+                            } />{'없음'}
 
 
                         </label>
@@ -2431,7 +2431,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
               {/* 액션 */}
               <div className="flex justify-end gap-2">
-                <Button variant="secondary" onClick={() => setShowSettingsModal(false)}>{t("msg_0546")}</Button>
+                <Button variant="secondary" onClick={() => setShowSettingsModal(false)}>{'취소'}</Button>
                 <Button
                     variant="primary"
                     onClick={() => {
@@ -2512,31 +2512,31 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               <div className="text-sm text-gray-600">설정 정보를 불러오는 중…</div>
               }
         </Modal>
-        <Modal open={showDescEdit} onClose={() => setShowDescEdit(false)} title={t('msg_0951')}>
+  <Modal open={showDescEdit} onClose={() => setShowDescEdit(false)} title={'상세 설명 편집'}>
           <div className="space-y-4">
             <div>
               <div className="text-sm text-gray-600 mb-1">HTML 입력</div>
               <textarea className="w-full h-56 p-2 border rounded font-mono text-sm" value={descEditValue} onChange={(e) => setDescEditValue(e.target.value)} />
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setShowDescEdit(false)}>{t("msg_0546")}</Button>
-              <Button variant="primary" onClick={() => {setProduct((p: any) => ({ ...p, description: descEditValue }));setShowDescEdit(false);setToast(t('msg_0952')); try {localStorage.setItem(`product_draft_${product.id}`, JSON.stringify({ images: imageListDraft, description: descEditValue }));} catch (e) {}}}>{t("msg_0351")}</Button>
+              <Button variant="secondary" onClick={() => setShowDescEdit(false)}>{'취소'}</Button>
+              <Button variant="primary" onClick={() => {setProduct((p: any) => ({ ...p, description: descEditValue }));setShowDescEdit(false);setToast('상세설명 저장됨'); try {localStorage.setItem(`product_draft_${product.id}`, JSON.stringify({ images: imageListDraft, description: descEditValue }));} catch (e) {}}}>{'저장'}</Button>
             </div>
           </div>
         </Modal>
 
         {/* Variant Edit Modal */}
-        <Modal open={showVariantModal} onClose={() => setShowVariantModal(false)} title={t('msg_0953')}>
+  <Modal open={showVariantModal} onClose={() => setShowVariantModal(false)} title={'옵션 편집'}>
           <div className="space-y-4">
             {variantForm ?
                 <div className="grid grid-cols-1 gap-3">
                 <div>
-                  <div className="text-sm text-gray-600">{t("msg_1157")}</div>
+                  <div className="text-sm text-gray-600">{'옵션명'}</div>
                   <input className="w-full px-2 py-1 border rounded" value={variantForm.variant_name || ''} onChange={(e) => setVariantForm((v: any) => ({ ...v, variant_name: e.target.value }))} />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <div className="text-sm text-gray-600">{t("msg_1410")}</div>
+                    <div className="text-sm text-gray-600">{'옵션코드'}</div>
                     <input className="w-full px-2 py-1 border rounded" value={variantForm.code || ''} onChange={(e) => setVariantForm((v: any) => ({ ...v, code: e.target.value }))} />
                   </div>
                   <div>
@@ -2546,11 +2546,11 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <div className="text-sm text-gray-600">{t("msg_0884")}</div>
+                    <div className="text-sm text-gray-600">{'가격'}</div>
                     <input className="w-full px-2 py-1 border rounded" value={String(variantForm.selling_price || 0)} onChange={(e) => setVariantForm((v: any) => ({ ...v, selling_price: Number(e.target.value || 0) }))} />
                   </div>
                   <div>
-                    <div className="text-sm text-gray-600">{t("msg_0410")}</div>
+                    <div className="text-sm text-gray-600">{'재고'}</div>
                     <input className="w-full px-2 py-1 border rounded" value={String(variantForm.stock || 0)} onChange={(e) => setVariantForm((v: any) => ({ ...v, stock: Number(e.target.value || 0) }))} />
                   </div>
                 </div>
@@ -2559,7 +2559,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 <div>옵션을 불러오는 중입니다.</div>
                 }
             <div className="flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setShowVariantModal(false)}>{t("msg_0546")}</Button>
+              <Button variant="secondary" onClick={() => setShowVariantModal(false)}>{'취소'}</Button>
               <Button variant="primary" onClick={async () => {
                     if (editingVariantIndex === null || !product) {setShowVariantModal(false);return;}
                     // update local product state
@@ -2584,8 +2584,8 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                     }
 
                     setShowVariantModal(false);
-                    setToast(t('msg_0954'))
-                  }}>{t("msg_0351")}</Button>
+                    setToast('옵션 저장됨')
+                  }}>{'저장'}</Button>
             </div>
           </div>
         </Modal>
@@ -2611,18 +2611,18 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="text-xs text-gray-500">{t("msg_0833")}</div>
+                        <div className="text-xs text-gray-500">{'상품명'}</div>
                         <div className="font-semibold">{product.name || '-'}</div>
-                        <div className="text-xs text-gray-500 mt-1">{t("msg_0887")}</div>
+                        <div className="text-xs text-gray-500 mt-1">{'재고'}</div>
                         <div className="text-sm">{product.brand || '-'}</div>
                       </div>
                       <div className="flex flex-col items-end gap-2">
                         <div className="flex gap-2">
                           {product.is_soldout &&
-                          <span className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded">{t("msg_0413")}</span>
+                          <span className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded">{'품절'}</span>
                           }
                           {product.is_selling ?
-                          <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded">{t("msg_0406")}</span> :
+                          <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded">{'판매중'}</span> :
 
                           <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">비판매</span>
                           }
@@ -2636,7 +2636,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
                     <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
                       <div>
-                        <div className="text-xs text-gray-500">{t("msg_0884")}</div>
+                        <div className="text-xs text-gray-500">{'가격'}</div>
                         <div className="text-lg font-bold text-green-700">
                           <PreviewPrice
                             price={Number(product.selling_price || 0)}
@@ -2671,20 +2671,20 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 <div className="flex justify-end gap-3">
                   <Button variant="outline" onClick={() => {
               try {handleBack();} catch (e) {window.location.href = '/products';}
-            }}>{t("msg_0546")}</Button>
+            }}>{'취소'}</Button>
                   <Button variant="primary" onClick={async () => {
               if (!onCreate) return;
               try {
                 setSaveStatus('saving');
                 await onCreate(product || {});
                 setSaveStatus('saved');
-                setToast(t('msg_0955'))
+                setToast('업로드 시작')
                 if (onNavigate) onNavigate('products-list');else
                 window.location.href = '/products';
               } catch (e) {
                 console.error('create failed', e);
                 setSaveStatus('error');
-                setToast(t('msg_0956'))
+                setToast('업로드 완료')
               }
             }}>생성</Button>
                 </div>
@@ -2695,12 +2695,12 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             <button
           className="px-3 py-2 bg-white border rounded text-sm"
           onClick={() => setIsHelpOpen(true)}
-          aria-label={t('msg_0223')}>{t("msg_0223")}
+          aria-label={'도움말'}>{'도움말'}
 
 
         </button>
           </div>
-          <SideGuide open={isHelpOpen} onClose={() => setIsHelpOpen(false)} title={t('msg_0957')}>
+          <SideGuide open={isHelpOpen} onClose={() => setIsHelpOpen(false)} title={'가이드'}>
             <div className="space-y-3 text-sm text-gray-700">
               <div className="flex gap-2 items-center">
                 <button
@@ -2717,7 +2717,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 </button>
                 <button
               className="px-3 py-2 bg-white border rounded text-sm"
-              onClick={() => window.location.href = "/products/import"}>{t("msg_0267")}
+              onClick={() => window.location.href = "/products/import"}>{'CSV 상품 등록'}
 
 
             </button>
@@ -2744,27 +2744,27 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                   <tbody>
                     <tr>
                       <td className="border px-2 py-1 align-top">필수값</td>
-                      <td className="border px-2 py-1 align-top">{t("msg_0833")}</td>
+                      <td className="border px-2 py-1 align-top">{'상품명'}</td>
                       <td className="border px-2 py-1">- 필수값(미입력 시 업로드 불가)<br />- 기존 등록 상품과 중복 시 업로드 불가</td>
                     </tr>
                     <tr>
                       <td className="border px-2 py-1" />
-                      <td className="border px-2 py-1">{t("msg_1157")}</td>
+                      <td className="border px-2 py-1">{'옵션명'}</td>
                       <td className="border px-2 py-1">- 필수값(미입력 시 업로드 불가)<br />- 옵션이 없으면 “단일옵션” 입력<br />- 작성 시 제공된 예시 형식 참고</td>
                     </tr>
                     <tr>
                       <td className="border px-2 py-1 align-top">옵션값</td>
-                      <td className="border px-2 py-1">{t("msg_0883")}</td>
+                      <td className="border px-2 py-1">{'상품ID'}</td>
                       <td className="border px-2 py-1">- 기존 등록 상품과 중복 시 업로드 불가<br />- 미입력 시 중복체크 안 함</td>
                     </tr>
                     <tr>
                       <td className="border px-2 py-1" />
-                      <td className="border px-2 py-1">{t("msg_1159")}</td>
+                      <td className="border px-2 py-1">{'옵션코드'}</td>
                       <td className="border px-2 py-1">- 기존 등록 옵션과 중복 시 업로드 불가<br />- 미입력 시 중복체크 안 함</td>
                     </tr>
                     <tr>
                       <td className="border px-2 py-1" />
-                      <td className="border px-2 py-1">{t("msg_1160")}</td>
+                      <td className="border px-2 py-1">{'재고수'}</td>
                       <td className="border px-2 py-1">- 중복 불가<br />- 미입력 시 FULGO가 자동 부여</td>
                     </tr>
                     <tr>
@@ -2774,7 +2774,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                     </tr>
                     <tr>
                       <td className="border px-2 py-1" />
-                      <td className="border px-2 py-1">{t("msg_1158")}</td>
+                      <td className="border px-2 py-1">{'추가'}</td>
                       <td className="border px-2 py-1">- 실제 매입 옵션명 입력</td>
                     </tr>
                     <tr>
@@ -2789,18 +2789,18 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                     </tr>
                     <tr>
                       <td className="border px-2 py-1" />
-                      <td className="border px-2 py-1">{t("msg_0889")}</td>
+                      <td className="border px-2 py-1">{'옵션'}</td>
                       <td className="border px-2 py-1">- 상품 설명 입력 가능<br />- 동일 상품의 옵션별 설명이 다를 경우 최상위 설명이 적용됨</td>
                     </tr>
                     <tr>
                       <td className="border px-2 py-1" />
                       <td className="border px-2 py-1">영문상품명 / 영문옵션명</td>
                       <td className="border px-2 py-1">- 영어 상품명/옵션명 입력 가능<br />- 미입력 시 공란 처리</td>
-                    </tr>
                     <tr>
                       <td className="border px-2 py-1" />
-                      <td className="border px-2 py-1">HS코드</td>
-                      <td className="border px-2 py-1">- 상품 HS Code 입력<br />- 미입력 시 공란 처리</td>
+                      <td className="border px-2 py-1">{'설명'}</td>
+                      <td className="border px-2 py-1">- FULGO 상품분류 관리에 등록된 값 입력<br />- 미입력 시 기본 분류 처리</td>
+                    </tr>
                     </tr>
                     <tr>
                       <td className="border px-2 py-1" />
@@ -2830,12 +2830,12 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
                     <tr>
                       <td className="border px-2 py-1 align-top">관리정보</td>
-                      <td className="border px-2 py-1">{t("msg_0905")}</td>
+                      <td className="border px-2 py-1">{'설명'}</td>
                       <td className="border px-2 py-1">- FULGO 상품분류 관리에 등록된 값 입력<br />- 미입력 시 기본 분류 처리</td>
                     </tr>
                     <tr>
                       <td className="border px-2 py-1" />
-                      <td className="border px-2 py-1">{t("msg_0113")}</td>
+                      <td className="border px-2 py-1">{'비고'}</td>
                       <td className="border px-2 py-1">- FULGO 공급처 관리 등록명 입력<br />- 미입력 시 기본 공급처<br />- 미등록 공급처 입력 시 자동 등록</td>
                     </tr>
                     <tr>
@@ -2845,7 +2845,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                     </tr>
                     <tr>
                       <td className="border px-2 py-1" />
-                      <td className="border px-2 py-1">{t("msg_0887")}</td>
+                      <td className="border px-2 py-1">{'재고'}</td>
                       <td className="border px-2 py-1">- FULGO 브랜드 관리 등록명 입력<br />- 미입력 시 “선택안함” 처리<br />- 미등록 브랜드 입력 시 자동 등록</td>
                     </tr>
                     <tr>
@@ -2860,12 +2860,12 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                     </tr>
                     <tr>
                       <td className="border px-2 py-1" />
-                      <td className="border px-2 py-1">{t("msg_1169")}</td>
+                      <td className="border px-2 py-1">{'무게'}</td>
                       <td className="border px-2 py-1">- 일반 / 우수 / 특별 중 입력<br />- 미입력 시 “일반” 처리</td>
                     </tr>
                     <tr>
                       <td className="border px-2 py-1" />
-                      <td className="border px-2 py-1">{t("msg_1165")}</td>
+                      <td className="border px-2 py-1">{'브랜드'}</td>
                       <td className="border px-2 py-1">- 상품 보관 위치 입력<br />- 미입력 시 공란 처리</td>
                     </tr>
                     <tr>
@@ -2880,7 +2880,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                     </tr>
                     <tr>
                       <td className="border px-2 py-1" />
-                      <td className="border px-2 py-1">{t("msg_1168")}</td>
+                      <td className="border px-2 py-1">{'원산지'}</td>
                       <td className="border px-2 py-1">- 품절: “품절”<br />- 정상: “미품절”<br />- 미입력 시 “미품절” 처리</td>
                     </tr>
 

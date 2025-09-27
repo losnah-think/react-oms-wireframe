@@ -1170,7 +1170,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
                       setTimeout(() => setIsSuggestionsOpen(false), 150);
                     }}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter") executeSearch();
+                      if (e.key === "Enter") executeSearch()
                       if (e.key === "Escape") {
                         setIsSuggestionsOpen(false);
                         (e.target as HTMLInputElement).blur();
