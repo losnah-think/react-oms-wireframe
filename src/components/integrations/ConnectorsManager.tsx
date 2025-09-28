@@ -1,13 +1,14 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react'
+import { mockVendors } from '../../data/mockVendors';
 
 export default function ConnectorsManager() {
   const [shops, setShops] = useState<any[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
   const [form, setForm] = useState({ shopId: '', clientId: '', clientSecret: '', redirectUri: '', accessToken: '' });
   const [adding, setAdding] = useState(false);
-  const [addForm, setAddForm] = useState({ shopId: '', name: '', platform: 'cafe24', clientId: '', accessToken: '' });
+  const [addForm, setAddForm] = useState({ vendorId: '', shopId: '', name: '', platform: 'cafe24', clientId: '', accessToken: '' });
   const [revealSecret, setRevealSecret] = useState<{[k:string]: boolean}>({});
   const { data: session } = useSession()
   const role = (session as any)?.user?.role || 'operator'
@@ -38,24 +39,47 @@ export default function ConnectorsManager() {
 
   const startAdd = () => {
     setAdding(true)
-    setAddForm({ shopId: '', name: '', platform: 'cafe24', clientId: '', accessToken: '' })
+    setAddForm({ vendorId: '', shopId: '', name: '', platform: 'cafe24', clientId: '', accessToken: '' })
   }
 
   const saveNewShop = async () => {
-    if (!addForm.shopId) return alert('shopId required')
+    if (!addForm.vendorId && !addForm.shopId) return alert('거래처를 선택하거나 Shop ID를 입력하세요')
+    
+    // 거래처가 선택된 경우 해당 거래처 정보를 사용
+    let shopData = { ...addForm };
+    if (addForm.vendorId) {
+      const selectedVendor = mockVendors.find(v => v.id === addForm.vendorId);
+      if (selectedVendor) {
+        shopData.shopId = addForm.shopId || `${selectedVendor.platform.toLowerCase()}_${selectedVendor.id}`;
+        shopData.name = addForm.name || selectedVendor.name;
+        shopData.platform = addForm.platform || selectedVendor.platform.toLowerCase();
+      }
+    }
+    
+    if (!shopData.shopId) return alert('Shop ID가 필요합니다')
+    
     try {
-      const resp = await fetch(`/api/integrations/shops/${addForm.shopId}/credentials`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ platform: addForm.platform, name: addForm.name, clientId: addForm.clientId, accessToken: addForm.accessToken }) })
+      const resp = await fetch(`/api/integrations/shops/${shopData.shopId}/credentials`, { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ 
+          platform: shopData.platform, 
+          name: shopData.name, 
+          clientId: shopData.clientId, 
+          accessToken: shopData.accessToken 
+        }) 
+      })
       const data = await resp.json()
       if (data?.ok) {
         const listResp = await fetch('/api/integrations/connected-shops')
         setShops(await listResp.json())
         setAdding(false)
       } else {
-        alert('failed to add shop')
+        alert('샵 등록에 실패했습니다')
       }
     } catch (err) {
       console.error(err)
-      alert('failed to add shop')
+      alert('샵 등록에 실패했습니다')
     }
   }
 
@@ -79,7 +103,15 @@ export default function ConnectorsManager() {
 
   return (
     <div>
-      <h3 className="text-lg font-medium mb-3">연결된 샵</h3>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-lg font-medium">연결된 샵</h3>
+        <button 
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          onClick={startAdd}
+        >
+          새 샵 등록
+        </button>
+      </div>
       <div className="space-y-2">
         {/* top-right fixed button now handles adding new shops */}
         {shops.map(s => (
@@ -107,18 +139,102 @@ export default function ConnectorsManager() {
       {adding && (
         <div className="mt-4 p-4 bg-white rounded shadow-sm">
           <h4 className="font-semibold mb-2">새 샵 등록</h4>
-          <div className="grid grid-cols-2 gap-2">
-            <input placeholder="Shop ID (예: shop_cafe24_1)" value={addForm.shopId} onChange={e => setAddForm(f => ({ ...f, shopId: e.target.value }))} />
-            <input placeholder="샵 이름" value={addForm.name} onChange={e => setAddForm(f => ({ ...f, name: e.target.value }))} />
-            <select value={addForm.platform} onChange={e => setAddForm(f => ({ ...f, platform: e.target.value }))}>
-              <option value="cafe24">Cafe24</option>
-              <option value="makeshop">MakeShop</option>
-              <option value="smartstore">SmartStore</option>
-              <option value="wisa">Wisa</option>
-              <option value="godomall">GodoMall</option>
-            </select>
-            <input placeholder="Client ID (optional)" value={addForm.clientId} onChange={e => setAddForm(f => ({ ...f, clientId: e.target.value }))} />
-            <input placeholder="Access Token (optional)" value={addForm.accessToken} onChange={e => setAddForm(f => ({ ...f, accessToken: e.target.value }))} />
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">거래처 선택 (선택사항)</label>
+              <select 
+                value={addForm.vendorId} 
+                onChange={e => {
+                  const vendorId = e.target.value;
+                  setAddForm(f => ({ ...f, vendorId }));
+                  
+                  // 거래처 선택 시 자동으로 정보 채우기
+                  if (vendorId) {
+                    const selectedVendor = mockVendors.find(v => v.id === vendorId);
+                    if (selectedVendor) {
+                      setAddForm(f => ({
+                        ...f,
+                        vendorId,
+                        shopId: `${selectedVendor.platform.toLowerCase()}_${selectedVendor.id}`,
+                        name: selectedVendor.name,
+                        platform: selectedVendor.platform.toLowerCase()
+                      }));
+                    }
+                  } else {
+                    // 거래처 선택 해제 시 초기화
+                    setAddForm(f => ({
+                      ...f,
+                      vendorId: '',
+                      shopId: '',
+                      name: '',
+                      platform: 'cafe24'
+                    }));
+                  }
+                }}
+                className="w-full border px-3 py-2 rounded"
+              >
+                <option value="">직접 입력</option>
+                {mockVendors.map(vendor => (
+                  <option key={vendor.id} value={vendor.id}>
+                    {vendor.name} ({vendor.platform})
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Shop ID</label>
+                <input 
+                  placeholder="Shop ID (예: shop_cafe24_1)" 
+                  value={addForm.shopId} 
+                  onChange={e => setAddForm(f => ({ ...f, shopId: e.target.value }))} 
+                  className="w-full border px-3 py-2 rounded"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">샵 이름</label>
+                <input 
+                  placeholder="샵 이름" 
+                  value={addForm.name} 
+                  onChange={e => setAddForm(f => ({ ...f, name: e.target.value }))} 
+                  className="w-full border px-3 py-2 rounded"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">플랫폼</label>
+                <select 
+                  value={addForm.platform} 
+                  onChange={e => setAddForm(f => ({ ...f, platform: e.target.value }))}
+                  className="w-full border px-3 py-2 rounded"
+                >
+                  <option value="cafe24">Cafe24</option>
+                  <option value="makeshop">MakeShop</option>
+                  <option value="smartstore">SmartStore</option>
+                  <option value="wisa">Wisa</option>
+                  <option value="godomall">GodoMall</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Client ID (선택)</label>
+                <input 
+                  placeholder="Client ID" 
+                  value={addForm.clientId} 
+                  onChange={e => setAddForm(f => ({ ...f, clientId: e.target.value }))} 
+                  className="w-full border px-3 py-2 rounded"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Access Token (선택)</label>
+              <input 
+                placeholder="Access Token" 
+                value={addForm.accessToken} 
+                onChange={e => setAddForm(f => ({ ...f, accessToken: e.target.value }))} 
+                className="w-full border px-3 py-2 rounded"
+              />
+            </div>
           </div>
           <div className="mt-3 flex gap-2">
             <button className="px-3 py-1 bg-green-600 text-white rounded" onClick={saveNewShop}>등록</button>

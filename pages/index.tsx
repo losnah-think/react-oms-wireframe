@@ -1,42 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from 'next/router';
-// `getServerSession` and `authOptions` are server-only and imported dynamically
-// inside `getServerSideProps` to avoid pulling server-only dependencies into
-// the client/test runtime at module-evaluation time.
-import LoginPage from "@/features/settings/integration-admin/login";
-import Breadcrumbs from "@/components/Breadcrumbs";
 
-// Dashboard
-import Dashboard from "@/features/dashboard/Dashboard";
-
-// Products
-import ProductsListPage from "@/features/products/ProductsListPage";
-import ProductDetailPage from "@/features/products/ProductDetailPage";
-import ProductsAddPage from "@/features/products/ProductsAddPage";
-import ProductCsvUploadPage from "@/features/products/ProductCsvUploadPage";
-import ProductImportPage from "@/features/products/ProductImportPage";
-import ExternalProductImportPage from "@/features/products/ExternalProductImportPage";
-import RegistrationHistoryPage from "@/features/products/registration-history";
-import IndividualRegistrationPage from "@/features/products/individual-registration";
-
-// Orders
-import OrderList from "@/features/orders/OrderList";
-import OrderAnalytics from "@/features/orders/OrderAnalytics";
-import OrderSettings from "@/features/orders/OrderSettings";
-
-// Categories
-import CategoriesManagementPage from "@/features/categories/CategoriesManagementPage";
-
-// Malls
-import MallsListPage from "@/features/malls/MallsListPage";
-import MallInfoManagementPage from "@/features/malls/MallInfoManagementPage";
-import MallProductsPage from "@/features/malls/MallProductsPage";
-import CategoryMappingPage from "@/features/malls/CategoryMappingPage";
-
-// Settings
-import BasicMetadataSettings from "@/features/settings/basic-metadata";
-import ProductCategoryPage from "@/features/settings/ProductCategoryPage";
-import ProductGroupPage from "@/features/settings/ProductGroupPage";
+import LoginPage from "@/features/auth/LoginPage";
+import { Router } from "@/lib/Router";
+import { NavigationService } from "@/lib/NavigationService";
+import { PageRenderer } from "@/lib/PageRenderer";
+import { AppController } from "@/lib/AppController";
 
 export default function Home(props: any) {
   // If no session, render the login UI inline at '/'
@@ -47,250 +16,69 @@ export default function Home(props: any) {
   // For local/dev use, prefer explicit opt-in via `NEXT_PUBLIC_HIDE_LOGIN=1`.
   const hideLogin = process.env.NEXT_PUBLIC_HIDE_LOGIN === "1";
   const initialPage = props.initialPage ?? "dashboard";
+
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [selectedProductId, setSelectedProductId] = useState<string>("");
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const router = useRouter();
 
   const showLoginInline = !sessionExists && !hideLogin && !useMocksInProd;
 
-  const idToPath: Record<string, string> = {
-    dashboard: "/",
-    "products-list": "/products",
-    products: "/products",
-    "products-add": "/products/add",
-    "products-edit": "/products",
-    "products-csv": "/products/csv",
-    "products-import": "/products/import",
-    "products-detail": "/products", // will be suffixed with /:id when productId provided
-    "orders-list": "/orders",
-    "orders-settings": "/orders/settings",
-    malls: "/malls",
-    "settings-product-classifications": "/settings/product-classifications",
-    "settings-product-groups": "/settings/product-groups",
-    "settings-product-category": "/settings/category",
-  };
+  // Initialize OO architecture components
+  const appController = AppController.getInstance();
+  const navigationService = NavigationService.getInstance();
+  const pageRenderer = PageRenderer.getInstance();
 
-  const handleNavigate = (page: string, productId?: string) => {
-    setCurrentPage(page);
-    if (productId) {
-      setSelectedProductId(productId);
-    }
-    // Immediately update browser history (so Back/Forward work instantly)
-    try {
-      const basePath =
-        idToPath[page] ?? `/${page.replace(/_/g, "/").replace(/\s+/g, "-")}`;
-      let target =
-        page === "products-detail" && productId
-          ? `${basePath}/${productId}`
-          : basePath;
-      // if navigating to products-edit, route to the product detail URL so detail page can act as editor
-      if (page === "products-edit" && productId) {
-        target = `/products/${productId}`;
-      }
-      if (
-        typeof window !== "undefined" &&
-        window.history &&
-        window.history.pushState
-      ) {
-        window.history.pushState({}, "", target);
-      }
-      // keep Next router in sync (shallow)
-      router.push(router.pathname, target, { shallow: true }).catch(() => {});
-    } catch (e) {
-      // ignore
-    }
-  };
-
-  // Helper: map a pathname (e.g. '/products', '/products/123') to SPA page id and id
-  const parsePathToPage = (pathname: string): { page: string; id?: string } => {
-    const parts = pathname.replace(/^\//, "").split("/").filter(Boolean);
-    if (parts.length === 0) return { page: "dashboard" };
-    if (parts[0] === "products") {
-      if (parts.length === 1) return { page: "products-list" };
-      // handle known product subpaths
-      if (parts[1] === "csv") return { page: "products-csv" };
-      if (parts[1] === "import") return { page: "products-import" };
-      if (parts[1] === "registration-history")
-        return { page: "products-registration-history" };
-      if (parts[1] === "individual-registration")
-        return { page: "products-individual-registration" };
-      if (parts[1] === "external-import")
-        return { page: "products-external-import" };
-      if (parts[1] === "add") return { page: "products-add" };
-      if (parts[1] === "edit") return { page: "products-edit" };
-      // otherwise, assume /products/:id
-      return { page: "products-detail", id: parts[1] };
-    }
-    if (parts[0] === "orders") return { page: "orders-list" };
-    if (parts[0] === "malls") return { page: "malls" };
-    if (parts[0] === "settings") {
-      // map known settings subpaths to SPA page ids
-      const sub = parts[1] ?? "";
-      if (
-        sub === "product-classifications" ||
-        sub === "category" ||
-        sub === "product-category"
-      )
-        return { page: "settings-product-classifications" };
-      if (sub === "product-groups" || sub === "product-group")
-        return { page: "settings-product-groups" };
-      if (sub === "integrations") return { page: "settings-integrations" };
-      if (sub === "basic-metadata")
-        return { page: "settings-basic-metadata" };
-      if (sub === "barcodes") return { page: "settings-barcodes" };
-      if (sub === "brands") return { page: "settings-brands" };
-      if (sub === "years") return { page: "settings-product-years" };
-      if (sub === "seasons") return { page: "settings-product-seasons" };
-      return { page: "settings-integrations" };
-    }
-    // fallback to dashboard
-    return { page: "dashboard" };
-  };
-
-  // On mount, initialize SPA state from the current URL
   useEffect(() => {
-    try {
-      const { page, id } = parsePathToPage(window.location.pathname);
-      setCurrentPage(page);
-      if (id) setSelectedProductId(id);
-    } catch (e) {
-      // ignore on server or unexpected errors
-    }
+    // Set up navigation service with router
+    navigationService.setRouter(router);
+    appController.setNavigationService(navigationService);
 
-    // Listen to router events and popstate so Back/Forward navigations update SPA state immediately
+    // Initialize from URL
+    const { page, id } = Router.parsePathToPage(window.location.pathname);
+    setCurrentPage(page);
+    setSelectedProductId(id || "");
+    appController.navigateTo(page, id);
+
+    // Set up navigation handlers
+    const handleNavigate = (page: string, productId?: string) => {
+      setCurrentPage(page);
+      setSelectedProductId(productId || "");
+      appController.navigateTo(page, productId);
+    };
+
+    // Make navigation function globally available
+    (window as any).navigateTo = handleNavigate;
+
+    // Set up route change listeners
     const onRouteChange = (url: string) => {
-      try {
-        const { page, id } = parsePathToPage(
-          new URL(url, window.location.origin).pathname,
-        );
-        setCurrentPage(page);
-        setSelectedProductId(id ?? "");
-      } catch (err) {
-        // ignore
-      }
+      const { page, id } = Router.parsePathToPage(new URL(url, window.location.origin).pathname);
+      setCurrentPage(page);
+      setSelectedProductId(id || "");
     };
 
     const onPopState = () => {
-      try {
-        const { page, id } = parsePathToPage(window.location.pathname);
-        setCurrentPage(page);
-        setSelectedProductId(id ?? "");
-      } catch (err) {
-        // ignore
-      }
+      const { page, id } = Router.parsePathToPage(window.location.pathname);
+      setCurrentPage(page);
+      setSelectedProductId(id || "");
     };
 
     router.events?.on?.("routeChangeComplete", onRouteChange);
     window.addEventListener("popstate", onPopState);
+
     return () => {
       router.events?.off?.("routeChangeComplete", onRouteChange);
       window.removeEventListener("popstate", onPopState);
     };
   }, []);
 
-  const toggleSidebar = () => {
-    setSidebarCollapsed((prev) => !prev);
+  const handleNavigate = (page: string, productId?: string) => {
+    setCurrentPage(page);
+    setSelectedProductId(productId || "");
+    appController.navigateTo(page, productId);
   };
 
   const renderCurrentPage = () => {
-    switch (currentPage) {
-      // Dashboard
-      case "dashboard":
-        return <Dashboard />;
-
-      // Products
-      case "products":
-      case "products-list":
-        return <ProductsListPage onNavigate={handleNavigate} />;
-      case "products-detail":
-        return (
-          <ProductDetailPage
-            productId={selectedProductId}
-            onNavigate={handleNavigate}
-          />
-        );
-      case "products-registration-history":
-        return <RegistrationHistoryPage />;
-      case "products-individual-registration":
-        return <IndividualRegistrationPage />;
-      case "products-add":
-        return <ProductsAddPage onNavigate={handleNavigate} />;
-      case "products-edit":
-        return (
-          <ProductDetailPage
-            productId={selectedProductId}
-            onNavigate={handleNavigate}
-          />
-        );
-      case "products-csv":
-        return <ProductCsvUploadPage />;
-      case "products-import":
-        return <ProductImportPage />;
-      case "products-external-import":
-        return <ExternalProductImportPage />;
-
-      // Orders
-      case "orders":
-      case "orders-list":
-        return <OrderList />;
-      case "orders-analytics":
-        return <OrderAnalytics orders={[]} />;
-      case "orders-settings":
-        return (
-          <OrderSettings
-            onSave={(settings) => console.log("Settings saved:", settings)}
-          />
-        );
-
-      // Categories
-      case "categories":
-        return <CategoriesManagementPage />;
-
-      // Malls
-      case "malls":
-      case "malls-list":
-        return <MallsListPage />;
-      case "mall-info":
-      case "malls-info":
-        return <MallInfoManagementPage />;
-      case "mall-products":
-      case "malls-products":
-        return <MallProductsPage />;
-      case "category-mapping":
-      case "malls-category-mapping":
-        return <CategoryMappingPage />;
-
-      // Settings
-      case "settings-product-classifications":
-        return <ProductCategoryPage />;
-      case "settings-product-groups":
-        return <ProductGroupPage />;
-      case "settings-integrations":
-        // render pages-based integrations index for SPA navigation
-        // Dynamically import to avoid SSR issues
-        const IntegrationsPage =
-          require("@/features/settings/IntegrationsPage").default;
-        return <IntegrationsPage onNavigate={handleNavigate} />;
-      case "settings-integrations-orderDetail":
-        const IntegrationOrderDetail =
-          require("@/features/settings/integrations/orderDetail").default;
-        return <IntegrationOrderDetail orderId={selectedProductId} />;
-      case "settings-brands":
-        return <BasicMetadataSettings initialTab="brands" />;
-      case "settings-basic-metadata":
-        return <BasicMetadataSettings initialTab="brands" />;
-      case "settings-product-years":
-        return <BasicMetadataSettings initialTab="years" />;
-      case "settings-product-seasons":
-        return <BasicMetadataSettings initialTab="seasons" />;
-      case "settings-barcodes":
-        const BarcodeManagement = require("@/features/settings/bc").default;
-        return <BarcodeManagement onNavigate={handleNavigate} />;
-
-      default:
-        return <Dashboard />;
-    }
+    return pageRenderer.renderPage(currentPage, selectedProductId, handleNavigate);
   };
 
   return (
@@ -307,39 +95,28 @@ export default function Home(props: any) {
     </>
   );
 }
-// client-side session check replaces server-side redirect for smoother dev flow
 
 export async function getServerSideProps(ctx: any) {
-  // In dev we allow using a query param to preview pages without login
   const page = ctx.query?.page ?? null;
-  // Only short-circuit server-side auth when explicitly requested via env var.
+
   if (process.env.NEXT_PUBLIC_DEV_NO_AUTH === "1") {
     return { props: { session: true, initialPage: page } };
   }
 
-  // Dynamically import server-only helpers to avoid loading them during tests
   try {
     const { getServerSession } = await import("next-auth/next");
     const { authOptions } = await import("./api/auth/[...nextauth]");
-    const session = await (getServerSession as any)(
-      ctx.req,
-      ctx.res,
-      authOptions as any,
-    );
-    // server-side env controls (mirror client-side behavior)
+    const session = await (getServerSession as any)(ctx.req, ctx.res, authOptions as any);
+
     const useMocksInProd = process.env.NEXT_PUBLIC_USE_MOCKS === "1";
     const hideLogin = process.env.NEXT_PUBLIC_HIDE_LOGIN === "1";
 
     if (!session && !hideLogin && !useMocksInProd) {
-      // Redirect to the standalone login page so Header/LNB are not shown
       return { redirect: { destination: "/login", permanent: false } };
     }
 
     return { props: { session: !!session, initialPage: page } };
   } catch (e) {
-    // If server auth cannot be loaded (e.g. in unit tests), behave differently:
-    // - In tests, return unauthenticated props so unit tests can render pages without server runtime.
-    // - In dev/production, redirect to the standalone login page so Layout isn't shown around the login UI.
     if (process.env.NODE_ENV === "test") {
       return { props: { session: false, initialPage: page } };
     }

@@ -1,3 +1,3 @@
-const Integrations =
-  require("@/features/settings/IntegrationsPage").default;
-export default Integrations;
+const Integration =
+  require("@/features/settings/integration").default;
+export default Integration;

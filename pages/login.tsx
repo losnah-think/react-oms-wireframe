@@ -1,4 +1,4 @@
-import LoginPage from "@/features/settings/integration-admin/login";
+import LoginPage from "@/features/auth/LoginPage";
 
 // Opt-out of global Layout by setting the page component property
 (LoginPage as any).disableLayout = true;
