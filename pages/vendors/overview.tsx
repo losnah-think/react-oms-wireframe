@@ -1,3 +1,4 @@
+import React from "react";
 import ShoppingMallIndex from "../../src/features/partners/index";
 
 export default function VendorsOverviewPage() {
