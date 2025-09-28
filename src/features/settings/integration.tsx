@@ -4,6 +4,7 @@ import Card from "../../design-system/components/Card";
 import ConnectorTable from "../../components/integrations/ConnectorTable";
 import ConnectorsManager from "../../components/integrations/ConnectorsManager";
 import AdminIntegrationLink from "src/components/AdminIntegrationLink";
+import OrderCycleSettings from "../../components/OrderCycleSettings";
 
 export default function IntegrationPage() {
   return (
@@ -39,6 +40,10 @@ export default function IntegrationPage() {
         </div>
         <AdminIntegrationLink />
       </Card>
+
+      {/* New order cycle settings inspired by client's screenshot */}
+      <OrderCycleSettings />
+
       <Card>
         <ConnectorTable />
       </Card>
