@@ -1,3 +1,0 @@
-id,product_code,product_name,brand,price,stock,thumbnail_url,variant_id,variant_name,variant_price,variant_stock
-12345,SKU-001,예시상품 A,BrandX,49000,50,https://example.com/img1.jpg,sku-001-red,Red,49000,20
-12346,SKU-002,예시상품 B,BrandY,29000,100,https://example.com/img2.jpg,sku-002-s,Small,29000,40

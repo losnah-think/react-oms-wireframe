@@ -1,2 +1,0 @@
-// backup of DeliveryCompanyManagementPage
-export {};
