@@ -1,57 +1,57 @@
 import React, { useState, useEffect } from "react";
 import { Container, Card } from "../../design-system";
 import { mockProducts } from "../../data/mockProducts";
-import { mockShops } from "../../data/mockShops";
+import { mockVendors } from "../../data/mockVendors";
 
-interface MallProduct {
+interface VendorProduct {
   id: number;
   name: string;
   code: string;
-  brand: string;
+  vendor: string;
   classificationPath: string[];
   selling_price: number;
   stock: number;
   is_selling: boolean;
 }
 
-export default function MallProductsPage() {
-  const [products, setProducts] = useState<MallProduct[]>([]);
-  const [selectedMall, setSelectedMall] = useState<string>("");
+export default function VendorProductsPage() {
+  const [products, setProducts] = useState<VendorProduct[]>([]);
+  const [selectedVendor, setSelectedVendor] = useState<string>("");
 
   useEffect(() => {
     // Take first 20 products as sample
     setProducts(mockProducts.slice(0, 20));
   }, []);
 
-  const filteredProducts = selectedMall
-    ? products.filter(p => p.brand === selectedMall) // Simple filter by brand as mall
+  const filteredProducts = selectedVendor
+    ? products.filter(p => p.vendor === selectedVendor)
     : products;
 
-  const malls = Array.from(new Set(products.map(p => p.brand)))
-    .map(brand => ({ id: brand, name: brand }));
+  const vendors = Array.from(new Set(products.map(p => p.vendor)))
+    .map(vendor => ({ id: vendor, name: vendor }));
 
   return (
     <Container>
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-bold">쇼핑몰 상품 관리</h1>
-            <p className="text-gray-600">각 쇼핑몰의 상품을 관리합니다.</p>
+            <h1 className="text-2xl font-bold">판매처 상품 관리</h1>
+            <p className="text-gray-600">각 판매처의 상품을 관리합니다.</p>
           </div>
         </div>
 
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            브랜드 필터 (샘플)
+            판매처 필터
           </label>
           <select
-            value={selectedMall}
-            onChange={(e) => setSelectedMall(e.target.value)}
+            value={selectedVendor}
+            onChange={(e) => setSelectedVendor(e.target.value)}
             className="border px-3 py-2 rounded"
           >
-            <option value="">전체 브랜드</option>
-            {malls.map(mall => (
-              <option key={mall.id} value={mall.id}>{mall.name}</option>
+            <option value="">전체 판매처</option>
+            {vendors.map(vendor => (
+              <option key={vendor.id} value={vendor.id}>{vendor.name}</option>
             ))}
           </select>
         </div>
@@ -70,7 +70,7 @@ export default function MallProductsPage() {
                     <div>
                       <div className="font-medium">{product.name}</div>
                       <div className="text-sm text-gray-500">
-                        {product.code} • {product.brand} • {product.classificationPath.join(' > ')}
+                        {product.code} • {product.vendor} • {product.classificationPath.join(' > ')}
                       </div>
                     </div>
                     <div className="text-right">

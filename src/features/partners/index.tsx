@@ -1,6 +1,6 @@
 import React from "react";
 import { Container } from "../../design-system";
-import MallsListPage from "./MallsListPage";
+import VendorsListPage from "./VendorsListPage";
 import VendorsIndex from "./VendorsIndex";
 
 export default function ShoppingMallIndex() {
@@ -13,7 +13,7 @@ export default function ShoppingMallIndex() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white border rounded-lg p-4">
             <h2 className="text-lg font-medium mb-3">쇼핑몰 관리</h2>
-            <MallsListPage />
+            <VendorsListPage />
           </div>
 
           <div className="bg-white border rounded-lg p-4">
