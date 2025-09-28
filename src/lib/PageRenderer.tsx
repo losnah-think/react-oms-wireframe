@@ -157,18 +157,18 @@ export class PageRenderer {
   }
 
   private renderMallsList(): JSX.Element {
-    const MallsListPage = require("@/features/partners/MallsListPage").default;
-    return <MallsListPage />;
+    const VendorsListPage = require("@/features/partners/VendorsListPage").default;
+    return <VendorsListPage />;
   }
 
   private renderMallInfo(): JSX.Element {
-    const MallInfoManagementPage = require("@/features/partners/MallInfoManagementPage").default;
-    return <MallInfoManagementPage />;
+    const VendorInfoManagementPage = require("@/features/partners/VendorInfoManagementPage").default;
+    return <VendorInfoManagementPage />;
   }
 
   private renderMallProducts(): JSX.Element {
-    const MallProductsPage = require("@/features/partners/MallProductsPage").default;
-    return <MallProductsPage />;
+    const VendorProductsPage = require("@/features/partners/VendorProductsPage").default;
+    return <VendorProductsPage />;
   }
 
   private renderCategoryMapping(): JSX.Element {

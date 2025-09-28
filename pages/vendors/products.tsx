@@ -1,6 +1,6 @@
 import React from "react";
-import MallProductsPage from "../../src/features/partners/MallProductsPage";
+import VendorProductsPage from "../../src/features/partners/VendorProductsPage";
 
 export default function MallProductsPageRoute() {
-  return <MallProductsPage />;
+  return <VendorProductsPage />;
 }
