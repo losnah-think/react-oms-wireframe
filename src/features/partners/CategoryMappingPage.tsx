@@ -1,257 +1,292 @@
-import React, { useState, useEffect } from "react";
-import { Container, Card } from "../../design-system";
+import React from "react";
+import {
+  Container,
+  Card,
+  Button,
+  Input,
+  Dropdown,
+  Badge,
+  Modal,
+  Stack,
+  Table,
+  type TableColumn,
+} from "../../design-system";
 import { mockCategories } from "../../data/mockCategories";
 import { mockVendors } from "../../data/mockVendors";
 
-interface CategoryMapping {
+type CategoryMapping = {
   id: string;
   vendorId: string;
   vendorName: string;
+  vendorPlatform: string;
   vendorCategory: string;
   internalCategory: string;
-}
+};
+
+const STORAGE_KEY = "vendorCategoryMappings";
+
+const platformLabel: Record<string, string> = {
+  godomall: "고도몰",
+  wisa: "위사",
+  kurly: "마켓컬리",
+  smartstore: "스마트스토어",
+  cafe24: "카페24",
+  gmarket: "G마켓",
+  coupang: "쿠팡",
+  naver: "네이버",
+};
+
+const vendorOptions = [
+  { value: "", label: "전체 판매처" },
+  ...mockVendors.map((vendor) => ({ value: vendor.id, label: vendor.name })),
+];
 
 export default function CategoryMappingPage() {
-  const [mappings, setMappings] = useState<CategoryMapping[]>([]);
-  const [showModal, setShowModal] = useState(false);
-  const [editing, setEditing] = useState<CategoryMapping | null>(null);
-  const [selectedVendor, setSelectedVendor] = useState("");
-  const [vendorCategory, setVendorCategory] = useState("");
-  const [internalCategory, setInternalCategory] = useState("");
+  const [mappings, setMappings] = React.useState<CategoryMapping[]>(() => {
+    if (typeof window === "undefined") return [];
+    const saved = window.localStorage.getItem(STORAGE_KEY);
+    if (saved) return JSON.parse(saved);
+    const seed = mockVendors.slice(0, 3).map((vendor, index) => ({
+      id: `seed-${vendor.id}`,
+      vendorId: vendor.id,
+      vendorName: vendor.name,
+      vendorPlatform: vendor.platform,
+      vendorCategory: ["전자제품", "의류", "잡화", "뷰티"][index % 4],
+      internalCategory: mockCategories[index]?.name ?? "미지정",
+    }));
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
+    return seed;
+  });
+  const [search, setSearch] = React.useState("");
+  const [vendorFilter, setVendorFilter] = React.useState(vendorOptions[0].value);
+  const [isModalOpen, setModalOpen] = React.useState(false);
+  const [editingId, setEditingId] = React.useState<string | null>(null);
+  const [formState, setFormState] = React.useState({
+    vendorId: vendorOptions[1]?.value ?? "",
+    vendorCategory: "",
+    internalCategory: mockCategories[0]?.name ?? "",
+  });
 
-  useEffect(() => {
-    // Load mappings from localStorage or API
-    const saved = localStorage.getItem("vendorCategoryMappings");
-    if (saved) {
-      setMappings(JSON.parse(saved));
-    } else {
-      // Sample data using mock vendors and categories
-      const sampleMappings = [
-        {
-          id: "1",
-          vendorId: mockVendors[0].id,
-          vendorName: mockVendors[0].name,
-          vendorCategory: "전자제품",
-          internalCategory: mockCategories[0].name
-        },
-        {
-          id: "2",
-          vendorId: mockVendors[1].id,
-          vendorName: mockVendors[1].name,
-          vendorCategory: "의류",
-          internalCategory: mockCategories[1].name
-        },
-        {
-          id: "3",
-          vendorId: mockVendors[2].id,
-          vendorName: mockVendors[2].name,
-          vendorCategory: "잡화",
-          internalCategory: mockCategories[2].name
-        },
-      ];
-      setMappings(sampleMappings);
-      localStorage.setItem("vendorCategoryMappings", JSON.stringify(sampleMappings));
+  const persist = React.useCallback((next: CategoryMapping[]) => {
+    setMappings(next);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     }
   }, []);
 
-  const saveMapping = () => {
-    if (!selectedVendor || !vendorCategory.trim() || !internalCategory.trim()) return;
+  const filtered = React.useMemo(() => {
+    return mappings.filter((mapping) => {
+      const matchesVendor = vendorFilter ? mapping.vendorId === vendorFilter : true;
+      const matchesSearch = search
+        ? mapping.vendorCategory.includes(search) ||
+          mapping.internalCategory.includes(search)
+        : true;
+      return matchesVendor && matchesSearch;
+    });
+  }, [mappings, vendorFilter, search]);
 
-    const vendor = mockVendors.find(v => v.id === selectedVendor);
-    if (!vendor) return;
+  const groupedByVendor = React.useMemo(() => {
+    return filtered.reduce<Record<string, CategoryMapping[]>>((acc, mapping) => {
+      if (!acc[mapping.vendorId]) acc[mapping.vendorId] = [];
+      acc[mapping.vendorId].push(mapping);
+      return acc;
+    }, {});
+  }, [filtered]);
 
-    const newMapping: CategoryMapping = {
-      id: editing?.id || Date.now().toString(),
-      vendorId: selectedVendor,
-      vendorName: vendor.name,
-      vendorCategory: vendorCategory.trim(),
-      internalCategory: internalCategory.trim(),
-    };
+  const columns: TableColumn<CategoryMapping>[] = [
+    {
+      key: "vendorCategory",
+      title: "판매처 카테고리",
+      render: (value) => <span className="font-medium text-gray-900">{value}</span>,
+    },
+    {
+      key: "internalCategory",
+      title: "내부 카테고리",
+      render: (value) => <span className="text-sm text-gray-700">{value}</span>,
+    },
+    {
+      key: "vendorPlatform",
+      title: "플랫폼",
+      render: (value) => (
+        <Badge size="small" variant="secondary">
+          {platformLabel[value] || value}
+        </Badge>
+      ),
+      align: "center",
+    },
+  ];
 
-    let updatedMappings;
-    if (editing) {
-      updatedMappings = mappings.map(m => m.id === editing.id ? newMapping : m);
+  const openModal = (mapping?: CategoryMapping) => {
+    if (mapping) {
+      setEditingId(mapping.id);
+      setFormState({
+        vendorId: mapping.vendorId,
+        vendorCategory: mapping.vendorCategory,
+        internalCategory: mapping.internalCategory,
+      });
     } else {
-      updatedMappings = [...mappings, newMapping];
+      setEditingId(null);
+      setFormState({
+        vendorId: vendorOptions[1]?.value ?? "",
+        vendorCategory: "",
+        internalCategory: mockCategories[0]?.name ?? "",
+      });
     }
-
-    setMappings(updatedMappings);
-    localStorage.setItem("vendorCategoryMappings", JSON.stringify(updatedMappings));
-    setShowModal(false);
-    setEditing(null);
-    setSelectedVendor("");
-    setVendorCategory("");
-    setInternalCategory("");
+    setModalOpen(true);
   };
 
-  const deleteMapping = (id: string) => {
-    if (!confirm("매핑을 삭제하시겠습니까?")) return;
-    const updatedMappings = mappings.filter(m => m.id !== id);
-    setMappings(updatedMappings);
-    localStorage.setItem("vendorCategoryMappings", JSON.stringify(updatedMappings));
+  const handleSave = () => {
+    if (!formState.vendorId || !formState.vendorCategory.trim() || !formState.internalCategory.trim()) {
+      window.alert("판매처와 카테고리를 모두 입력해주세요.");
+      return;
+    }
+    const vendor = mockVendors.find((v) => v.id === formState.vendorId);
+    if (!vendor) {
+      window.alert("유효하지 않은 판매처입니다.");
+      return;
+    }
+    const nextMapping: CategoryMapping = {
+      id: editingId ?? `mapping-${Date.now()}`,
+      vendorId: vendor.id,
+      vendorName: vendor.name,
+      vendorPlatform: vendor.platform,
+      vendorCategory: formState.vendorCategory.trim(),
+      internalCategory: formState.internalCategory.trim(),
+    };
+    const next = editingId
+      ? mappings.map((item) => (item.id === editingId ? nextMapping : item))
+      : [nextMapping, ...mappings];
+    persist(next);
+    setModalOpen(false);
   };
 
-  const openAdd = () => {
-    setEditing(null);
-    setSelectedVendor("");
-    setVendorCategory("");
-    setInternalCategory("");
-    setShowModal(true);
-  };
-
-  const openEdit = (mapping: CategoryMapping) => {
-    setEditing(mapping);
-    setSelectedVendor(mapping.vendorId);
-    setVendorCategory(mapping.vendorCategory);
-    setInternalCategory(mapping.internalCategory);
-    setShowModal(true);
-  };
-
-  const getMappingsByVendor = (vendorId: string) => {
-    return mappings.filter(m => m.vendorId === vendorId);
+  const handleDelete = (id: string) => {
+    if (!window.confirm("매핑을 삭제하시겠습니까?")) return;
+    persist(mappings.filter((item) => item.id !== id));
   };
 
   return (
-    <Container>
-      <Card className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-bold">판매처별 카테고리 매핑</h1>
-            <p className="text-gray-600">각 판매처의 카테고리와 내부 카테고리를 매핑합니다.</p>
+    <Container maxWidth="7xl" className="space-y-6 pb-10">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold text-gray-900">판매처별 카테고리 매핑</h1>
+        <p className="text-sm text-gray-600">
+          판매처 카테고리를 내부 카테고리에 연결해 자동 분류를 구성하세요.
+        </p>
+      </div>
+
+      <Card padding="lg" className="space-y-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-center">
+            <Dropdown
+              label="판매처"
+              options={vendorOptions}
+              value={vendorFilter}
+              onChange={setVendorFilter}
+              fullWidth
+            />
+            <Input
+              label="검색"
+              placeholder="판매처 카테고리 또는 내부 카테고리를 검색"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              fullWidth
+            />
           </div>
-          <button
-            className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700"
-            onClick={openAdd}
-          >
-            매핑 추가
-          </button>
+          <Stack direction="row" gap={3} className="flex-wrap">
+            <Button variant="outline" size="small" onClick={() => setVendorFilter("")}>필터 초기화</Button>
+            <Button size="small" onClick={() => openModal()}>매핑 추가</Button>
+          </Stack>
         </div>
 
         <div className="space-y-6">
-          {mockVendors.map(vendor => {
-            const vendorMappings = getMappingsByVendor(vendor.id);
+          {Object.keys(groupedByVendor).length === 0 && (
+            <div className="rounded-md border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
+              조건에 맞는 매핑이 없습니다. 새로운 매핑을 추가해 보세요.
+            </div>
+          )}
+
+          {Object.entries(groupedByVendor).map(([vendorId, rows]) => {
+            const vendor = mockVendors.find((item) => item.id === vendorId);
             return (
-              <div key={vendor.id} className="border rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-medium">{vendor.name}</h3>
-                  <span className={`px-2 py-1 rounded text-xs ${
-                    vendor.is_active
-                      ? "bg-green-100 text-green-800"
-                      : "bg-gray-100 text-gray-800"
-                  }`}>
-                    {vendor.is_active ? "활성" : "비활성"}
-                  </span>
+              <Card key={vendorId} padding="lg" className="space-y-4">
+                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900">{vendor?.name ?? "알 수 없는 판매처"}</h2>
+                    <div className="text-xs text-gray-500">
+                      플랫폼 {vendor ? platformLabel[vendor.platform] : "-"}
+                    </div>
+                  </div>
+                  <Badge variant={vendor?.is_active ? "success" : "secondary"} size="small">
+                    {vendor?.is_active ? "연동중" : "중지"}
+                  </Badge>
                 </div>
 
-                {vendorMappings.length === 0 ? (
-                  <div className="text-sm text-gray-500 text-center py-4">
-                    등록된 매핑이 없습니다.
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {vendorMappings.map(mapping => (
-                      <div key={mapping.id} className="border rounded p-3 flex items-center justify-between bg-gray-50">
-                        <div className="flex items-center gap-4">
-                          <div>
-                            <div className="font-medium">{mapping.vendorCategory}</div>
-                            <div className="text-sm text-gray-500">판매처 카테고리</div>
-                          </div>
-                          <div className="text-gray-400">→</div>
-                          <div>
-                            <div className="font-medium">{mapping.internalCategory}</div>
-                            <div className="text-sm text-gray-500">내부 카테고리</div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            className="px-3 py-1 border rounded text-sm hover:bg-gray-50"
-                            onClick={() => openEdit(mapping)}
-                          >
+                <Table<CategoryMapping>
+                  bordered
+                  columns={columns}
+                  data={rows}
+                  size="small"
+                  className="bg-white"
+                  expandable={{
+                    expandedRowRender: (record) => (
+                      <div className="flex items-center justify-between gap-4 border-t border-gray-100 pt-3 text-xs text-gray-500">
+                        <span>
+                          {record.vendorName} → {record.internalCategory}
+                        </span>
+                        <Stack direction="row" gap={2}>
+                          <Button variant="ghost" size="small" onClick={() => openModal(record)}>
                             편집
-                          </button>
-                          <button
-                            className="px-3 py-1 border rounded text-sm text-red-600 hover:bg-red-50"
-                            onClick={() => deleteMapping(mapping.id)}
-                          >
+                          </Button>
+                          <Button variant="outline" size="small" onClick={() => handleDelete(record.id)}>
                             삭제
-                          </button>
-                        </div>
+                          </Button>
+                        </Stack>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                    ),
+                  }}
+                />
+              </Card>
             );
           })}
         </div>
       </Card>
 
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-medium mb-4">
-              {editing ? "매핑 편집" : "매핑 추가"}
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  판매처 선택
-                </label>
-                <select
-                  value={selectedVendor}
-                  onChange={(e) => setSelectedVendor(e.target.value)}
-                  className="w-full border px-3 py-2 rounded"
-                >
-                  <option value="">판매처 선택</option>
-                  {mockVendors.map(vendor => (
-                    <option key={vendor.id} value={vendor.id}>{vendor.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  판매처 카테고리
-                </label>
-                <input
-                  value={vendorCategory}
-                  onChange={(e) => setVendorCategory(e.target.value)}
-                  className="w-full border px-3 py-2 rounded"
-                  placeholder="판매처 카테고리 입력"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  내부 카테고리
-                </label>
-                <select
-                  value={internalCategory}
-                  onChange={(e) => setInternalCategory(e.target.value)}
-                  className="w-full border px-3 py-2 rounded"
-                >
-                  <option value="">카테고리 선택</option>
-                  {mockCategories.slice(0, 10).map(cat => (
-                    <option key={cat.id} value={cat.name}>{cat.name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="mt-6 text-right space-x-2">
-              <button
-                className="px-4 py-2 border rounded hover:bg-gray-50"
-                onClick={() => setShowModal(false)}
-              >
-                취소
-              </button>
-              <button
-                className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700"
-                onClick={saveMapping}
-              >
-                저장
-              </button>
-            </div>
-          </div>
+      <Modal
+        open={isModalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editingId ? "매핑 편집" : "매핑 추가"}
+        footer={
+          <Stack direction="row" gap={3}>
+            <Button variant="ghost" onClick={() => setModalOpen(false)}>
+              취소
+            </Button>
+            <Button onClick={handleSave}>저장</Button>
+          </Stack>
+        }
+      >
+        <div className="space-y-4">
+          <Dropdown
+            label="판매처"
+            options={vendorOptions.slice(1)}
+            value={formState.vendorId}
+            onChange={(value) => setFormState((prev) => ({ ...prev, vendorId: value }))}
+            fullWidth
+          />
+          <Input
+            label="판매처 카테고리"
+            value={formState.vendorCategory}
+            onChange={(event) => setFormState((prev) => ({ ...prev, vendorCategory: event.target.value }))}
+            fullWidth
+          />
+          <Dropdown
+            label="내부 카테고리"
+            options={mockCategories.slice(0, 20).map((cat) => ({ value: cat.name, label: cat.name }))}
+            value={formState.internalCategory}
+            onChange={(value) => setFormState((prev) => ({ ...prev, internalCategory: value }))}
+            fullWidth
+          />
         </div>
-      )}
+      </Modal>
     </Container>
   );
 }

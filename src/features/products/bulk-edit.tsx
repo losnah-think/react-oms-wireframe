@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { Container, Card, Button, Grid, GridCol } from "../../design-system";
 import * as XLSX from "xlsx";
 
@@ -211,9 +212,9 @@ const BulkEditPage: React.FC = () => {
             이전될 예정입니다. 5초 후 자동으로 상품 목록으로 이동합니다.
           </p>
           <div className="mt-3">
-            <a href="/products" className="text-sm text-blue-600 underline">
+            <Link href="/products" className="text-sm text-blue-600 underline">
               지금 상품 목록으로 이동하기
-            </a>
+            </Link>
           </div>
         </div>
       </div>

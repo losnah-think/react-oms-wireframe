@@ -53,7 +53,7 @@ const menuItems: MenuItem[] = [
     icon: "tag",
     children: [
       { id: "barcodes-products", label: "상품 바코드 관리", icon: "menu" },
-      { id: "barcodes-options", label: "옵션 바코드 관리", icon: "menu" },
+      { id: "barcodes-location", label: "위치 바코드 관리", icon: "menu" },
       {
         id: "barcodes-settings",
         label: "바코드 환경 설정",
@@ -285,7 +285,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   Object.assign(idToPath, {
     barcodes: "/barcodes",
     "barcodes-products": "/barcodes/product",
-    "barcodes-options": "/barcodes/option",
+    "barcodes-location": "/barcodes/location",
     "barcodes-settings": "/barcodes/settings",
   });
 

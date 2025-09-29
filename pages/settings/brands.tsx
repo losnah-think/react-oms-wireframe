@@ -1,6 +1,6 @@
 import React from "react";
-import BasicMetadataSettings from "@/features/settings/basic-metadata";
+import BrandsPage from "@/features/settings/BrandsPage";
 
 export default function BrandsSettingsPage() {
-  return <BasicMetadataSettings initialTab="brands" />;
+  return <BrandsPage />;
 }

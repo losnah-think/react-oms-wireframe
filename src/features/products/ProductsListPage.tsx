@@ -1173,7 +1173,7 @@ const ProductsListPage: React.FC<ProductsListPageProps> = ({ onNavigate }) => {
                       if (e.key === "Enter") executeSearch()
                       if (e.key === "Escape") {
                         setIsSuggestionsOpen(false);
-                        (e.target as HTMLInputElement).blur();
+                        (e.target as HTMLInputElement).blur();`~`
                       }
                       if (e.key === "ArrowDown") {
                         e.preventDefault();

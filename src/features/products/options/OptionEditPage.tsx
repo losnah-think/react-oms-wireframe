@@ -205,6 +205,15 @@ const OptionEditPage: React.FC<OptionEditPageProps> = ({
   const booleanOptions = [{ value: 'yes', label: '사용' }, { value: 'no', label: '사용안함' }];
 
   useEffect(() => {
+    return () => {
+      if (saveTimer.current) {
+        clearTimeout(saveTimer.current);
+        saveTimer.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     if (!productId) return;
     let mounted = true;
     setLoading(true);
@@ -535,16 +544,6 @@ const OptionEditPage: React.FC<OptionEditPageProps> = ({
       </Container>
     );
   }
-
-  useEffect(() => {
-    return () => {
-      if (saveTimer.current) {
-        clearTimeout(saveTimer.current);
-        // @ts-ignore
-        saveTimer.current = null;
-      }
-    };
-  }, []);
 
   return (
     <>

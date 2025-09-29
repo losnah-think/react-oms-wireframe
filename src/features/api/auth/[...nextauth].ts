@@ -1,5 +1,4 @@
-// Re-export authOptions from the pages stub to satisfy relative imports
-export { authOptions } from "src/pages/api/auth/[...nextauth]";
-
-// Also export a default handler to match NextAuth handler shape if needed
-export { default } from "src/pages/api/auth/[...nextauth]";
+// Re-export authOptions and default from the actual pages API handler so TypeScript
+// resolves the module correctly during compilation.
+export { authOptions } from "../../../../pages/api/auth/[...nextauth]";
+export { default } from "../../../../pages/api/auth/[...nextauth]";

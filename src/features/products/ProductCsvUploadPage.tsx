@@ -20,6 +20,7 @@ interface Platform {
   detectionKeywords: string[];
   requiredFields: string[];
   matchedKeywords?: string[];
+  confidence?: number;
 }
 
 interface UploadHistory {
@@ -910,9 +911,9 @@ const ProductCsvUploadPage: React.FC = () => {
                     <div className="text-xs text-gray-500 mt-1">
                       {platform.description}
                     </div>
-                    {platform.confidence > 0 && (
+                    {(platform.confidence ?? 0) > 0 && (
                       <div className="text-xs text-blue-600 mt-1">
-                        매칭률: {platform.confidence}%
+                        매칭률: {(platform.confidence ?? 0)}%
                       </div>
                     )}
                   </div>

@@ -1850,6 +1850,13 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
                 목록으로
               </Button>
               <Button
+                variant="primary"
+                onClick={handleSave}
+                disabled={saving}
+              >
+                등록
+              </Button>
+              <Button
                 variant="outline"
                 onClick={() => setIsHelpOpen(true)}
               >
@@ -3038,19 +3045,6 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
           </GridRow>
         </div>
       </Container>
-      {/* Fixed bottom action bar for Add page */}
-      <div className="fixed left-0 right-0 bottom-0 bg-white border-t py-3 px-4 z-40">
-        <div className="max-w-6xl mx-auto flex justify-end">
-          <Button
-            variant="primary"
-            onClick={handleSave}
-            disabled={saving}
-          >
-            생성
-          </Button>
-        </div>
-      </div>
-
       <SideGuide open={isHelpOpen} onClose={() => setIsHelpOpen(false)} title="상품 등록 도움말">
         <div className="space-y-3 text-sm text-gray-700">
           <p>이 페이지에서는 상품 기본 정보, 가격, 재고, 옵션 등을 등록할 수 있습니다.</p>

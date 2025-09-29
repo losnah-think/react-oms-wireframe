@@ -1,5 +1,7 @@
 import { getServerSession } from 'next-auth/next'
-import { authOptions } from '../pages/api/auth/[...nextauth]'
+// pages APIs are emitted into the build; import via relative path from src/lib
+// to the Next.js pages handler to satisfy TypeScript resolution during dev.
+import { authOptions } from '../../pages/api/auth/[...nextauth]'
 
 export async function requireAdmin(req: any, res: any) {
   try {

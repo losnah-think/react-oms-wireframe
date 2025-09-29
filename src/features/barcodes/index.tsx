@@ -16,7 +16,7 @@ const BarcodesIndexPage: React.FC = () => {
         </Link>
 
         <Link
-          href="/barcodes/option"
+          href="/barcodes/location"
           className="block p-6 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all"
         >
           <h2 className="text-lg font-medium text-gray-900 mb-2">위치 바코드</h2>

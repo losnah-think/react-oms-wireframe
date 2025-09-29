@@ -1,6 +1,8 @@
 import React from "react";
-import VendorsIndex from "../../src/features/partners/VendorsIndex";
+import ShoppingMallIndex, { VendorsIndexPage } from "../../src/features/partners";
 
 export default function SalesPage() {
-  return <VendorsIndex />;
+  // prefer VendorsIndexPage if available
+  const Page = VendorsIndexPage || ShoppingMallIndex;
+  return <Page />;
 }

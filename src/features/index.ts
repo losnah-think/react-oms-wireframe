@@ -12,22 +12,27 @@ export { default as ProductImportPage } from "./products/ProductImportPage";
 export { default as ExternalProductImportPage } from "./products/ExternalProductImportPage";
 export { default as ProductCsvUploadPage } from "./products/ProductCsvUploadPage";
 
-export { default as MallsListPage } from "./malls/MallsListPage";
-export { default as MallProductsPage } from "./malls/MallProductsPage";
-export { default as MallInfoManagementPage } from "./malls/MallInfoManagementPage";
-export { default as CategoryMappingPage } from "./malls/CategoryMappingPage";
+export { default as MallsListPage } from "./partners/MallsListPage";
+export { default as MallProductsPage } from "./partners/MallProductsPage";
+export { default as MallInfoManagementPage } from "./partners/MallInfoManagementPage";
+export { default as CategoryMappingPage } from "./partners/CategoryMappingPage";
 
 export { default as CategoriesManagementPage } from "./categories/CategoriesManagementPage";
 
-export { default as VendorManagementPage } from "./shopping-mall/vendors/VendorManagementPage";
-export { default as VendorFixedAddressManagementPage } from "./shopping-mall/vendors/VendorFixedAddressManagementPage";
-export { default as DeliveryCompanyManagementPage } from "./shopping-mall/vendors/DeliveryCompanyManagementPage";
-export { default as ExpectedDeliveryListPage } from "./shopping-mall/vendors/suppliers/ExpectedDeliveryListPage";
-export { default as OrderSlipListPage } from "./shopping-mall/vendors/suppliers/OrderSlipListPage";
-export { default as SupplierOrderPage } from "./shopping-mall/vendors/suppliers/SupplierOrderPage";
+export { default as VendorManagementPage } from "./partners/VendorManagementPage";
+export { default as VendorFixedAddressManagementPage } from "./partners/VendorFixedAddressManagementPage";
+// NOTE: The following partner pages are not present in the codebase and
+// were removed from this index to avoid module-not-found errors. If you
+// add them later, re-export here:
+// export { default as DeliveryCompanyManagementPage } from "./partners/DeliveryCompanyManagementPage";
+// export { default as ExpectedDeliveryListPage } from "./partners/ExpectedDeliveryListPage";
+// export { default as OrderSlipListPage } from "./partners/OrderSlipListPage";
+// export { default as SupplierOrderPage } from "./partners/SupplierOrderPage";
 
 export { default as BrandsPage } from "./settings/BrandsPage";
 export { default as ProductCategoryPage } from "./settings/ProductCategoryPage";
-export { default as ProductSeasonsPage } from "./settings/ProductSeasonsPage";
-export { default as ProductYearsPage } from "./settings/ProductYearsPage";
-export { default as BarcodeManagementPage } from "./settings/bc/index";
+// Product seasons/years pages and barcode management are not present under
+// src/features/settings; keep exports minimal until those modules exist.
+// export { default as ProductSeasonsPage } from "./settings/ProductSeasonsPage";
+// export { default as ProductYearsPage } from "./settings/ProductYearsPage";
+// export { default as BarcodeManagementPage } from "./settings/bc";
