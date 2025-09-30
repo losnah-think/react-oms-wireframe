@@ -31,6 +31,16 @@ export class Router {
     this.routes.set("malls-list", "/malls");
     this.routes.set("settings-product-classifications", "/settings/product-classifications");
     this.routes.set("settings-product-groups", "/settings/product-groups");
+    this.routes.set("settings-integrations", "/settings/integration");
+    this.routes.set("settings-basic-metadata", "/settings/basic-metadata");
+    this.routes.set("settings-brands", "/settings/brands");
+    this.routes.set("settings-product-years", "/settings/years");
+    this.routes.set("settings-product-seasons", "/settings/seasons");
+    this.routes.set("vendors-sales", "/vendors/sales");
+    this.routes.set("vendors-fixed-addresses", "/vendors/fixed-addresses");
+    this.routes.set("vendors-products", "/vendors/products");
+    this.routes.set("vendors-info", "/vendors/info");
+    this.routes.set("vendors-category-mapping", "/vendors/category-mapping");
   }
 
   public getPath(pageId: string): string {
@@ -44,6 +54,7 @@ export class Router {
     return this.parseProductRoutes(parts) ||
            this.parseOrderRoutes(parts) ||
            this.parseMallRoutes(parts) ||
+           this.parseVendorsRoutes(parts) ||
            this.parseSettingsRoutes(parts) ||
            { page: "dashboard" };
   }
@@ -73,6 +84,20 @@ export class Router {
     return null;
   }
 
+  private parseVendorsRoutes(parts: string[]): { page: string; id?: string } | null {
+    if (parts[0] !== "vendors") return null;
+
+    const sub = parts[1] ?? "";
+    if (sub === "sales" || sub === "") return { page: "vendors-sales" };
+    if (sub === "fixed-addresses") return { page: "vendors-fixed-addresses" };
+    if (sub === "products" || sub === "vendor-products") return { page: "vendors-products" };
+    if (sub === "info" || sub === "vendor-info") return { page: "vendors-info" };
+    if (sub === "category-mapping" || sub === "vendor-category-mapping") {
+      return { page: "vendors-category-mapping" };
+    }
+    return { page: "vendors-sales" };
+  }
+
   private parseSettingsRoutes(parts: string[]): { page: string; id?: string } | null {
     if (parts[0] !== "settings") return null;
 
@@ -85,10 +110,10 @@ export class Router {
     }
     if (sub === "integrations") return { page: "settings-integrations" };
     if (sub === "basic-metadata") return { page: "settings-basic-metadata" };
-    if (sub === "barcodes") return { page: "settings-barcodes" };
     if (sub === "brands") return { page: "settings-brands" };
     if (sub === "years") return { page: "settings-product-years" };
     if (sub === "seasons") return { page: "settings-product-seasons" };
+    if (sub === "barcodes") return { page: "settings-barcodes" };
 
     return { page: "settings-integrations" };
   }

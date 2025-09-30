@@ -3,6 +3,7 @@ import React from "react";
 import IntegrationCard from "./IntegrationCard";
 import SecretModal from "./SecretModal";
 import RegisterIntegrationForm from "./RegisterIntegrationForm";
+import { Modal, Stack, Button } from "../../design-system";
 import IntegrationIntervalsModal from "./IntegrationIntervalsModal";
 
 // Minimal Integration type expected by this component
@@ -129,9 +130,27 @@ export default function ConnectionsList({
         <SecretModal secret={showSecret} onClose={() => setShowSecret(null)} />
       )}
 
-      {showRegister && (
-        <RegisterIntegrationForm onClose={() => setShowRegister(false)} />
-      )}
+      <Stack direction="row" gap={2} className="mt-4">
+        <Button size="small" onClick={() => setShowRegister(true)}>
+          새 샵 등록
+        </Button>
+      </Stack>
+
+      <Modal
+        open={showRegister}
+        onClose={() => setShowRegister(false)}
+        title="새 샵 등록"
+        footer={null}
+        size="big"
+      >
+        <RegisterIntegrationForm
+          onClose={() => setShowRegister(false)}
+          onRegistered={() => {
+            setShowRegister(false);
+            window.location.reload();
+          }}
+        />
+      </Modal>
       {intervalModalFor && (
         <IntegrationIntervalsModal
           integrationId={intervalModalFor}

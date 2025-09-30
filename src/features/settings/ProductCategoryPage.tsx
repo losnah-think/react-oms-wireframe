@@ -6,8 +6,10 @@ import {
   Input,
   Dropdown,
   Badge,
-  Modal,
   Stack,
+  Table,
+  type TableColumn,
+  Modal,
 } from "../../design-system";
 
 const STORAGE_KEY = "productCategories_v2";
@@ -16,12 +18,12 @@ export type Category = {
   id: string;
   name: string;
   slug: string;
-  description?: string;
   group: string;
+  description?: string;
   isDefault?: boolean;
 };
 
-const categoryGroups = [
+const groupOptions = [
   { value: "의류", label: "의류" },
   { value: "잡화", label: "잡화" },
   { value: "식품", label: "식품" },
@@ -33,6 +35,7 @@ const defaultCategories: Category[] = [
   { id: "default-1", name: "티셔츠", slug: "clothing-tshirt", group: "의류", isDefault: true },
   { id: "default-2", name: "스니커즈", slug: "shoes-sneakers", group: "의류", isDefault: true },
   { id: "default-3", name: "주얼리", slug: "accessories-jewelry", group: "잡화", isDefault: true },
+  { id: "default-4", name: "건강식품", slug: "food-health", group: "식품", isDefault: true },
 ];
 
 const loadCategories = (): Category[] => {
@@ -44,7 +47,7 @@ const loadCategories = (): Category[] => {
       return defaultCategories;
     }
     const parsed = JSON.parse(raw) as Category[];
-    return parsed.length > 0 ? parsed : defaultCategories;
+    return parsed.length ? parsed : defaultCategories;
   } catch (err) {
     return defaultCategories;
   }
@@ -58,24 +61,32 @@ const saveCategories = (categories: Category[]) => {
   }
 };
 
-const slugify = (name: string) =>
-  name
+const slugify = (value: string) =>
+  value
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9가-힣\s-]/g, "")
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-");
 
-export default function ProductCategoryPage() {
+const ProductCategoryPage: React.FC = () => {
   const [categories, setCategories] = React.useState<Category[]>(loadCategories);
   const [search, setSearch] = React.useState("");
   const [groupFilter, setGroupFilter] = React.useState("");
-  const [isModalOpen, setModalOpen] = React.useState(false);
-  const [editingId, setEditingId] = React.useState<string | null>(null);
-  const [formState, setFormState] = React.useState({
+  const [selectedId, setSelectedId] = React.useState<string | null>(
+    () => loadCategories()[0]?.id ?? null,
+  );
+  const [detailForm, setDetailForm] = React.useState({
     name: "",
     slug: "",
-    group: categoryGroups[0].value,
+    group: groupOptions[0].value,
+    description: "",
+  });
+  const [isModalOpen, setModalOpen] = React.useState(false);
+  const [newCategory, setNewCategory] = React.useState({
+    name: "",
+    slug: "",
+    group: groupOptions[0].value,
     description: "",
   });
 
@@ -83,64 +94,126 @@ export default function ProductCategoryPage() {
     saveCategories(categories);
   }, [categories]);
 
-  const filtered = categories.filter((category) => {
-    const matchesSearch = search
-      ? category.name.includes(search) || category.slug.includes(search)
-      : true;
-    const matchesGroup = groupFilter ? category.group === groupFilter : true;
-    return matchesSearch && matchesGroup;
-  });
-
-  const openModal = (category?: Category) => {
-    if (category) {
-      setEditingId(category.id);
-      setFormState({
-        name: category.name,
-        slug: category.slug,
-        group: category.group,
-        description: category.description ?? "",
-      });
-    } else {
-      setEditingId(null);
-      setFormState({
-        name: "",
-        slug: "",
-        group: categoryGroups[0].value,
-        description: "",
-      });
+  React.useEffect(() => {
+    if (!selectedId && categories.length) {
+      setSelectedId(categories[0].id);
     }
+  }, [categories, selectedId]);
+
+  React.useEffect(() => {
+    if (!selectedId) return;
+    const current = categories.find((category) => category.id === selectedId);
+    if (!current) return;
+    setDetailForm({
+      name: current.name,
+      slug: current.slug,
+      group: current.group,
+      description: current.description ?? "",
+    });
+  }, [selectedId, categories]);
+
+  const filtered = React.useMemo(() => {
+    return categories.filter((category) => {
+      const matchesSearch = search
+        ? category.name.includes(search) || category.slug.includes(search)
+        : true;
+      const matchesGroup = groupFilter ? category.group === groupFilter : true;
+      return matchesSearch && matchesGroup;
+    });
+  }, [categories, search, groupFilter]);
+
+  const summary = React.useMemo(() => {
+    const total = categories.length;
+    const defaultCount = categories.filter((category) => category.isDefault).length;
+    const groupCounts = groupOptions.reduce((acc, group) => {
+      acc[group.value] = categories.filter((category) => category.group === group.value).length;
+      return acc;
+    }, {} as Record<string, number>);
+    return { total, defaultCount, groupCounts };
+  }, [categories]);
+
+  const columns: TableColumn<Category>[] = [
+    {
+      key: "name",
+      title: "상품 분류",
+      render: (_, record) => (
+        <div className="flex flex-col">
+          <span className="font-semibold text-gray-900">{record.name}</span>
+          <span className="text-xs text-gray-500">슬러그: {record.slug}</span>
+        </div>
+      ),
+    },
+    {
+      key: "group",
+      title: "그룹",
+      render: (value) => <span className="text-sm text-gray-700">{value}</span>,
+    },
+    {
+      key: "description",
+      title: "설명",
+      render: (value) => (
+        <span className="text-sm text-gray-600">{value || "-"}</span>
+      ),
+    },
+  ];
+
+  const handleDetailSave = () => {
+    if (!selectedId) return;
+    if (!detailForm.name.trim()) {
+      window.alert("분류명을 입력해주세요.");
+      return;
+    }
+    setCategories((prev) =>
+      prev.map((category) =>
+        category.id === selectedId
+          ? {
+              ...category,
+              name: detailForm.name.trim(),
+              slug: detailForm.slug.trim() || slugify(detailForm.name),
+              group: detailForm.group,
+              description: detailForm.description.trim() || undefined,
+            }
+          : category,
+      ),
+    );
+  };
+
+  const handleDelete = () => {
+    if (!selectedId) return;
+    const target = categories.find((category) => category.id === selectedId);
+    if (!target) return;
+    if (target.isDefault) {
+      window.alert("기본 상품 분류는 삭제할 수 없습니다.");
+      return;
+    }
+    if (!window.confirm("이 상품 분류를 삭제하시겠습니까?")) return;
+    setCategories((prev) => prev.filter((category) => category.id !== selectedId));
+    setSelectedId((prevSelected) =>
+      prevSelected === target.id ? (prev.filter((category) => category.id !== target.id)[0]?.id ?? null) : prevSelected,
+    );
+  };
+
+  const openAddModal = () => {
+    setNewCategory({ name: "", slug: "", group: groupOptions[0].value, description: "" });
     setModalOpen(true);
   };
 
-  const handleSave = () => {
-    if (!formState.name.trim()) {
-      window.alert("카테고리 이름을 입력해주세요.");
+  const handleCreate = () => {
+    if (!newCategory.name.trim()) {
+      window.alert("분류명을 입력해주세요.");
       return;
     }
-    const slug = formState.slug.trim() || slugify(formState.name);
+    const slug = newCategory.slug.trim() || slugify(newCategory.name);
     const category: Category = {
-      id: editingId ?? `cat-${Date.now()}`,
-      name: formState.name.trim(),
+      id: `cat-${Date.now()}`,
+      name: newCategory.name.trim(),
       slug,
-      group: formState.group,
-      description: formState.description.trim() || undefined,
-      isDefault: editingId ? categories.find((item) => item.id === editingId)?.isDefault : false,
+      group: newCategory.group,
+      description: newCategory.description.trim() || undefined,
     };
-
-    setCategories((prev) =>
-      editingId ? prev.map((item) => (item.id === editingId ? category : item)) : [category, ...prev],
-    );
+    setCategories((prev) => [category, ...prev]);
+    setSelectedId(category.id);
     setModalOpen(false);
-  };
-
-  const handleDelete = (id: string) => {
-    const target = categories.find((category) => category.id === id);
-    if (!target || target.isDefault) {
-      window.alert("기본 카테고리는 삭제할 수 없습니다.");
-      return;
-    }
-    if (!window.confirm("카테고리를 삭제하시겠습니까?")) return;
-    setCategories((prev) => prev.filter((category) => category.id !== id));
   };
 
   return (
@@ -148,136 +221,189 @@ export default function ProductCategoryPage() {
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold text-gray-900">상품 분류 관리</h1>
         <p className="text-sm text-gray-600">
-          내부 상품 분류 체계를 관리하고, 신규 분류를 추가하거나 기본 분류를 확인하세요.
+          기본 분류에 사용자 정의 분류를 추가하고, 그룹별로 정리합니다.
         </p>
       </div>
 
-      <Card padding="lg" className="space-y-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-          <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-center">
-            <Input
-              label="검색"
-              placeholder="상품 분류명 또는 슬러그로 검색"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              fullWidth
-            />
-            <Dropdown
-              label="상품 분류 그룹"
-              options={[{ value: "", label: "전체 그룹" }, ...categoryGroups]}
-              value={groupFilter}
-              onChange={setGroupFilter}
-              fullWidth
-            />
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Card padding="lg" className="flex flex-col gap-1">
+          <span className="text-xs text-gray-500">총 분류</span>
+          <span className="text-2xl font-semibold text-gray-900">{summary.total}</span>
+        </Card>
+        <Card padding="lg" className="flex flex-col gap-1">
+          <span className="text-xs text-gray-500">기본 분류</span>
+          <span className="text-2xl font-semibold text-gray-900">{summary.defaultCount}</span>
+        </Card>
+        <Card padding="lg" className="flex flex-col gap-1">
+          <span className="text-xs text-gray-500">의류 그룹</span>
+          <span className="text-2xl font-semibold text-gray-900">{summary.groupCounts["의류"] ?? 0}</span>
+        </Card>
+        <Card padding="lg" className="flex flex-col gap-1">
+          <span className="text-xs text-gray-500">잡화 그룹</span>
+          <span className="text-2xl font-semibold text-gray-900">{summary.groupCounts["잡화"] ?? 0}</span>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,0.6fr)_minmax(0,0.4fr)]">
+        <Card padding="lg" className="space-y-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+            <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-center">
+              <Input
+                label="검색"
+                placeholder="상품 분류명 또는 슬러그 검색"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                fullWidth
+              />
+              <Dropdown
+                label="그룹"
+                options={[{ value: "", label: "전체 그룹" }, ...groupOptions]}
+                value={groupFilter}
+                onChange={setGroupFilter}
+                fullWidth
+              />
+            </div>
+            <Stack direction="row" gap={3} className="flex-wrap">
+              <Button variant="outline" size="small" onClick={() => setGroupFilter("")}>필터 초기화</Button>
+              <Button size="small" onClick={openAddModal}>상품 분류 추가</Button>
+            </Stack>
           </div>
-          <Stack direction="row" gap={3} className="flex-wrap">
-            <Button variant="outline" size="small" onClick={() => setGroupFilter("")}>필터 초기화</Button>
-            <Button size="small" onClick={() => openModal()}>상품 분류 추가</Button>
-          </Stack>
-        </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((category) => (
-            <Card key={category.id} padding="lg" className="flex h-full flex-col gap-4">
-              <div className="flex items-start justify-between">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-semibold text-gray-900">{category.name}</h3>
-                    {category.isDefault && (
-                      <Badge size="small" variant="primary">
-                        기본값
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-500">슬러그: {category.slug}</p>
-                  <p className="text-xs text-gray-500">그룹: {category.group}</p>
-                  {category.description && (
-                    <p className="text-xs text-gray-600">{category.description}</p>
-                  )}
-                </div>
-                <Stack direction="column" gap={2}>
-                  <Button variant="ghost" size="small" onClick={() => openModal(category)}>
-                    수정
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="small"
-                    disabled={category.isDefault}
-                    onClick={() => handleDelete(category.id)}
-                  >
-                    삭제
-                  </Button>
-                </Stack>
-              </div>
-            </Card>
-          ))}
-        </div>
+          <Table<Category>
+            bordered
+            data={filtered}
+            columns={columns}
+            size="middle"
+            rowSelection={{
+              selectedRowKeys: selectedId ? [selectedId] : [],
+              onChange: (keys) => setSelectedId(keys[0] ?? null),
+            }}
+            onRow={(record) => ({
+              onClick: () => setSelectedId(record.id),
+              className: record.id === selectedId ? "bg-primary-50" : undefined,
+            })}
+          />
+        </Card>
 
-        {filtered.length === 0 && (
-          <div className="rounded-md border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
-            조건에 맞는 상품 분류가 없습니다. 새 분류를 추가해 보세요.
-          </div>
-        )}
-      </Card>
-
-      <Card padding="lg" className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">참고: 기본 상품 분류</h2>
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {defaultCategories.map((category) => (
-            <Card key={category.id} padding="md" className="space-y-2 bg-gray-50">
+        <Card padding="lg" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900">상품 분류 상세</h2>
+            {selectedId && (
               <Badge size="small" variant="secondary">
-                기본값
+                {categories.find((category) => category.id === selectedId)?.isDefault ? "기본값" : "사용자 정의"}
               </Badge>
-              <h3 className="text-sm font-semibold text-gray-900">{category.name}</h3>
-              <p className="text-xs text-gray-500">슬러그: {category.slug}</p>
-              <p className="text-xs text-gray-500">그룹: {category.group}</p>
-            </Card>
-          ))}
-        </div>
-      </Card>
+            )}
+          </div>
+
+          {selectedId ? (
+            <div className="space-y-4">
+              <Input
+                label="상품 분류명"
+                value={detailForm.name}
+                onChange={(event) => setDetailForm((prev) => ({ ...prev, name: event.target.value }))}
+                fullWidth
+              />
+              <Input
+                label="슬러그"
+                value={detailForm.slug}
+                placeholder="입력하지 않으면 자동 생성"
+                onChange={(event) => setDetailForm((prev) => ({ ...prev, slug: event.target.value }))}
+                fullWidth
+              />
+              <Dropdown
+                label="그룹"
+                options={groupOptions}
+                value={detailForm.group}
+                onChange={(value) => setDetailForm((prev) => ({ ...prev, group: value }))}
+                fullWidth
+              />
+              <Input
+                label="설명"
+                value={detailForm.description}
+                onChange={(event) => setDetailForm((prev) => ({ ...prev, description: event.target.value }))}
+                fullWidth
+              />
+
+              <Stack direction="row" gap={3} className="flex-wrap">
+                <Button size="small" onClick={handleDetailSave}>저장</Button>
+                <Button
+                  size="small"
+                  variant="outline"
+                  onClick={() => {
+                    const current = categories.find((category) => category.id === selectedId);
+                    if (!current) return;
+                    setDetailForm({
+                      name: current.name,
+                      slug: current.slug,
+                      group: current.group,
+                      description: current.description ?? "",
+                    });
+                  }}
+                >
+                  되돌리기
+                </Button>
+                <Button
+                  size="small"
+                  variant="outline"
+                  onClick={handleDelete}
+                  disabled={categories.find((category) => category.id === selectedId)?.isDefault}
+                >
+                  삭제
+                </Button>
+              </Stack>
+            </div>
+          ) : (
+            <div className="rounded-md border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500">
+              왼쪽 목록에서 상품 분류를 선택하면 상세 정보를 편집할 수 있습니다.
+            </div>
+          )}
+        </Card>
+      </div>
 
       <Modal
         open={isModalOpen}
         onClose={() => setModalOpen(false)}
-        title={editingId ? "상품 분류 수정" : "상품 분류 추가"}
+        title="상품 분류 추가"
         footer={
           <Stack direction="row" gap={3}>
             <Button variant="ghost" onClick={() => setModalOpen(false)}>
               취소
             </Button>
-            <Button onClick={handleSave}>저장</Button>
+            <Button onClick={handleCreate}>등록</Button>
           </Stack>
         }
       >
         <div className="space-y-4">
           <Input
             label="상품 분류명"
-            value={formState.name}
-            onChange={(event) => setFormState((prev) => ({ ...prev, name: event.target.value }))}
+            value={newCategory.name}
+            onChange={(event) => setNewCategory((prev) => ({ ...prev, name: event.target.value }))}
             fullWidth
           />
           <Input
             label="슬러그"
-            value={formState.slug}
+            value={newCategory.slug}
             placeholder="입력하지 않으면 자동 생성"
-            onChange={(event) => setFormState((prev) => ({ ...prev, slug: event.target.value }))}
+            onChange={(event) => setNewCategory((prev) => ({ ...prev, slug: event.target.value }))}
             fullWidth
           />
           <Dropdown
             label="그룹"
-            options={categoryGroups}
-            value={formState.group}
-            onChange={(value) => setFormState((prev) => ({ ...prev, group: value }))}
+            options={groupOptions}
+            value={newCategory.group}
+            onChange={(value) => setNewCategory((prev) => ({ ...prev, group: value }))}
             fullWidth
           />
           <Input
             label="설명"
-            value={formState.description}
-            onChange={(event) => setFormState((prev) => ({ ...prev, description: event.target.value }))}
+            value={newCategory.description}
+            onChange={(event) => setNewCategory((prev) => ({ ...prev, description: event.target.value }))}
             fullWidth
           />
         </div>
       </Modal>
     </Container>
   );
-}
+};
+
+export default ProductCategoryPage;

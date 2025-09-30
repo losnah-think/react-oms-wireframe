@@ -61,6 +61,15 @@ export class PageRenderer {
       case "malls-category-mapping":
         return this.renderCategoryMapping();
 
+      case "vendors-sales":
+        return this.renderVendorManagement();
+      case "vendors-products":
+        return this.renderMallProducts();
+      case "vendors-info":
+        return this.renderMallInfo();
+      case "vendors-category-mapping":
+        return this.renderCategoryMapping();
+
       // Settings
       case "settings-product-classifications":
         return this.renderProductClassifications();
@@ -166,6 +175,11 @@ export class PageRenderer {
     return <VendorInfoManagementPage />;
   }
 
+  private renderVendorManagement(): JSX.Element {
+    const VendorManagementPage = require("@/features/partners/VendorManagementPage").default;
+    return <VendorManagementPage />;
+  }
+
   private renderMallProducts(): JSX.Element {
     const VendorProductsPage = require("@/features/partners/VendorProductsPage").default;
     return <VendorProductsPage />;
@@ -182,7 +196,8 @@ export class PageRenderer {
   }
 
   private renderProductGroups(): JSX.Element {
-    return <div>상품 그룹 관리 기능은 현재 준비 중입니다.</div>;
+    const ProductGroupsPage = require("@/features/settings/ProductGroupsPage").default;
+    return <ProductGroupsPage />;
   }
 
   private renderIntegrations(): JSX.Element {

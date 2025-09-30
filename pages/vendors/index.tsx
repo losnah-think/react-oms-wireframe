@@ -1,6 +1,3 @@
-import React from "react";
-import VendorManagementPage from "../../src/features/partners/VendorManagementPage";
+import VendorsHome from "@/features/partners";
 
-export default function VendorsPage() {
-  return <VendorManagementPage />;
-}
+export default VendorsHome;
