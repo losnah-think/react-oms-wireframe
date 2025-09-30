@@ -28,7 +28,7 @@ const defaultGroups: ProductGroup[] = [
   {
     id: "group-1",
     name: "온라인 전용",
-    description: "온라인 몰에만 노출되는 상품 군",
+    description: "온라인 쇼핑몰 전용",
     channels: ["스마트스토어", "쿠팡"],
     categoryIds: [],
     color: "#2563eb",
@@ -36,8 +36,8 @@ const defaultGroups: ProductGroup[] = [
   },
   {
     id: "group-2",
-    name: "오프라인 베스트",
-    description: "오프라인 매장 베스트셀러",
+    name: "오프라인 매장",
+    description: "실제 매장 판매",
     channels: ["백화점", "직영점"],
     categoryIds: [],
     color: "#f97316",
@@ -87,24 +87,12 @@ const channelPresets = [
   "오프라인",
 ];
 
-const getColorDot = (color?: string) => (
-  <span
-    style={{
-      display: "inline-block",
-      width: 10,
-      height: 10,
-      borderRadius: "50%",
-      backgroundColor: color || "#64748B",
-    }}
-  />
-);
-
 const ProductGroupsPage: React.FC = () => {
   const [groups, setGroups] = React.useState<ProductGroup[]>(loadGroups);
   const [search, setSearch] = React.useState("");
-  const [channelFilter, setChannelFilter] = React.useState("");
   const [isModalOpen, setModalOpen] = React.useState(false);
   const [editingId, setEditingId] = React.useState<string | null>(null);
+  const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [formState, setFormState] = React.useState({
     name: "",
     description: "",
@@ -123,17 +111,14 @@ const ProductGroupsPage: React.FC = () => {
     const matchesSearch = search
       ? group.name.includes(search) || group.description?.includes(search)
       : true;
-    const matchesChannel = channelFilter
-      ? group.channels.includes(channelFilter)
-      : true;
-    return matchesSearch && matchesChannel;
+    return matchesSearch;
   });
 
   const summary = React.useMemo(() => {
     const total = groups.length;
     const channelUsage = groups.reduce((acc, group) => acc + group.channels.length, 0);
     const avgCategories = groups.reduce((acc, group) => acc + group.categoryIds.length, 0) / (total || 1);
-    return { total, channelUsage, avgCategories };
+    return { total, channelUsage, avgCategories: Math.round(avgCategories * 10) / 10 };
   }, [groups]);
 
   const openModal = (group?: ProductGroup) => {
@@ -179,11 +164,11 @@ const ProductGroupsPage: React.FC = () => {
 
   const handleSave = () => {
     if (!formState.name.trim()) {
-      window.alert("상품 그룹 이름을 입력해주세요.");
+      window.alert("분류 이름을 입력하세요");
       return;
     }
     if (!formState.channels.length) {
-      window.alert("적어도 1개의 채널을 선택해주세요.");
+      window.alert("판매 채널을 1개 이상 선택하세요");
       return;
     }
 
@@ -208,155 +193,231 @@ const ProductGroupsPage: React.FC = () => {
   const handleDelete = (id: string) => {
     const target = groups.find((group) => group.id === id);
     if (!target || target.isDefault) {
-      window.alert("기본 상품 그룹은 삭제할 수 없습니다.");
+      window.alert("기본 분류는 삭제할 수 없습니다");
       return;
     }
-    if (!window.confirm("상품 그룹을 삭제하시겠습니까?")) return;
+    if (!window.confirm("삭제하시겠습니까?")) return;
     setGroups((prev) => prev.filter((group) => group.id !== id));
+    if (selectedId === id) setSelectedId(null);
   };
 
   return (
-    <Container maxWidth="7xl" className="space-y-6 pb-10">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold text-gray-900">상품 그룹 관리</h1>
-        <p className="text-sm text-gray-600">
-          판매 채널과 카테고리를 묶어 상품 그룹을 정의하고, 연동 정책에 활용하세요.
-        </p>
+    <div className="min-h-screen bg-gray-50">
+      {/* 헤더 */}
+      <div className="bg-white border-b sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <h1 className="text-2xl font-bold">상품 분류</h1>
+          <Button size="big" onClick={() => openModal()}>
+            ➕ 추가
+          </Button>
+        </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <Card padding="lg" className="flex flex-col gap-1">
-          <span className="text-xs text-gray-500">총 그룹 수</span>
-          <span className="text-2xl font-semibold text-gray-900">{summary.total}</span>
-        </Card>
-        <Card padding="lg" className="flex flex-col gap-1">
-          <span className="text-xs text-gray-500">채널 연결 수</span>
-          <span className="text-2xl font-semibold text-blue-600">{summary.channelUsage}</span>
-        </Card>
-        <Card padding="lg" className="flex flex-col gap-1">
-          <span className="text-xs text-gray-500">평균 연결 카테고리</span>
-          <span className="text-2xl font-semibold text-gray-900">
-            {summary.avgCategories.toFixed(1)}개
-          </span>
-        </Card>
-      </div>
-
-      <Card padding="lg" className="space-y-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-          <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-center">
-            <Input
-              label="검색"
-              placeholder="상품 그룹명 또는 설명 검색"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              fullWidth
-            />
-            <Dropdown
-              label="채널"
-              options={[{ value: "", label: "전체 채널" }, ...channelPresets.map((channel) => ({ value: channel, label: channel }))]}
-              value={channelFilter}
-              onChange={setChannelFilter}
-              fullWidth
-            />
-          </div>
-          <Stack direction="row" gap={3} className="flex-wrap">
-            <Button variant="outline" size="small" onClick={() => setChannelFilter("")}>필터 초기화</Button>
-            <Button size="small" onClick={() => openModal()}>상품 그룹 추가</Button>
-          </Stack>
+      {/* 통계 */}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-3 gap-6 mb-8">
+          <button className="bg-white rounded-xl p-8 text-center shadow-sm hover:shadow-md transition">
+            <div className="text-5xl font-bold text-gray-900 mb-2">{summary.total}</div>
+            <div className="text-gray-600">전체 분류</div>
+          </button>
+          
+          <button className="bg-green-50 rounded-xl p-8 text-center shadow-sm hover:shadow-md transition">
+            <div className="text-5xl font-bold text-green-600 mb-2">{summary.channelUsage}</div>
+            <div className="text-green-700 font-medium">판매 채널</div>
+          </button>
+          
+          <button className="bg-purple-50 rounded-xl p-8 text-center shadow-sm hover:shadow-md transition">
+            <div className="text-5xl font-bold text-purple-600 mb-2">{summary.avgCategories}</div>
+            <div className="text-purple-700 font-medium">평균 카테고리</div>
+          </button>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((group) => (
-            <Card key={group.id} padding="lg" className="flex h-full flex-col gap-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    {getColorDot(group.color)}
-                    <h3 className="text-lg font-semibold text-gray-900">{group.name}</h3>
-                    {group.isDefault && (
-                      <Badge size="small" variant="primary">
-                        기본값
-                      </Badge>
-                    )}
+        {/* 검색 */}
+        <div className="bg-white rounded-xl p-6 mb-6 shadow-sm">
+          <Input
+            placeholder="분류 검색"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            fullWidth
+          />
+        </div>
+
+        {/* 분류 목록 - 거대한 카드 */}
+        <div className="space-y-4">
+          {filtered.map((group) => {
+            const isSelected = selectedId === group.id;
+            return (
+              <button
+                key={group.id}
+                onClick={() => setSelectedId(isSelected ? null : group.id)}
+                className={`w-full bg-white rounded-xl p-6 text-left shadow-sm hover:shadow-md transition ${
+                  isSelected ? "ring-4 ring-blue-500" : ""
+                }`}
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-4">
+                    <div 
+                      className="w-6 h-6 rounded-full" 
+                      style={{ backgroundColor: group.color }}
+                    />
+                    <div>
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="text-2xl font-bold text-gray-900">{group.name}</div>
+                        {group.isDefault && (
+                          <span className="text-sm px-3 py-1 bg-gray-100 text-gray-600 rounded-full">
+                            기본
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-gray-500">{group.description}</div>
+                    </div>
                   </div>
-                  {group.description && (
-                    <p className="text-xs text-gray-600">{group.description}</p>
-                  )}
-                  <div className="flex flex-wrap gap-2">
-                    {group.channels.map((channel) => (
-                      <Badge key={channel} size="small" variant="secondary">
-                        {channel}
-                      </Badge>
-                    ))}
-                  </div>
-          <div className="flex flex-wrap gap-2 text-xs text-gray-500">
-            {group.categoryIds.length > 0 ? (
-              group.categoryIds
-                .map((id) => categories.find((category) => category.id === id)?.name || "미지정")
-                .map((name) => (
-                  <Badge key={name} size="small" variant="secondary" outline>
-                    {name}
-                  </Badge>
-                ))
-            ) : (
-              <span>연결된 상품 분류 없음</span>
-            )}
-          </div>
                 </div>
-                <Stack direction="column" gap={2}>
-                  <Button variant="ghost" size="small" onClick={() => openModal(group)}>
-                    수정
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="small"
-                    disabled={group.isDefault}
-                    onClick={() => handleDelete(group.id)}
-                  >
-                    삭제
-                  </Button>
-                </Stack>
-              </div>
-            </Card>
-          ))}
+
+                <div className="flex gap-2 mb-3">
+                  {group.channels.map((channel) => (
+                    <span 
+                      key={channel}
+                      className="text-sm px-3 py-1 bg-blue-50 text-blue-700 rounded-full"
+                    >
+                      {channel}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="text-sm text-gray-500">
+                  카테고리: {group.categoryIds.length}개
+                </div>
+              </button>
+            );
+          })}
         </div>
 
-        {filtered.length === 0 && (
-          <div className="rounded-md border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
-            조건에 맞는 상품 그룹이 없습니다. 새 그룹을 추가해 보세요.
+        {/* 선택된 분류 편집 */}
+        {selectedId && (
+          <div className="mt-8 bg-white rounded-xl p-8 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold">편집</h2>
+              <div className="flex gap-3">
+                <Button 
+                  size="big"
+                  variant="outline"
+                  onClick={() => {
+                    const group = groups.find(g => g.id === selectedId);
+                    if (group) openModal(group);
+                  }}
+                >
+                  ✏️ 수정
+                </Button>
+                <Button 
+                  size="big"
+                  variant="outline"
+                  onClick={() => handleDelete(selectedId)}
+                  disabled={groups.find(g => g.id === selectedId)?.isDefault}
+                >
+                  🗑️ 삭제
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setSelectedId(null)}
+                >
+                  ✕
+                </Button>
+              </div>
+            </div>
+
+            {(() => {
+              const group = groups.find(g => g.id === selectedId);
+              if (!group) return null;
+              
+              return (
+                <div className="space-y-6">
+                  <div>
+                    <div className="text-sm text-gray-500 mb-2">이름</div>
+                    <div className="text-xl font-semibold">{group.name}</div>
+                  </div>
+
+                  <div>
+                    <div className="text-sm text-gray-500 mb-2">설명</div>
+                    <div className="text-lg">{group.description || "-"}</div>
+                  </div>
+
+                  <div>
+                    <div className="text-sm text-gray-500 mb-3">판매 채널</div>
+                    <div className="flex gap-2">
+                      {group.channels.map((channel) => (
+                        <span 
+                          key={channel}
+                          className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg font-medium"
+                        >
+                          {channel}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-sm text-gray-500 mb-3">연결된 카테고리</div>
+                    <div className="flex flex-wrap gap-2">
+                      {group.categoryIds.length > 0 ? (
+                        group.categoryIds.map((id) => {
+                          const cat = categories.find(c => c.id === id);
+                          return (
+                            <span 
+                              key={id}
+                              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg"
+                            >
+                              {cat?.name || "알 수 없음"}
+                            </span>
+                          );
+                        })
+                      ) : (
+                        <span className="text-gray-400">없음</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         )}
-      </Card>
+      </div>
 
+      {/* 추가/수정 모달 */}
       <Modal
         open={isModalOpen}
         onClose={() => setModalOpen(false)}
-        title={editingId ? "상품 그룹 수정" : "상품 그룹 추가"}
+        title={editingId ? "분류 수정" : "분류 추가"}
         footer={
-          <Stack direction="row" gap={3}>
-            <Button variant="ghost" onClick={() => setModalOpen(false)}>
+          <div className="flex gap-4">
+            <Button variant="ghost" onClick={() => setModalOpen(false)} fullWidth>
               취소
             </Button>
-            <Button onClick={handleSave}>저장</Button>
-          </Stack>
+            <Button onClick={handleSave} fullWidth>
+              {editingId ? "수정" : "등록"}
+            </Button>
+          </div>
         }
       >
-        <div className="space-y-4">
+        <div className="space-y-6">
           <Input
-            label="상품 그룹명"
+            label="이름"
+            placeholder="온라인 전용"
             value={formState.name}
             onChange={(event) => setFormState((prev) => ({ ...prev, name: event.target.value }))}
             fullWidth
           />
+          
           <Input
             label="설명"
+            placeholder="온라인 쇼핑몰 전용"
             value={formState.description}
             onChange={(event) => setFormState((prev) => ({ ...prev, description: event.target.value }))}
             fullWidth
           />
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">연결 채널</label>
+          <div>
+            <div className="text-sm font-medium text-gray-700 mb-3">판매 채널 *</div>
             <div className="flex flex-wrap gap-2">
               {channelPresets.map((channel) => {
                 const checked = formState.channels.includes(channel);
@@ -365,9 +426,9 @@ const ProductGroupsPage: React.FC = () => {
                     key={channel}
                     type="button"
                     onClick={() => toggleChannel(channel)}
-                    className={`rounded-full px-3 py-1 text-xs transition ${
+                    className={`px-4 py-2 rounded-lg font-medium transition ${
                       checked
-                        ? "bg-primary-600 text-white"
+                        ? "bg-blue-600 text-white"
                         : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                     }`}
                   >
@@ -378,34 +439,51 @@ const ProductGroupsPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">연결 상품 분류</label>
-            <div className="max-h-40 overflow-y-auto rounded-md border border-gray-200">
+          <div>
+            <div className="text-sm font-medium text-gray-700 mb-3">카테고리</div>
+            <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg">
               {categories.length === 0 && (
-                <p className="p-3 text-xs text-gray-500">등록된 상품 분류가 없습니다.</p>
+                <div className="p-4 text-center text-gray-500">카테고리 없음</div>
               )}
               {categories.map((category) => {
                 const checked = formState.categoryIds.includes(category.id);
                 return (
                   <label
                     key={category.id}
-                    className="flex cursor-pointer items-center justify-between border-b border-gray-100 px-3 py-2 text-sm last:border-b-0"
+                    className="flex items-center justify-between px-4 py-3 border-b last:border-b-0 hover:bg-gray-50 cursor-pointer"
                   >
-                    <span>{category.name}</span>
+                    <span className="font-medium">{category.name}</span>
                     <input
                       type="checkbox"
                       checked={checked}
                       onChange={() => toggleCategory(category.id)}
-                      className="h-4 w-4"
+                      className="w-5 h-5"
                     />
                   </label>
                 );
               })}
             </div>
           </div>
+
+          <div>
+            <div className="text-sm font-medium text-gray-700 mb-3">색상</div>
+            <div className="flex gap-3">
+              {["#2563eb", "#f97316", "#10b981", "#8b5cf6", "#ec4899", "#64748b"].map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  onClick={() => setFormState((prev) => ({ ...prev, color }))}
+                  className={`w-12 h-12 rounded-full transition ${
+                    formState.color === color ? "ring-4 ring-offset-2 ring-blue-300 scale-110" : "hover:scale-105"
+                  }`}
+                  style={{ backgroundColor: color }}
+                />
+              ))}
+            </div>
+          </div>
         </div>
       </Modal>
-    </Container>
+    </div>
   );
 };
 

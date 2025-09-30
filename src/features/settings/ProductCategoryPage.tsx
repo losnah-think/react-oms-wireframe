@@ -132,35 +132,10 @@ const ProductCategoryPage: React.FC = () => {
     return { total, defaultCount, groupCounts };
   }, [categories]);
 
-  const columns: TableColumn<Category>[] = [
-    {
-      key: "name",
-      title: "상품 분류",
-      render: (_, record) => (
-        <div className="flex flex-col">
-          <span className="font-semibold text-gray-900">{record.name}</span>
-          <span className="text-xs text-gray-500">슬러그: {record.slug}</span>
-        </div>
-      ),
-    },
-    {
-      key: "group",
-      title: "그룹",
-      render: (value) => <span className="text-sm text-gray-700">{value}</span>,
-    },
-    {
-      key: "description",
-      title: "설명",
-      render: (value) => (
-        <span className="text-sm text-gray-600">{value || "-"}</span>
-      ),
-    },
-  ];
-
   const handleDetailSave = () => {
     if (!selectedId) return;
     if (!detailForm.name.trim()) {
-      window.alert("분류명을 입력해주세요.");
+      window.alert("카테고리 이름을 입력하세요");
       return;
     }
     setCategories((prev) =>
@@ -183,10 +158,10 @@ const ProductCategoryPage: React.FC = () => {
     const target = categories.find((category) => category.id === selectedId);
     if (!target) return;
     if (target.isDefault) {
-      window.alert("기본 상품 분류는 삭제할 수 없습니다.");
+      window.alert("기본 카테고리는 삭제할 수 없습니다");
       return;
     }
-    if (!window.confirm("이 상품 분류를 삭제하시겠습니까?")) return;
+    if (!window.confirm("삭제하시겠습니까?")) return;
     setCategories((prev) => prev.filter((category) => category.id !== selectedId));
     setSelectedId((prevSelected) =>
       prevSelected === target.id ? (prev.filter((category) => category.id !== target.id)[0]?.id ?? null) : prevSelected,
@@ -200,7 +175,7 @@ const ProductCategoryPage: React.FC = () => {
 
   const handleCreate = () => {
     if (!newCategory.name.trim()) {
-      window.alert("분류명을 입력해주세요.");
+      window.alert("카테고리 이름을 입력하세요");
       return;
     }
     const slug = newCategory.slug.trim() || slugify(newCategory.name);
@@ -217,99 +192,125 @@ const ProductCategoryPage: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="7xl" className="space-y-6 pb-10">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold text-gray-900">상품 분류 관리</h1>
-        <p className="text-sm text-gray-600">
-          기본 분류에 사용자 정의 분류를 추가하고, 그룹별로 정리합니다.
-        </p>
+    <div className="min-h-screen bg-gray-50">
+      {/* 헤더 */}
+      <div className="bg-white border-b sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <h1 className="text-2xl font-bold">카테고리</h1>
+          <Button size="big" onClick={openAddModal}>
+            ➕ 추가
+          </Button>
+        </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Card padding="lg" className="flex flex-col gap-1">
-          <span className="text-xs text-gray-500">총 분류</span>
-          <span className="text-2xl font-semibold text-gray-900">{summary.total}</span>
-        </Card>
-        <Card padding="lg" className="flex flex-col gap-1">
-          <span className="text-xs text-gray-500">기본 분류</span>
-          <span className="text-2xl font-semibold text-gray-900">{summary.defaultCount}</span>
-        </Card>
-        <Card padding="lg" className="flex flex-col gap-1">
-          <span className="text-xs text-gray-500">의류 그룹</span>
-          <span className="text-2xl font-semibold text-gray-900">{summary.groupCounts["의류"] ?? 0}</span>
-        </Card>
-        <Card padding="lg" className="flex flex-col gap-1">
-          <span className="text-xs text-gray-500">잡화 그룹</span>
-          <span className="text-2xl font-semibold text-gray-900">{summary.groupCounts["잡화"] ?? 0}</span>
-        </Card>
-      </div>
+      {/* 통계 */}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-5 gap-6 mb-8">
+          <button className="bg-white rounded-xl p-8 text-center shadow-sm hover:shadow-md transition">
+            <div className="text-5xl font-bold text-gray-900 mb-2">{summary.total}</div>
+            <div className="text-gray-600">전체</div>
+          </button>
+          
+          <button className="bg-blue-50 rounded-xl p-8 text-center shadow-sm hover:shadow-md transition">
+            <div className="text-5xl font-bold text-blue-600 mb-2">{summary.groupCounts["의류"] ?? 0}</div>
+            <div className="text-blue-700 font-medium">의류</div>
+          </button>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,0.6fr)_minmax(0,0.4fr)]">
-        <Card padding="lg" className="space-y-4">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-            <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-center">
-              <Input
-                label="검색"
-                placeholder="상품 분류명 또는 슬러그 검색"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                fullWidth
-              />
-              <Dropdown
-                label="그룹"
-                options={[{ value: "", label: "전체 그룹" }, ...groupOptions]}
-                value={groupFilter}
-                onChange={setGroupFilter}
-                fullWidth
-              />
+          <button className="bg-purple-50 rounded-xl p-8 text-center shadow-sm hover:shadow-md transition">
+            <div className="text-5xl font-bold text-purple-600 mb-2">{summary.groupCounts["잡화"] ?? 0}</div>
+            <div className="text-purple-700 font-medium">잡화</div>
+          </button>
+
+          <button className="bg-green-50 rounded-xl p-8 text-center shadow-sm hover:shadow-md transition">
+            <div className="text-5xl font-bold text-green-600 mb-2">{summary.groupCounts["식품"] ?? 0}</div>
+            <div className="text-green-700 font-medium">식품</div>
+          </button>
+
+          <button className="bg-orange-50 rounded-xl p-8 text-center shadow-sm hover:shadow-md transition">
+            <div className="text-5xl font-bold text-orange-600 mb-2">{summary.groupCounts["생활"] ?? 0}</div>
+            <div className="text-orange-700 font-medium">생활</div>
+          </button>
+        </div>
+
+        {/* 검색 */}
+        <div className="bg-white rounded-xl p-6 mb-6 shadow-sm">
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              placeholder="카테고리 검색"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              fullWidth
+            />
+            <Dropdown
+              options={[{ value: "", label: "전체 그룹" }, ...groupOptions]}
+              value={groupFilter}
+              onChange={setGroupFilter}
+              fullWidth
+            />
+          </div>
+        </div>
+
+        {/* 카테고리 목록 - 거대한 카드 */}
+        <div className="space-y-4">
+          {filtered.map((cat) => {
+            const isSelected = selectedId === cat.id;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedId(isSelected ? null : cat.id)}
+                className={`w-full bg-white rounded-xl p-6 text-left shadow-sm hover:shadow-md transition ${
+                  isSelected ? "ring-4 ring-blue-500" : ""
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="text-2xl font-bold text-gray-900">{cat.name}</div>
+                      {cat.isDefault && (
+                        <span className="text-sm px-3 py-1 bg-gray-100 text-gray-600 rounded-full">
+                          기본
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-gray-500">{cat.group}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm text-gray-400">{cat.slug}</div>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* 선택된 카테고리 편집 */}
+        {selectedId && (
+          <div className="mt-8 bg-white rounded-xl p-8 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold">편집</h2>
+              <Button 
+                variant="ghost" 
+                onClick={() => setSelectedId(null)}
+              >
+                ✕
+              </Button>
             </div>
-            <Stack direction="row" gap={3} className="flex-wrap">
-              <Button variant="outline" size="small" onClick={() => setGroupFilter("")}>필터 초기화</Button>
-              <Button size="small" onClick={openAddModal}>상품 분류 추가</Button>
-            </Stack>
-          </div>
 
-          <Table<Category>
-            bordered
-            data={filtered}
-            columns={columns}
-            size="middle"
-            rowSelection={{
-              selectedRowKeys: selectedId ? [selectedId] : [],
-              onChange: (keys) => setSelectedId(keys[0] ?? null),
-            }}
-            onRow={(record) => ({
-              onClick: () => setSelectedId(record.id),
-              className: record.id === selectedId ? "bg-primary-50" : undefined,
-            })}
-          />
-        </Card>
-
-        <Card padding="lg" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">상품 분류 상세</h2>
-            {selectedId && (
-              <Badge size="small" variant="secondary">
-                {categories.find((category) => category.id === selectedId)?.isDefault ? "기본값" : "사용자 정의"}
-              </Badge>
-            )}
-          </div>
-
-          {selectedId ? (
-            <div className="space-y-4">
+            <div className="space-y-6">
               <Input
-                label="상품 분류명"
+                label="이름"
                 value={detailForm.name}
                 onChange={(event) => setDetailForm((prev) => ({ ...prev, name: event.target.value }))}
                 fullWidth
               />
+              
               <Input
-                label="슬러그"
+                label="경로"
                 value={detailForm.slug}
-                placeholder="입력하지 않으면 자동 생성"
                 onChange={(event) => setDetailForm((prev) => ({ ...prev, slug: event.target.value }))}
                 fullWidth
               />
+              
               <Dropdown
                 label="그룹"
                 options={groupOptions}
@@ -317,6 +318,7 @@ const ProductCategoryPage: React.FC = () => {
                 onChange={(value) => setDetailForm((prev) => ({ ...prev, group: value }))}
                 fullWidth
               />
+              
               <Input
                 label="설명"
                 value={detailForm.description}
@@ -324,69 +326,56 @@ const ProductCategoryPage: React.FC = () => {
                 fullWidth
               />
 
-              <Stack direction="row" gap={3} className="flex-wrap">
-                <Button size="small" onClick={handleDetailSave}>저장</Button>
-                <Button
-                  size="small"
-                  variant="outline"
-                  onClick={() => {
-                    const current = categories.find((category) => category.id === selectedId);
-                    if (!current) return;
-                    setDetailForm({
-                      name: current.name,
-                      slug: current.slug,
-                      group: current.group,
-                      description: current.description ?? "",
-                    });
-                  }}
-                >
-                  되돌리기
+              <div className="flex gap-4 pt-4">
+                <Button size="big" onClick={handleDetailSave} fullWidth>
+                  💾 저장
                 </Button>
                 <Button
-                  size="small"
+                  size="big"
                   variant="outline"
                   onClick={handleDelete}
                   disabled={categories.find((category) => category.id === selectedId)?.isDefault}
+                  fullWidth
                 >
-                  삭제
+                  🗑️ 삭제
                 </Button>
-              </Stack>
+              </div>
             </div>
-          ) : (
-            <div className="rounded-md border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500">
-              왼쪽 목록에서 상품 분류를 선택하면 상세 정보를 편집할 수 있습니다.
-            </div>
-          )}
-        </Card>
+          </div>
+        )}
       </div>
 
+      {/* 추가 모달 */}
       <Modal
         open={isModalOpen}
         onClose={() => setModalOpen(false)}
-        title="상품 분류 추가"
+        title="카테고리 추가"
         footer={
-          <Stack direction="row" gap={3}>
-            <Button variant="ghost" onClick={() => setModalOpen(false)}>
+          <div className="flex gap-4">
+            <Button variant="ghost" onClick={() => setModalOpen(false)} fullWidth>
               취소
             </Button>
-            <Button onClick={handleCreate}>등록</Button>
-          </Stack>
+            <Button onClick={handleCreate} fullWidth>등록</Button>
+          </div>
         }
       >
-        <div className="space-y-4">
+        <div className="space-y-6">
           <Input
-            label="상품 분류명"
+            label="이름"
+            placeholder="티셔츠"
             value={newCategory.name}
             onChange={(event) => setNewCategory((prev) => ({ ...prev, name: event.target.value }))}
             fullWidth
           />
+          
           <Input
-            label="슬러그"
+            label="경로"
+            placeholder="tshirt"
             value={newCategory.slug}
-            placeholder="입력하지 않으면 자동 생성"
             onChange={(event) => setNewCategory((prev) => ({ ...prev, slug: event.target.value }))}
             fullWidth
           />
+          
           <Dropdown
             label="그룹"
             options={groupOptions}
@@ -394,15 +383,17 @@ const ProductCategoryPage: React.FC = () => {
             onChange={(value) => setNewCategory((prev) => ({ ...prev, group: value }))}
             fullWidth
           />
+          
           <Input
             label="설명"
+            placeholder="반팔 티셔츠"
             value={newCategory.description}
             onChange={(event) => setNewCategory((prev) => ({ ...prev, description: event.target.value }))}
             fullWidth
           />
         </div>
       </Modal>
-    </Container>
+    </div>
   );
 };
 

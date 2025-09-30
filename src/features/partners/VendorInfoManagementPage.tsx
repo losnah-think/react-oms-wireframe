@@ -1,279 +1,432 @@
-import React from "react";
-import {
-  Container,
-  Card,
-  Button,
-  Input,
-  Dropdown,
-  Badge,
-  Modal,
-  Stack,
-  Table,
-  type TableColumn,
-} from "../../design-system";
-import { mockVendors } from "../../data/mockVendors";
+import React, { useState, useEffect } from "react";
 
-type VendorRow = {
-  id: string;
-  name: string;
-  code: string;
-  platform: string;
-  platformLabel: string;
-  is_active: boolean;
-  created_at: string;
-  contact?: string;
-};
-
-const platformOptions = [
-  { value: "", label: "전체 플랫폼" },
-  { value: "godomall", label: "고도몰" },
-  { value: "wisa", label: "위사" },
-  { value: "kurly", label: "마켓컬리" },
-  { value: "smartstore", label: "스마트스토어" },
-  { value: "cafe24", label: "카페24" },
-  { value: "gmarket", label: "G마켓" },
-  { value: "coupang", label: "쿠팡" },
-  { value: "naver", label: "네이버" },
+// Mock 데이터
+const mockVendors = [
+  {
+    id: "V001",
+    name: "네이버 스마트스토어",
+    type: "판매처" as const,
+    businessNumber: "123-45-67890",
+    representative: "김철수",
+    phone: "02-1234-5678",
+    email: "naver@example.com",
+    address: "서울시 강남구 테헤란로 123",
+    status: "active" as const,
+    registrationDate: "2023-01-15",
+    apiKey: "naver_api_key_1234",
+    lastLoginDate: "2025-09-30",
+  },
+  {
+    id: "V002",
+    name: "쿠팡 파트너스",
+    type: "판매처" as const,
+    businessNumber: "987-65-43210",
+    representative: "이영희",
+    phone: "031-1111-2222",
+    email: "coupang@example.com",
+    address: "경기도 성남시 분당구 판교로 100",
+    status: "active" as const,
+    registrationDate: "2023-02-01",
+    apiKey: "coupang_api_key_5678",
+    lastLoginDate: "2025-09-29",
+  },
+  {
+    id: "V003",
+    name: "11번가",
+    type: "판매처" as const,
+    businessNumber: "111-22-33444",
+    representative: "박민수",
+    phone: "02-3333-4444",
+    email: "11st@example.com",
+    address: "서울시 중구 청계천로 100",
+    status: "active" as const,
+    registrationDate: "2023-03-10",
+  },
 ];
 
-const statusFilters = [
-  { value: "", label: "전체 상태" },
-  { value: "active", label: "활성" },
-  { value: "inactive", label: "비활성" },
-];
-
-const PLATFORM_LABEL: Record<string, string> = {
-  godomall: "고도몰",
-  wisa: "위사",
-  kurly: "마켓컬리",
-  smartstore: "스마트스토어",
-  cafe24: "카페24",
-  gmarket: "G마켓",
-  coupang: "쿠팡",
-  naver: "네이버",
+// 판매처별 부가 정보 Mock
+const mockExtraInfo: Record<string, Record<string, string>> = {
+  V001: {
+    "판매자 ID": "naver_seller_123",
+    "정산 주기": "월 2회 (15일, 말일)",
+    "수수료율": "12%",
+    "배송비 템플릿 ID": "TPL-NAVER-001",
+    "고객센터 번호": "1588-1234",
+  },
+  V002: {
+    "판매자 ID": "coupang_seller_456",
+    "정산 주기": "주 1회 (매주 금요일)",
+    "수수료율": "15%",
+    "로켓배송 사용": "사용함",
+    "반품배송비": "5,000원",
+  },
+  V003: {
+    "판매자 ID": "11st_seller_789",
+    "정산 주기": "월 1회 (말일)",
+    "수수료율": "10%",
+  },
 };
 
-const deriveVendors = (): VendorRow[] =>
-  mockVendors.map((vendor) => ({
-    id: vendor.id,
-    name: vendor.name,
-    code: vendor.code,
-    platform: vendor.platform,
-    platformLabel: PLATFORM_LABEL[vendor.platform] || vendor.platform,
-    is_active: vendor.is_active,
-    created_at: new Date(vendor.created_at).toLocaleDateString(),
-    contact: vendor.settings?.manager ? String(vendor.settings.manager) : undefined,
-  }));
+// 판매처 정보 카드 컴포넌트
+function VendorInfoCard({ vendor, onEdit }: any) {
+  return (
+    <div className="bg-white rounded-lg border shadow-sm p-6 mb-6">
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">{vendor.name}</h2>
+          <div className="flex items-center gap-2 mt-2">
+            <span
+              className={`px-3 py-1 text-sm rounded-full ${
+                vendor.status === "active"
+                  ? "bg-green-100 text-green-700"
+                  : "bg-gray-100 text-gray-700"
+              }`}
+            >
+              {vendor.status === "active" ? "활성" : "비활성"}
+            </span>
+            {vendor.apiKey && (
+              <span className="px-3 py-1 text-sm rounded-full bg-blue-100 text-blue-700">
+                API 연동됨
+              </span>
+            )}
+          </div>
+        </div>
+        {onEdit && (
+          <button
+            onClick={onEdit}
+            className="px-4 py-2 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600"
+          >
+            정보 수정
+          </button>
+        )}
+      </div>
 
-export default function VendorInfoManagementPage() {
-  const [vendors, setVendors] = React.useState<VendorRow[]>(deriveVendors);
-  const [search, setSearch] = React.useState("");
-  const [platformFilter, setPlatformFilter] = React.useState(platformOptions[0].value);
-  const [statusFilter, setStatusFilter] = React.useState(statusFilters[0].value);
-  const [isModalOpen, setModalOpen] = React.useState(false);
-  const [formState, setFormState] = React.useState({
-    name: "",
-    code: "",
-    platform: platformOptions[1].value,
-    manager: "",
-  });
+      <div className="grid grid-cols-2 gap-6">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">기본 정보</h3>
+          <div className="space-y-2">
+            <div className="flex">
+              <span className="text-sm text-gray-600 w-24">대표자</span>
+              <span className="text-sm text-gray-900 font-medium">
+                {vendor.representative}
+              </span>
+            </div>
+            <div className="flex">
+              <span className="text-sm text-gray-600 w-24">사업자번호</span>
+              <span className="text-sm text-gray-900 font-medium">
+                {vendor.businessNumber}
+              </span>
+            </div>
+            <div className="flex">
+              <span className="text-sm text-gray-600 w-24">등록일</span>
+              <span className="text-sm text-gray-900">{vendor.registrationDate}</span>
+            </div>
+          </div>
+        </div>
 
-  const filtered = React.useMemo(() => {
-    return vendors.filter((vendor) => {
-      const matchesSearch = search
-        ? vendor.name.includes(search) || vendor.code.includes(search)
-        : true;
-      const matchesPlatform = platformFilter ? vendor.platform === platformFilter : true;
-      const matchesStatus = statusFilter
-        ? statusFilter === "active"
-          ? vendor.is_active
-          : !vendor.is_active
-        : true;
-      return matchesSearch && matchesPlatform && matchesStatus;
-    });
-  }, [vendors, search, platformFilter, statusFilter]);
+        <div>
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">연락 정보</h3>
+          <div className="space-y-2">
+            <div className="flex">
+              <span className="text-sm text-gray-600 w-24">전화번호</span>
+              <span className="text-sm text-gray-900 font-medium">
+                {vendor.phone}
+              </span>
+            </div>
+            <div className="flex">
+              <span className="text-sm text-gray-600 w-24">이메일</span>
+              <span className="text-sm text-gray-900 font-medium">
+                {vendor.email}
+              </span>
+            </div>
+            <div className="flex">
+              <span className="text-sm text-gray-600 w-24">주소</span>
+              <span className="text-sm text-gray-900">{vendor.address}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-  const summary = React.useMemo(() => {
-    const total = vendors.length;
-    const active = vendors.filter((vendor) => vendor.is_active).length;
-    return {
-      total,
-      active,
-      inactive: total - active,
-    };
+export default function VendorExtraInfoPage() {
+  const [vendors] = useState(mockVendors);
+  const [selectedVendor, setSelectedVendor] = useState<any>(null);
+  const [extraInfo, setExtraInfo] = useState<Record<string, string>>({});
+  const [isEditing, setIsEditing] = useState(false);
+  const [newKey, setNewKey] = useState("");
+  const [newValue, setNewValue] = useState("");
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (vendors.length > 0 && !selectedVendor) {
+      setSelectedVendor(vendors[0]);
+    }
   }, [vendors]);
 
-  const columns: TableColumn<VendorRow>[] = [
-    {
-      key: "name",
-      title: "판매처",
-      render: (_, record) => (
-        <div className="flex flex-col">
-          <span className="font-semibold text-gray-900">{record.name}</span>
-          <span className="text-xs text-gray-500">코드 {record.code}</span>
-        </div>
-      ),
-    },
-    {
-      key: "platformLabel",
-      title: "플랫폼",
-      render: (value) => <span className="text-sm text-gray-700">{value}</span>,
-    },
-    {
-      key: "contact",
-      title: "담당자",
-      render: (value) => <span className="text-sm text-gray-600">{value ?? "-"}</span>,
-    },
-    {
-      key: "created_at",
-      title: "등록일",
-    },
-    {
-      key: "is_active",
-      title: "상태",
-      render: (value) => (
-        <Badge variant={value ? "success" : "secondary"} size="small">
-          {value ? "활성" : "비활성"}
-        </Badge>
-      ),
-      align: "center",
-    },
-  ];
+  useEffect(() => {
+    if (selectedVendor) {
+      setExtraInfo(mockExtraInfo[selectedVendor.id] || {});
+      setIsEditing(false);
+    }
+  }, [selectedVendor]);
 
-  const handleCreate = () => {
-    if (!formState.name.trim()) {
-      window.alert("판매처 이름을 입력해주세요.");
+  const handleAddInfo = () => {
+    if (!newKey.trim()) {
+      alert("항목명을 입력해주세요.");
       return;
     }
-    const vendor: VendorRow = {
-      id: `vendor-${Date.now()}`,
-      name: formState.name.trim(),
-      code: formState.code.trim() || `AUTO-${Date.now().toString().slice(-4)}`,
-      platform: formState.platform,
-      platformLabel: PLATFORM_LABEL[formState.platform] || formState.platform,
-      is_active: true,
-      created_at: new Date().toLocaleDateString(),
-      contact: formState.manager.trim() || undefined,
-    };
-    setVendors((prev) => [vendor, ...prev]);
-    setFormState({ name: "", code: "", platform: platformOptions[1].value, manager: "" });
-    setModalOpen(false);
+    if (!newValue.trim()) {
+      alert("값을 입력해주세요.");
+      return;
+    }
+    setExtraInfo({ ...extraInfo, [newKey]: newValue });
+    setNewKey("");
+    setNewValue("");
+  };
+
+  const handleDeleteInfo = (key: string) => {
+    if (window.confirm(`"${key}" 항목을 삭제하시겠습니까?`)) {
+      const updated = { ...extraInfo };
+      delete updated[key];
+      setExtraInfo(updated);
+    }
+  };
+
+  const handleEditInfo = (key: string) => {
+    setEditingKey(key);
+    setNewKey(key);
+    setNewValue(extraInfo[key]);
+  };
+
+  const handleUpdateInfo = () => {
+    if (!newKey.trim() || !newValue.trim()) {
+      alert("항목명과 값을 입력해주세요.");
+      return;
+    }
+    const updated = { ...extraInfo };
+    if (editingKey && editingKey !== newKey) {
+      delete updated[editingKey];
+    }
+    updated[newKey] = newValue;
+    setExtraInfo(updated);
+    setEditingKey(null);
+    setNewKey("");
+    setNewValue("");
+  };
+
+  const handleSave = () => {
+    alert("부가 정보가 저장되었습니다.");
+    setIsEditing(false);
+    // 실제로는 여기서 API 호출
   };
 
   return (
-    <Container maxWidth="7xl" className="space-y-6 pb-10">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold text-gray-900">판매처 정보 관리</h1>
-        <p className="text-sm text-gray-600">
-          연동 중인 판매처를 조회하고, 담당자 정보 및 연동 상태를 최신으로 유지하세요.
+    <div className="min-h-screen bg-gray-50 p-6">
+      {/* 헤더 */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">판매처별 부가 정보 관리</h1>
+        <p className="text-gray-600 mt-1">
+          판매처별로 추가 정보(정산 주기, 수수료, 템플릿 ID 등)를 관리합니다.
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Card padding="lg" className="flex flex-col gap-1">
-          <span className="text-xs text-gray-500">전체 판매처</span>
-          <span className="text-2xl font-semibold text-gray-900">{summary.total}</span>
-        </Card>
-        <Card padding="lg" className="flex flex-col gap-1">
-          <span className="text-xs text-gray-500">활성</span>
-          <span className="text-2xl font-semibold text-green-600">{summary.active}</span>
-        </Card>
-        <Card padding="lg" className="flex flex-col gap-1">
-          <span className="text-xs text-gray-500">비활성</span>
-          <span className="text-2xl font-semibold text-red-500">{summary.inactive}</span>
-        </Card>
-        <Card padding="lg" className="flex flex-col gap-1">
-          <span className="text-xs text-gray-500">최근 등록일</span>
-          <span className="text-2xl font-semibold text-gray-900">
-            {vendors[0]?.created_at ?? "-"}
-          </span>
-        </Card>
-      </div>
+      <div className="flex gap-6">
+        {/* 좌측: 판매처 목록 */}
+        <div className="w-80 flex-shrink-0">
+          <div className="bg-white rounded-lg border shadow-sm">
+            <div className="p-4 border-b">
+              <input
+                type="text"
+                placeholder="판매처 검색..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
 
-      <Card padding="lg" className="space-y-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-          <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-center">
-            <Input
-              label="검색"
-              placeholder="판매처명 또는 코드 검색"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              fullWidth
-            />
-            <Dropdown
-              label="플랫폼"
-              options={platformOptions}
-              value={platformFilter}
-              onChange={setPlatformFilter}
-              fullWidth
-            />
-            <Dropdown
-              label="상태"
-              options={statusFilters}
-              value={statusFilter}
-              onChange={setStatusFilter}
-              fullWidth
-            />
+            <div className="max-h-[calc(100vh-280px)] overflow-y-auto">
+              {vendors.map((vendor) => (
+                <button
+                  key={vendor.id}
+                  onClick={() => setSelectedVendor(vendor)}
+                  className={`w-full text-left p-4 border-b hover:bg-gray-50 transition-colors ${
+                    selectedVendor?.id === vendor.id
+                      ? "bg-blue-50 border-l-4 border-l-blue-500"
+                      : ""
+                  }`}
+                >
+                  <div className="font-semibold text-gray-900">{vendor.name}</div>
+                  <div className="text-sm text-gray-600 mt-1">
+                    {vendor.representative}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {Object.keys(mockExtraInfo[vendor.id] || {}).length}개 부가 정보
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
-          <Stack direction="row" gap={3} className="flex-wrap">
-            <Button variant="outline" size="small" onClick={() => setPlatformFilter("")}>필터 초기화</Button>
-            <Button size="small" onClick={() => setModalOpen(true)}>
-              판매처 추가
-            </Button>
-          </Stack>
         </div>
 
-        <Table<VendorRow>
-          bordered
-          columns={columns}
-          data={filtered}
-          size="middle"
-          className="bg-white"
-        />
-      </Card>
+        {/* 우측: 판매처 정보 및 부가 정보 */}
+        <div className="flex-1">
+          {selectedVendor ? (
+            <>
+              {/* 판매처 기본 정보 */}
+              <VendorInfoCard
+                vendor={selectedVendor}
+                onEdit={() => alert("판매처 정보 수정")}
+              />
 
-      <Modal
-        open={isModalOpen}
-        onClose={() => setModalOpen(false)}
-        title="판매처 추가"
-        size="default"
-        footer={
-          <Stack direction="row" gap={3}>
-            <Button variant="ghost" onClick={() => setModalOpen(false)}>
-              취소
-            </Button>
-            <Button onClick={handleCreate}>등록</Button>
-          </Stack>
-        }
-      >
-        <div className="space-y-4">
-          <Input
-            label="판매처 이름"
-            value={formState.name}
-            onChange={(event) => setFormState((prev) => ({ ...prev, name: event.target.value }))}
-            fullWidth
-          />
-          <Input
-            label="판매처 코드"
-            value={formState.code}
-            onChange={(event) => setFormState((prev) => ({ ...prev, code: event.target.value }))}
-            fullWidth
-          />
-          <Dropdown
-            label="플랫폼"
-            options={platformOptions.slice(1)}
-            value={formState.platform}
-            onChange={(value) => setFormState((prev) => ({ ...prev, platform: value }))}
-            fullWidth
-          />
-          <Input
-            label="담당자"
-            value={formState.manager}
-            onChange={(event) => setFormState((prev) => ({ ...prev, manager: event.target.value }))}
-            fullWidth
-          />
+              {/* 부가 정보 */}
+              <div className="bg-white rounded-lg border shadow-sm">
+                <div className="p-4 border-b flex items-center justify-between">
+                  <h3 className="font-semibold text-gray-900">
+                    부가 정보 ({Object.keys(extraInfo).length}개)
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    {isEditing ? (
+                      <>
+                        <button
+                          onClick={() => {
+                            setIsEditing(false);
+                            setEditingKey(null);
+                            setNewKey("");
+                            setNewValue("");
+                          }}
+                          className="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50"
+                        >
+                          취소
+                        </button>
+                        <button
+                          onClick={handleSave}
+                          className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+                        >
+                          저장
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => setIsEditing(true)}
+                        className="px-3 py-1.5 text-sm bg-green-500 text-white rounded hover:bg-green-600"
+                      >
+                        편집 모드
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* 편집 모드: 추가/수정 폼 */}
+                {isEditing && (
+                  <div className="p-4 bg-gray-50 border-b">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          항목명
+                        </label>
+                        <input
+                          type="text"
+                          value={newKey}
+                          onChange={(e) => setNewKey(e.target.value)}
+                          placeholder="예: 정산 주기"
+                          className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          값
+                        </label>
+                        <input
+                          type="text"
+                          value={newValue}
+                          onChange={(e) => setNewValue(e.target.value)}
+                          placeholder="예: 월 2회"
+                          className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-3">
+                      {editingKey ? (
+                        <button
+                          onClick={handleUpdateInfo}
+                          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+                        >
+                          수정
+                        </button>
+                      ) : (
+                        <button
+                          onClick={handleAddInfo}
+                          className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
+                        >
+                          + 추가
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* 부가 정보 목록 */}
+                <div className="divide-y">
+                  {Object.keys(extraInfo).length === 0 ? (
+                    <div className="text-center py-12">
+                      <div className="text-gray-400 text-4xl mb-3">📋</div>
+                      <p className="text-gray-600">등록된 부가 정보가 없습니다.</p>
+                      {!isEditing && (
+                        <button
+                          onClick={() => setIsEditing(true)}
+                          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                        >
+                          부가 정보 추가하기
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    Object.entries(extraInfo).map(([key, value]) => (
+                      <div
+                        key={key}
+                        className="p-4 hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="font-medium text-gray-900">{key}</div>
+                            <div className="text-sm text-gray-600 mt-1">{value}</div>
+                          </div>
+                          {isEditing && (
+                            <div className="ml-4 flex gap-2">
+                              <button
+                                onClick={() => handleEditInfo(key)}
+                                className="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50"
+                              >
+                                수정
+                              </button>
+                              <button
+                                onClick={() => handleDeleteInfo(key)}
+                                className="px-3 py-1.5 text-sm text-red-600 border border-red-300 rounded hover:bg-red-50"
+                              >
+                                삭제
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="bg-white rounded-lg border shadow-sm p-12 text-center">
+              <div className="text-gray-400 text-4xl mb-3">🏪</div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                판매처를 선택해주세요
+              </h3>
+              <p className="text-gray-600">
+                좌측에서 판매처를 선택하면 부가 정보를 관리할 수 있습니다.
+              </p>
+            </div>
+          )}
         </div>
-      </Modal>
-    </Container>
+      </div>
+    </div>
   );
 }

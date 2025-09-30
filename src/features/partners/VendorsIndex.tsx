@@ -1,723 +1,436 @@
-import React from "react";
-import {
-  Container,
-  Card,
-  Button,
-  Input,
-  Dropdown,
-  Modal,
-  Stack,
-  Badge,
-} from "../../design-system";
-import {
-  listVendors,
-  upsertVendor,
-  stampVendor,
-  MockVendor,
-} from "../../data/mockVendors";
+import React, { useState, useEffect } from 'react';
 
-type VendorFormState = {
+// 타입 정의
+interface Vendor {
+  id: string;
   name: string;
-  code: string;
-  platform: MockVendor["platform"] | "";
-  vendorType: string;
-  vendorSite: string;
-  apiKey: string;
-  apiSecret: string;
-  franchiseNumber: string;
-  imageBaseUrl: string;
-  commissionRate: string;
-  memo: string;
-  loginId: string;
-  loginPassword: string;
-  loginPasswordConfirm: string;
-  orderDuplicatePolicy: string;
-  productPageUrl: string;
-  shippingNameDisplay: string;
-  shippingCountDisplay: string;
-  majorItems: string;
-  globalService: boolean;
-  globalServiceStatus: string;
-  externalShipping: boolean;
-  externalShippingStatus: string;
-  nfaStatus: string;
-};
+  type: '판매처' | '공급처';
+  businessNumber: string;
+  representative: string;
+  phone: string;
+  email?: string;
+  address: string;
+  status: '사용중' | '정지';
+  registrationDate: string;
+}
 
-type CreateVendorState = {
-  name: string;
-  code: string;
-  platform: MockVendor["platform"] | "";
-  vendorType: string;
-};
+const VendorManagementPage = () => {
+  const [selectedType, setSelectedType] = useState<'판매처' | '공급처'>('판매처');
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-const platformLabels: Record<MockVendor["platform"], string> = {
-  godomall: "고도몰",
-  wisa: "위사",
-  kurly: "마켓컬리",
-  smartstore: "스마트스토어",
-  cafe24: "카페24",
-  gmarket: "G마켓",
-  coupang: "쿠팡",
-  naver: "네이버",
-};
+  // 로컬스토리지에서 로드
+  useEffect(() => {
+    const saved = localStorage.getItem('vendors');
+    if (saved) {
+      setVendors(JSON.parse(saved));
+    } else {
+      // 초기 데이터
+      const initialVendors: Vendor[] = [
+        {
+          id: '1',
+          name: '스마트스토어',
+          type: '판매처',
+          businessNumber: '123-45-67890',
+          representative: '김판매',
+          phone: '02-1234-5678',
+          email: 'smart@store.com',
+          address: '서울시 강남구 테헤란로 123',
+          status: '사용중',
+          registrationDate: '2024-01-15'
+        },
+        {
+          id: '2',
+          name: '쿠팡',
+          type: '판매처',
+          businessNumber: '234-56-78901',
+          representative: '이쿠팡',
+          phone: '02-2345-6789',
+          email: 'coupang@partners.com',
+          address: '서울시 송파구 올림픽로 300',
+          status: '사용중',
+          registrationDate: '2024-02-01'
+        }
+      ];
+      setVendors(initialVendors);
+      localStorage.setItem('vendors', JSON.stringify(initialVendors));
+    }
+  }, []);
 
-const platformOptions = Object.entries(platformLabels).map(([value, label]) => ({
-  value,
-  label,
-}));
-
-const vendorTypeOptions = [
-  { value: "오픈마켓", label: "오픈마켓" },
-  { value: "전용 쇼핑몰", label: "전용 쇼핑몰" },
-  { value: "마켓컬리", label: "마켓컬리" },
-  { value: "스마트스토어", label: "스마트스토어" },
-  { value: "카페24", label: "카페24" },
-];
-
-const orderDuplicateOptions = [
-  { value: "전체 판매처 주문번호", label: "전체 판매처 주문번호" },
-  { value: "판매처별 주문번호", label: "판매처별 주문번호" },
-];
-
-const shippingNameOptions = [
-  { value: "상품명 보임", label: "상품명 보임" },
-  { value: "상품명 숨김", label: "상품명 숨김" },
-];
-
-const shippingCountOptions = [
-  { value: "수량 표시함", label: "수량 표시함" },
-  { value: "수량 숨김", label: "수량 숨김" },
-];
-
-const majorItemOptions = [
-  { value: "선택", label: "선택" },
-  { value: "식품", label: "식품" },
-  { value: "생활용품", label: "생활용품" },
-  { value: "가전", label: "가전" },
-];
-
-const serviceStatusOptions = [
-  { value: "사용함", label: "사용함" },
-  { value: "사용안함", label: "사용안함" },
-];
-
-const createEmptyFormState = (): VendorFormState => ({
-  name: "",
-  code: "",
-  platform: "",
-  vendorType: "",
-  vendorSite: "",
-  apiKey: "",
-  apiSecret: "",
-  franchiseNumber: "",
-  imageBaseUrl: "",
-  commissionRate: "0%",
-  memo: "",
-  loginId: "",
-  loginPassword: "",
-  loginPasswordConfirm: "",
-  orderDuplicatePolicy: orderDuplicateOptions[0].value,
-  productPageUrl: "",
-  shippingNameDisplay: shippingNameOptions[0].value,
-  shippingCountDisplay: shippingCountOptions[0].value,
-  majorItems: majorItemOptions[0].value,
-  globalService: true,
-  globalServiceStatus: serviceStatusOptions[0].value,
-  externalShipping: false,
-  externalShippingStatus: serviceStatusOptions[1].value,
-  nfaStatus: "",
-});
-
-const mapVendorToForm = (vendor?: MockVendor | null): VendorFormState => {
-  if (!vendor) return createEmptyFormState();
-
-  return {
-    name: vendor.name,
-    code: vendor.code,
-    platform: vendor.platform,
-    vendorType: String(vendor.settings?.vendorType ?? ""),
-    vendorSite: String(vendor.settings?.site ?? ""),
-    apiKey: String(vendor.settings?.apiKey ?? ""),
-    apiSecret: String(vendor.settings?.apiSecret ?? ""),
-    franchiseNumber: String(vendor.settings?.franchiseNumber ?? ""),
-    imageBaseUrl: String(vendor.settings?.imageBaseUrl ?? ""),
-    commissionRate: String(vendor.settings?.commissionRate ?? "0%"),
-    memo: String(vendor.settings?.memo ?? ""),
-    loginId: String(vendor.settings?.loginId ?? ""),
-    loginPassword: String(vendor.settings?.loginPassword ?? ""),
-    loginPasswordConfirm: String(vendor.settings?.loginPasswordConfirm ?? ""),
-    orderDuplicatePolicy: String(
-      vendor.settings?.orderDuplicatePolicy ?? orderDuplicateOptions[0].value
-    ),
-    productPageUrl: String(vendor.settings?.productPageUrl ?? ""),
-    shippingNameDisplay: String(
-      vendor.settings?.shippingNameDisplay ?? shippingNameOptions[0].value
-    ),
-    shippingCountDisplay: String(
-      vendor.settings?.shippingCountDisplay ?? shippingCountOptions[0].value
-    ),
-    majorItems: String(vendor.settings?.majorItems ?? majorItemOptions[0].value),
-    globalService: Boolean(vendor.settings?.globalService ?? true),
-    globalServiceStatus: String(
-      vendor.settings?.globalServiceStatus ?? serviceStatusOptions[0].value
-    ),
-    externalShipping: Boolean(vendor.settings?.externalShipping ?? false),
-    externalShippingStatus: String(
-      vendor.settings?.externalShippingStatus ?? serviceStatusOptions[1].value
-    ),
-    nfaStatus: String(vendor.settings?.nfaStatus ?? ""),
+  // 저장
+  const saveVendors = (newVendors: Vendor[]) => {
+    setVendors(newVendors);
+    localStorage.setItem('vendors', JSON.stringify(newVendors));
   };
-};
 
-const formStateToVendor = (
-  original: MockVendor,
-  form: VendorFormState
-): MockVendor => ({
-  ...original,
-  name: form.name,
-  code: form.code,
-  platform: (form.platform || original.platform) as MockVendor["platform"],
-  updated_at: new Date().toISOString(),
-  settings: {
-    ...original.settings,
-    vendorType: form.vendorType,
-    site: form.vendorSite,
-    apiKey: form.apiKey,
-    apiSecret: form.apiSecret,
-    franchiseNumber: form.franchiseNumber,
-    imageBaseUrl: form.imageBaseUrl,
-    commissionRate: form.commissionRate,
-    memo: form.memo,
-    loginId: form.loginId,
-    loginPassword: form.loginPassword,
-    loginPasswordConfirm: form.loginPasswordConfirm,
-    orderDuplicatePolicy: form.orderDuplicatePolicy,
-    productPageUrl: form.productPageUrl,
-    shippingNameDisplay: form.shippingNameDisplay,
-    shippingCountDisplay: form.shippingCountDisplay,
-    majorItems: form.majorItems,
-    globalService: form.globalService,
-    globalServiceStatus: form.globalServiceStatus,
-    externalShipping: form.externalShipping,
-    externalShippingStatus: form.externalShippingStatus,
-    nfaStatus: form.nfaStatus,
-  },
-});
-
-const Section: React.FC<{
-  title: string;
-  description?: string;
-  children: React.ReactNode;
-}> = ({ title, description, children }) => (
-  <div className="rounded-lg border border-gray-200 bg-white">
-    <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-6 py-4">
-      <div>
-        <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-        {description && (
-          <p className="mt-1 text-sm text-gray-500">{description}</p>
-        )}
-      </div>
-    </div>
-    <div className="px-6 py-5 space-y-6">{children}</div>
-  </div>
-);
-
-const SectionGrid: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">{children}</div>
-);
-
-const useInitialVendors = () => React.useMemo(() => listVendors(), []);
-
-export default function VendorsIndex() {
-  const initialVendors = useInitialVendors();
-  const [vendors, setVendors] = React.useState<MockVendor[]>(initialVendors);
-  const [selectedVendorId, setSelectedVendorId] = React.useState<string>(
-    initialVendors[0]?.id ?? ""
+  // 필터링
+  const filteredVendors = vendors.filter(v => 
+    v.type === selectedType && 
+    (v.name.includes(searchTerm) || 
+     v.businessNumber.includes(searchTerm) || 
+     v.representative.includes(searchTerm))
   );
-  const [formState, setFormState] = React.useState<VendorFormState>(() =>
-    mapVendorToForm(initialVendors[0])
-  );
-  const [isCreateModalOpen, setCreateModalOpen] = React.useState(false);
-  const [createState, setCreateState] = React.useState<CreateVendorState>(
-    () => ({
-      name: "",
-      code: "",
-      platform: "",
-      vendorType: vendorTypeOptions[0].value,
-    })
-  );
-  const selectedVendor = vendors.find((vendor) => vendor.id === selectedVendorId);
 
-  const setVendorsAndSync = (next: MockVendor[]) => {
-    setVendors(next);
+  // 새 업체 추가
+  const openAddModal = () => {
+    setEditingVendor({
+      id: Date.now().toString(),
+      name: '',
+      type: selectedType,
+      businessNumber: '',
+      representative: '',
+      phone: '',
+      email: '',
+      address: '',
+      status: '사용중',
+      registrationDate: new Date().toISOString().split('T')[0]
+    });
+    setIsModalOpen(true);
   };
 
-  const handleSelectVendor = (vendorId: string) => {
-    setSelectedVendorId(vendorId);
-    const next = vendors.find((vendor) => vendor.id === vendorId);
-    setFormState(mapVendorToForm(next));
+  // 수정 모달 열기
+  const openEditModal = (vendor: Vendor) => {
+    setEditingVendor({ ...vendor });
+    setIsModalOpen(true);
   };
 
-  const handleInputChange = (
-    field: keyof VendorFormState
-  ): React.ChangeEventHandler<HTMLInputElement | HTMLTextAreaElement> => (
-    event
-  ) => {
-    const target = event.target as HTMLInputElement | HTMLTextAreaElement;
-    const isCheckbox = (target as HTMLInputElement).type === "checkbox";
-    const value: any = isCheckbox
-      ? (target as HTMLInputElement).checked
-      : (target as HTMLInputElement).value;
-    setFormState((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const handleDropdownChange = (
-    field: keyof VendorFormState
-  ) => (value: string) => {
-    setFormState((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const handleToggle = (field: "globalService" | "externalShipping") => (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const checked = event.target.checked;
-    setFormState((prev) => ({
-      ...prev,
-      [field]: checked,
-      ...(field === "globalService"
-        ? { globalServiceStatus: checked ? "사용함" : "사용안함" }
-        : { externalShippingStatus: checked ? "사용함" : "사용안함" }),
-    }));
-  };
-
+  // 저장
   const handleSave = () => {
-    if (!selectedVendor) {
+    if (!editingVendor) return;
+
+    if (!editingVendor.name.trim()) {
+      alert('업체명을 입력하세요');
+      return;
+    }
+    if (!editingVendor.representative.trim()) {
+      alert('대표자명을 입력하세요');
+      return;
+    }
+    if (!editingVendor.phone.trim()) {
+      alert('전화번호를 입력하세요');
       return;
     }
 
-    const updatedVendor = formStateToVendor(selectedVendor, formState);
-    upsertVendor(updatedVendor);
-    const next = listVendors();
-    setVendorsAndSync(next);
-    setFormState(mapVendorToForm(updatedVendor));
-  };
+    const existingIndex = vendors.findIndex(v => v.id === editingVendor.id);
+    let newVendors;
 
-  const handleCreateVendorField = (
-    field: keyof CreateVendorState
-  ): React.ChangeEventHandler<HTMLInputElement> => (event) => {
-    setCreateState((prev) => ({
-      ...prev,
-      [field]: event.target.value,
-    }));
-  };
-
-  const handleCreateVendorPlatform = (value: string) => {
-    setCreateState((prev) => ({
-      ...prev,
-      platform: value as MockVendor["platform"],
-    }));
-  };
-
-  const resetCreateState = () => {
-    setCreateState({
-      name: "",
-      code: "",
-      platform: "",
-      vendorType: vendorTypeOptions[0].value,
-    });
-  };
-
-  const handleCreateVendor = () => {
-    if (!createState.name || !createState.platform) {
-      return;
+    if (existingIndex >= 0) {
+      newVendors = [...vendors];
+      newVendors[existingIndex] = editingVendor;
+    } else {
+      newVendors = [...vendors, editingVendor];
     }
 
-    const newVendor = stampVendor({
-      name: createState.name,
-      code: createState.code || createState.name.slice(0, 8).toUpperCase(),
-      platform: createState.platform,
-      settings: {
-        vendorType: createState.vendorType,
-        site: platformLabels[createState.platform],
-        commissionRate: "0%",
-        orderDuplicatePolicy: orderDuplicateOptions[0].value,
-        productPageUrl: "",
-        loginId: "",
-        globalService: true,
-        globalServiceStatus: serviceStatusOptions[0].value,
-        externalShipping: false,
-        externalShippingStatus: serviceStatusOptions[1].value,
-      },
-    });
-
-    upsertVendor(newVendor);
-    const next = listVendors();
-    setVendorsAndSync(next);
-    setSelectedVendorId(newVendor.id);
-    setFormState(mapVendorToForm(newVendor));
-    setCreateModalOpen(false);
-    resetCreateState();
+    saveVendors(newVendors);
+    setIsModalOpen(false);
+    setEditingVendor(null);
   };
 
-  const vendorCountText = `${vendors.length}개의 판매처`;
+  // 삭제
+  const handleDelete = (id: string) => {
+    if (confirm('정말 삭제하시겠습니까?')) {
+      saveVendors(vendors.filter(v => v.id !== id));
+    }
+  };
+
+  // 상태 토글
+  const toggleStatus = (id: string) => {
+    const newVendors = vendors.map(v => {
+      if (v.id === id) {
+        return { ...v, status: v.status === '사용중' ? '정지' : '사용중' } as Vendor;
+      }
+      return v;
+    });
+    saveVendors(newVendors);
+  };
 
   return (
-    <Container maxWidth="7xl" className="space-y-6">
-      <Stack direction="row" justify="between" align="center" className="">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">판매처 관리</h1>
-          <p className="mt-1 text-sm text-gray-600">
-            판매처 정보를 등록하고 관리합니다. 등록된 판매처는 외부 연동 설정에서 API 연동이 가능합니다.
-          </p>
+    <div className="min-h-screen bg-gray-50">
+      {/* 헤더 */}
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <h1 className="text-2xl font-bold">거래처 관리</h1>
+          <p className="text-sm text-gray-600 mt-1">물건을 팔고 사는 곳을 등록하고 관리하세요</p>
         </div>
-        <Stack direction="row" gap={3}>
-          <Button variant="outline" size="small">
-            가이드 보기
-          </Button>
-          <Button onClick={() => setCreateModalOpen(true)}>판매처 추가</Button>
-        </Stack>
-      </Stack>
+      </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[360px_1fr]">
-        <Card className="h-full p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">판매처 목록</h2>
-              <p className="text-sm text-gray-500">{vendorCountText}</p>
-            </div>
-          </div>
-
-          <div className="mt-5 space-y-2">
-            {vendors.map((vendor) => {
-              const isSelected = vendor.id === selectedVendorId;
-              return (
-                <button
-                  key={vendor.id}
-                  type="button"
-                  onClick={() => handleSelectVendor(vendor.id)}
-                  className={`w-full rounded-lg border px-4 py-3 text-left transition focus:outline-none ${
-                    isSelected
-                      ? "border-primary-500 bg-primary-50"
-                      : "border-gray-200 hover:border-primary-200 hover:bg-primary-50/40"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-base font-medium text-gray-900">
-                        {vendor.name}
-                      </div>
-                      <div className="mt-1 text-xs text-gray-500">
-                        {vendor.code} · {platformLabels[vendor.platform]}
-                      </div>
-                    </div>
-                    <Badge
-                      size="small"
-                      variant={vendor.is_active ? "success" : "secondary"}
-                    >
-                      {vendor.is_active ? "활성" : "비활성"}
-                    </Badge>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </Card>
-
-        <div className="space-y-6">
-          <Section title="판매처 정보" description="판매처 기본 정보와 연동에 필요한 설정값을 입력합니다.">
-            <SectionGrid>
-              <Input
-                label="판매처명"
-                fullWidth
-                value={formState.name}
-                onChange={handleInputChange("name")}
-                placeholder="판매처명을 입력하세요"
-              />
-              <Input
-                label="판매처 코드"
-                fullWidth
-                value={formState.code}
-                onChange={handleInputChange("code")}
-                placeholder="예: GODOMALL001"
-              />
-              <Dropdown
-                label="판매처 플랫폼"
-                fullWidth
-                options={platformOptions}
-                value={formState.platform}
-                onChange={handleDropdownChange("platform")}
-                placeholder="플랫폼을 선택하세요"
-              />
-              <Dropdown
-                label="판매처 타입"
-                fullWidth
-                options={vendorTypeOptions}
-                value={formState.vendorType}
-                onChange={handleDropdownChange("vendorType")}
-              />
-              <Input
-                label="판매처 사이트"
-                fullWidth
-                value={formState.vendorSite}
-                onChange={handleInputChange("vendorSite")}
-                placeholder="예: GodomallAPI"
-              />
-              <Input
-                label="API 키"
-                fullWidth
-                value={formState.apiKey}
-                onChange={handleInputChange("apiKey")}
-                placeholder="API 키를 입력하세요"
-              />
-              <Input
-                label="API 비밀키"
-                fullWidth
-                value={formState.apiSecret}
-                onChange={handleInputChange("apiSecret")}
-                placeholder="필요 시 입력"
-              />
-              <Input
-                label="지점/프랜차이즈 번호"
-                fullWidth
-                value={formState.franchiseNumber}
-                onChange={handleInputChange("franchiseNumber")}
-                placeholder="예: WSA-001-234"
-              />
-              <Input
-                label="이미지 기본 경로"
-                fullWidth
-                value={formState.imageBaseUrl}
-                onChange={handleInputChange("imageBaseUrl")}
-                placeholder="https://..."
-              />
-              <Input
-                label="NFA 상태"
-                fullWidth
-                value={formState.nfaStatus}
-                onChange={handleInputChange("nfaStatus")}
-                placeholder="발급 상태를 입력"
-              />
-              <Input
-                label="수수료율"
-                fullWidth
-                value={formState.commissionRate}
-                onChange={handleInputChange("commissionRate")}
-                placeholder="예: 3%"
-              />
-              <div className="md:col-span-2">
-                <label className="mb-2 block text-sm font-medium text-gray-700">
-                  메모
-                </label>
-                <textarea
-                  className="h-28 w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-800 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                  placeholder="메모를 입력하세요"
-                  value={formState.memo}
-                  onChange={handleInputChange("memo")}
-                />
-              </div>
-            </SectionGrid>
-          </Section>
-
-          <Section title="로그인 정보">
-            <SectionGrid>
-              <Input
-                label="로그인 아이디"
-                fullWidth
-                value={formState.loginId}
-                onChange={handleInputChange("loginId")}
-              />
-              <Input
-                label="로그인 비밀번호"
-                fullWidth
-                type="password"
-                value={formState.loginPassword}
-                onChange={handleInputChange("loginPassword")}
-              />
-              <Input
-                label="로그인 비밀번호 확인"
-                fullWidth
-                type="password"
-                value={formState.loginPasswordConfirm}
-                onChange={handleInputChange("loginPasswordConfirm")}
-              />
-            </SectionGrid>
-          </Section>
-
-          <Section title="주문 / CS">
-            <SectionGrid>
-              <Dropdown
-                label="중복체크 범위"
-                fullWidth
-                options={orderDuplicateOptions}
-                value={formState.orderDuplicatePolicy}
-                onChange={handleDropdownChange("orderDuplicatePolicy")}
-              />
-              <Input
-                label="상품 페이지 URL"
-                fullWidth
-                value={formState.productPageUrl}
-                onChange={handleInputChange("productPageUrl")}
-                placeholder="https:// 로 시작해야 합니다"
-              />
-            </SectionGrid>
-          </Section>
-
-          <Section title="배송 / 송장 출력">
-            <SectionGrid>
-              <Dropdown
-                label="송장검증 상품명 표시여부"
-                fullWidth
-                options={shippingNameOptions}
-                value={formState.shippingNameDisplay}
-                onChange={handleDropdownChange("shippingNameDisplay")}
-              />
-              <Dropdown
-                label="송장검증 수량 표시여부"
-                fullWidth
-                options={shippingCountOptions}
-                value={formState.shippingCountDisplay}
-                onChange={handleDropdownChange("shippingCountDisplay")}
-              />
-              <Dropdown
-                label="판매처 주요 품목 등록"
-                fullWidth
-                options={majorItemOptions}
-                value={formState.majorItems}
-                onChange={handleDropdownChange("majorItems")}
-              />
-            </SectionGrid>
-          </Section>
-
-          <Section title="해외배송">
-            <div className="space-y-5">
-              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <p className="font-medium text-gray-900">셀메이트 해외배송 서비스</p>
-                  <p className="text-sm text-gray-500">
-                    셀메이트 해외배송 서비스를 사용하여 주문을 처리할 수 있습니다.
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <input
-                    id="globalService"
-                    type="checkbox"
-                    checked={formState.globalService}
-                    onChange={handleToggle("globalService")}
-                    className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                  />
-                  <label className="text-sm text-gray-700" htmlFor="globalService">
-                    사용함
-                  </label>
-                  <Dropdown
-                    options={serviceStatusOptions}
-                    value={formState.globalServiceStatus}
-                    onChange={handleDropdownChange("globalServiceStatus")}
-                    disabled={!formState.globalService}
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <p className="font-medium text-gray-900">외부 해외배송</p>
-                  <p className="text-sm text-gray-500">
-                    외부 해외배송 연동 여부를 설정합니다.
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <input
-                    id="externalShipping"
-                    type="checkbox"
-                    checked={formState.externalShipping}
-                    onChange={handleToggle("externalShipping")}
-                    className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                  />
-                  <label className="text-sm text-gray-700" htmlFor="externalShipping">
-                    사용함
-                  </label>
-                  <Dropdown
-                    options={serviceStatusOptions}
-                    value={formState.externalShippingStatus}
-                    onChange={handleDropdownChange("externalShippingStatus")}
-                    disabled={!formState.externalShipping}
-                  />
-                </div>
-              </div>
-            </div>
-          </Section>
-
-          <div className="flex justify-end">
-            <Button onClick={handleSave}>등록</Button>
+      {/* 탭 */}
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex gap-2 py-4">
+            <button
+              onClick={() => setSelectedType('판매처')}
+              className={`flex-1 py-6 px-4 text-center rounded-lg font-semibold text-lg transition-all ${
+                selectedType === '판매처'
+                  ? "bg-blue-600 text-white shadow-lg scale-105"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              <div className="text-3xl mb-2">🛒</div>
+              <div>판매처</div>
+              <div className="text-xs mt-1 opacity-75">물건 파는 곳</div>
+            </button>
+            <button
+              onClick={() => setSelectedType('공급처')}
+              className={`flex-1 py-6 px-4 text-center rounded-lg font-semibold text-lg transition-all ${
+                selectedType === '공급처'
+                  ? "bg-green-600 text-white shadow-lg scale-105"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              <div className="text-3xl mb-2">🏭</div>
+              <div>공급처</div>
+              <div className="text-xs mt-1 opacity-75">물건 사는 곳</div>
+            </button>
           </div>
         </div>
       </div>
 
-      <Modal
-        open={isCreateModalOpen}
-        onClose={() => {
-          setCreateModalOpen(false);
-          resetCreateState();
-        }}
-        title="판매처 추가"
-        size="default"
-        footer={
-          <Stack direction="row" gap={3}>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setCreateModalOpen(false);
-                resetCreateState();
-              }}
+      {/* 메인 */}
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        {/* 검색 및 추가 */}
+        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+          <div className="flex items-center justify-between gap-4">
+            <input
+              type="text"
+              placeholder={`${selectedType} 이름, 대표자, 사업자번호로 검색`}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1 px-4 py-3 border rounded-lg text-base"
+            />
+            <button
+              onClick={openAddModal}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold whitespace-nowrap"
             >
-              취소
-            </Button>
-            <Button onClick={handleCreateVendor}>등록</Button>
-          </Stack>
-        }
-      >
-        <div className="space-y-4">
-          <Input
-            label="판매처명"
-            fullWidth
-            value={createState.name}
-            onChange={handleCreateVendorField("name")}
-            placeholder="판매처명을 입력하세요"
-          />
-          <Input
-            label="판매처 코드"
-            fullWidth
-            value={createState.code}
-            onChange={handleCreateVendorField("code")}
-            placeholder="없으면 자동 생성됩니다"
-          />
-          <Dropdown
-            label="판매처 플랫폼"
-            fullWidth
-            options={platformOptions}
-            value={createState.platform}
-            onChange={handleCreateVendorPlatform}
-            placeholder="플랫폼을 선택하세요"
-          />
-          <Dropdown
-            label="판매처 타입"
-            fullWidth
-            options={vendorTypeOptions}
-            value={createState.vendorType}
-            onChange={(value) =>
-              setCreateState((prev) => ({
-                ...prev,
-                vendorType: value,
-              }))
-            }
-          />
+              ➕ {selectedType} 추가
+            </button>
+          </div>
+          <p className="text-sm text-gray-500 mt-2">
+            총 {filteredVendors.length}개의 {selectedType}
+          </p>
         </div>
-      </Modal>
-    </Container>
+
+        {/* 목록 */}
+        {filteredVendors.length === 0 ? (
+          <div className="bg-white rounded-lg shadow-sm p-16 text-center">
+            <div className="text-5xl mb-4">
+              {selectedType === '판매처' ? '🛒' : '🏭'}
+            </div>
+            <p className="text-lg mb-2 text-gray-700">등록된 {selectedType}가 없어요</p>
+            <p className="text-sm text-gray-500 mb-6">
+              위의 "{selectedType} 추가" 버튼을 눌러서<br/>
+              첫 {selectedType}를 등록해보세요
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredVendors.map((vendor) => (
+              <div
+                key={vendor.id}
+                className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition"
+              >
+                <div className="flex items-start justify-between">
+                  {/* 왼쪽: 정보 */}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-3">
+                      <h3 className="text-xl font-bold text-gray-900">{vendor.name}</h3>
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        vendor.status === '사용중' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {vendor.status}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-500">대표자:</span>
+                        <span className="ml-2 font-medium text-gray-900">{vendor.representative}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">사업자번호:</span>
+                        <span className="ml-2 font-medium text-gray-900">{vendor.businessNumber}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">전화번호:</span>
+                        <span className="ml-2 font-medium text-gray-900">{vendor.phone}</span>
+                      </div>
+                      {vendor.email && (
+                        <div>
+                          <span className="text-gray-500">이메일:</span>
+                          <span className="ml-2 font-medium text-gray-900">{vendor.email}</span>
+                        </div>
+                      )}
+                      <div className="col-span-2">
+                        <span className="text-gray-500">주소:</span>
+                        <span className="ml-2 font-medium text-gray-900">{vendor.address}</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 text-xs text-gray-500">
+                      등록일: {vendor.registrationDate}
+                    </div>
+                  </div>
+
+                  {/* 오른쪽: 버튼 */}
+                  <div className="flex flex-col gap-2 ml-6">
+                    <button
+                      onClick={() => toggleStatus(vendor.id)}
+                      className={`px-4 py-2 rounded text-sm font-medium whitespace-nowrap ${
+                        vendor.status === '사용중'
+                          ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                          : 'bg-green-50 text-green-600 hover:bg-green-100'
+                      }`}
+                    >
+                      {vendor.status === '사용중' ? '⏸️ 정지' : '▶️ 재개'}
+                    </button>
+                    <button
+                      onClick={() => openEditModal(vendor)}
+                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-sm font-medium"
+                    >
+                      ✏️ 수정
+                    </button>
+                    <button
+                      onClick={() => handleDelete(vendor.id)}
+                      className="px-4 py-2 bg-red-100 text-red-600 rounded hover:bg-red-200 text-sm font-medium"
+                    >
+                      🗑️ 삭제
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 모달 */}
+      {isModalOpen && editingVendor && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b flex items-center justify-between sticky top-0 bg-white">
+              <h3 className="text-xl font-semibold">
+                {vendors.find(v => v.id === editingVendor.id) 
+                  ? `${selectedType} 수정` 
+                  : `새 ${selectedType} 추가`}
+              </h3>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 text-2xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              {/* 업체명 */}
+              <div>
+                <label className="block text-base font-semibold text-gray-900 mb-2">
+                  {selectedType} 이름 *
+                </label>
+                <input
+                  type="text"
+                  value={editingVendor.name}
+                  onChange={(e) => setEditingVendor({ ...editingVendor, name: e.target.value })}
+                  placeholder="예: 스마트스토어, 쿠팡"
+                  className="w-full px-4 py-3 border rounded-lg text-base"
+                />
+              </div>
+
+              {/* 대표자 */}
+              <div>
+                <label className="block text-base font-semibold text-gray-900 mb-2">
+                  대표자 이름 *
+                </label>
+                <input
+                  type="text"
+                  value={editingVendor.representative}
+                  onChange={(e) => setEditingVendor({ ...editingVendor, representative: e.target.value })}
+                  placeholder="예: 홍길동"
+                  className="w-full px-4 py-3 border rounded-lg text-base"
+                />
+              </div>
+
+              {/* 사업자번호 */}
+              <div>
+                <label className="block text-base font-semibold text-gray-900 mb-2">
+                  사업자번호
+                </label>
+                <input
+                  type="text"
+                  value={editingVendor.businessNumber}
+                  onChange={(e) => setEditingVendor({ ...editingVendor, businessNumber: e.target.value })}
+                  placeholder="예: 123-45-67890"
+                  className="w-full px-4 py-3 border rounded-lg text-base"
+                />
+              </div>
+
+              {/* 전화번호 */}
+              <div>
+                <label className="block text-base font-semibold text-gray-900 mb-2">
+                  전화번호 *
+                </label>
+                <input
+                  type="text"
+                  value={editingVendor.phone}
+                  onChange={(e) => setEditingVendor({ ...editingVendor, phone: e.target.value })}
+                  placeholder="예: 02-1234-5678"
+                  className="w-full px-4 py-3 border rounded-lg text-base"
+                />
+              </div>
+
+              {/* 이메일 */}
+              <div>
+                <label className="block text-base font-semibold text-gray-900 mb-2">
+                  이메일
+                </label>
+                <input
+                  type="email"
+                  value={editingVendor.email || ''}
+                  onChange={(e) => setEditingVendor({ ...editingVendor, email: e.target.value })}
+                  placeholder="예: contact@company.com"
+                  className="w-full px-4 py-3 border rounded-lg text-base"
+                />
+              </div>
+
+              {/* 주소 */}
+              <div>
+                <label className="block text-base font-semibold text-gray-900 mb-2">
+                  주소
+                </label>
+                <input
+                  type="text"
+                  value={editingVendor.address}
+                  onChange={(e) => setEditingVendor({ ...editingVendor, address: e.target.value })}
+                  placeholder="예: 서울시 강남구 테헤란로 123"
+                  className="w-full px-4 py-3 border rounded-lg text-base"
+                />
+              </div>
+            </div>
+
+            {/* 하단 버튼 */}
+            <div className="p-6 border-t bg-gray-50 flex gap-3">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="flex-1 px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-base font-medium"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleSave}
+                className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-base font-semibold"
+              >
+                💾 저장하기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
-}
+};
+
+export default VendorManagementPage;

@@ -19,9 +19,9 @@ import ConnectorTable from "../../components/integrations/ConnectorTable";
 import CollectionScheduleManager from "../../components/integrations/CollectionScheduleManager";
 
 const channelOptions = [
-  { value: "", label: "전체 채널" },
+  { value: "", label: "전체" },
   { value: "cafe24", label: "카페24" },
-  { value: "smartstore", label: "네이버 스마트스토어" },
+  { value: "smartstore", label: "스마트스토어" },
   { value: "coupang", label: "쿠팡" },
   { value: "kurly", label: "마켓컬리" },
   { value: "godo", label: "고도몰" },
@@ -112,155 +112,171 @@ const IntegrationPage: React.FC = () => {
   const columns: TableColumn<ConnectedShop>[] = [
     {
       key: "name",
-      title: "연동 샵",
+      title: "쇼핑몰",
       render: (_, record) => (
-        <div className="flex flex-col">
-          <span className="font-semibold text-gray-900">{record.name}</span>
-          <span className="text-xs text-gray-500">ID: {record.id}</span>
-        </div>
+        <div className="font-semibold text-gray-900 text-lg">{record.name}</div>
       ),
     },
     {
       key: "platform",
-      title: "채널",
+      title: "플랫폼",
       render: (value) => (
-        <Badge size="small" variant="secondary">
-          {channelOptions.find((option) => option.value === value)?.label ?? value}
-        </Badge>
+        <span className="text-base">{channelOptions.find((option) => option.value === value)?.label ?? value}</span>
       ),
     },
     {
       key: "status",
       title: "상태",
       render: (value) => (
-        <Badge
-          size="small"
-          variant={value === "연동중" ? "success" : value === "오류" ? "danger" : "secondary"}
-        >
-          {value}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <div className={`w-3 h-3 rounded-full ${
+            value === "연동중" ? "bg-green-500" : value === "오류" ? "bg-red-500" : "bg-gray-400"
+          }`} />
+          <span className="font-medium">{value}</span>
+        </div>
       ),
     },
-    { key: "lastSync", title: "최근 동기화" },
-    { key: "nextSync", title: "다음 동기화" },
+    { 
+      key: "lastSync", 
+      title: "마지막 동기화",
+    },
   ];
 
   return (
-    <Container maxWidth="7xl" className="space-y-6 pb-10">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold text-gray-900">외부 연동 관리</h1>
-        <p className="text-sm text-gray-600">
-          셀메이트·사방넷·카페24 등 주요 채널과의 연동 현황을 살펴보고, 빠르게 신규 샵을 등록하거나 설정을 변경하세요.
-        </p>
+    <div className="min-h-screen bg-gray-50">
+      {/* 헤더 */}
+      <div className="bg-white border-b sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <h1 className="text-2xl font-bold">쇼핑몰 연동</h1>
+          <Button 
+            size="big"
+            onClick={() => setRegisterOpen(true)}
+          >
+            ➕ 새 쇼핑몰 연결
+          </Button>
+        </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Card padding="lg" className="flex flex-col gap-1">
-          <span className="text-xs text-gray-500">전체 연동 샵</span>
-          <span className="text-2xl font-semibold text-gray-900">{summary.total}</span>
-        </Card>
-        <Card padding="lg" className="flex flex-col gap-1">
-          <span className="text-xs text-gray-500">정상 연동</span>
-          <span className="text-2xl font-semibold text-green-600">{summary.active}</span>
-        </Card>
-        <Card padding="lg" className="flex flex-col gap-1">
-          <span className="text-xs text-gray-500">미연동</span>
-          <span className="text-2xl font-semibold text-gray-900">{summary.pending}</span>
-        </Card>
-        <Card padding="lg" className="flex flex-col gap-1">
-          <span className="text-xs text-gray-500">연동 오류</span>
-          <span className="text-2xl font-semibold text-red-500">{summary.error}</span>
-        </Card>
-      </div>
+      {/* 거대한 통계 카드 */}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-4 gap-6 mb-8">
+          <button className="bg-white rounded-xl p-8 text-center shadow-sm hover:shadow-md transition">
+            <div className="text-5xl font-bold text-gray-900 mb-2">{summary.total}</div>
+            <div className="text-gray-600">전체</div>
+          </button>
+          
+          <button className="bg-green-50 rounded-xl p-8 text-center shadow-sm hover:shadow-md transition">
+            <div className="text-5xl font-bold text-green-600 mb-2">{summary.active}</div>
+            <div className="text-green-700 font-medium">정상</div>
+          </button>
+          
+          <button className="bg-gray-100 rounded-xl p-8 text-center shadow-sm hover:shadow-md transition">
+            <div className="text-5xl font-bold text-gray-600 mb-2">{summary.pending}</div>
+            <div className="text-gray-700">대기</div>
+          </button>
+          
+          <button className="bg-red-50 rounded-xl p-8 text-center shadow-sm hover:shadow-md transition">
+            <div className="text-5xl font-bold text-red-600 mb-2">{summary.error}</div>
+            <div className="text-red-700 font-medium">오류</div>
+          </button>
+        </div>
 
-      <Card padding="lg" className="space-y-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-          <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-center">
+        {/* 검색 필터 - 크고 단순하게 */}
+        <div className="bg-white rounded-xl p-6 mb-6 shadow-sm">
+          <div className="grid grid-cols-3 gap-4">
             <Input
-              label="검색"
-              placeholder="샵 이름 또는 ID 검색"
+              placeholder="쇼핑몰 검색"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               fullWidth
+              className="text-lg py-3"
             />
             <Dropdown
-              label="채널"
               options={channelOptions}
               value={channelFilter}
               onChange={setChannelFilter}
               fullWidth
             />
             <Dropdown
-              label="상태"
               options={[
-                { value: "", label: "전체 상태" },
-                { value: "연동중", label: "연동중" },
-                { value: "오류", label: "연동 오류" },
-                { value: "미연동", label: "미연동" },
+                { value: "", label: "모든 상태" },
+                { value: "연동중", label: "정상" },
+                { value: "오류", label: "오류" },
+                { value: "미연동", label: "대기" },
               ]}
               value={statusFilter}
               onChange={setStatusFilter}
               fullWidth
             />
           </div>
-          <Stack direction="row" gap={3} className="flex-wrap">
-            <Button variant="outline" size="small" onClick={() => {
-              setSearch("");
-              setChannelFilter("");
-              setStatusFilter("");
-            }}>
-              필터 초기화
-            </Button>
-            <Button size="small" onClick={() => setRegisterOpen(true)}>
-              새 샵 등록
-            </Button>
-          </Stack>
         </div>
 
-        <Table<ConnectedShop>
-          bordered
-          data={filteredShops}
-          columns={columns}
-          onRow={(record) => ({
-            onClick: () => setSelectedShop(record.id),
-            className: record.id === selectedShop ? "bg-primary-50" : undefined,
+        {/* 쇼핑몰 목록 - 거대한 카드로 */}
+        <div className="space-y-4">
+          {filteredShops.map((shop) => {
+            const isSelected = selectedShop === shop.id;
+            return (
+              <button
+                key={shop.id}
+                onClick={() => setSelectedShop(isSelected ? null : shop.id)}
+                className={`w-full bg-white rounded-xl p-6 text-left shadow-sm hover:shadow-md transition ${
+                  isSelected ? "ring-4 ring-blue-500" : ""
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-6">
+                    <div className={`w-4 h-4 rounded-full ${
+                      shop.status === "연동중" ? "bg-green-500" : 
+                      shop.status === "오류" ? "bg-red-500" : "bg-gray-400"
+                    }`} />
+                    <div>
+                      <div className="text-xl font-bold text-gray-900 mb-1">{shop.name}</div>
+                      <div className="text-gray-500">{channelOptions.find(o => o.value === shop.platform)?.label}</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className={`text-lg font-semibold mb-1 ${
+                      shop.status === "연동중" ? "text-green-600" : 
+                      shop.status === "오류" ? "text-red-600" : "text-gray-600"
+                    }`}>
+                      {shop.status}
+                    </div>
+                    <div className="text-sm text-gray-500">마지막: {shop.lastSync}</div>
+                  </div>
+                </div>
+              </button>
+            );
           })}
-          rowSelection={{
-            selectedRowKeys: selectedShop ? [selectedShop] : [],
-            onChange: (keys) => setSelectedShop(keys[0] ?? null),
-          }}
-          size="middle"
-        />
-      </Card>
+        </div>
 
-      {selectedShop ? (
-        <Card padding="lg" className="space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900">연동 상세 및 설정</h2>
-          <RegisterIntegrationForm
-            initialShop={mockConnectedShops.find((shop) => shop.id === selectedShop)}
-            vendors={mockVendors}
-            onClose={() => setSelectedShop(null)}
-            onRegistered={() => setSelectedShop(null)}
-          />
-        </Card>
-      ) : (
-        <Card padding="lg" className="space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900">연동 가이드</h2>
-          <ConnectionsList />
-        </Card>
-      )}
+        {/* 선택된 쇼핑몰 상세 */}
+        {selectedShop && (
+          <div className="mt-8 bg-white rounded-xl p-8 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold">설정</h2>
+              <Button 
+                variant="ghost" 
+                onClick={() => setSelectedShop(null)}
+                className="text-lg"
+              >
+                ✕ 닫기
+              </Button>
+            </div>
+            <RegisterIntegrationForm
+              initialShop={mockConnectedShops.find((shop) => shop.id === selectedShop)}
+              vendors={mockVendors}
+              onClose={() => setSelectedShop(null)}
+              onRegistered={() => setSelectedShop(null)}
+            />
+          </div>
+        )}
+      </div>
 
-      <Card padding="lg" className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">세부 채널 테스트 로그</h2>
-        <ConnectorTable />
-      </Card>
-
-      <CollectionScheduleManager shops={connectedShopOptions} />
-
+      {/* 모달 */}
       <Modal
         open={isRegisterOpen}
         onClose={() => setRegisterOpen(false)}
-        title="새 샵 등록"
+        title="새 쇼핑몰 연결"
         footer={null}
         size="big"
       >
@@ -270,7 +286,7 @@ const IntegrationPage: React.FC = () => {
           onRegistered={() => setRegisterOpen(false)}
         />
       </Modal>
-    </Container>
+    </div>
   );
 };
 
