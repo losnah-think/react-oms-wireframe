@@ -96,112 +96,112 @@ export class PageRenderer {
   }
 
   private renderDashboard(): JSX.Element {
-    const Dashboard = require("@/features/dashboard/Dashboard").default;
+    const Dashboard = require("../features/dashboard/Dashboard").default;
     return <Dashboard />;
   }
 
   private renderProductsList(onNavigate: (page: string, id?: string) => void): JSX.Element {
-    const ProductsListPage = require("@/features/products/ProductsListPage").default;
+    const ProductsListPage = require("../features/products/ProductsListPage").default;
     return <ProductsListPage onNavigate={onNavigate} />;
   }
 
   private renderProductDetail(productId: string, onNavigate: (page: string, id?: string) => void): JSX.Element {
-    const ProductDetailPage = require("@/features/products/ProductDetailPage").default;
+    const ProductDetailPage = require("../features/products/ProductDetailPage").default;
     return <ProductDetailPage productId={productId} onNavigate={onNavigate} />;
   }
 
   private renderRegistrationHistory(): JSX.Element {
-    const RegistrationHistoryPage = require("@/features/products/registration-history").default;
+    const RegistrationHistoryPage = require("../features/products/registration-history").default;
     return <RegistrationHistoryPage />;
   }
 
   private renderIndividualRegistration(): JSX.Element {
-    const IndividualRegistrationPage = require("@/features/products/individual-registration").default;
+    const IndividualRegistrationPage = require("../features/products/individual-registration").default;
     return <IndividualRegistrationPage />;
   }
 
   private renderProductsAdd(onNavigate: (page: string, id?: string) => void): JSX.Element {
-    const ProductsAddPage = require("@/features/products/ProductsAddPage").default;
+    const ProductsAddPage = require("../features/products/ProductsAddPage").default;
     return <ProductsAddPage onNavigate={onNavigate} />;
   }
 
   private renderProductEdit(productId: string, onNavigate: (page: string, id?: string) => void): JSX.Element {
-    const ProductDetailPage = require("@/features/products/ProductDetailPage").default;
+    const ProductDetailPage = require("../features/products/ProductDetailPage").default;
     return <ProductDetailPage productId={productId} onNavigate={onNavigate} />;
   }
 
   private renderProductsCsv(): JSX.Element {
-    const ProductCsvUploadPage = require("@/features/products/ProductCsvUploadPage").default;
+    const ProductCsvUploadPage = require("../features/products/ProductCsvUploadPage").default;
     return <ProductCsvUploadPage />;
   }
 
   private renderProductsImport(): JSX.Element {
-    const ProductImportPage = require("@/features/products/ProductImportPage").default;
+    const ProductImportPage = require("../features/products/ProductImportPage").default;
     return <ProductImportPage />;
   }
 
   private renderExternalProductImport(): JSX.Element {
-    const ExternalProductImportPage = require("@/features/products/ExternalProductImportPage").default;
+    const ExternalProductImportPage = require("../features/products/ExternalProductImportPage").default;
     return <ExternalProductImportPage />;
   }
 
   private renderOrdersList(): JSX.Element {
-    const OrderList = require("@/features/orders/OrderList").default;
+    const OrderList = require("../features/orders/OrderList").default;
     return <OrderList />;
   }
 
   private renderOrdersAnalytics(): JSX.Element {
-    const OrderAnalytics = require("@/features/orders/OrderAnalytics").default;
+    const OrderAnalytics = require("../features/orders/OrderAnalytics").default;
     return <OrderAnalytics orders={[]} />;
   }
 
   private renderOrdersSettings(): JSX.Element {
-    const OrderSettings = require("@/features/orders/OrderSettings").default;
+    const OrderSettings = require("../features/orders/OrderSettings").default;
     return <OrderSettings onSave={(settings: any) => console.log("Settings saved:", settings)} />;
   }
 
   private renderCategories(): JSX.Element {
-    const CategoriesManagementPage = require("@/features/categories/CategoriesManagementPage").default;
+    const CategoriesManagementPage = require("../features/categories/CategoriesManagementPage").default;
     return <CategoriesManagementPage />;
   }
 
   private renderMallsList(): JSX.Element {
-    const VendorsListPage = require("@/features/partners/VendorsListPage").default;
+    const VendorsListPage = require("../features/partners/VendorsListPage").default;
     return <VendorsListPage />;
   }
 
   private renderMallInfo(): JSX.Element {
-    const VendorInfoManagementPage = require("@/features/partners/VendorInfoManagementPage").default;
+    const VendorInfoManagementPage = require("../features/partners/VendorInfoManagementPage").default;
     return <VendorInfoManagementPage />;
   }
 
   private renderVendorManagement(): JSX.Element {
-    const VendorManagementPage = require("@/features/partners/VendorManagementPage").default;
+    const VendorManagementPage = require("../features/partners/VendorManagementPage").default;
     return <VendorManagementPage />;
   }
 
   private renderMallProducts(): JSX.Element {
-    const VendorProductsPage = require("@/features/partners/VendorProductsPage").default;
+    const VendorProductsPage = require("../features/partners/VendorProductsPage").default;
     return <VendorProductsPage />;
   }
 
   private renderCategoryMapping(): JSX.Element {
-    const CategoryMappingPage = require("@/features/partners/CategoryMappingPage").default;
+    const CategoryMappingPage = require("../features/partners/CategoryMappingPage").default;
     return <CategoryMappingPage />;
   }
 
   private renderProductClassifications(): JSX.Element {
-    const ProductCategoryPage = require("@/features/settings/ProductCategoryPage").default;
+    const ProductCategoryPage = require("../features/settings/ProductCategoryPage").default;
     return <ProductCategoryPage />;
   }
 
   private renderProductGroups(): JSX.Element {
-    const ProductGroupsPage = require("@/features/settings/ProductGroupsPage").default;
+    const ProductGroupsPage = require("../features/settings/ProductGroupsPage").default;
     return <ProductGroupsPage />;
   }
 
   private renderIntegrations(): JSX.Element {
-    const IntegrationPage = require("@/features/settings/integration").default;
+    const IntegrationPage = require("../features/settings/integration").default;
     return <IntegrationPage />;
   }
 
@@ -210,22 +210,22 @@ export class PageRenderer {
   }
 
   private renderBrands(): JSX.Element {
-    const BasicMetadataSettings = require("@/features/settings/basic-metadata").default;
+    const BasicMetadataSettings = require("../features/settings/basic-metadata").default;
     return <BasicMetadataSettings initialTab="brands" />;
   }
 
   private renderBasicMetadata(): JSX.Element {
-    const BasicMetadataSettings = require("@/features/settings/basic-metadata").default;
+    const BasicMetadataSettings = require("../features/settings/basic-metadata").default;
     return <BasicMetadataSettings initialTab="brands" />;
   }
 
   private renderProductYears(): JSX.Element {
-    const BasicMetadataSettings = require("@/features/settings/basic-metadata").default;
+    const BasicMetadataSettings = require("../features/settings/basic-metadata").default;
     return <BasicMetadataSettings initialTab="years" />;
   }
 
   private renderProductSeasons(): JSX.Element {
-    const BasicMetadataSettings = require("@/features/settings/basic-metadata").default;
+    const BasicMetadataSettings = require("../features/settings/basic-metadata").default;
     return <BasicMetadataSettings initialTab="seasons" />;
   }
 

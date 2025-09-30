@@ -66,16 +66,16 @@ export default function EditProductModal({ mallId, productId, onClose, onSaved }
             <input className="w-full px-2 py-1 border" value={draft.name||''} onChange={(e)=>setDraft((d:DraftType|null)=>d?{...d,name:e.target.value}:d)} />
           </div>
           <div>
-            <label className="block text-sm text-gray-700">쇼핑몰 상품명</label>
+            <label className="block text-sm text-gray-700">판매처 상품명</label>
             <input className="w-full px-2 py-1 border" value={draft.mallProductName||''} onChange={(e)=>setDraft((d:DraftType|null)=>d?{...d,mallProductName:e.target.value}:d)} />
           </div>
           <div className="flex gap-2">
             <div className="flex-1">
-              <label className="block text-sm text-gray-700">쇼핑몰 가격</label>
+              <label className="block text-sm text-gray-700">판매처 가격</label>
               <input type="number" className="w-full px-2 py-1 border" value={draft.mallPrice||0} onChange={(e)=>setDraft((d:DraftType|null)=>d?{...d,mallPrice:parseInt(e.target.value||'0')}:d)} />
             </div>
             <div className="flex-1">
-              <label className="block text-sm text-gray-700">쇼핑몰 재고</label>
+              <label className="block text-sm text-gray-700">판매처 재고</label>
               <input type="number" className="w-full px-2 py-1 border" value={draft.mallStock||0} onChange={(e)=>setDraft((d:DraftType|null)=>d?{...d,mallStock:parseInt(e.target.value||'0')}:d)} />
             </div>
           </div>

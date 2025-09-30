@@ -14,9 +14,9 @@ describe('Sidebar - click all entries (real component)', () => {
 
     // Parent items that have children and their expected children labels
     const menuStructure: Record<string, string[]> = {
-      '상품 관리': ['상품 목록', 'CSV 상품 등록', '외부 쇼핑몰 상품 가져오기', '상품 일괄 수정', '옵션 일괄 수정'],
+      '상품 관리': ['상품 목록', 'CSV 상품 등록', '외부 판매처 상품 가져오기', '상품 일괄 수정', '옵션 일괄 수정'],
       '주문 관리': ['주문 목록', '주문 설정'],
-      '쇼핑몰 관리': ['쇼핑몰 목록', '쇼핑몰별 상품 관리', '쇼핑몰별 부가 정보 관리', '카테고리 매핑'],
+      '판매처 관리': ['판매처 목록', '판매처별 상품 관리', '판매처별 부가 정보 관리', '카테고리 매핑'],
       '환경 설정': ['외부 연동 관리', '상품 그룹 관리', '브랜드 관리', '상품 연도 관리', '상품 시즌 관리', '시스템 설정']
     };
 
@@ -26,7 +26,7 @@ describe('Sidebar - click all entries (real component)', () => {
     const parentIdMap: Record<string, string> = {
       '상품 관리': 'products',
       '주문 관리': 'orders',
-      '쇼핑몰 관리': 'shopping-mall',
+      '판매처 관리': 'shopping-mall',
       '환경 설정': 'settings'
     };
 

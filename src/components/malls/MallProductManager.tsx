@@ -88,7 +88,7 @@ export default function MallProductManager({
   }
 
   const handleClearAll = () => {
-    if (!window.confirm('이 쇼핑몰의 모든 오버라이드를 삭제하시겠습니까?')) return
+    if (!window.confirm('이 판매처의 모든 오버라이드를 삭제하시겠습니까?')) return
     setOverrides({})
   }
 
@@ -130,7 +130,7 @@ export default function MallProductManager({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
       <div className="w-full max-w-3xl bg-white rounded shadow p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">{mallId} - 쇼핑몰별 상품명/정보 관리</h3>
+          <h3 className="text-lg font-semibold">{mallId} - 판매처별 상품명/정보 관리</h3>
           <div className="flex gap-2">
             <button onClick={onClose} className="px-3 py-1 border rounded">취소</button>
             <button onClick={handleSave} className="px-3 py-1 bg-blue-600 text-white rounded">저장</button>
@@ -148,7 +148,7 @@ export default function MallProductManager({
         </div>
 
         <div className="mb-4 flex items-center gap-2">
-          <input value={importFilter} onChange={(e)=>setImportFilter(e.target.value)} placeholder="상품명/쇼핑몰명으로 필터" className="px-2 py-1 border rounded flex-1" />
+          <input value={importFilter} onChange={(e)=>setImportFilter(e.target.value)} placeholder="상품명/판매처명으로 필터" className="px-2 py-1 border rounded flex-1" />
           <button onClick={handleImportFromProducts} className="px-3 py-1 border rounded text-sm">상품에서 가져오기</button>
         </div>
 
@@ -164,10 +164,10 @@ export default function MallProductManager({
                   <div className="space-y-2">
                     <input className="w-full px-2 py-1 border" value={draft?.productId || ''} onChange={(e)=>setDraft(d=>d?{...d,productId:e.target.value}:null)} placeholder="상품코드" />
                     <input className="w-full px-2 py-1 border" value={draft?.name||''} onChange={(e)=>setDraft(d=>d?{...d,name:e.target.value}:null)} placeholder="상품명(기준)" />
-                    <input className="w-full px-2 py-1 border" value={draft?.mallProductName||''} onChange={(e)=>setDraft(d=>d?{...d,mallProductName:e.target.value}:null)} placeholder="쇼핑몰 상품명" />
+                    <input className="w-full px-2 py-1 border" value={draft?.mallProductName||''} onChange={(e)=>setDraft(d=>d?{...d,mallProductName:e.target.value}:null)} placeholder="판매처 상품명" />
                     <div className="flex gap-2">
-                      <input type="number" className="px-2 py-1 border" value={draft?.mallPrice||0} onChange={(e)=>setDraft(d=>d?{...d,mallPrice:parseInt(e.target.value||'0')}:null)} placeholder="쇼핑몰 가격" />
-                      <input type="number" className="px-2 py-1 border" value={draft?.mallStock||0} onChange={(e)=>setDraft(d=>d?{...d,mallStock:parseInt(e.target.value||'0')}:null)} placeholder="쇼핑몰 재고" />
+                      <input type="number" className="px-2 py-1 border" value={draft?.mallPrice||0} onChange={(e)=>setDraft(d=>d?{...d,mallPrice:parseInt(e.target.value||'0')}:null)} placeholder="판매처 가격" />
+                      <input type="number" className="px-2 py-1 border" value={draft?.mallStock||0} onChange={(e)=>setDraft(d=>d?{...d,mallStock:parseInt(e.target.value||'0')}:null)} placeholder="판매처 재고" />
                     </div>
                     <div className="flex gap-2">
                       <button onClick={saveDraft} className="px-2 py-1 bg-green-600 text-white rounded text-sm">저장</button>

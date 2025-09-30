@@ -165,7 +165,7 @@ const ProductCsvUploadPage: React.FC = () => {
       id: "company",
       name: "자사",
       logo: "□",
-      description: "자사 쇼핑몰",
+      description: "자사 판매처",
       detectionKeywords: [
         "상품코드",
         "상품명",
@@ -182,7 +182,7 @@ const ProductCsvUploadPage: React.FC = () => {
       id: "cafe24",
       name: "Cafe24",
       logo: "□",
-      description: "Cafe24 쇼핑몰",
+      description: "Cafe24 판매처",
       detectionKeywords: [
         "상품코드",
         "상품명",
@@ -198,7 +198,7 @@ const ProductCsvUploadPage: React.FC = () => {
       id: "wiseamall",
       name: "위사몰",
       logo: "□",
-      description: "위사몰 쇼핑몰",
+      description: "위사몰 판매처",
       detectionKeywords: [
         "상품번호",
         "상품명",
@@ -228,7 +228,7 @@ const ProductCsvUploadPage: React.FC = () => {
       id: "makeshop",
       name: "메이크샵",
       logo: "□",
-      description: "메이크샵 쇼핑몰",
+      description: "메이크샵 판매처",
       detectionKeywords: [
         "상품코드",
         "상품명",
@@ -244,7 +244,7 @@ const ProductCsvUploadPage: React.FC = () => {
       id: "godo5",
       name: "고도몰5",
       logo: "□",
-      description: "고도몰5 쇼핑몰",
+      description: "고도몰5 판매처",
       detectionKeywords: [
         "상품관리코드",
         "상품명",
@@ -613,7 +613,7 @@ const ProductCsvUploadPage: React.FC = () => {
               CSV 상품 등록
             </h1>
             <p className="text-gray-600">
-              CSV 파일을 업로드하면 자동으로 쇼핑몰 플랫폼을 감지하여 상품을
+              CSV 파일을 업로드하면 자동으로 판매처 플랫폼을 감지하여 상품을
               등록합니다.
             </p>
           </div>
@@ -1407,7 +1407,7 @@ const ProductCsvUploadPage: React.FC = () => {
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
               <div className="text-sm text-blue-800">
                 <strong>□ 팁:</strong> CSV 파일을 업로드하면 자동으로 어떤
-                쇼핑몰의 파일인지 감지합니다. 감지 실패 시 수동으로 플랫폼을
+                판매처의 파일인지 감지합니다. 감지 실패 시 수동으로 플랫폼을
                 선택할 수 있습니다.
               </div>
             </div>

@@ -164,7 +164,7 @@ const ProductCategoryPage: React.FC = () => {
     if (!window.confirm("삭제하시겠습니까?")) return;
     setCategories((prev) => prev.filter((category) => category.id !== selectedId));
     setSelectedId((prevSelected) =>
-      prevSelected === target.id ? (prev.filter((category) => category.id !== target.id)[0]?.id ?? null) : prevSelected,
+      prevSelected === target.id ? (categories.filter((category: any) => category.id !== target.id)[0]?.id ?? null) : prevSelected,
     );
   };
 

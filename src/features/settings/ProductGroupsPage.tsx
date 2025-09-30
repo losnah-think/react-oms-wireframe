@@ -28,7 +28,7 @@ const defaultGroups: ProductGroup[] = [
   {
     id: "group-1",
     name: "온라인 전용",
-    description: "온라인 쇼핑몰 전용",
+    description: "온라인 판매처 전용",
     channels: ["스마트스토어", "쿠팡"],
     categoryIds: [],
     color: "#2563eb",
@@ -410,7 +410,7 @@ const ProductGroupsPage: React.FC = () => {
           
           <Input
             label="설명"
-            placeholder="온라인 쇼핑몰 전용"
+            placeholder="온라인 판매처 전용"
             value={formState.description}
             onChange={(event) => setFormState((prev) => ({ ...prev, description: event.target.value }))}
             fullWidth

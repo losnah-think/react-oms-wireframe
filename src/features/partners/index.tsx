@@ -31,7 +31,7 @@ export default function VendorsHome() {
       <div className="flex flex-col gap-3">
         <h1 className="text-3xl font-bold text-gray-900">판매처 센터</h1>
         <p className="text-sm text-gray-600">
-          판매처와 쇼핑몰 연동을 관리하고, 상품·카테고리·정보를 빠르게 점검할 수 있는 허브입니다.
+          판매처와 판매처 연동을 관리하고, 상품·카테고리·정보를 빠르게 점검할 수 있는 허브입니다.
         </p>
       </div>
 
@@ -59,8 +59,8 @@ export default function VendorsHome() {
         <Card padding="lg" className="space-y-4">
           <Stack direction="row" justify="between" align="center">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">쇼핑몰 관리</h2>
-              <p className="text-xs text-gray-500">연동된 쇼핑몰 목록과 상태를 확인하세요.</p>
+              <h2 className="text-lg font-semibold text-gray-900">판매처 관리</h2>
+              <p className="text-xs text-gray-500">연동된 판매처 목록과 상태를 확인하세요.</p>
             </div>
             <Link href="/vendors/malls" className="inline-flex">
               <Button variant="ghost" size="small">전체 보기</Button>

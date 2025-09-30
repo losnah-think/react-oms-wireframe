@@ -20,7 +20,7 @@ interface ProductImportStats {
   lastImportDate: string;
 }
 
-// Minimal product shape mapped from 외부 쇼핑몰 (참고: Cafe24 Admin API 제품 속성)
+// Minimal product shape mapped from 외부 판매처 (참고: Cafe24 Admin API 제품 속성)
 interface ExternalProduct {
   product_no?: string;
   name: string;
@@ -46,7 +46,7 @@ const ExternalProductImportPage: React.FC = () => {
       id: "makeshop",
       name: "메이크샵",
       icon: "",
-      description: "메이크샵 쇼핑몰 플랫폼에서 상품을 가져옵니다",
+      description: "메이크샵 판매처 플랫폼에서 상품을 가져옵니다",
       isConnected: true,
       lastSync: "2025-01-15 14:30",
       productCount: 1247,
@@ -57,7 +57,7 @@ const ExternalProductImportPage: React.FC = () => {
       id: "cafe24",
       name: "카페24",
       icon: "",
-      description: "카페24 쇼핑몰 플랫폼에서 상품을 가져옵니다",
+      description: "카페24 판매처 플랫폼에서 상품을 가져옵니다",
       isConnected: true,
       lastSync: "2025-01-15 12:15",
       productCount: 892,
@@ -79,7 +79,7 @@ const ExternalProductImportPage: React.FC = () => {
       id: "godo",
       name: "고도몰5",
       icon: "",
-      description: "고도몰5 쇼핑몰 플랫폼에서 상품을 가져옵니다",
+      description: "고도몰5 판매처 플랫폼에서 상품을 가져옵니다",
       isConnected: true,
       lastSync: "2025-01-15 10:45",
       productCount: 456,
@@ -318,7 +318,7 @@ const ExternalProductImportPage: React.FC = () => {
   const handleImport = (mallId: string) => {
     const mall = shoppingMalls.find((m) => m.id === mallId);
     if (!mall?.isConnected) {
-      alert("먼저 쇼핑몰을 연결해주세요.");
+      alert("먼저 판매처을 연결해주세요.");
       return;
     }
 
@@ -438,10 +438,10 @@ const ExternalProductImportPage: React.FC = () => {
     <Container maxWidth="6xl" padding="md" className="min-h-screen bg-gray-50">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          외부 쇼핑몰 상품 가져오기
+          외부 판매처 상품 가져오기
         </h1>
         <p className="text-gray-600">
-          다양한 쇼핑몰 플랫폼에서 상품을 가져오고 통합 관리합니다.
+          다양한 판매처 플랫폼에서 상품을 가져오고 통합 관리합니다.
         </p>
       </div>
 
@@ -720,7 +720,7 @@ const ExternalProductImportPage: React.FC = () => {
                 onClick={() => setActiveTab("integrations")}
                 className={`px-4 py-2 rounded ${activeTab === "integrations" ? "bg-blue-600 text-white" : "bg-white border"}`}
               >
-                연결된 쇼핑몰
+                연결된 판매처
               </button>
               <button
                 onClick={() => setActiveTab("history")}
@@ -744,12 +744,12 @@ const ExternalProductImportPage: React.FC = () => {
           <Card padding="md" className="mb-6">
             <h2 className="text-lg font-bold mb-2">가져오기 개요</h2>
             <p className="text-sm text-gray-600 mb-4">
-              여기서는 전체 쇼핑몰 통계와 최근 가져오기 상태를 빠르게 확인할 수
+              여기서는 전체 판매처 통계와 최근 가져오기 상태를 빠르게 확인할 수
               있습니다.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card padding="md" className="bg-white border">
-                <div className="text-sm text-gray-600">총 연결 쇼핑몰</div>
+                <div className="text-sm text-gray-600">총 연결 판매처</div>
                 <div className="text-2xl font-bold">
                   {shoppingMalls.filter((m) => m.isConnected).length}
                 </div>
@@ -777,7 +777,7 @@ const ExternalProductImportPage: React.FC = () => {
 
         {activeTab === "integrations" && (
           <Card padding="md" className="mb-6">
-            <h2 className="text-lg font-bold mb-2">연결된 쇼핑몰</h2>
+            <h2 className="text-lg font-bold mb-2">연결된 판매처</h2>
             <div className="space-y-4">
               {shoppingMalls.map((mall) => (
                 <div
@@ -987,7 +987,7 @@ const ExternalProductImportPage: React.FC = () => {
                               <p className="text-gray-600 mb-4">
                                 {mall.isConnected
                                   ? "통계를 불러오는 중..."
-                                  : "먼저 쇼핑몰을 연결해주세요"}
+                                  : "먼저 판매처을 연결해주세요"}
                               </p>
                               {!mall.isConnected && (
                                 <button
@@ -1031,7 +1031,7 @@ const ExternalProductImportPage: React.FC = () => {
         <h3 className="text-lg font-medium text-gray-900 mb-4">일괄 작업</h3>
         <div className="flex flex-wrap gap-3">
           <button className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-            전체 쇼핑몰 동기화
+            전체 판매처 동기화
           </button>
           <button className="px-6 py-3 border border-gray-300 rounded-md hover:bg-gray-50">
             동기화 로그 보기

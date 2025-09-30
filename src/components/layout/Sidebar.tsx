@@ -35,7 +35,7 @@ const menuItems: MenuItem[] = [
       { id: "products-csv", label: "CSV 상품 등록", icon: "upload" },
       {
         id: "products-import",
-        label: "외부 쇼핑몰 상품 가져오기",
+        label: "외부 판매처 상품 가져오기",
         icon: "externalLink",
       },
       {

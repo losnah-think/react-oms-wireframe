@@ -39,7 +39,7 @@ export const mockVendors: MockVendor[] = [
     created_at: '2024-02-10T08:10:00Z',
     updated_at: '2024-02-22T15:45:00Z',
     settings: {
-      vendorType: '전용 쇼핑몰',
+      vendorType: '전용 판매처',
       site: 'WisaAPI',
       commissionRate: '2%',
       franchiseNumber: 'WSA-001-234',

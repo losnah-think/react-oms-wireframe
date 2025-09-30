@@ -1,8 +1,8 @@
-// 쇼핑몰/사이트 목업 데이터
+// 판매처/사이트 목업 데이터
 export const mockShops = Array.from({length: 10}, (_, i) => ({
   id: i+1,
   shop_no: `SHOP${i+1}`,
-  name: `쇼핑몰${i+1}`,
+  name: `판매처${i+1}`,
   site_id: i+1,
   mall_id: `MALL${i+1}`,
   active: i % 2 === 0

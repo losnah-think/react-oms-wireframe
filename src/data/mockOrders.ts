@@ -3,7 +3,7 @@ import { mockOrderStatus, mockShippingStatus, mockPaymentStatus } from './mockSt
 
 const mockShops = Array.from({length: 10}, (_, i) => ({
   shop_no: `SHOP${i+1}`,
-  shop_name: `쇼핑몰${i+1}`,
+  shop_name: `판매처${i+1}`,
   site_id: i+1,
   mall_id: `MALL${i+1}`
 }));

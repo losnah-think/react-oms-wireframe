@@ -133,7 +133,7 @@ const MallCategoryMapping: React.FC<{
     custom: { internal: 'internalCategory', mall: 'mallCategory' },
     naver: { internal: 'internalCategory', mall: 'mallCategory' },
     coupang: { internal: 'internal', mall: 'mall' },
-    gmarket: { internal: '내부카테고리', mall: '쇼핑몰카테고리' },
+    gmarket: { internal: '내부카테고리', mall: '판매처카테고리' },
   }
 
   useEffect(() => {
@@ -249,7 +249,7 @@ const MallCategoryMapping: React.FC<{
           // accept exported columns: internalId, internalPath, mallCategory
           const rawId = row['internalId'] || row['internal_id'] || row['internalId'.toLowerCase()]
           const rawPath = row['internalPath'] || row['internal_path'] || row[colInternal] || row['internalCategory'] || row['internal'] || row['내부카테고리']
-          const mall = row['mallCategory'] || row['mall'] || row[colMall] || row['쇼핑몰카테고리']
+          const mall = row['mallCategory'] || row['mall'] || row[colMall] || row['판매처카테고리']
           if (!rawPath && !rawId) return
           if (!mall) return
           const mallVal = String(mall)
@@ -311,7 +311,7 @@ const MallCategoryMapping: React.FC<{
           <div className="flex items-center gap-2">
             <div className="text-xs">내부 컬럼</div>
             <input value={colInternal} onChange={(e) => setColInternal(e.target.value)} className="px-2 py-1 border" />
-            <div className="text-xs">쇼핑몰 컬럼</div>
+            <div className="text-xs">판매처 컬럼</div>
             <input value={colMall} onChange={(e) => setColMall(e.target.value)} className="px-2 py-1 border" />
             <label className="px-3 py-1 border rounded text-sm cursor-pointer inline-block">
               업로드

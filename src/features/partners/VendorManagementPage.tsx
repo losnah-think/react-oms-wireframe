@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
 
 // 타입 정의
+interface FixedAddress {
+  id: string;
+  name: string;
+  address: string;
+  description?: string;
+}
+
 interface Vendor {
   id: string;
   name: string;
@@ -10,9 +17,44 @@ interface Vendor {
   phone: string;
   email?: string;
   address: string;
+  fixedAddressId?: string; // 고정 주소 ID
   status: '사용중' | '정지';
   registrationDate: string;
 }
+
+// 고정 주소 목록
+const fixedAddresses: FixedAddress[] = [
+  {
+    id: 'addr-001',
+    name: '본사 (서울)',
+    address: '서울시 강남구 테헤란로 123',
+    description: '메인 본사 건물'
+  },
+  {
+    id: 'addr-002', 
+    name: '물류센터 (경기)',
+    address: '경기도 성남시 분당구 판교로 100',
+    description: '물류 및 배송 센터'
+  },
+  {
+    id: 'addr-003',
+    name: '지점 (부산)',
+    address: '부산시 해운대구 센텀중앙로 55',
+    description: '부산 지역 지점'
+  },
+  {
+    id: 'addr-004',
+    name: '창고 (인천)',
+    address: '인천시 연수구 컨벤시아대로 165',
+    description: '인천 물류 창고'
+  },
+  {
+    id: 'addr-005',
+    name: '지점 (대구)',
+    address: '대구시 수성구 동대구로 149',
+    description: '대구 지역 지점'
+  }
+];
 
 const VendorManagementPage = () => {
   const [selectedType, setSelectedType] = useState<'판매처' | '공급처'>('판매처');
@@ -20,6 +62,16 @@ const VendorManagementPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // 추가 모달 상태들
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+  const [vendorToDelete, setVendorToDelete] = useState<Vendor | null>(null);
+  const [showStatusChangeModal, setShowStatusChangeModal] = useState(false);
+  const [vendorToChangeStatus, setVendorToChangeStatus] = useState<Vendor | null>(null);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
+  const [showStatsModal, setShowStatsModal] = useState(false);
+  const [showImportExportModal, setShowImportExportModal] = useState(false);
 
   // 로컬스토리지에서 로드
   useEffect(() => {
@@ -128,22 +180,57 @@ const VendorManagementPage = () => {
     setEditingVendor(null);
   };
 
-  // 삭제
-  const handleDelete = (id: string) => {
-    if (confirm('정말 삭제하시겠습니까?')) {
-      saveVendors(vendors.filter(v => v.id !== id));
+  // 삭제 확인 모달 열기
+  const handleDelete = (vendor: Vendor) => {
+    setVendorToDelete(vendor);
+    setShowDeleteConfirmModal(true);
+  };
+
+  // 실제 삭제 실행
+  const confirmDelete = () => {
+    if (vendorToDelete) {
+      saveVendors(vendors.filter(v => v.id !== vendorToDelete.id));
+      setShowDeleteConfirmModal(false);
+      setVendorToDelete(null);
     }
   };
 
-  // 상태 토글
-  const toggleStatus = (id: string) => {
-    const newVendors = vendors.map(v => {
-      if (v.id === id) {
-        return { ...v, status: v.status === '사용중' ? '정지' : '사용중' } as Vendor;
-      }
-      return v;
-    });
-    saveVendors(newVendors);
+  // 상태 변경 확인 모달 열기
+  const toggleStatus = (vendor: Vendor) => {
+    setVendorToChangeStatus(vendor);
+    setShowStatusChangeModal(true);
+  };
+
+  // 실제 상태 변경 실행
+  const confirmStatusChange = () => {
+    if (vendorToChangeStatus) {
+      const newVendors = vendors.map(v => {
+        if (v.id === vendorToChangeStatus.id) {
+          return { ...v, status: v.status === '사용중' ? '정지' : '사용중' } as Vendor;
+        }
+        return v;
+      });
+      saveVendors(newVendors);
+      setShowStatusChangeModal(false);
+      setVendorToChangeStatus(null);
+    }
+  };
+
+  // 통계 계산
+  const getStats = () => {
+    const totalVendors = vendors.length;
+    const activeVendors = vendors.filter(v => v.status === '사용중').length;
+    const inactiveVendors = vendors.filter(v => v.status === '정지').length;
+    const sellers = vendors.filter(v => v.type === '판매처').length;
+    const suppliers = vendors.filter(v => v.type === '공급처').length;
+    
+    return {
+      totalVendors,
+      activeVendors,
+      inactiveVendors,
+      sellers,
+      suppliers
+    };
   };
 
   return (
@@ -278,7 +365,7 @@ const VendorManagementPage = () => {
                   {/* 오른쪽: 버튼 */}
                   <div className="flex flex-col gap-2 ml-6">
                     <button
-                      onClick={() => toggleStatus(vendor.id)}
+                      onClick={() => toggleStatus(vendor)}
                       className={`px-4 py-2 rounded text-sm font-medium whitespace-nowrap ${
                         vendor.status === '사용중'
                           ? 'bg-red-50 text-red-600 hover:bg-red-100'
@@ -294,7 +381,7 @@ const VendorManagementPage = () => {
                       ✏️ 수정
                     </button>
                     <button
-                      onClick={() => handleDelete(vendor.id)}
+                      onClick={() => handleDelete(vendor)}
                       className="px-4 py-2 bg-red-100 text-red-600 rounded hover:bg-red-200 text-sm font-medium"
                     >
                       🗑️ 삭제
@@ -399,15 +486,39 @@ const VendorManagementPage = () => {
               {/* 주소 */}
               <div>
                 <label className="block text-base font-semibold text-gray-900 mb-2">
-                  주소
+                  고정 주소 선택
                 </label>
-                <input
-                  type="text"
-                  value={editingVendor.address}
-                  onChange={(e) => setEditingVendor({ ...editingVendor, address: e.target.value })}
-                  placeholder="예: 서울시 강남구 테헤란로 123"
+                <select
+                  value={editingVendor.fixedAddressId || ''}
+                  onChange={(e) => {
+                    const selectedAddress = fixedAddresses.find(addr => addr.id === e.target.value);
+                    setEditingVendor({ 
+                      ...editingVendor, 
+                      fixedAddressId: e.target.value,
+                      address: selectedAddress?.address || ''
+                    });
+                  }}
                   className="w-full px-4 py-3 border rounded-lg text-base"
-                />
+                >
+                  <option value="">주소를 선택하세요</option>
+                  {fixedAddresses.map((address) => (
+                    <option key={address.id} value={address.id}>
+                      {address.name} - {address.address}
+                    </option>
+                  ))}
+                </select>
+                {editingVendor.fixedAddressId && (
+                  <div className="mt-2 p-3 bg-blue-50 rounded-lg">
+                    <div className="text-sm text-blue-800">
+                      <strong>선택된 주소:</strong> {editingVendor.address}
+                    </div>
+                    {fixedAddresses.find(addr => addr.id === editingVendor.fixedAddressId)?.description && (
+                      <div className="text-xs text-blue-600 mt-1">
+                        {fixedAddresses.find(addr => addr.id === editingVendor.fixedAddressId)?.description}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 

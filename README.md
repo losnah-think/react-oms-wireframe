@@ -27,11 +27,11 @@ React + TypeScript + Tailwind CSS 기반의 객체지향 Order Management System
 - **Order**: 주문 정보, 고객 정보, 배송/결제 상태
 - **OrderItem**: 주문 상품 상세 정보
 
-#### 쇼핑몰 연동
-- **Mall**: 쇼핑몰 기본 정보 및 연결 상태
-- **MallInfo**: 쇼핑몰별 배송비, 정책, 템플릿 설정
-- **CategoryMapping**: 내부 카테고리와 쇼핑몰 카테고리 매핑
-- **ShoppingMallIntegration**: 외부 쇼핑몰 API 연동 설정
+#### 판매처 연동
+- **Mall**: 판매처 기본 정보 및 연결 상태
+- **MallInfo**: 판매처별 배송비, 정책, 템플릿 설정
+- **CategoryMapping**: 내부 카테고리와 판매처 카테고리 매핑
+- **ShoppingMallIntegration**: 외부 판매처 API 연동 설정
 
 #### 기타
 - **User**: 사용자 계정 및 권한 관리
@@ -44,7 +44,7 @@ React + TypeScript + Tailwind CSS 기반의 객체지향 Order Management System
 - 완전한 상품 정보 관리 (이름, 코드, 가격, 재고 등)
 - 다국어 지원 (한글명, 영문명)
 - 물리적 속성 (크기, 무게, 부피)
-- 외부 쇼핑몰 연동 정보
+- 외부 판매처 연동 정보
 - 재고 업데이트 및 상태 관리 메서드
 
 #### Order 클래스

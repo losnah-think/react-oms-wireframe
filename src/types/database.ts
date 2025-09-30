@@ -160,7 +160,7 @@ export interface DeliveryCompany extends BaseEntity {
   };
 }
 
-// 쇼핑몰 타입
+// 판매처 타입
 export interface Mall extends BaseEntity {
   name: string;
   status: 'active' | 'inactive';
@@ -209,7 +209,7 @@ export interface MallInfo {
   };
 }
 
-// 쇼핑몰 카테고리 타입
+// 판매처 카테고리 타입
 export interface MallCategory {
   id: string;
   mallId: string;
@@ -278,7 +278,7 @@ export interface Order extends BaseEntity {
   
   // 기타
   notes?: string;
-  mallId?: string; // 어느 쇼핑몰에서 온 주문인지
+  mallId?: string; // 어느 판매처에서 온 주문인지
 }
 
 // 사용자 타입
@@ -290,7 +290,7 @@ export interface User extends BaseEntity {
   isActive: boolean;
 }
 
-// 외부 쇼핑몰 연동 타입
+// 외부 판매처 연동 타입
 export interface ShoppingMallIntegration extends BaseEntity {
   mallType: 'makeshop' | 'cafe24' | 'wemakeprice' | 'godo' | 'naver' | 'coupang';
   mallName: string;

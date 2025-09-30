@@ -242,7 +242,7 @@ const ProductCodeManager: React.FC<ProductCodeManagerProps> = ({
       impacts.push('재고 연동 시스템 코드 변경');
       impacts.push('주문 연동 시스템 영향');
     } else if (type === 'cafe24') {
-      impacts.push('카페24 쇼핑몰 상품 코드 변경');
+      impacts.push('카페24 판매처 상품 코드 변경');
       impacts.push('카페24 재고 연동 영향');
     }
     
@@ -331,7 +331,7 @@ const ProductCodeManager: React.FC<ProductCodeManagerProps> = ({
         
         <div className="mt-1 space-y-1">
           <p className="text-xs text-gray-500">
-            영문, 숫자, _, - 조합 3-30자 / 카페24 쇼핑몰 연동 시 사용
+            영문, 숫자, _, - 조합 3-30자 / 카페24 판매처 연동 시 사용
           </p>
           
           {validationErrors.cafe24?.map((error, index) => (

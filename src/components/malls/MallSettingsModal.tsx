@@ -54,7 +54,7 @@ export default function MallSettingsModal({
       <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl" style={{ maxHeight: '90vh', overflow: 'auto' }}>
         <div className="flex items-center justify-between p-4 border-b">
           <div>
-            <h3 className="text-lg font-semibold">{form.id ? '쇼핑몰 편집' : '쇼핑몰 추가'}</h3>
+            <h3 className="text-lg font-semibold">{form.id ? '판매처 편집' : '판매처 추가'}</h3>
             <div className="text-sm text-gray-500">연결 정보를 입력하고 저장하세요.</div>
           </div>
           <button className="text-gray-500 hover:text-gray-700" onClick={onClose} aria-label="close modal">✕</button>

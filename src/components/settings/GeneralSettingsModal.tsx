@@ -36,12 +36,12 @@ export default function GeneralSettingsModal({ open, onClose, onSave, initial }:
           <div>
             <label className="flex items-center space-x-3">
               <input type="checkbox" checked={allowExternalSend} onChange={e => setAllowExternalSend(e.target.checked)} />
-              <span className="text-sm">외부 전송시 단일 쇼핑몰 선택을 강제합니다</span>
+              <span className="text-sm">외부 전송시 단일 판매처 선택을 강제합니다</span>
             </label>
           </div>
 
           <div>
-            <label className="block text-sm text-gray-600 mb-1">기본 쇼핑몰 (선택)</label>
+            <label className="block text-sm text-gray-600 mb-1">기본 판매처 (선택)</label>
             <input className="w-full border px-2 py-1 rounded" value={defaultMall ?? ''} onChange={e => setDefaultMall(e.target.value)} placeholder="몰 ID를 입력" />
           </div>
         </div>
