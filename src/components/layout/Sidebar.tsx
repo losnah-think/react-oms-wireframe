@@ -283,8 +283,8 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   // barcodes mappings
   Object.assign(idToPath, {
-    barcodes: "/barcodes",
-    "barcodes-products": "/barcodes/product",
+    barcodes: "/products/barcode",
+    "barcodes-products": "/products/barcode",
     "barcodes-location": "/barcodes/location",
     "barcodes-settings": "/barcodes/settings",
   });

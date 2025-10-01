@@ -5,14 +5,16 @@ import TemplatesPanel from "./panels/TemplatesPanel";
 import EditorPanel from "./panels/EditorPanel";
 import QueuePanel from "./panels/QueuePanel";
 import RulesPanel from "./panels/RulesPanel";
+import ShipperRulesPanel from "./panels/ShipperRulesPanel";
 
-const Tabs = ["Templates", "Editor", "Queue", "Rules"] as const;
+const Tabs = ["Templates", "Editor", "Queue", "Rules", "ShipperRules"] as const;
 
 const TAB_CONFIG = {
   Templates: { label: "템플릿", icon: "📋" },
   Editor: { label: "편집", icon: "✏️" },
   Queue: { label: "인쇄대기", icon: "📦" },
-  Rules: { label: "자동정리", icon: "🔧" }
+  Rules: { label: "자동정리", icon: "🔧" },
+  ShipperRules: { label: "화주사별 규칙", icon: "🚚" }
 };
 
 const BarcodeSettingsPage: React.FC = () => {
@@ -115,6 +117,10 @@ const BarcodeSettingsPage: React.FC = () => {
             toggleRule={api.toggleRule} 
             addRule={api.addRule} 
           />
+        )}
+
+        {active === "ShipperRules" && (
+          <ShipperRulesPanel />
         )}
       </div>
     </div>

@@ -1,4 +1,5 @@
 import React from 'react'
+import { useRouter } from 'next/router'
 import Header from './Header'
 import Sidebar from './Sidebar'
 import Breadcrumbs from '@/components/Breadcrumbs'
@@ -8,8 +9,40 @@ type LayoutProps = {
 }
 
 export default function Layout({ children }: LayoutProps) {
+  const router = useRouter()
   const [collapsed, setCollapsed] = React.useState(false)
-  const [currentPage, setCurrentPage] = React.useState('products')
+  
+  // URL에 따라 currentPage 설정
+  const getCurrentPageFromPath = (pathname: string) => {
+    if (pathname.startsWith('/products/barcode')) return 'barcodes-products'
+    if (pathname === '/products/add') return 'products-add'
+    if (pathname === '/products/csv') return 'products-csv'
+    if (pathname === '/products/import') return 'products-import'
+    if (pathname === '/products/registration-history') return 'products-registration-history'
+    if (pathname === '/products/individual-registration') return 'products-individual-registration'
+    if (pathname === '/products/trash') return 'products-trash'
+    if (pathname.startsWith('/products')) return 'products-list'
+    if (pathname.startsWith('/vendors')) return 'vendors-sales'
+    if (pathname.startsWith('/settings')) return 'settings-integrations'
+    if (pathname.startsWith('/barcodes')) return 'barcodes-products'
+    return 'products-list'
+  }
+  
+  const [currentPage, setCurrentPage] = React.useState(() => 
+    getCurrentPageFromPath(router.pathname)
+  )
+  
+  // URL 변경 시 currentPage 업데이트
+  React.useEffect(() => {
+    const handleRouteChange = (url: string) => {
+      setCurrentPage(getCurrentPageFromPath(url))
+    }
+    
+    router.events.on('routeChangeComplete', handleRouteChange)
+    return () => {
+      router.events.off('routeChangeComplete', handleRouteChange)
+    }
+  }, [router])
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />

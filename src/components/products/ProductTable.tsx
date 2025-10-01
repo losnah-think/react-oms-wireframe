@@ -3,18 +3,17 @@ import Table, { TableColumn } from '../../design-system/components/Table';
 import Button from '../../design-system/components/Button';
 import Badge from '../../design-system/components/Badge';
 import Stack from '../../design-system/components/Stack';
-import TableExportButton from '../common/TableExportButton';
 import { formatDate, formatPrice, getStockStatus } from '../../utils/productUtils';
 
 interface ProductTableProps {
   products: any[];
   loading?: boolean;
   selectedProducts?: string[];
-  onSelectionChange?: (selectedKeys: string[], selectedRows: any[]) => void;
+  onSelectionChange?: (selectedKeys: string[], selectedRows?: any[]) => void;
   onProductClick?: (product: any) => void;
   onProductEdit?: (productId: string) => void;
   onProductDelete?: (productId: string) => void;
-  onProductCopy?: (productId: string) => void;
+  onProductCopy?: (product: any) => void;
   pagination?: {
     current: number;
     pageSize: number;
@@ -128,7 +127,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
       width: '10%',
       align: 'center',
       render: (_, product) => {
-  const totalStock = product.variants?.reduce((sum: number, variant: any) => sum + (variant.stock || 0), 0) || product.stock || 0;
+        const totalStock = product.variants?.reduce((sum: number, variant: any) => sum + (variant.stock || 0), 0) || product.stock || 0;
         const stockStatus = getStockStatus(totalStock);
         
         return (
@@ -173,57 +172,78 @@ const ProductTable: React.FC<ProductTableProps> = ({
             }}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v.01M12 12v.01M12 18v.01" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
             </svg>
           </Button>
 
           {dropdownOpen === product.id && (
-            <div className="absolute right-0 top-8 z-50 min-w-32 bg-white border border-gray-200 rounded-lg shadow-lg py-1">
-              <button
-                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
-                onClick={() => {
-                  onProductClick?.(product);
-                  setDropdownOpen(null);
-                }}
-              >
-                상세보기
-              </button>
-              <button
-                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
-                onClick={() => {
-                  onProductEdit?.(product.id);
-                  setDropdownOpen(null);
-                }}
-              >
-                수정
-              </button>
-              <button
-                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
-                onClick={() => {
-                  onProductCopy?.(product.id);
-                  setDropdownOpen(null);
-                }}
-              >
-                복사
-              </button>
-              <hr className="my-1 border-gray-200" />
-              <button
-                className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
-                onClick={() => {
-                  onProductDelete?.(product.id);
-                  setDropdownOpen(null);
-                }}
-              >
-                삭제
-              </button>
-            </div>
+            <>
+              <div 
+                className="fixed inset-0 z-40" 
+                onClick={() => setDropdownOpen(null)}
+              />
+              <div className="absolute right-0 top-8 z-50 min-w-40 bg-white border border-gray-200 rounded-lg shadow-lg py-1">
+                <button
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                  onClick={() => {
+                    onProductClick?.(product);
+                    setDropdownOpen(null);
+                  }}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  상세보기
+                </button>
+                <button
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                  onClick={() => {
+                    onProductEdit?.(product.id);
+                    setDropdownOpen(null);
+                  }}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  수정
+                </button>
+                <button
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                  onClick={() => {
+                    onProductCopy?.(product);
+                    setDropdownOpen(null);
+                  }}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  복사
+                </button>
+                <hr className="my-1 border-gray-200" />
+                <button
+                  className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                  onClick={() => {
+                    if (confirm('정말 이 상품을 삭제하시겠습니까?')) {
+                      onProductDelete?.(product.id);
+                    }
+                    setDropdownOpen(null);
+                  }}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  삭제
+                </button>
+              </div>
+            </>
           )}
         </div>
       )
     }
   ];
 
-  // 확장된 행 렌더링 (옵션 정보) — handled below with a generic any-based renderer
+  // 확장된 행 렌더링 (옵션 정보)
   const expandedRowRender = (product: any) => {
     if (!product.variants || product.variants.length === 0) {
       return (
@@ -234,7 +254,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
     }
 
     return (
-      <div className="p-4">
+      <div className="p-4 bg-gray-50">
         <h4 className="text-sm font-semibold text-gray-900 mb-3">
           상품 옵션 ({product.variants.length}개)
         </h4>
@@ -315,54 +335,33 @@ const ProductTable: React.FC<ProductTableProps> = ({
     );
   };
 
-  // 외부 클릭 시 드롭다운 닫기
-  React.useEffect(() => {
-    const handleClickOutside = () => {
-      setDropdownOpen(null);
-    };
-    
-    if (dropdownOpen) {
-      document.addEventListener('click', handleClickOutside);
-      return () => document.removeEventListener('click', handleClickOutside);
-    }
-  }, [dropdownOpen]);
-
   return (
     <div>
-      <div className="flex justify-end mb-2">
-        <TableExportButton data={products.map((p:any)=>({
-          id: p.id,
-          code: p.productCode || p.code,
-          name: p.productName || p.name,
-          price: p.representativeSellingPrice || 0,
-          stock: (p.variants||[]).reduce((s:number,v:any)=>s+(v.stock||0),0)
-        }))} fileName={`product-table.xlsx`} />
-      </div>
       <Table
-      columns={columns}
-      data={products}
-      loading={loading}
-      pagination={pagination}
-      rowSelection={onSelectionChange ? {
-        selectedRowKeys: selectedProducts,
-        onChange: onSelectionChange
-      } : undefined}
-      expandable={{
-        expandedRowKeys: expandedProductIds,
-        onExpand: (expanded, record) => {
-          if (expanded) {
-            setExpandedProductIds([...expandedProductIds, record.id]);
-          } else {
-            setExpandedProductIds(expandedProductIds.filter(id => id !== record.id));
-          }
-        },
-        expandedRowRender,
-        rowExpandable: (record) => Boolean(record.variants && record.variants.length > 0)
-      }}
-      onRow={(record) => ({
-        className: 'cursor-pointer'
-      })}
-    />
+        columns={columns}
+        data={products}
+        loading={loading}
+        pagination={pagination}
+        rowSelection={onSelectionChange ? {
+          selectedRowKeys: selectedProducts,
+          onChange: onSelectionChange
+        } : undefined}
+        expandable={{
+          expandedRowKeys: expandedProductIds,
+          onExpand: (expanded, record) => {
+            if (expanded) {
+              setExpandedProductIds([...expandedProductIds, record.id]);
+            } else {
+              setExpandedProductIds(expandedProductIds.filter(id => id !== record.id));
+            }
+          },
+          expandedRowRender,
+          rowExpandable: (record) => Boolean(record.variants && record.variants.length > 0)
+        }}
+        onRow={(record) => ({
+          className: 'cursor-pointer hover:bg-gray-50'
+        })}
+      />
     </div>
   );
 };
