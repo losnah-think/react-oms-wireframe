@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 
-// Mock 데이터 (실제로는 API에서 가져옴)
+// Mock 데이터
 const mockVendors = [
   {
     id: "V001",
@@ -38,66 +38,32 @@ const mockVendors = [
   }
 ];
 
-const mockVendorProducts = [
-  {
-    id: "VP001",
-    vendorId: "V001",
-    productId: "1",
-    vendorProductCode: "NAVER-TS001",
-    vendorPrice: 29000,
-    vendorStock: 150,
-    vendorCategory: "의류/상의",
-    vendorDescription: "네이버 스마트스토어용 상의 상품",
-    isActive: true,
-    lastSyncDate: "2025-09-30"
-  },
-  {
-    id: "VP002",
-    vendorId: "V002",
-    productId: "1",
-    vendorProductCode: "COUPANG-TS001",
-    vendorPrice: 31000,
-    vendorStock: 120,
-    vendorCategory: "의류/상의",
-    vendorDescription: "쿠팡용 상의 상품",
-    isActive: true,
-    lastSyncDate: "2025-09-29"
-  }
-];
-
 const mockProducts = [
   {
     id: "1",
-    name: "기본 반팔티셔츠",
-    code: "TS001",
-    selling_price: 25000,
-    stock: 100,
+    name: "[MADE] 임스 베이직 반폴라 니트 JT09390",
+    code: "JJBD03-KN01",
+    selling_price: 10000,
+    stock: 45,
     is_selling: true,
-    classificationPath: ["의류", "상의"]
+    classificationPath: ["카테고리", "카테고리", "카테고리", "카테고리"],
+    brand: "MADE J",
+    season: "2024 SS",
+    year: "2024"
   },
   {
     id: "2", 
-    name: "기본 청바지",
-    code: "JN001",
-    selling_price: 45000,
-    stock: 50,
+    name: "[FULGO] 클래식 데님 청바지",
+    code: "FG-DN-001",
+    selling_price: 25000,
+    stock: 120,
     is_selling: true,
-    classificationPath: ["의류", "하의"]
+    classificationPath: ["의류", "하의", "청바지"],
+    brand: "FULGO",
+    season: "2024 FW",
+    year: "2024"
   }
 ];
-
-interface VendorProduct {
-  id: string;
-  vendorId: string;
-  productId: string;
-  vendorProductCode: string;
-  vendorPrice: number;
-  vendorStock: number;
-  vendorCategory?: string;
-  vendorDescription?: string;
-  isActive: boolean;
-  lastSyncDate: string;
-}
 
 const ExternalSendPage: React.FC = () => {
   const router = useRouter();
@@ -106,661 +72,554 @@ const ExternalSendPage: React.FC = () => {
   // URL에서 받은 상품 ID들을 배열로 변환
   const productIds = ids ? (typeof ids === 'string' ? ids.split(',') : ids) : [];
   
-  // 외부송신 단계별 상태 관리
-  const [sendStep, setSendStep] = useState<'vendors' | 'products' | 'review'>('vendors');
-  const [selectedVendorsForSend, setSelectedVendorsForSend] = useState<string[]>([]);
-  const [productVendorMapping, setProductVendorMapping] = useState<Record<string, string[]>>({});
+  // 상태 관리
+  const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
+  const [productSettings, setProductSettings] = useState<Record<string, Record<string, {
+    price: number;
+    stock: number;
+    category: string;
+    description: string;
+  }>>>({});
   
-  // 상품 정보 편집을 위한 상태
-  const [editingProductVendor, setEditingProductVendor] = useState<{
-    productId: string;
-    vendorId: string;
-  } | null>(null);
-  const [vendorProductForm, setVendorProductForm] = useState({
-    vendorProductCode: '',
-    vendorPrice: 0,
-    vendorStock: 0,
-    vendorCategory: '',
-    vendorDescription: ''
-  });
-
-  // 가격 포맷팅 함수
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('ko-KR', {
-      style: 'currency',
-      currency: 'KRW'
-    }).format(price);
-  };
-
-  // 판매처별 상품 정보 편집 함수들
-  const handleEditVendorProduct = (productId: string, vendorId: string) => {
-    const vendorProduct = mockVendorProducts.find(vp => 
-      vp.vendorId === vendorId && vp.productId === productId
-    );
-    
-    setEditingProductVendor({ productId, vendorId });
-    setVendorProductForm({
-      vendorProductCode: vendorProduct?.vendorProductCode || '',
-      vendorPrice: vendorProduct?.vendorPrice || 0,
-      vendorStock: vendorProduct?.vendorStock || 0,
-      vendorCategory: vendorProduct?.vendorCategory || '',
-      vendorDescription: vendorProduct?.vendorDescription || ''
-    });
-  };
-
-  const handleSaveVendorProduct = () => {
-    if (!editingProductVendor) return;
-    
-    console.log('판매처별 상품 정보 저장:', {
-      ...editingProductVendor,
-      ...vendorProductForm
-    });
-    
-    setEditingProductVendor(null);
-    setVendorProductForm({
-      vendorProductCode: '',
-      vendorPrice: 0,
-      vendorStock: 0,
-      vendorCategory: '',
-      vendorDescription: ''
-    });
-  };
-
-  const handleCancelVendorProductEdit = () => {
-    setEditingProductVendor(null);
-    setVendorProductForm({
-      vendorProductCode: '',
-      vendorPrice: 0,
-      vendorStock: 0,
-      vendorCategory: '',
-      vendorDescription: ''
-    });
-  };
-
-  // 외부 송신 실행
-  const handleExternalSend = async () => {
-    console.log('외부 송신 실행:', {
-      productIds,
-      selectedVendors: selectedVendorsForSend,
-      productVendorMapping
-    });
-    
-    // 실제로는 API 호출
-    alert('외부 송신이 완료되었습니다!');
-    router.push('/products');
-  };
+  // 상품 기본 정보 편집 상태
+  const [editingProducts, setEditingProducts] = useState<Record<string, {
+    name: string;
+    price: number;
+    stock: number;
+    category: string;
+  }>>({});
+  
+  // 판매처별 상품 상태 관리
+  const [productStatuses, setProductStatuses] = useState<Record<string, Record<string, {
+    status: 'active' | 'inactive' | 'out_of_stock' | 'discontinued';
+    isNew: boolean; // 신규 등록인지 기존 수정인지
+  }>>>({});
 
   // 상품 정보 가져오기
   const products = mockProducts.filter(p => productIds.includes(p.id));
 
+  // 상품 기본 정보 초기화
+  useEffect(() => {
+    products.forEach(product => {
+      if (!editingProducts[product.id]) {
+        initializeProductBasicInfo(product.id);
+      }
+    });
+  }, [products]);
+
+  // 가격 포맷팅 함수
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('ko-KR').format(price);
+  };
+
+  // 판매처 선택/해제
+  const toggleVendor = (vendorId: string) => {
+    setSelectedVendors(prev => 
+      prev.includes(vendorId) 
+        ? prev.filter(id => id !== vendorId)
+        : [...prev, vendorId]
+    );
+  };
+
+  // 상품 설정 업데이트
+  const updateProductSetting = (productId: string, vendorId: string, field: string, value: any) => {
+    setProductSettings(prev => ({
+      ...prev,
+      [productId]: {
+        ...prev[productId],
+        [vendorId]: {
+          ...prev[productId]?.[vendorId],
+          [field]: value
+        }
+      }
+    }));
+  };
+
+  // 상품 기본 정보 업데이트
+  const updateProductBasicInfo = (productId: string, field: string, value: any) => {
+    setEditingProducts(prev => ({
+      ...prev,
+      [productId]: {
+        ...prev[productId],
+        [field]: value
+      }
+    }));
+  };
+
+  // 상품 기본 정보 초기화
+  const initializeProductBasicInfo = (productId: string) => {
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+    
+    setEditingProducts(prev => ({
+      ...prev,
+      [productId]: {
+        name: product.name,
+        price: product.selling_price,
+        stock: product.stock,
+        category: product.classificationPath.join(' > ')
+      }
+    }));
+  };
+
+  // 판매처별 상품 상태 업데이트
+  const updateProductStatus = (productId: string, vendorId: string, status: 'active' | 'inactive' | 'out_of_stock' | 'discontinued', isNew: boolean = false) => {
+    setProductStatuses(prev => ({
+      ...prev,
+      [productId]: {
+        ...prev[productId],
+        [vendorId]: {
+          status,
+          isNew
+        }
+      }
+    }));
+  };
+
+  // 판매처별 상품 상태 가져오기
+  const getProductStatus = (productId: string, vendorId: string) => {
+    return productStatuses[productId]?.[vendorId] || {
+      status: 'active' as const,
+      isNew: true
+    };
+  };
+
+  // 상태 텍스트 변환
+  const getStatusText = (status: 'active' | 'inactive' | 'out_of_stock' | 'discontinued') => {
+    const statusMap = {
+      'active': '판매중',
+      'inactive': '판매중지',
+      'out_of_stock': '품절',
+      'discontinued': '단종'
+    };
+    return statusMap[status];
+  };
+
+  // 상태 색상 변환
+  const getStatusColor = (status: 'active' | 'inactive' | 'out_of_stock' | 'discontinued') => {
+    const colorMap = {
+      'active': 'bg-green-100 text-green-700',
+      'inactive': 'bg-gray-100 text-gray-700',
+      'out_of_stock': 'bg-red-100 text-red-700',
+      'discontinued': 'bg-orange-100 text-orange-700'
+    };
+    return colorMap[status];
+  };
+
+  // 편집된 상품 정보 가져오기
+  const getEditedProductInfo = (productId: string, field: string) => {
+    const product = products.find(p => p.id === productId);
+    if (!product) return '';
+    
+    const editedInfo = editingProducts[productId];
+    if (!editedInfo) return '';
+    
+    switch (field) {
+      case 'name':
+        return editedInfo.name || product.name;
+      case 'price':
+        return editedInfo.price || product.selling_price;
+      case 'stock':
+        return editedInfo.stock || product.stock;
+      case 'category':
+        return editedInfo.category || product.classificationPath.join(' > ');
+      default:
+        return '';
+    }
+  };
+
+  // 기본값 설정
+  const getDefaultSetting = (productId: string, vendorId: string, field: string) => {
+    const product = products.find(p => p.id === productId);
+    if (!product) return '';
+    
+    switch (field) {
+      case 'price':
+        return productSettings[productId]?.[vendorId]?.price || getEditedProductInfo(productId, 'price');
+      case 'stock':
+        return productSettings[productId]?.[vendorId]?.stock || getEditedProductInfo(productId, 'stock');
+      case 'category':
+        return productSettings[productId]?.[vendorId]?.category || getEditedProductInfo(productId, 'category');
+      case 'description':
+        return productSettings[productId]?.[vendorId]?.description || `${getEditedProductInfo(productId, 'name')} - ${product.brand}`;
+      default:
+        return '';
+    }
+  };
+
+  // 외부 송신 실행
+  const handleExternalSend = async () => {
+    if (selectedVendors.length === 0) {
+      alert('전송할 판매처를 선택해주세요.');
+      return;
+    }
+
+    console.log('외부 송신 실행:', {
+      productIds,
+      selectedVendors,
+      productSettings
+    });
+    
+    alert('외부 송신이 완료되었습니다!');
+    router.push('/products');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* 헤더 */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="px-6 py-4">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => router.back()}
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              <span className="text-sm font-medium">뒤로가기</span>
+            </button>
+            <div className="h-6 w-px bg-gray-300"></div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">상품 외부 송신</h1>
+              <p className="text-sm text-gray-600 mt-1">
+                선택된 상품 {products.length}개를 외부 판매처로 전송합니다.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* 메인 콘텐츠 */}
-      <div className="flex flex-col h-screen">
-          {/* 헤더 */}
-          <div className="bg-white border-b border-gray-200 px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">상품 외부 송신</h1>
-                <p className="text-sm text-gray-600 mt-1">
-                  선택된 상품 {products.length}개를 외부 판매처로 전송합니다.
-                </p>
-              </div>
-              <button
-                onClick={() => router.push('/products')}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          {/* 단계 표시기 */}
-          <div className="bg-white border-b border-gray-200 px-6 py-4">
-            <div className="flex items-center justify-center">
-              {[
-                { key: 'vendors', label: '전송할 판매처', icon: '🤝' },
-                { key: 'products', label: '상품 정보 맵핑', icon: '📦' },
-                { key: 'review', label: '최종 확인', icon: '✅' }
-              ].map((step, index) => (
-                <div key={step.key} className="flex items-center">
-                  <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
-                    sendStep === step.key 
-                      ? 'bg-blue-500 border-blue-500 text-white' 
-                      : ['vendors', 'products', 'review'].indexOf(sendStep) > index
-                      ? 'bg-green-500 border-green-500 text-white'
-                      : 'bg-gray-100 border-gray-300 text-gray-500'
-                  }`}>
-                    <span className="text-sm">{step.icon}</span>
-                  </div>
-                  <div className="ml-2 text-sm font-medium text-gray-700">{step.label}</div>
-                  {index < 2 && (
-                    <div className={`w-16 h-0.5 mx-4 ${
-                      ['vendors', 'products', 'review'].indexOf(sendStep) > index
-                        ? 'bg-green-500' 
-                        : 'bg-gray-300'
-                    }`} />
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 단계별 콘텐츠 */}
-          <div className="flex-1 p-6 bg-gray-50">
-            <div className="max-w-4xl mx-auto">
-              
-              {/* 1단계: 전송할 판매처 선택 */}
-              {sendStep === 'vendors' && (
-                <div className="space-y-6">
-                  <h4 className="text-lg font-semibold text-gray-900">전송할 판매처를 선택하세요</h4>
-                  <p className="text-sm text-gray-600">
-                    상품을 전송할 판매처를 선택하세요. 각 판매처별로 상품 정보를 다르게 설정할 수 있습니다.
-                  </p>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {mockVendors.map((vendor) => {
-                      const isSelected = selectedVendorsForSend.includes(vendor.id);
-                      
-                      return (
-                        <div
-                          key={vendor.id}
-                          onClick={() => {
-                            if (isSelected) {
-                              setSelectedVendorsForSend(prev => prev.filter(id => id !== vendor.id));
-                            } else {
-                              setSelectedVendorsForSend(prev => [...prev, vendor.id]);
-                            }
-                          }}
-                          className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 hover:shadow-md ${
-                            isSelected
-                              ? 'border-blue-500 bg-blue-50'
-                              : 'border-gray-200 hover:border-gray-300'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center">
-                              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white text-lg">
-                                🤝
-                              </div>
-                              <div className="ml-3">
-                                <h5 className="font-semibold text-gray-900">{vendor.name}</h5>
-                                <p className="text-sm text-gray-600">{vendor.representative}</p>
-                              </div>
-                            </div>
-                            <span className={`px-2 py-1 text-xs rounded-full ${
-                              vendor.status === "active" 
-                                ? "bg-green-100 text-green-700" 
-                                : "bg-gray-100 text-gray-700"
-                            }`}>
-                              {vendor.status === "active" ? "활성" : "비활성"}
-                            </span>
-                          </div>
-                          
-                          <div className="space-y-2 text-sm">
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">사업자번호:</span>
-                              <span className="font-medium">{vendor.businessNumber}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">연락처:</span>
-                              <span className="font-medium">{vendor.phone}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">등록일:</span>
-                              <span className="font-medium">{vendor.registrationDate}</span>
-                            </div>
-                          </div>
-                          
-                          {isSelected && (
-                            <div className="mt-3 pt-3 border-t border-blue-200">
-                              <div className="text-sm text-blue-600 font-medium">✓ 선택됨</div>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* 2단계: 상품 정보 맵핑 */}
-              {sendStep === 'products' && selectedVendorsForSend.length > 0 && (
-                <div className="space-y-6">
-                  <h4 className="text-lg font-semibold text-gray-900">상품별 판매처 매핑 및 정보 수정</h4>
-                  <p className="text-sm text-gray-600">
-                    각 상품이 어떤 판매처로 전송될지 선택하고, 판매처별 상품 정보를 수정하세요.
-                  </p>
-                  
-                  <div className="space-y-4">
-                    {productIds.map(productId => {
-                      const product = products.find(p => String(p.id) === productId);
-                      const mappedVendors = productVendorMapping[productId] || [];
-                      
-                      return (
-                        <div key={productId} className="border border-gray-200 rounded-lg p-4">
-                          <div className="mb-4">
-                            <div className="flex items-start justify-between mb-3">
-                              <div className="flex items-start">
-                                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center text-white text-lg">
-                                  📦
-                                </div>
-                                <div className="ml-3 flex-1">
-                                  <h5 className="font-semibold text-gray-900 mb-1">{product?.name}</h5>
-                                  <div className="text-sm text-gray-600 space-y-1">
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-medium">코드:</span>
-                                      <span>{product?.code}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-medium">가격:</span>
-                                      <span className="text-blue-600 font-semibold">{formatPrice(product?.selling_price || 0)}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-medium">재고:</span>
-                                      <span className={`font-medium ${(product?.stock || 0) > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                        {product?.stock || 0}개
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-medium">분류:</span>
-                                      <span>{product?.classificationPath?.join(' > ') || '미분류'}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-medium">상태:</span>
-                                      <span className={`px-2 py-1 text-xs rounded-full ${
-                                        product?.is_selling ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-                                      }`}>
-                                        {product?.is_selling ? '판매중' : '판매중단'}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg">
-                                {mappedVendors.length}개 판매처 선택됨
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {selectedVendorsForSend.map(vendorId => {
-                              const vendor = mockVendors.find(v => v.id === vendorId);
-                              const vendorProduct = mockVendorProducts.find(vp => 
-                                vp.vendorId === vendorId && vp.productId === productId
-                              );
-                              const isMapped = mappedVendors.includes(vendorId);
-                              
-                              return (
-                                <div
-                                  key={vendorId}
-                                  onClick={() => {
-                                    if (isMapped) {
-                                      setProductVendorMapping(prev => ({
-                                        ...prev,
-                                        [productId]: prev[productId]?.filter(id => id !== vendorId) || []
-                                      }));
-                                    } else {
-                                      setProductVendorMapping(prev => ({
-                                        ...prev,
-                                        [productId]: [...(prev[productId] || []), vendorId]
-                                      }));
-                                    }
-                                  }}
-                                  className={`p-3 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
-                                    isMapped
-                                      ? 'border-purple-500 bg-purple-50'
-                                      : 'border-gray-200 hover:border-gray-300'
-                                  }`}
-                                >
-                                  <div className="flex items-center justify-between mb-2">
-                                    <h6 className="font-medium text-gray-900">{vendor?.name}</h6>
-                                    {isMapped && (
-                                      <span className="text-purple-600 text-sm">✓</span>
-                                    )}
-                                  </div>
-                                  
-                                  {vendorProduct ? (
-                                    <div className="space-y-1 text-sm">
-                                      <div className="text-gray-600">코드: {vendorProduct.vendorProductCode}</div>
-                                      <div className="text-gray-600">가격: {formatPrice(vendorProduct.vendorPrice)}</div>
-                                      <div className="text-gray-600">재고: {vendorProduct.vendorStock}개</div>
-                                      <div className="text-gray-600">카테고리: {vendorProduct.vendorCategory}</div>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleEditVendorProduct(productId, vendorId);
-                                        }}
-                                        className="mt-2 px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-                                      >
-                                        정보 수정
-                                      </button>
-                                    </div>
-                                  ) : (
-                                    <div className="space-y-2">
-                                      <div className="text-sm text-gray-500">신규 등록 예정</div>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleEditVendorProduct(productId, vendorId);
-                                        }}
-                                        className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
-                                      >
-                                        정보 등록
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* 3단계: 최종 확인 */}
-              {sendStep === 'review' && (
-                <div className="space-y-6">
-                  <h4 className="text-lg font-semibold text-gray-900">전송 정보 최종 확인</h4>
-                  
-                  {/* 판매처별 전송 요약 */}
-                  <div className="space-y-4">
-                    <h5 className="font-semibold text-gray-900">판매처별 전송 요약</h5>
-                    {selectedVendorsForSend.map(vendorId => {
-                      const vendor = mockVendors.find(v => v.id === vendorId);
-                      const mappedProducts = productIds.filter(productId => 
-                        productVendorMapping[productId]?.includes(vendorId)
-                      );
-                      
-                      return (
-                        <div key={vendorId} className="border border-gray-200 rounded-lg p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <h6 className="font-semibold text-gray-900">{vendor?.name}</h6>
-                            <span className="px-2 py-1 text-sm bg-green-100 text-green-700 rounded-full">
-                              {mappedProducts.length}개 상품 전송
-                            </span>
-                          </div>
-                          
-                          <div className="space-y-2">
-                            {mappedProducts.map(productId => {
-                              const product = products.find(p => String(p.id) === productId);
-                              const vendorProduct = mockVendorProducts.find(vp => 
-                                vp.vendorId === vendorId && vp.productId === productId
-                              );
-                              
-                              return (
-                                <div key={productId} className="bg-gray-50 rounded-lg p-3">
-                                  <div className="flex items-start justify-between mb-2">
-                                    <div className="flex-1">
-                                      <div className="font-medium text-gray-900 mb-1">{product?.name}</div>
-                                      <div className="text-sm text-gray-600 space-y-1">
-                                        <div className="flex items-center gap-2">
-                                          <span className="font-medium">코드:</span>
-                                          <span>{product?.code}</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                          <span className="font-medium">분류:</span>
-                                          <span>{product?.classificationPath?.join(' > ') || '미분류'}</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                          <span className="font-medium">기본 재고:</span>
-                                          <span className={`font-medium ${(product?.stock || 0) > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                            {product?.stock || 0}개
-                                          </span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                    <div className="text-right ml-4">
-                                      <div className="text-lg font-semibold text-blue-600 mb-1">
-                                        {vendorProduct ? formatPrice(vendorProduct.vendorPrice) : formatPrice(product?.selling_price || 0)}
-                                      </div>
-                                      <div className="text-sm text-gray-600">
-                                        {vendorProduct ? (
-                                          <div className="space-y-1">
-                                            <div className="text-green-600 font-medium">
-                                              판매처 재고: {vendorProduct.vendorStock}개
-                                            </div>
-                                            <div className="text-xs text-gray-500">
-                                              판매처 코드: {vendorProduct.vendorProductCode}
-                                            </div>
-                                            {vendorProduct.vendorCategory && (
-                                              <div className="text-xs text-gray-500">
-                                                카테고리: {vendorProduct.vendorCategory}
-                                              </div>
-                                            )}
-                                          </div>
-                                        ) : (
-                                          <div className="text-orange-600 font-medium">신규 등록</div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* 하단 버튼 */}
-              <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-200">
-                <button
-                  onClick={() => {
-                    if (sendStep === 'vendors') {
-                      router.push('/products');
-                    } else if (sendStep === 'products') {
-                      setSendStep('vendors');
-                    } else if (sendStep === 'review') {
-                      setSendStep('products');
-                    }
-                  }}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                >
-                  {sendStep === 'vendors' ? '취소' : '이전'}
-                </button>
+      <div className="px-6 py-6">
+          
+          {/* 1단계: 판매처 선택 */}
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">1. 전송할 판매처 선택</h3>
+            <p className="text-sm text-gray-600 mb-6">
+              상품을 전송할 판매처를 선택하세요. ({selectedVendors.length}개 선택됨)
+            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+              {mockVendors.map((vendor) => {
+                const isSelected = selectedVendors.includes(vendor.id);
                 
-                <div className="flex gap-3">
-                  {sendStep === 'vendors' && (
-                    <button
-                      onClick={() => setSendStep('products')}
-                      disabled={selectedVendorsForSend.length === 0}
-                      className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      다음
-                    </button>
-                  )}
-                  
-                  {sendStep === 'products' && (
-                    <button
-                      onClick={() => setSendStep('review')}
-                      disabled={Object.keys(productVendorMapping).length === 0}
-                      className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      다음
-                    </button>
-                  )}
-                  
-                  {sendStep === 'review' && (
-                    <button
-                      onClick={handleExternalSend}
-                      className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                    >
-                      전송 시작
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      {/* 판매처별 상품 정보 편집 모달 */}
-      {editingProductVendor && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-          onMouseDown={(e) => { if (e.target === e.currentTarget) { handleCancelVendorProductEdit(); } }}
-        >
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-semibold text-gray-900">
-                  판매처별 상품 정보 {mockVendorProducts.find(vp => 
-                    vp.vendorId === editingProductVendor.vendorId && 
-                    vp.productId === editingProductVendor.productId
-                  ) ? '수정' : '등록'}
-                </h3>
-                <button
-                  onClick={handleCancelVendorProductEdit}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* 상품 정보 표시 */}
-              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-semibold text-gray-900 mb-2">상품 정보</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-600">상품명:</span>
-                    <span className="ml-2 font-medium">
-                      {products.find(p => String(p.id) === editingProductVendor.productId)?.name}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">상품코드:</span>
-                    <span className="ml-2 font-medium">
-                      {products.find(p => String(p.id) === editingProductVendor.productId)?.code}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">판매처:</span>
-                    <span className="ml-2 font-medium">
-                      {mockVendors.find(v => v.id === editingProductVendor.vendorId)?.name}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">기본 가격:</span>
-                    <span className="ml-2 font-medium">
-                      {formatPrice(products.find(p => String(p.id) === editingProductVendor.productId)?.selling_price || 0)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* 판매처별 상품 정보 입력 폼 */}
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    판매처 상품 코드 *
-                  </label>
-                  <input
-                    type="text"
-                    value={vendorProductForm.vendorProductCode}
-                    onChange={(e) => setVendorProductForm({...vendorProductForm, vendorProductCode: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="판매처에서 사용할 상품 코드"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      판매처 가격 *
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={vendorProductForm.vendorPrice}
-                      onChange={(e) => setVendorProductForm({...vendorProductForm, vendorPrice: Number(e.target.value)})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="1"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">가격은 1원 이상이어야 합니다.</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      판매처 재고 *
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={vendorProductForm.vendorStock}
-                      onChange={(e) => setVendorProductForm({...vendorProductForm, vendorStock: Number(e.target.value)})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="0"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">재고는 0개 이상 입력 가능합니다.</p>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    판매처 카테고리
-                  </label>
-                  <select
-                    value={vendorProductForm.vendorCategory}
-                    onChange={(e) => setVendorProductForm({...vendorProductForm, vendorCategory: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                return (
+                  <div
+                    key={vendor.id}
+                    onClick={() => toggleVendor(vendor.id)}
+                    className={`p-3 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
+                      isSelected
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
                   >
-                    <option value="">카테고리를 선택하세요</option>
-                    <option value="의류/상의">의류/상의</option>
-                    <option value="의류/하의">의류/하의</option>
-                    <option value="신발">신발</option>
-                    <option value="가방">가방</option>
-                    <option value="액세서리">액세서리</option>
-                    <option value="화장품">화장품</option>
-                    <option value="생활용품">생활용품</option>
-                    <option value="전자제품">전자제품</option>
-                    <option value="기타">기타</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    판매처 상품 설명
-                  </label>
-                  <textarea
-                    value={vendorProductForm.vendorDescription}
-                    onChange={(e) => setVendorProductForm({...vendorProductForm, vendorDescription: e.target.value})}
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="판매처에서 표시할 상품 설명"
-                  />
-                </div>
-              </div>
-
-              {/* 버튼 */}
-              <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200">
-                <button
-                  onClick={handleCancelVendorProductEdit}
-                  className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  취소
-                </button>
-                <button
-                  onClick={handleSaveVendorProduct}
-                  disabled={!vendorProductForm.vendorProductCode || vendorProductForm.vendorPrice <= 0 || vendorProductForm.vendorStock < 0}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  저장
-                </button>
-              </div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex-1 min-w-0">
+                        <h5 className="font-semibold text-gray-900 text-sm truncate">{vendor.name}</h5>
+                        <p className="text-xs text-gray-600 truncate">{vendor.representative}</p>
+                      </div>
+                      {isSelected && (
+                        <span className="text-blue-600 text-sm ml-2">✓</span>
+                      )}
+                    </div>
+                    
+                    <div className="text-xs text-gray-600 space-y-1">
+                      <div className="truncate">사업자: {vendor.businessNumber}</div>
+                      <div className="truncate">연락처: {vendor.phone}</div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
-        </div>
-      )}
+
+          {/* 2단계: 상품별 설정 */}
+          {selectedVendors.length > 0 && (
+            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">2. 상품별 판매처 설정</h3>
+              <p className="text-sm text-gray-600 mb-6">
+                각 상품의 판매처별 가격, 재고, 카테고리를 설정하세요.
+              </p>
+              
+              <div className="space-y-6">
+                {products.map((product) => (
+                  <div key={product.id} className="border border-gray-200 rounded-lg p-4">
+                    {/* 판매처별 기본값 설정 */}
+                    <div className="bg-blue-50 rounded-lg p-4 mb-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <h5 className="font-semibold text-blue-900">판매처별 기본값 설정</h5>
+                          <p className="text-sm text-blue-700 mt-1">
+                            아래 값들이 각 판매처별 설정의 기본값으로 사용됩니다. 필요에 따라 개별 판매처에서 수정할 수 있습니다.
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => initializeProductBasicInfo(product.id)}
+                          className="px-3 py-1 text-sm bg-blue-200 text-blue-700 rounded hover:bg-blue-300"
+                        >
+                          원본값으로 초기화
+                        </button>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                        {/* 기본 상품명 */}
+                        <div className="lg:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            기본 상품명
+                          </label>
+                          <input
+                            type="text"
+                            value={getEditedProductInfo(product.id, 'name')}
+                            onChange={(e) => updateProductBasicInfo(product.id, 'name', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="판매처별 기본 상품명"
+                          />
+                        </div>
+                        
+                        {/* 기본 가격 */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            기본 가격
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={getEditedProductInfo(product.id, 'price')}
+                            onChange={(e) => updateProductBasicInfo(product.id, 'price', Number(e.target.value))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="기본 가격"
+                          />
+                        </div>
+                        
+                        {/* 기본 재고 */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            기본 재고
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={getEditedProductInfo(product.id, 'stock')}
+                            onChange={(e) => updateProductBasicInfo(product.id, 'stock', Number(e.target.value))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="기본 재고"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
+                        {/* 기본 카테고리 */}
+                        <div className="lg:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            기본 카테고리
+                          </label>
+                          <input
+                            type="text"
+                            value={getEditedProductInfo(product.id, 'category')}
+                            onChange={(e) => updateProductBasicInfo(product.id, 'category', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="기본 카테고리"
+                          />
+                        </div>
+                        
+                        {/* 읽기 전용 정보 */}
+                        <div className="flex items-end">
+                          <div className="text-sm text-gray-600">
+                            <div>코드: {product.code}</div>
+                            <div>브랜드: {product.brand} | {product.year} {product.season}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 판매처별 개별 설정 - 테이블 형태 */}
+                    <div className="overflow-x-auto">
+                      <div className="mb-3">
+                        <h6 className="font-semibold text-gray-900">판매처별 개별 설정</h6>
+                        <p className="text-sm text-gray-600">각 판매처별로 다른 가격, 재고, 카테고리를 설정할 수 있습니다.</p>
+                      </div>
+                      <table className="w-full border border-gray-200 rounded-lg">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b border-gray-200">
+                              판매처
+                            </th>
+                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b border-gray-200">
+                              상태
+                            </th>
+                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b border-gray-200">
+                              판매 가격
+                            </th>
+                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b border-gray-200">
+                              판매 재고
+                            </th>
+                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b border-gray-200">
+                              판매처 카테고리
+                            </th>
+                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b border-gray-200">
+                              상품 설명
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {selectedVendors.map((vendorId) => {
+                            const vendor = mockVendors.find(v => v.id === vendorId);
+                            
+                            return (
+                              <tr key={vendorId} className="hover:bg-gray-50">
+                                <td className="px-4 py-3 border-b border-gray-200">
+                                  <div className="font-medium text-gray-900">{vendor?.name}</div>
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    {getProductStatus(product.id, vendorId).isNew ? '신규 등록' : '기존 수정'}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3 border-b border-gray-200">
+                                  <select
+                                    value={getProductStatus(product.id, vendorId).status}
+                                    onChange={(e) => updateProductStatus(product.id, vendorId, e.target.value as any)}
+                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                  >
+                                    <option value="active">판매중</option>
+                                    <option value="inactive">판매중지</option>
+                                    <option value="out_of_stock">품절</option>
+                                    <option value="discontinued">단종</option>
+                                  </select>
+                                </td>
+                                <td className="px-4 py-3 border-b border-gray-200">
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    value={getDefaultSetting(product.id, vendorId, 'price')}
+                                    onChange={(e) => updateProductSetting(product.id, vendorId, 'price', Number(e.target.value))}
+                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                  />
+                                </td>
+                                <td className="px-4 py-3 border-b border-gray-200">
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={getDefaultSetting(product.id, vendorId, 'stock')}
+                                    onChange={(e) => updateProductSetting(product.id, vendorId, 'stock', Number(e.target.value))}
+                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                  />
+                                </td>
+                                <td className="px-4 py-3 border-b border-gray-200">
+                                  <select
+                                    value={getDefaultSetting(product.id, vendorId, 'category')}
+                                    onChange={(e) => updateProductSetting(product.id, vendorId, 'category', e.target.value)}
+                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                  >
+                                    <option value="의류/상의">의류/상의</option>
+                                    <option value="의류/하의">의류/하의</option>
+                                    <option value="신발">신발</option>
+                                    <option value="가방">가방</option>
+                                    <option value="액세서리">액세서리</option>
+                                    <option value="화장품">화장품</option>
+                                    <option value="생활용품">생활용품</option>
+                                    <option value="전자제품">전자제품</option>
+                                    <option value="기타">기타</option>
+                                  </select>
+                                </td>
+                                <td className="px-4 py-3 border-b border-gray-200">
+                                  <textarea
+                                    value={getDefaultSetting(product.id, vendorId, 'description')}
+                                    onChange={(e) => updateProductSetting(product.id, vendorId, 'description', e.target.value)}
+                                    rows={1}
+                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+                                    placeholder="상품 설명"
+                                  />
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 3단계: 최종 확인 */}
+          {selectedVendors.length > 0 && (
+            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">3. 전송 정보 확인</h3>
+              
+              <div className="space-y-4">
+                {selectedVendors.map((vendorId) => {
+                  const vendor = mockVendors.find(v => v.id === vendorId);
+                  
+                  return (
+                    <div key={vendorId} className="border border-gray-200 rounded-lg p-4">
+                      <h5 className="font-semibold text-gray-900 mb-3">{vendor?.name}</h5>
+                      
+                      <div className="space-y-3">
+                        {products.map((product) => {
+                          const price = getDefaultSetting(product.id, vendorId, 'price');
+                          const stock = getDefaultSetting(product.id, vendorId, 'stock');
+                          const category = getDefaultSetting(product.id, vendorId, 'category');
+                          const productName = getEditedProductInfo(product.id, 'name');
+                          const productStatus = getProductStatus(product.id, vendorId);
+                          
+                          return (
+                            <div key={product.id} className="bg-gray-50 rounded-lg p-3">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="font-medium text-gray-900 mb-1">{productName}</div>
+                                  <div className="text-sm text-gray-600 space-y-1">
+                                    <div>코드: {product.code}</div>
+                                    <div>카테고리: {category}</div>
+                                    <div className="flex items-center gap-2">
+                                      <span>상태:</span>
+                                      <span className={`px-2 py-1 text-xs rounded ${getStatusColor(productStatus.status)}`}>
+                                        {getStatusText(productStatus.status)}
+                                      </span>
+                                      <span className="text-xs text-gray-500">
+                                        ({productStatus.isNew ? '신규 등록' : '기존 수정'})
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="text-right ml-4">
+                                  <div className="text-lg font-semibold text-blue-600 mb-1">
+                                    ₩{formatPrice(price)}
+                                  </div>
+                                  <div className="text-sm text-gray-600">
+                                    재고: {stock}개
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* 하단 버튼 */}
+          <div className="flex justify-between items-center">
+            <button
+              onClick={() => router.back()}
+              className="px-6 py-2 text-gray-600 hover:text-gray-800"
+            >
+              뒤로가기
+            </button>
+            
+            <button
+              onClick={handleExternalSend}
+              disabled={selectedVendors.length === 0}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              외부 송신 시작
+            </button>
+          </div>
+      </div>
     </div>
   );
 };

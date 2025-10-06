@@ -61,6 +61,7 @@ const menuItems: MenuItem[] = [
       },
     ],
   },
+  // 주문 관리 - 현재 숨김 처리
   // {
   //   id: "orders",
   //   label: "주문 관리",
@@ -81,9 +82,8 @@ const menuItems: MenuItem[] = [
       { id: "vendors-products", label: "판매처별 상품 관리", icon: "package" },
       { id: "vendors-info", label: "판매처별 부가 정보", icon: "info" },
       { id: "vendors-category-mapping", label: "판매처별 카테고리 매핑", icon: "copy" },
-      // vendors merged into this section
+      // 숨김 처리된 메뉴들
       // { id: "vendors-delivery", label: "택배사 관리", icon: "truck" },
-      // { id: "vendors-automation", label: "판매처 자동화", icon: "settings" },
       // { id: "vendors-suppliers", label: "공급처 관리", icon: "truck" },
       // {
       //   id: "vendors-supplier-orders",
@@ -113,8 +113,7 @@ const menuItems: MenuItem[] = [
         id: "settings-basic-metadata",
         label: "브랜드·연도·시즌",
         icon: "tag",
-      },
-      // { id: "orders-settings", label: "주문 설정", icon: "settings" },
+      }
     ],
   },
   // vendors moved into shopping-mall section above
@@ -175,6 +174,10 @@ const Sidebar: React.FC<SidebarProps> = ({
       trash: "delete",
       barcode: "tag",
       "shopping-cart": "shoppingCart",
+      truck: "truck",
+      plus: "plus",
+      tag: "tag",
+      menu: "menu",
     };
 
     const iconKey = (mapToIconKey[iconName] ?? iconName) as any;
@@ -242,8 +245,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   "products-import": "/products/import",
     "products-registration-history": "/products/registration-history",
     "products-individual-registration": "/products/individual-registration",
-    "orders-list": "/orders",
-    "orders-settings": "/orders/settings",
     malls: "/malls",
   "malls-products": "/malls/products",
   "malls-info": "/malls/info",
@@ -251,7 +252,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   "vendors-products": "/vendors/vendor-products",
   "vendors-info": "/vendors/vendor-info",
   "vendors-category-mapping": "/vendors/vendor-category-mapping",
-    "settings-integrations": "/settings/integrations",
+    "settings-integrations": "/settings/integration",
     "settings-product-classifications": "/settings/product-classifications",
     "settings-product-groups": "/settings/product-groups",
     "settings-basic-metadata": "/settings/basic-metadata",
@@ -271,7 +272,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   // vendor related mappings
   Object.assign(idToPath, {
-  vendors: "/vendors",
+    vendors: "/vendors",
     "vendors-sales": "/vendors/sales",
     "vendors-delivery": "/vendors/delivery-companies",
     "vendors-fixed-addresses": "/vendors/fixed-addresses",
@@ -279,6 +280,12 @@ const Sidebar: React.FC<SidebarProps> = ({
     "vendors-suppliers": "/vendors/suppliers",
     "vendors-supplier-orders": "/vendors/supplier-orders",
     "vendors-payments": "/vendors/payments",
+  });
+
+  // orders related mappings
+  Object.assign(idToPath, {
+    "orders-list": "/orders",
+    "orders-settings": "/orders/settings",
   });
 
   // barcodes mappings
@@ -289,6 +296,13 @@ const Sidebar: React.FC<SidebarProps> = ({
     "barcodes-settings": "/barcodes/settings",
   });
 
+  // malls mappings
+  Object.assign(idToPath, {
+    malls: "/malls",
+    "malls-products": "/malls/products",
+    "malls-info": "/malls/info",
+  });
+
   const isActive = (id: string) => {
     // 정확한 페이지 매칭
     if (currentPage === id) return true;
@@ -296,13 +310,10 @@ const Sidebar: React.FC<SidebarProps> = ({
     // 상위 메뉴 활성화 (하위 메뉴가 선택된 경우)
     if (id === "products" && currentPage.startsWith("products-")) return true;
     if (id === "orders" && currentPage.startsWith("orders-")) return true;
-    if (id === "shopping-mall" && currentPage.startsWith("malls-")) return true;
-    // consider vendors pages as part of the shopping-mall parent after merge
-    if (id === "shopping-mall" && currentPage.startsWith("vendors-"))
-      return true;
+    if (id === "shopping-mall" && (currentPage.startsWith("malls-") || currentPage.startsWith("vendors-"))) return true;
     if (id === "barcodes" && currentPage.startsWith("barcodes-")) return true;
     if (id === "basic" && currentPage.startsWith("basic-")) return true;
-    if (id === "settings" && currentPage.startsWith("settings-")) return true;
+    if (id === "settings" && (currentPage.startsWith("settings-") || currentPage === "category-mapping")) return true;
     return false;
   };
 
@@ -312,13 +323,10 @@ const Sidebar: React.FC<SidebarProps> = ({
       return;
     }
 
-    // For leaf items, navigate to canonical path so browser URL updates
-    // Build fallback target path from id when no explicit mapping exists.
-    // Handle patterns like 'settings-product-classifications' -> '/settings/product-classifications'
+    // Convert item.id to proper Next.js path
     const fallbackFromId = () => {
       if (item.id.includes("-")) {
         const parts = item.id.split("-");
-        // If first part is a known top-level key like 'settings' or 'products', join accordingly
         if (
           [
             "settings",
@@ -336,20 +344,8 @@ const Sidebar: React.FC<SidebarProps> = ({
       return "/" + item.id;
     };
     const targetPath = idToPath[item.id] ?? fallbackFromId();
-    // Use history API first so the browser address and history stack update immediately
-    try {
-      if (
-        typeof window !== "undefined" &&
-        window.history &&
-        window.history.pushState
-      ) {
-        window.history.pushState({}, "", targetPath);
-      }
-    } catch (err) {
-      // ignore
-    }
 
-    // Prefer Next router navigation; fallback to full navigation if router fails
+    // Use Next.js router for navigation
     try {
       if (router && typeof router.push === "function") {
         router.push(targetPath).catch(() => {

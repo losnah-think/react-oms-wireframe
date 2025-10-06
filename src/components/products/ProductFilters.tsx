@@ -70,7 +70,6 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
             showFilters ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white text-gray-700 hover:bg-gray-50'
           }`}
         >
-          <span>🔧</span>
           <span>필터</span>
         </button>
       </div>

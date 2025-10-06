@@ -10,11 +10,11 @@ import ShipperRulesPanel from "./panels/ShipperRulesPanel";
 const Tabs = ["Templates", "Editor", "Queue", "Rules", "ShipperRules"] as const;
 
 const TAB_CONFIG = {
-  Templates: { label: "템플릿", icon: "📋" },
-  Editor: { label: "편집", icon: "✏️" },
-  Queue: { label: "인쇄대기", icon: "📦" },
-  Rules: { label: "자동정리", icon: "🔧" },
-  ShipperRules: { label: "화주사별 규칙", icon: "🚚" }
+  Templates: { label: "템플릿", icon: null },
+  Editor: { label: "편집", icon: null },
+  Queue: { label: "인쇄대기", icon: null },
+  Rules: { label: "자동정리", icon: null },
+  ShipperRules: { label: "화주사별 규칙", icon: null }
 };
 
 const BarcodeSettingsPage: React.FC = () => {
@@ -43,13 +43,12 @@ const BarcodeSettingsPage: React.FC = () => {
                 <button
                   key={tab}
                   onClick={() => setActive(tab)}
-                  className={`flex-1 py-6 px-4 text-center rounded-lg font-semibold text-lg transition-all ${
+                  className={`flex-1 py-3 px-4 text-center rounded-md font-medium text-sm transition-colors ${
                     isActive
-                      ? "bg-blue-600 text-white shadow-lg scale-105"
+                      ? "bg-blue-600 text-white"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}
                 >
-                  <div className="text-3xl mb-2">{config.icon}</div>
                   <div>{config.label}</div>
                 </button>
               );

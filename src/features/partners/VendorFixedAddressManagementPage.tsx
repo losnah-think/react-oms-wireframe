@@ -204,15 +204,6 @@ export default function VendorFixedAddressManagementPage() {
     }
   };
 
-  // 판매처 토글
-  const toggleVendor = (vendorId: string) => {
-    setNewAddress(prev => ({
-      ...prev,
-      vendorIds: prev.vendorIds.includes(vendorId)
-        ? prev.vendorIds.filter(id => id !== vendorId)
-        : [...prev.vendorIds, vendorId]
-    }));
-  };
 
   // 기본 주소 설정
   const setAsDefault = (addressId: string) => {
@@ -414,7 +405,8 @@ export default function VendorFixedAddressManagementPage() {
                   {fixedAddresses.filter(addr => addr.vendorIds.includes(selectedVendor)).length === 0 ? (
                     <div className="text-center py-12">
                       <div className="text-gray-400 text-4xl mb-3">🏢</div>
-                      <p className="text-gray-600">등록된 주소가 없습니다.</p>
+                      <p className="text-gray-600">아직 등록된 주소가 없습니다</p>
+                      <p className="text-sm text-gray-500 mt-1">새 주소를 추가해보세요</p>
                       <button
                         onClick={() => {
                           setEditingAddress(null);
@@ -484,12 +476,11 @@ export default function VendorFixedAddressManagementPage() {
             </>
           ) : (
             <div className="bg-white rounded-lg border shadow-sm p-12 text-center">
-              <div className="text-gray-400 text-4xl mb-3">🏪</div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">
                 판매처를 선택해주세요
               </h3>
               <p className="text-gray-600">
-                좌측에서 판매처를 선택하면 해당 판매처의 주소를 관리할 수 있습니다.
+                좌측 목록에서 판매처를 선택하면 해당 판매처의 주소를 관리할 수 있습니다
               </p>
             </div>
           )}
@@ -551,23 +542,15 @@ export default function VendorFixedAddressManagementPage() {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  사용 판매처
+                  대상 판매처
                 </label>
-                <div className="space-y-2 max-h-40 overflow-y-auto border border-gray-300 rounded-lg p-3">
-                  {vendors.map(vendor => (
-                    <label key={vendor.id} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={newAddress.vendorIds.includes(vendor.id)}
-                        onChange={() => toggleVendor(vendor.id)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">{vendor.name}</span>
-                    </label>
-                  ))}
+                <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg">
+                  <span className="text-sm text-gray-700 font-medium">
+                    {vendors.find(v => v.id === selectedVendor)?.name}
+                  </span>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  이 주소를 사용할 판매처를 선택하세요.
+                  현재 선택된 판매처에 주소가 등록됩니다.
                 </p>
               </div>
               

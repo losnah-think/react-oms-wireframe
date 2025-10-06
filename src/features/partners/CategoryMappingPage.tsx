@@ -191,8 +191,8 @@ function HelpModal({ isOpen, onClose }: HelpModalProps) {
                 <div className="flex items-start gap-3">
                   <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
                   <div>
-                    <h4 className="font-medium text-gray-900">자동 저장</h4>
-                    <p className="text-sm text-gray-600">변경사항은 자동으로 저장되며 토스트 알림으로 확인할 수 있습니다</p>
+                    <h4 className="font-medium text-gray-900">저장 방식</h4>
+                    <p className="text-sm text-gray-600">변경사항은 실시간으로 저장되며 알림으로 확인할 수 있습니다</p>
                   </div>
                 </div>
               </div>
@@ -211,15 +211,15 @@ function HelpModal({ isOpen, onClose }: HelpModalProps) {
               <div className="space-y-3">
                 <div>
                   <h4 className="font-medium text-gray-900">매핑이 저장되지 않아요</h4>
-                  <p className="text-sm text-gray-600">모든 필수 필드를 입력했는지 확인하고, 올바른 형식으로 입력했는지 확인해주세요.</p>
+                  <p className="text-sm text-gray-600">필수 필드(판매처 카테고리, 내부 카테고리)가 모두 입력되었는지 확인해주세요</p>
                 </div>
                 <div>
                   <h4 className="font-medium text-gray-900">검색 결과가 나오지 않아요</h4>
-                  <p className="text-sm text-gray-600">검색어를 확인하고, 필터 설정을 "전체 상태"로 변경해보세요.</p>
+                  <p className="text-sm text-gray-600">검색어를 다시 확인하고, 필터를 "전체 상태"로 변경해보세요</p>
                 </div>
                 <div>
                   <h4 className="font-medium text-gray-900">페이지가 느려요</h4>
-                  <p className="text-sm text-gray-600">브라우저를 새로고침하거나 캐시를 삭제해보세요.</p>
+                  <p className="text-sm text-gray-600">브라우저를 새로고침하거나 캐시를 삭제해보세요</p>
                 </div>
               </div>
             </div>
@@ -247,7 +247,6 @@ interface VendorCategory {
   path: string;
   level: number;
   parentId?: string;
-  isActive: boolean;
   lastSyncDate: string;
   productCount?: number;
 }
@@ -305,7 +304,6 @@ const mockVendorCategories: VendorCategory[] = [
     name: "패션의류",
     path: "패션의류",
     level: 1,
-    isActive: true,
     lastSyncDate: "2025-01-15T10:30:00Z",
     productCount: 1250
   },
@@ -316,7 +314,6 @@ const mockVendorCategories: VendorCategory[] = [
     path: "패션의류 > 남성의류",
     level: 2,
     parentId: "VC001",
-    isActive: true,
     lastSyncDate: "2025-01-15T10:30:00Z",
     productCount: 450
   },
@@ -327,7 +324,6 @@ const mockVendorCategories: VendorCategory[] = [
     path: "패션의류 > 남성의류 > 상의",
     level: 3,
     parentId: "VC002",
-    isActive: true,
     lastSyncDate: "2025-01-15T10:30:00Z",
     productCount: 180
   },
@@ -338,7 +334,6 @@ const mockVendorCategories: VendorCategory[] = [
     path: "패션의류 > 남성의류 > 하의",
     level: 3,
     parentId: "VC002",
-    isActive: true,
     lastSyncDate: "2025-01-15T10:30:00Z",
     productCount: 120
   },
@@ -348,7 +343,6 @@ const mockVendorCategories: VendorCategory[] = [
     name: "패션잡화",
     path: "패션잡화",
     level: 1,
-    isActive: true,
     lastSyncDate: "2025-01-15T10:30:00Z",
     productCount: 890
   },
@@ -359,7 +353,6 @@ const mockVendorCategories: VendorCategory[] = [
     path: "패션잡화 > 가방",
     level: 2,
     parentId: "VC005",
-    isActive: true,
     lastSyncDate: "2025-01-15T10:30:00Z",
     productCount: 320
   },
@@ -371,7 +364,6 @@ const mockVendorCategories: VendorCategory[] = [
     name: "의류",
     path: "의류",
     level: 1,
-    isActive: true,
     lastSyncDate: "2025-01-14T15:20:00Z",
     productCount: 2100
   },
@@ -382,7 +374,6 @@ const mockVendorCategories: VendorCategory[] = [
     path: "의류 > 상의",
     level: 2,
     parentId: "VC007",
-    isActive: true,
     lastSyncDate: "2025-01-14T15:20:00Z",
     productCount: 850
   },
@@ -392,7 +383,6 @@ const mockVendorCategories: VendorCategory[] = [
     name: "신발",
     path: "신발",
     level: 1,
-    isActive: true,
     lastSyncDate: "2025-01-14T15:20:00Z",
     productCount: 1200
   },
@@ -403,7 +393,6 @@ const mockVendorCategories: VendorCategory[] = [
     path: "신발 > 운동화",
     level: 2,
     parentId: "VC009",
-    isActive: true,
     lastSyncDate: "2025-01-14T15:20:00Z",
     productCount: 650
   },
@@ -415,7 +404,6 @@ const mockVendorCategories: VendorCategory[] = [
     name: "패션",
     path: "패션",
     level: 1,
-    isActive: true,
     lastSyncDate: "2025-01-13T09:45:00Z",
     productCount: 1800
   },
@@ -426,7 +414,6 @@ const mockVendorCategories: VendorCategory[] = [
     path: "패션 > 남성패션",
     level: 2,
     parentId: "VC011",
-    isActive: true,
     lastSyncDate: "2025-01-13T09:45:00Z",
     productCount: 720
   },
@@ -437,7 +424,6 @@ const mockVendorCategories: VendorCategory[] = [
     path: "패션 > 남성패션 > 티셔츠",
     level: 3,
     parentId: "VC012",
-    isActive: true,
     lastSyncDate: "2025-01-13T09:45:00Z",
     productCount: 280
   }
@@ -462,7 +448,6 @@ interface CategoryMapping {
   vendorCategory: string;
   internalCategoryId: string;
   internalCategoryPath: string;
-  isActive: boolean;
 }
 
 const mockMappings: CategoryMapping[] = [
@@ -472,7 +457,6 @@ const mockMappings: CategoryMapping[] = [
     vendorCategory: "패션의류 > 남성의류 > 상의",
     internalCategoryId: "IC002",
     internalCategoryPath: "의류 > 상의",
-    isActive: true,
   },
   {
     id: "M002",
@@ -480,7 +464,6 @@ const mockMappings: CategoryMapping[] = [
     vendorCategory: "패션의류 > 남성의류 > 하의",
     internalCategoryId: "IC003",
     internalCategoryPath: "의류 > 하의",
-    isActive: true,
   },
   {
     id: "M003",
@@ -488,7 +471,6 @@ const mockMappings: CategoryMapping[] = [
     vendorCategory: "패션잡화 > 가방",
     internalCategoryId: "IC005",
     internalCategoryPath: "잡화 > 가방",
-    isActive: true,
   },
   {
     id: "M004",
@@ -496,7 +478,6 @@ const mockMappings: CategoryMapping[] = [
     vendorCategory: "의류 > 상의",
     internalCategoryId: "IC002",
     internalCategoryPath: "의류 > 상의",
-    isActive: true,
   },
   {
     id: "M005",
@@ -504,14 +485,12 @@ const mockMappings: CategoryMapping[] = [
     vendorCategory: "신발 > 운동화",
     internalCategoryId: "IC007",
     internalCategoryPath: "신발 > 운동화",
-    isActive: false,
   },
 ];
 
 // 판매처 정보 카드 컴포넌트
-function VendorInfoCard({ vendor, onEdit, onSyncCategories, isLoadingCategories, vendorCategories, lastSyncTime }: any) {
+function VendorInfoCard({ vendor, onSyncCategories, isLoadingCategories, vendorCategories, lastSyncTime }: any) {
   const vendorCats = vendorCategories.filter((cat: any) => cat.vendorId === vendor.id);
-  const activeCategories = vendorCats.filter((cat: any) => cat.isActive).length;
   
   return (
     <div className="bg-white rounded-lg border shadow-sm p-6 mb-6">
@@ -558,35 +537,14 @@ function VendorInfoCard({ vendor, onEdit, onSyncCategories, isLoadingCategories,
               </>
             )}
           </button>
-          {onEdit && (
-            <button
-              onClick={onEdit}
-              className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              정보 수정
-            </button>
-          )}
         </div>
       </div>
 
-      {/* 카테고리 정보 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        <div className="bg-gray-50 rounded-lg p-4">
-          <div className="text-sm text-gray-600">전체 카테고리</div>
-          <div className="text-2xl font-bold text-gray-900">{vendorCats.length}개</div>
-        </div>
-        <div className="bg-green-50 rounded-lg p-4">
-          <div className="text-sm text-green-600">활성 카테고리</div>
-          <div className="text-2xl font-bold text-green-700">{activeCategories}개</div>
-        </div>
-        <div className="bg-blue-50 rounded-lg p-4">
-          <div className="text-sm text-blue-600">마지막 동기화</div>
-          <div className="text-sm font-medium text-blue-700">
-            {lastSyncTime || "동기화 필요"}
-          </div>
+      {/* 마지막 동기화 정보만 표시 */}
+      <div className="bg-blue-50 rounded-lg p-4 mb-4">
+        <div className="text-sm text-blue-600">마지막 동기화</div>
+        <div className="text-sm font-medium text-blue-700">
+          {lastSyncTime || "동기화 필요"}
         </div>
       </div>
 
@@ -648,20 +606,7 @@ export default function VendorCategoryMappingPage() {
   const [vendorCategory, setVendorCategory] = useState("");
   const [selectedInternalCategory, setSelectedInternalCategory] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState<string>("all");
   
-  // 판매처 정보 수정 모달 상태
-  const [showVendorEditModal, setShowVendorEditModal] = useState(false);
-  const [editingVendor, setEditingVendor] = useState<any>(null);
-  const [vendorForm, setVendorForm] = useState({
-    name: "",
-    businessNumber: "",
-    representative: "",
-    phone: "",
-    email: "",
-    address: "",
-    status: "active" as "active" | "inactive",
-  });
 
   // UI/UX 개선을 위한 상태
   const [isLoading, setIsLoading] = useState(false);
@@ -686,15 +631,12 @@ export default function VendorCategoryMappingPage() {
         if (showModal) {
           setShowModal(false);
         }
-        if (showVendorEditModal) {
-          handleCancelVendorEdit();
-        }
       }
     };
 
     document.addEventListener('keydown', handleEscKey);
     return () => document.removeEventListener('keydown', handleEscKey);
-  }, [showModal, showVendorEditModal]);
+  }, [showModal]);
 
   // 토스트 알림 헬퍼 함수
   const showToast = (message: string, type: 'success' | 'error' | 'info') => {
@@ -739,14 +681,10 @@ export default function VendorCategoryMappingPage() {
   const filteredMappings = mappings.filter((mapping) => {
     if (!selectedVendor) return false;
     const matchesVendor = mapping.vendorId === selectedVendor.id;
-    const matchesStatus =
-      filterStatus === "all" ||
-      (filterStatus === "active" && mapping.isActive) ||
-      (filterStatus === "inactive" && !mapping.isActive);
     const matchesSearch =
       mapping.vendorCategory.toLowerCase().includes(searchTerm.toLowerCase()) ||
       mapping.internalCategoryPath.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesVendor && matchesStatus && matchesSearch;
+    return matchesVendor && matchesSearch;
   });
 
   const handleAddMapping = () => {
@@ -765,11 +703,11 @@ export default function VendorCategoryMappingPage() {
 
   const handleSaveMapping = async () => {
     if (!vendorCategory.trim()) {
-      showToast("판매처 카테고리를 입력해주세요.", "error");
+      showToast("판매처 카테고리를 입력해주세요", "error");
       return;
     }
     if (!selectedInternalCategory) {
-      showToast("내부 카테고리를 선택해주세요.", "error");
+      showToast("내부 카테고리를 먼저 선택해주세요", "error");
       return;
     }
 
@@ -806,7 +744,6 @@ export default function VendorCategoryMappingPage() {
         vendorCategory,
         internalCategoryId: selectedInternalCategory,
         internalCategoryPath: internalCat.path,
-        isActive: true,
       };
       setMappings([...mappings, newMapping]);
       showToast("매핑이 추가되었습니다.", "success");
@@ -828,108 +765,7 @@ export default function VendorCategoryMappingPage() {
     }
   };
 
-  const handleToggleActive = async (id: string) => {
-    setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 300));
-    setMappings(
-      mappings.map((m) => (m.id === id ? { ...m, isActive: !m.isActive } : m))
-    );
-    setIsLoading(false);
-    const mapping = mappings.find(m => m.id === id);
-    showToast(`매핑이 ${mapping?.isActive ? '비활성화' : '활성화'}되었습니다.`, "info");
-  };
 
-  // 판매처 정보 수정 핸들러들
-  const handleEditVendor = (vendor: any) => {
-    setEditingVendor(vendor);
-    setVendorForm({
-      name: vendor.name,
-      businessNumber: vendor.businessNumber,
-      representative: vendor.representative,
-      phone: vendor.phone,
-      email: vendor.email,
-      address: vendor.address,
-      status: vendor.status,
-    });
-    setShowVendorEditModal(true);
-  };
-
-  const handleSaveVendor = async () => {
-    // 유효성 검사
-    if (!vendorForm.name.trim()) {
-      showToast("판매처명을 입력해주세요.", "error");
-      return;
-    }
-    if (!vendorForm.businessNumber.trim()) {
-      showToast("사업자번호를 입력해주세요.", "error");
-      return;
-    }
-    if (!vendorForm.representative.trim()) {
-      showToast("대표자명을 입력해주세요.", "error");
-      return;
-    }
-    if (!vendorForm.phone.trim()) {
-      showToast("전화번호를 입력해주세요.", "error");
-      return;
-    }
-    if (!vendorForm.email.trim()) {
-      showToast("이메일을 입력해주세요.", "error");
-      return;
-    }
-    if (!vendorForm.address.trim()) {
-      showToast("주소를 입력해주세요.", "error");
-      return;
-    }
-
-    // 이메일 형식 검사
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(vendorForm.email)) {
-      showToast("올바른 이메일 형식을 입력해주세요.", "error");
-      return;
-    }
-
-    // 사업자번호 형식 검사 (xxx-xx-xxxxx)
-    const businessNumberRegex = /^\d{3}-\d{2}-\d{5}$/;
-    if (!businessNumberRegex.test(vendorForm.businessNumber)) {
-      showToast("사업자번호는 xxx-xx-xxxxx 형식으로 입력해주세요.", "error");
-      return;
-    }
-
-    setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    // 판매처 정보 업데이트
-    const updatedVendor = {
-      ...editingVendor,
-      ...vendorForm,
-    };
-
-    setVendors(vendors.map(v => v.id === editingVendor.id ? updatedVendor : v));
-    
-    // 현재 선택된 판매처가 수정된 판매처라면 업데이트
-    if (selectedVendor?.id === editingVendor.id) {
-      setSelectedVendor(updatedVendor);
-    }
-
-    setIsLoading(false);
-    showToast("판매처 정보가 수정되었습니다.", "success");
-    setShowVendorEditModal(false);
-    setEditingVendor(null);
-  };
-
-  const handleCancelVendorEdit = () => {
-    setShowVendorEditModal(false);
-    setEditingVendor(null);
-    setVendorForm({
-      name: "",
-      businessNumber: "",
-      representative: "",
-      phone: "",
-      email: "",
-      address: "",
-      status: "active" as "active" | "inactive",
-    });
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -937,7 +773,7 @@ export default function VendorCategoryMappingPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">판매처별 카테고리 매핑</h1>
         <p className="text-gray-600 mt-1">
-          각 판매처의 카테고리와 내부 카테고리를 매핑하여 상품 분류를 자동화합니다.
+          각 판매처의 카테고리와 내부 카테고리를 매핑하여 상품 분류를 관리합니다.
         </p>
       </div>
 
@@ -1020,7 +856,6 @@ export default function VendorCategoryMappingPage() {
               {/* 판매처 기본 정보 */}
               <VendorInfoCard
                 vendor={selectedVendor}
-                onEdit={() => handleEditVendor(selectedVendor)}
                 onSyncCategories={syncVendorCategories}
                 isLoadingCategories={isLoadingCategories}
                 vendorCategories={vendorCategories}
@@ -1048,20 +883,6 @@ export default function VendorCategoryMappingPage() {
 
                   {/* 필터 및 검색 */}
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                    <div className="relative">
-                      <select
-                        value={filterStatus}
-                        onChange={(e) => setFilterStatus(e.target.value)}
-                        className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none bg-white pr-8"
-                      >
-                        <option value="all">전체 상태</option>
-                        <option value="active">활성</option>
-                        <option value="inactive">비활성</option>
-                      </select>
-                      <svg className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
                     <div className="relative flex-1">
                       <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -1081,7 +902,7 @@ export default function VendorCategoryMappingPage() {
                   {filteredMappings.length === 0 ? (
                     <div className="text-center py-12">
                       <div className="text-gray-400 text-4xl mb-3">🔗</div>
-                      <p className="text-gray-600">등록된 매핑이 없습니다.</p>
+                      <p className="text-gray-600">등록된 매핑이 없습니다</p>
                       <button
                         onClick={handleAddMapping}
                         className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
@@ -1098,14 +919,8 @@ export default function VendorCategoryMappingPage() {
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
-                              <span
-                                className={`px-2 py-1 text-xs rounded ${
-                                  mapping.isActive
-                                    ? "bg-green-100 text-green-700"
-                                    : "bg-gray-100 text-gray-700"
-                                }`}
-                              >
-                                {mapping.isActive ? "활성" : "비활성"}
+                              <span className="px-2 py-1 text-xs rounded bg-blue-100 text-blue-700">
+                                매핑됨
                               </span>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
@@ -1128,20 +943,6 @@ export default function VendorCategoryMappingPage() {
                             </div>
                           </div>
                           <div className="ml-4 flex flex-col gap-2">
-                            <button
-                              onClick={() => handleToggleActive(mapping.id)}
-                              disabled={isLoading}
-                              className={`px-3 py-1.5 text-sm border rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 ${
-                                mapping.isActive
-                                  ? "border-gray-300 hover:bg-gray-50 hover:border-gray-400"
-                                  : "border-green-300 text-green-600 hover:bg-green-50 hover:border-green-400"
-                              }`}
-                            >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={mapping.isActive ? "M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728" : "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"} />
-                              </svg>
-                              {mapping.isActive ? "비활성화" : "활성화"}
-                            </button>
                             <button
                               onClick={() => handleEditMapping(mapping)}
                               disabled={isLoading}
@@ -1172,7 +973,6 @@ export default function VendorCategoryMappingPage() {
             </>
           ) : (
             <div className="bg-white rounded-lg border shadow-sm p-12 text-center">
-              <div className="text-gray-400 text-4xl mb-3">🏪</div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">
                 판매처를 선택해주세요
               </h3>
@@ -1281,139 +1081,6 @@ export default function VendorCategoryMappingPage() {
         </div>
       )}
 
-      {/* 판매처 정보 수정 모달 */}
-      {showVendorEditModal && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in"
-          onClick={(e) => e.target === e.currentTarget && handleCancelVendorEdit()}
-        >
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto transform transition-all duration-300 ease-out animate-scale-in">
-            <h3 className="text-lg font-semibold mb-4">판매처 정보 수정</h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  판매처명 (필수)
-                </label>
-                <input
-                  type="text"
-                  value={vendorForm.name}
-                  onChange={(e) => setVendorForm({ ...vendorForm, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  사업자번호 (필수)
-                </label>
-                <input
-                  type="text"
-                  value={vendorForm.businessNumber}
-                  onChange={(e) => setVendorForm({ ...vendorForm, businessNumber: e.target.value })}
-                  placeholder="xxx-xx-xxxxx"
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  대표자명 (필수)
-                </label>
-                <input
-                  type="text"
-                  value={vendorForm.representative}
-                  onChange={(e) => setVendorForm({ ...vendorForm, representative: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  전화번호 (필수)
-                </label>
-                <input
-                  type="text"
-                  value={vendorForm.phone}
-                  onChange={(e) => setVendorForm({ ...vendorForm, phone: e.target.value })}
-                  placeholder="02-1234-5678"
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  이메일 (필수)
-                </label>
-                <input
-                  type="email"
-                  value={vendorForm.email}
-                  onChange={(e) => setVendorForm({ ...vendorForm, email: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  상태
-                </label>
-                <select
-                  value={vendorForm.status}
-                  onChange={(e) => setVendorForm({ ...vendorForm, status: e.target.value as "active" | "inactive" })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="active">활성</option>
-                  <option value="inactive">비활성</option>
-                </select>
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  주소 (필수)
-                </label>
-                <input
-                  type="text"
-                  value={vendorForm.address}
-                  onChange={(e) => setVendorForm({ ...vendorForm, address: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                onClick={handleCancelVendorEdit}
-                disabled={isLoading}
-                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                취소
-              </button>
-              <button
-                onClick={handleSaveVendor}
-                disabled={isLoading}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md"
-              >
-                {isLoading ? (
-                  <>
-                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    처리중...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    수정
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* 토스트 알림 */}
       {toast && (

@@ -224,7 +224,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
                 <button
                   className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                   onClick={() => {
-                    if (confirm('정말 이 상품을 삭제하시겠습니까?')) {
+                    if (confirm('이 상품을 정말 삭제하시겠습니까? 삭제된 상품은 복구할 수 없습니다.')) {
                       onProductDelete?.(product.id);
                     }
                     setDropdownOpen(null);
@@ -248,7 +248,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
     if (!product.variants || product.variants.length === 0) {
       return (
         <div className="p-4 text-center text-gray-500">
-          등록된 옵션이 없습니다.
+          아직 등록된 옵션이 없습니다
         </div>
       );
     }

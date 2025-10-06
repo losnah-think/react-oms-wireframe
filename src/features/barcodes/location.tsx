@@ -203,7 +203,7 @@ const LocationBarcodesPage: React.FC = () => {
               {filteredLocations.length === 0 && (
                 <tr>
                   <td colSpan={4} className="p-8 text-center text-sm text-gray-500">
-                    검색 결과가 없습니다.
+                    검색 결과가 없습니다
                   </td>
                 </tr>
               )}

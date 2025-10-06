@@ -863,12 +863,12 @@ const ProductCsvUploadPage: React.FC = () => {
         </div>
 
         <HelpDrawer open={isHelpOpen} onClose={() => setIsHelpOpen(false)} title="CSV 업로드 도움말">
-          <ul className="list-disc pl-5 text-sm text-gray-600 space-y-1">
-            <li>지원 형식은 UTF-8 인코딩의 CSV입니다.</li>
-            <li>필수 필드(플랫폼별)를 반드시 매핑하세요. 매핑이 없으면 업로드할 수 없습니다.</li>
-            <li>이미지 필드는 URL을 사용할 경우 '이미지 필드 URL로 처리' 옵션을 체크하세요.</li>
-            <li>복잡한 CSV(따옴표 포함, 개행 포함)는 자동 파서가 처리하지만 이상이 있으면 템플릿을 이용하세요.</li>
-            <li>템플릿 다운로드 버튼을 사용해 플랫폼별 샘플 헤더를 받아보세요.</li>
+          <ul className="list-disc pl-5 text-sm text-gray-600 space-y-2">
+            <li><strong>파일 형식:</strong> UTF-8 인코딩의 CSV 파일만 지원됩니다</li>
+            <li><strong>필수 매핑:</strong> 플랫폼별 필수 필드를 반드시 매핑해주세요. 매핑이 없으면 업로드가 불가능합니다</li>
+            <li><strong>이미지 처리:</strong> 이미지 URL을 사용할 때는 '이미지 필드 URL로 처리' 옵션을 체크해주세요</li>
+            <li><strong>복잡한 데이터:</strong> 따옴표나 줄바꿈이 포함된 CSV도 자동으로 처리되지만, 문제가 있다면 템플릿을 사용해보세요</li>
+            <li><strong>템플릿 활용:</strong> 템플릿 다운로드로 플랫폼별 샘플 파일을 받아 참고하세요</li>
           </ul>
         </HelpDrawer>
 

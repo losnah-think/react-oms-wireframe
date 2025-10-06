@@ -25,3 +25,6 @@ export {
   Col,
   GridStyles
 } from './Grid';
+export { default as Alert, type AlertProps } from './Alert';
+export { default as Confirm, type ConfirmProps } from './Confirm';
+export { NotificationProvider, useNotification } from './NotificationProvider';

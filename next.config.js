@@ -44,26 +44,23 @@ const nextConfig = {
         path: false,
       };
     }
-    
-    // 개발 환경에서 소스맵 최적화
-    if (dev) {
-      config.devtool = 'cheap-module-source-map';
-    }
-    
-    // 번들 크기 최적화
-    config.optimization = {
-      ...config.optimization,
-      splitChunks: {
-        chunks: 'all',
-        cacheGroups: {
-          vendor: {
-            test: /[\\/]node_modules[\\/]/,
-            name: 'vendors',
-            chunks: 'all',
+
+    // 번들 크기 최적화 (프로덕션에만 적용)
+    if (!dev) {
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          chunks: 'all',
+          cacheGroups: {
+            vendor: {
+              test: /[\\/]node_modules[\\/]/,
+              name: 'vendors',
+              chunks: 'all',
+            },
           },
         },
-      },
-    };
+      };
+    }
     
     return config;
   },

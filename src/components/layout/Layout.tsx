@@ -14,6 +14,7 @@ export default function Layout({ children }: LayoutProps) {
   
   // URL에 따라 currentPage 설정
   const getCurrentPageFromPath = (pathname: string) => {
+    // Products
     if (pathname.startsWith('/products/barcode')) return 'barcodes-products'
     if (pathname === '/products/add') return 'products-add'
     if (pathname === '/products/csv') return 'products-csv'
@@ -21,10 +22,51 @@ export default function Layout({ children }: LayoutProps) {
     if (pathname === '/products/registration-history') return 'products-registration-history'
     if (pathname === '/products/individual-registration') return 'products-individual-registration'
     if (pathname === '/products/trash') return 'products-trash'
-    if (pathname.startsWith('/products')) return 'products-list'
-    if (pathname.startsWith('/vendors')) return 'vendors-sales'
-    if (pathname.startsWith('/settings')) return 'settings-integrations'
-    if (pathname.startsWith('/barcodes')) return 'barcodes-products'
+    if (pathname === '/products' || pathname.startsWith('/products/')) return 'products-list'
+    
+    // Barcodes
+    if (pathname === '/barcodes/location') return 'barcodes-location'
+    if (pathname === '/barcodes/settings') return 'barcodes-settings'
+    if (pathname === '/barcodes' || pathname.startsWith('/barcodes/')) return 'barcodes-products'
+    
+    // Vendors
+    if (pathname === '/vendors/sales') return 'vendors-sales'
+    if (pathname === '/vendors/fixed-addresses') return 'vendors-fixed-addresses'
+    if (pathname === '/vendors/vendor-products') return 'vendors-products'
+    if (pathname === '/vendors/vendor-info') return 'vendors-info'
+    if (pathname === '/vendors/vendor-category-mapping') return 'vendors-category-mapping'
+    if (pathname === '/vendors/delivery-companies') return 'vendors-delivery'
+    if (pathname === '/vendors/automation') return 'vendors-automation'
+    if (pathname === '/vendors/suppliers') return 'vendors-suppliers'
+    if (pathname === '/vendors/supplier-orders') return 'vendors-supplier-orders'
+    if (pathname === '/vendors/payments') return 'vendors-payments'
+    if (pathname === '/vendors' || pathname.startsWith('/vendors/')) return 'vendors-sales'
+    
+    // Settings
+    if (pathname === '/settings/integration' || pathname === '/settings/integrations') return 'settings-integrations'
+    if (pathname === '/settings/product-groups') return 'settings-product-groups'
+    if (pathname === '/settings/product-classifications' || pathname === '/settings/product-categories') return 'settings-product-classifications'
+    if (pathname === '/settings/basic-metadata') return 'settings-basic-metadata'
+    if (pathname === '/settings/brands') return 'settings-brands'
+    if (pathname === '/settings/years') return 'settings-product-years'
+    if (pathname === '/settings/seasons') return 'settings-product-seasons'
+    if (pathname === '/settings/users') return 'settings-users'
+    if (pathname === '/settings/categories') return 'settings-product-classifications'
+    if (pathname === '/settings/bc') return 'settings-integrations'
+    if (pathname === '/settings' || pathname.startsWith('/settings/')) return 'settings-integrations'
+    
+    // Orders
+    if (pathname === '/orders/settings') return 'orders-settings'
+    if (pathname === '/orders' || pathname.startsWith('/orders/')) return 'orders-list'
+    
+    // Malls
+    if (pathname === '/malls/products') return 'malls-products'
+    if (pathname === '/malls/info') return 'malls-info'
+    if (pathname === '/malls' || pathname.startsWith('/malls/')) return 'malls'
+    
+    // Categories
+    if (pathname === '/categories/mapping') return 'category-mapping'
+    
     return 'products-list'
   }
   

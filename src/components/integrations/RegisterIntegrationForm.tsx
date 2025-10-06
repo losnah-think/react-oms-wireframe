@@ -194,15 +194,15 @@ export default function RegisterIntegrationForm({
       });
       const data = await resp.json();
       if (data?.ok) {
-        window.alert("연결이 등록되었습니다.");
+        window.alert("연결이 성공적으로 등록되었습니다!");
         onRegistered?.({ id, ...payload });
         onClose?.();
       } else {
-        window.alert("등록에 실패했습니다.");
+        window.alert("등록에 실패했습니다. 입력 정보를 다시 확인해주세요.");
       }
     } catch (error) {
       console.error(error);
-      window.alert("등록 중 오류가 발생했습니다.");
+      window.alert("등록 중 오류가 발생했습니다. 네트워크 연결을 확인해주세요.");
     }
   };
 
@@ -219,11 +219,11 @@ export default function RegisterIntegrationForm({
         body: JSON.stringify({ apiBaseUrl, accessToken, clientId, clientSecret }),
       });
       const data = await resp.json();
-      if (data?.ok) window.alert(`연결 성공 (HTTP ${data.status})`);
-      else window.alert(`연결 실패 (HTTP ${data?.status || "unknown"})`);
+      if (data?.ok) window.alert(`연결 테스트에 성공했습니다! (HTTP ${data.status})`);
+      else window.alert(`연결 테스트에 실패했습니다. (HTTP ${data?.status || "unknown"})`);
     } catch (error) {
       console.error(error);
-      window.alert("테스트 연결 중 오류가 발생했습니다.");
+      window.alert("테스트 연결 중 오류가 발생했습니다. 설정을 확인해주세요.");
     } finally {
       setTesting(false);
     }

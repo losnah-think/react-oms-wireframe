@@ -52,6 +52,8 @@ export class PageRenderer {
         return this.renderCategories();
 
       // Malls
+      case "malls":
+        return this.renderMallsList();
       case "malls-list":
         return this.renderMallsList();
       case "malls-info":
@@ -61,13 +63,36 @@ export class PageRenderer {
       case "malls-category-mapping":
         return this.renderCategoryMapping();
 
+      // Vendors
       case "vendors-sales":
         return this.renderVendorManagement();
+      case "vendors-fixed-addresses":
+        return this.renderVendorFixedAddresses();
       case "vendors-products":
-        return this.renderMallProducts();
+        return this.renderVendorProducts();
       case "vendors-info":
-        return this.renderMallInfo();
+        return this.renderVendorInfo();
       case "vendors-category-mapping":
+        return this.renderCategoryMapping();
+      case "vendors-delivery":
+        return this.renderVendorDelivery();
+      case "vendors-suppliers":
+        return this.renderVendorSuppliers();
+      case "vendors-supplier-orders":
+        return this.renderVendorSupplierOrders();
+      case "vendors-payments":
+        return this.renderVendorPayments();
+
+      // Barcodes
+      case "barcodes-products":
+        return this.renderBarcodesProducts();
+      case "barcodes-location":
+        return this.renderBarcodesLocation();
+      case "barcodes-settings":
+        return this.renderBarcodesSettings();
+
+      // Categories
+      case "category-mapping":
         return this.renderCategoryMapping();
 
       // Settings
@@ -231,5 +256,53 @@ export class PageRenderer {
 
   private renderBarcodes(): JSX.Element {
     return <div>바코드 관리 기능은 현재 준비 중입니다.</div>;
+  }
+
+  // Vendor specific renderers
+  private renderVendorFixedAddresses(): JSX.Element {
+    const VendorFixedAddressManagementPage = require("../features/partners/VendorFixedAddressManagementPage").default;
+    return <VendorFixedAddressManagementPage />;
+  }
+
+  private renderVendorProducts(): JSX.Element {
+    const VendorProductsPage = require("../features/partners/VendorProductsPage").default;
+    return <VendorProductsPage />;
+  }
+
+  private renderVendorInfo(): JSX.Element {
+    const VendorInfoManagementPage = require("../features/partners/VendorInfoManagementPage").default;
+    return <VendorInfoManagementPage />;
+  }
+
+  private renderVendorDelivery(): JSX.Element {
+    return <div>택배사 관리 기능은 현재 준비 중입니다.</div>;
+  }
+
+  private renderVendorSuppliers(): JSX.Element {
+    return <div>공급처 관리 기능은 현재 준비 중입니다.</div>;
+  }
+
+  private renderVendorSupplierOrders(): JSX.Element {
+    return <div>공급처 발주 관리 기능은 현재 준비 중입니다.</div>;
+  }
+
+  private renderVendorPayments(): JSX.Element {
+    return <div>지불 관리 기능은 현재 준비 중입니다.</div>;
+  }
+
+  // Barcodes specific renderers
+  private renderBarcodesProducts(): JSX.Element {
+    const ProductBarcodeManagementPage = require("../features/products/ProductBarcodeManagementPage").default;
+    return <ProductBarcodeManagementPage />;
+  }
+
+  private renderBarcodesLocation(): JSX.Element {
+    const BarcodesLocationPage = require("../features/barcodes/location").default;
+    return <BarcodesLocationPage />;
+  }
+
+  private renderBarcodesSettings(): JSX.Element {
+    const BarcodesSettingsPage = require("../features/barcodes/settings").default;
+    return <BarcodesSettingsPage />;
   }
 }

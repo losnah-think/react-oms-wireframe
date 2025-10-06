@@ -23,31 +23,25 @@ export default function Home(props: any) {
 
   const showLoginInline = !sessionExists && !hideLogin && !useMocksInProd;
 
-  // Initialize OO architecture components
-  const appController = AppController.getInstance();
-  const navigationService = NavigationService.getInstance();
-  const pageRenderer = PageRenderer.getInstance();
+  // Initialize OO architecture components (memoized)
+  const appController = React.useMemo(() => AppController.getInstance(), []);
+  const navigationService = React.useMemo(() => NavigationService.getInstance(), []);
+  const pageRenderer = React.useMemo(() => PageRenderer.getInstance(), []);
 
+  // Update currentPage when router.pathname changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const { page, id } = Router.parsePathToPage(router.pathname);
+      setCurrentPage(page);
+      setSelectedProductId(id || "");
+    }
+  }, [router.pathname]);
+
+  // One-time setup
   useEffect(() => {
     // Set up navigation service with router
     navigationService.setRouter(router);
     appController.setNavigationService(navigationService);
-
-    // Initialize from URL
-    const { page, id } = Router.parsePathToPage(window.location.pathname);
-    setCurrentPage(page);
-    setSelectedProductId(id || "");
-    appController.navigateTo(page, id);
-
-    // Set up navigation handlers
-    const handleNavigate = (page: string, productId?: string) => {
-      setCurrentPage(page);
-      setSelectedProductId(productId || "");
-      appController.navigateTo(page, productId);
-    };
-
-    // Make navigation function globally available
-    (window as any).navigateTo = handleNavigate;
 
     // Set up route change listeners
     const onRouteChange = (url: string) => {
@@ -69,7 +63,7 @@ export default function Home(props: any) {
       router.events?.off?.("routeChangeComplete", onRouteChange);
       window.removeEventListener("popstate", onPopState);
     };
-  }, []);
+  }, []); // Empty array - only run once on mount
 
   const handleNavigate = (page: string, productId?: string) => {
     setCurrentPage(page);

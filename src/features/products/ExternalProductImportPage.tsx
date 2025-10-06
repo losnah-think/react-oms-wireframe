@@ -958,10 +958,10 @@ const ExternalProductImportPage: React.FC = () => {
                                 <button
                                   onClick={() => handleImport(mall.id)}
                                   disabled={importProgress[mall.id] > 0}
-                                  className="w-full px-4 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
                                 >
                                   {importProgress[mall.id] > 0
-                                    ? `상품 가져오는 중... ${importProgress[mall.id]}%`
+                                    ? `가져오는 중... ${importProgress[mall.id]}%`
                                     : "전체 상품 가져오기"}
                                 </button>
 
@@ -969,16 +969,16 @@ const ExternalProductImportPage: React.FC = () => {
                                   onClick={() =>
                                     handleImport(`${mall.id}-incremental`)
                                   }
-                                  className="w-full px-4 py-2 border border-blue-600 text-blue-600 rounded-md hover:bg-blue-50"
+                                  className="w-full px-4 py-2 border border-blue-600 text-blue-600 rounded-md hover:bg-blue-50 transition-colors"
                                 >
-                                  신규/변경 상품만 가져오기
+                                  신규/변경 상품 가져오기
                                 </button>
 
                                 <button
                                   onClick={() => handleSync(mall.id)}
-                                  className="w-full px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                                  className="w-full px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
                                 >
-                                  기존 상품 동기화
+                                  상품 동기화
                                 </button>
                               </div>
                             </div>

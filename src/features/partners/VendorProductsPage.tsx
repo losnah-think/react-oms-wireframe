@@ -96,7 +96,27 @@ interface Product {
   classificationPath: string[];
   selling_price: number;
   stock: number;
-  is_selling: boolean;
+  status: 'active' | 'inactive' | 'out_of_stock' | 'discontinued';
+  season: string;
+  relatedProducts: string[];
+  brand: string;
+  year: string;
+}
+
+interface FulgoProduct {
+  id: string;
+  name: string;
+  code: string;
+  category: string[];
+  price: number;
+  stock: number;
+  status: 'active' | 'inactive' | 'out_of_stock' | 'discontinued';
+  season: string;
+  brand: string;
+  year: string;
+  description: string;
+  images: string[];
+  tags: string[];
 }
 
 // Mock 데이터
@@ -109,7 +129,11 @@ const mockProducts: Product[] = [
     classificationPath: ["의류", "상의", "티셔츠"],
     selling_price: 29000,
     stock: 150,
-    is_selling: true,
+    status: 'active',
+    season: "2024 SS",
+    relatedProducts: ["TS002", "TS003"],
+    brand: "FULGO",
+    year: "2024",
   },
   {
     id: 2,
@@ -119,7 +143,11 @@ const mockProducts: Product[] = [
     classificationPath: ["의류", "하의", "청바지"],
     selling_price: 59000,
     stock: 80,
-    is_selling: true,
+    status: 'active',
+    season: "2024 FW",
+    relatedProducts: ["JN001", "JN003"],
+    brand: "FULGO",
+    year: "2024",
   },
   {
     id: 3,
@@ -129,7 +157,11 @@ const mockProducts: Product[] = [
     classificationPath: ["잡화", "가방", "크로스백"],
     selling_price: 89000,
     stock: 45,
-    is_selling: false,
+    status: 'inactive',
+    season: "2023 FW",
+    relatedProducts: ["BG001", "BG002"],
+    brand: "FULGO",
+    year: "2023",
   },
   {
     id: 4,
@@ -139,8 +171,76 @@ const mockProducts: Product[] = [
     classificationPath: ["신발", "운동화", "스니커즈"],
     selling_price: 79000,
     stock: 0,
-    is_selling: true,
+    status: 'out_of_stock',
+    season: "2024 SS",
+    relatedProducts: ["SH001", "SH002"],
+    brand: "FULGO",
+    year: "2024",
   },
+];
+
+// FULGO 상품 데이터 (실제로는 API에서 가져옴)
+const mockFulgoProducts: FulgoProduct[] = [
+  {
+    id: "fulgo_1",
+    name: "베이직 티셔츠",
+    code: "TS001",
+    category: ["의류", "상의", "티셔츠"],
+    price: 25000,
+    stock: 200,
+    status: 'active',
+    season: "2024 SS",
+    brand: "FULGO",
+    year: "2024",
+    description: "편안한 착용감의 베이직 티셔츠입니다.",
+    images: ["/images/ts001_1.jpg", "/images/ts001_2.jpg"],
+    tags: ["베이직", "티셔츠", "캐주얼"]
+  },
+  {
+    id: "fulgo_2",
+    name: "슬림핏 청바지",
+    code: "JN002",
+    category: ["의류", "하의", "청바지"],
+    price: 55000,
+    stock: 100,
+    status: 'active',
+    season: "2024 FW",
+    brand: "FULGO",
+    year: "2024",
+    description: "슬림핏으로 다리를 길어 보이게 하는 청바지입니다.",
+    images: ["/images/jn002_1.jpg"],
+    tags: ["청바지", "슬림핏", "데님"]
+  },
+  {
+    id: "fulgo_3",
+    name: "가죽 크로스백",
+    code: "BG003",
+    category: ["잡화", "가방", "크로스백"],
+    price: 85000,
+    stock: 50,
+    status: 'inactive',
+    season: "2023 FW",
+    brand: "FULGO",
+    year: "2023",
+    description: "고급 가죽으로 제작된 크로스백입니다.",
+    images: ["/images/bg003_1.jpg", "/images/bg003_2.jpg"],
+    tags: ["가방", "가죽", "크로스백"]
+  },
+  {
+    id: "fulgo_4",
+    name: "캐주얼 스니커즈",
+    code: "SH004",
+    category: ["신발", "운동화", "스니커즈"],
+    price: 75000,
+    stock: 0,
+    status: 'out_of_stock',
+    season: "2024 SS",
+    brand: "FULGO",
+    year: "2024",
+    description: "일상에서 편안하게 신을 수 있는 캐주얼 스니커즈입니다.",
+    images: ["/images/sh004_1.jpg"],
+    tags: ["스니커즈", "캐주얼", "운동화"]
+  }
 ];
 
 const mockVendors: Vendor[] = [
@@ -189,12 +289,97 @@ export default function VendorProductsPage() {
   const [productSearchTerm, setProductSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   
+  // 상품 비교 모달 상태
+  const [showCompareModal, setShowCompareModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [fulgoProduct, setFulgoProduct] = useState<FulgoProduct | null>(null);
+  
+  // 체크박스 관련 상태
+  const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
+  const [isAllSelected, setIsAllSelected] = useState(false);
+  
+  // 체크박스 관련 함수들
+  const handleSelectProduct = (productId: number) => {
+    setSelectedProducts(prev => 
+      prev.includes(productId) 
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedProducts([]);
+      setIsAllSelected(false);
+    } else {
+      const allProductIds = filteredProducts.map(p => p.id);
+      setSelectedProducts(allProductIds);
+      setIsAllSelected(true);
+    }
+  };
+
+  const handleBulkStatusChange = async (newStatus: 'active' | 'inactive' | 'out_of_stock' | 'discontinued') => {
+    if (selectedProducts.length === 0) {
+      showToast("상품을 선택해주세요.", "error");
+      return;
+    }
+
+    setIsLoading(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    setProducts(prev => prev.map(p => 
+      selectedProducts.includes(p.id) 
+        ? { ...p, status: newStatus }
+        : p
+    ));
+    
+    const statusText = {
+      'active': '판매중',
+      'inactive': '판매중지',
+      'out_of_stock': '품절',
+      'discontinued': '단종'
+    }[newStatus];
+    
+    showToast(`${selectedProducts.length}개 상품이 ${statusText}으로 변경되었습니다.`, "success");
+    
+    setSelectedProducts([]);
+    setIsAllSelected(false);
+    setIsLoading(false);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedProducts.length === 0) {
+      showToast("상품을 선택해주세요.", "error");
+      return;
+    }
+
+    if (!window.confirm(`선택한 ${selectedProducts.length}개 상품을 삭제하시겠습니까?`)) {
+      return;
+    }
+
+    setIsLoading(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    setProducts(prev => prev.filter(p => !selectedProducts.includes(p.id)));
+    showToast(`${selectedProducts.length}개 상품이 삭제되었습니다.`, "success");
+    
+    setSelectedProducts([]);
+    setIsAllSelected(false);
+    setIsLoading(false);
+  };
+
+  // 상품 비교 함수
+  const handleCompareProduct = (product: Product) => {
+    const fulgoProductData = mockFulgoProducts.find(fp => fp.code === product.code);
+    setSelectedProduct(product);
+    setFulgoProduct(fulgoProductData || null);
+    setShowCompareModal(true);
+  };
+  
   // 토스트 알림 헬퍼 함수
   const showToast = (message: string, type: 'success' | 'error' | 'info') => {
     setToast({ message, type });
   };
-
-  // 상품 정보 동기화 함수
   const syncProducts = async (vendorId: string) => {
     setIsLoading(true);
     showToast(`${vendors.find(v => v.id === vendorId)?.name} 상품 정보 동기화 중...`, "info");
@@ -203,7 +388,7 @@ export default function VendorProductsPage() {
     await new Promise(resolve => setTimeout(resolve, 2000));
     
     // 새로운 상품 데이터 생성 (실제로는 API에서 받아옴)
-    const newProducts = [
+    const newProducts: Product[] = [
       {
         id: Date.now() + Math.random(),
         name: "새로운 상품 1",
@@ -212,7 +397,11 @@ export default function VendorProductsPage() {
         classificationPath: ["의류", "상의"],
         selling_price: Math.floor(Math.random() * 100000) + 10000,
         stock: Math.floor(Math.random() * 100),
-        is_selling: true,
+        status: 'active',
+        season: "2024 SS",
+        relatedProducts: [],
+        brand: "FULGO",
+        year: "2024",
       },
       {
         id: Date.now() + Math.random() + 1,
@@ -222,7 +411,11 @@ export default function VendorProductsPage() {
         classificationPath: ["의류", "하의"],
         selling_price: Math.floor(Math.random() * 100000) + 10000,
         stock: Math.floor(Math.random() * 100),
-        is_selling: true,
+        status: 'active',
+        season: "2024 FW",
+        relatedProducts: [],
+        brand: "FULGO",
+        year: "2024",
       }
     ];
     
@@ -243,11 +436,19 @@ export default function VendorProductsPage() {
         const matchesSearch = p.name.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
                              p.code.toLowerCase().includes(productSearchTerm.toLowerCase());
         const matchesStatus = filterStatus === "all" ||
-                             (filterStatus === "selling" && p.is_selling) ||
-                             (filterStatus === "not_selling" && !p.is_selling);
+                             (filterStatus === "active" && p.status === 'active') ||
+                             (filterStatus === "inactive" && p.status === 'inactive') ||
+                             (filterStatus === "out_of_stock" && p.status === 'out_of_stock') ||
+                             (filterStatus === "discontinued" && p.status === 'discontinued');
         return matchesVendor && matchesSearch && matchesStatus;
       })
     : [];
+
+  // 체크박스 상태 동기화
+  useEffect(() => {
+    const allSelected = filteredProducts.length > 0 && selectedProducts.length === filteredProducts.length;
+    setIsAllSelected(allSelected);
+  }, [selectedProducts, filteredProducts]);
 
   const filteredVendors = vendors.filter(
     (v) =>
@@ -265,7 +466,11 @@ export default function VendorProductsPage() {
       classificationPath: [],
       selling_price: 0,
       stock: 0,
-      is_selling: true
+      status: 'active',
+      season: "",
+      relatedProducts: [],
+      brand: "",
+      year: "",
     });
     setShowProductModal(true);
   };
@@ -277,13 +482,48 @@ export default function VendorProductsPage() {
   };
   
   // \uc0c1\ud488 \uc800\uc7a5
+  const handleDeleteProduct = async (productId: number) => {
+    if (!window.confirm("이 상품을 삭제하시겠습니까?")) {
+      return;
+    }
+    
+    setIsLoading(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    const product = products.find(p => p.id === productId);
+    setProducts(prev => prev.filter(p => p.id !== productId));
+    
+    showToast(`${product?.name}이(가) 삭제되었습니다.`, "success");
+    setIsLoading(false);
+  };
+  const handleStatusChange = async (productId: number, newStatus: 'active' | 'inactive' | 'out_of_stock' | 'discontinued') => {
+    setIsLoading(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    setProducts(prev => prev.map(p => 
+      p.id === productId 
+        ? { ...p, status: newStatus }
+        : p
+    ));
+    
+    const product = products.find(p => p.id === productId);
+    const statusText = {
+      'active': '판매중',
+      'inactive': '판매중지',
+      'out_of_stock': '품절',
+      'discontinued': '단종'
+    }[newStatus];
+    
+    showToast(`${product?.name}의 상태가 ${statusText}으로 변경되었습니다.`, "success");
+    setIsLoading(false);
+  };
   const handleSaveProduct = async () => {
     if (!editingProduct?.name.trim()) {
-      showToast("\uc0c1\ud488\uba85\uc744 \uc785\ub825\ud574\uc8fc\uc138\uc694.", "error");
+      showToast("상품명을 입력해주세요.", "error");
       return;
     }
     if (!editingProduct?.code.trim()) {
-      showToast("\uc0c1\ud488\ucf54\ub4dc\ub97c \uc785\ub825\ud574\uc8fc\uc138\uc694.", "error");
+      showToast("상품코드를 입력해주세요.", "error");
       return;
     }
     
@@ -293,10 +533,10 @@ export default function VendorProductsPage() {
     const existingIndex = products.findIndex(p => p.id === editingProduct.id);
     if (existingIndex >= 0) {
       setProducts(products.map(p => p.id === editingProduct.id ? editingProduct : p));
-      showToast("\uc0c1\ud488\uc774 \uc218\uc815\ub418\uc5c8\uc2b5\ub2c8\ub2e4.", "success");
+      showToast("상품이 수정되었습니다.", "success");
     } else {
       setProducts([...products, editingProduct]);
-      showToast("\uc0c1\ud488\uc774 \ucd94\uac00\ub418\uc5c8\uc2b5\ub2c8\ub2e4.", "success");
+      showToast("상품이 추가되었습니다.", "success");
     }
     
     setIsLoading(false);
@@ -504,28 +744,65 @@ export default function VendorProductsPage() {
                     <h3 className="font-semibold text-gray-900">
                       등록 상품 목록 ({filteredProducts.length}개)
                     </h3>
-                    <button 
-                      onClick={() => syncProducts(selectedVendor.id)}
-                      disabled={isLoading}
-                      className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md"
-                    >
-                      {isLoading ? (
-                        <>
-                          <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          동기화 중...
-                        </>
-                      ) : (
-                        <>
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                          </svg>
-                          상품 정보 동기화
-                        </>
-                      )}
-                    </button>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => handleBulkStatusChange('active')}
+                        disabled={isLoading || selectedProducts.length === 0}
+                        className="px-3 py-2 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center gap-2"
+                      >
+                        선택 상품 판매중
+                      </button>
+                      <button 
+                        onClick={() => handleBulkStatusChange('inactive')}
+                        disabled={isLoading || selectedProducts.length === 0}
+                        className="px-3 py-2 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center gap-2"
+                      >
+                        선택 상품 판매중지
+                      </button>
+                      <button 
+                        onClick={() => handleBulkStatusChange('out_of_stock')}
+                        disabled={isLoading || selectedProducts.length === 0}
+                        className="px-3 py-2 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center gap-2"
+                      >
+                        선택 상품 품절
+                      </button>
+                      <button 
+                        onClick={() => handleBulkStatusChange('discontinued')}
+                        disabled={isLoading || selectedProducts.length === 0}
+                        className="px-3 py-2 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center gap-2"
+                      >
+                        선택 상품 단종
+                      </button>
+                      <button 
+                        onClick={handleBulkDelete}
+                        disabled={isLoading || selectedProducts.length === 0}
+                        className="px-3 py-2 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center gap-2"
+                      >
+                        선택 상품 삭제
+                      </button>
+                      <button 
+                        onClick={() => syncProducts(selectedVendor.id)}
+                        disabled={isLoading}
+                        className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center gap-2"
+                      >
+                        {isLoading ? (
+                          <>
+                            <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            동기화 중...
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            상품 정보 동기화
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
                   
                   {/* 검색 및 필터 */}
@@ -537,8 +814,10 @@ export default function VendorProductsPage() {
                         className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none bg-white pr-8"
                       >
                         <option value="all">전체 상태</option>
-                        <option value="selling">판매중</option>
-                        <option value="not_selling">판매중지</option>
+                        <option value="active">판매중</option>
+                        <option value="inactive">판매중지</option>
+                        <option value="out_of_stock">품절</option>
+                        <option value="discontinued">단종</option>
                       </select>
                       <svg className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -560,10 +839,25 @@ export default function VendorProductsPage() {
                 </div>
 
                 <div className="divide-y">
+                  {filteredProducts.length > 0 && (
+                    <div className="p-4 bg-gray-50 border-b">
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={isAllSelected}
+                          onChange={handleSelectAll}
+                          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                        />
+                        <span className="text-sm text-gray-700">
+                          전체 선택 ({selectedProducts.length}/{filteredProducts.length})
+                        </span>
+                      </div>
+                    </div>
+                  )}
                   {filteredProducts.length === 0 ? (
                     <div className="text-center py-12">
-                      <div className="text-gray-400 text-4xl mb-3">📦</div>
-                      <p className="text-gray-600">등록된 상품이 없습니다.</p>
+                      <p className="text-gray-600">아직 등록된 상품이 없습니다</p>
+                      <p className="text-sm text-gray-500 mt-1">아래 버튼을 눌러 상품을 가져와보세요</p>
                       <button 
                         onClick={() => syncProducts(selectedVendor.id)}
                         disabled={isLoading}
@@ -591,27 +885,51 @@ export default function VendorProductsPage() {
                     filteredProducts.map((product) => (
                       <div
                         key={product.id}
-                        className="p-4 hover:bg-gray-50 transition-colors"
+                        className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                        onClick={() => handleCompareProduct(product)}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
                             <div className="flex items-center gap-3">
+                              <input
+                                type="checkbox"
+                                checked={selectedProducts.includes(product.id)}
+                                onChange={(e) => {
+                                  e.stopPropagation();
+                                  handleSelectProduct(product.id);
+                                }}
+                                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                              />
                               <div className="font-medium text-gray-900">
                                 {product.name}
                               </div>
                               <span
                                 className={`px-2 py-1 text-xs rounded ${
-                                  product.is_selling
+                                  product.status === 'active'
                                     ? "bg-green-100 text-green-700"
-                                    : "bg-gray-100 text-gray-700"
+                                    : product.status === 'inactive'
+                                    ? "bg-gray-100 text-gray-700"
+                                    : product.status === 'out_of_stock'
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-orange-100 text-orange-700"
                                 }`}
                               >
-                                {product.is_selling ? "판매중" : "판매중지"}
+                                {product.status === 'active' ? "판매중" : 
+                                 product.status === 'inactive' ? "판매중지" :
+                                 product.status === 'out_of_stock' ? "품절" : "단종"}
                               </span>
                             </div>
                             <div className="text-sm text-gray-600 mt-1">
                               {product.code} • {product.classificationPath.join(" > ")}
                             </div>
+                            <div className="text-xs text-gray-500 mt-1">
+                              브랜드: {product.brand} • 연도: {product.year} • 시즌: {product.season}
+                            </div>
+                            {product.relatedProducts.length > 0 && (
+                              <div className="text-xs text-blue-600 mt-1">
+                                연관상품: {product.relatedProducts.join(", ")}
+                              </div>
+                            )}
                           </div>
                           <div className="text-right ml-4">
                             <div className="font-semibold text-gray-900">
@@ -629,16 +947,37 @@ export default function VendorProductsPage() {
                               재고: {product.stock}개
                             </div>
                           </div>
-                          <div className="ml-4">
-                            <button 
-                              onClick={() => handleEditProduct(product)}
+                          <div className="ml-4 flex gap-2">
+                            <select
+                              value={product.status}
+                              onChange={(e) => handleStatusChange(product.id, e.target.value as 'active' | 'inactive' | 'out_of_stock' | 'discontinued')}
                               disabled={isLoading}
-                              className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                              className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none bg-white pr-8 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
+                              <option value="active">판매중</option>
+                              <option value="inactive">판매중지</option>
+                              <option value="out_of_stock">품절</option>
+                              <option value="discontinued">단종</option>
+                            </select>
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditProduct(product);
+                              }}
+                              disabled={isLoading}
+                              className="px-4 py-2 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            >
                               수정
+                            </button>
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteProduct(product.id);
+                              }}
+                              disabled={isLoading}
+                              className="px-4 py-2 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            >
+                              삭제
                             </button>
                           </div>
                         </div>
@@ -650,12 +989,11 @@ export default function VendorProductsPage() {
             </>
           ) : (
             <div className="bg-white rounded-lg border shadow-sm p-12 text-center">
-              <div className="text-gray-400 text-4xl mb-3">🏪</div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">
                 판매처를 선택해주세요
               </h3>
               <p className="text-gray-600">
-                좌측에서 판매처를 선택하면 상세 정보와 상품 목록을 확인할 수 있습니다.
+                좌측 목록에서 판매처를 선택하면 상세 정보와 상품 목록을 확인할 수 있습니다
               </p>
             </div>
           )}
@@ -729,13 +1067,62 @@ export default function VendorProductsPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">판매상태</label>
                 <select
-                  value={editingProduct.is_selling ? 'selling' : 'not_selling'}
-                  onChange={(e) => setEditingProduct({ ...editingProduct, is_selling: e.target.value === 'selling' })}
+                  value={editingProduct.status}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, status: e.target.value as 'active' | 'inactive' | 'out_of_stock' | 'discontinued' })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="selling">판매중</option>
-                  <option value="not_selling">판매중지</option>
+                  <option value="active">판매중</option>
+                  <option value="inactive">판매중지</option>
+                  <option value="out_of_stock">품절</option>
+                  <option value="discontinued">단종</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">브랜드</label>
+                <input
+                  type="text"
+                  value={editingProduct.brand}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, brand: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="예: FULGO"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">연도</label>
+                <input
+                  type="text"
+                  value={editingProduct.year}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, year: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="예: 2024"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">시즌</label>
+                <input
+                  type="text"
+                  value={editingProduct.season}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, season: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="예: 2024 SS"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">연관상품 코드</label>
+                <input
+                  type="text"
+                  value={editingProduct.relatedProducts.join(", ")}
+                  onChange={(e) => setEditingProduct({ 
+                    ...editingProduct, 
+                    relatedProducts: e.target.value.split(",").map(code => code.trim()).filter(code => code)
+                  })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="예: TS002, TS003 (쉼표로 구분)"
+                />
               </div>
             </div>
 
@@ -770,6 +1157,197 @@ export default function VendorProductsPage() {
                 )}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 상품 비교 모달 */}
+      {showCompareModal && selectedProduct && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in"
+          onClick={(e) => e.target === e.currentTarget && setShowCompareModal(false)}
+        >
+          <div className="bg-white rounded-lg p-6 w-full max-w-6xl max-h-[90vh] overflow-y-auto transform transition-all duration-300 ease-out animate-scale-in">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-gray-900">
+                상품 정보 비교 - {selectedProduct.name}
+              </h3>
+              <button
+                onClick={() => setShowCompareModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* 판매처 상품 정보 */}
+              <div className="bg-blue-50 rounded-lg p-4">
+                <h4 className="text-lg font-semibold text-blue-800 mb-4 flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                  판매처 상품 정보 ({selectedProduct.vendor})
+                </h4>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">상품명:</span>
+                    <span className="font-medium">{selectedProduct.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">상품코드:</span>
+                    <span className="font-medium">{selectedProduct.code}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">판매가격:</span>
+                    <span className="font-medium">₩{selectedProduct.selling_price.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">재고:</span>
+                    <span className="font-medium">{selectedProduct.stock}개</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">상태:</span>
+                    <span className={`px-2 py-1 text-xs rounded ${
+                      selectedProduct.status === 'active' ? "bg-green-100 text-green-700" :
+                      selectedProduct.status === 'inactive' ? "bg-gray-100 text-gray-700" :
+                      selectedProduct.status === 'out_of_stock' ? "bg-red-100 text-red-700" :
+                      "bg-orange-100 text-orange-700"
+                    }`}>
+                      {selectedProduct.status === 'active' ? "판매중" : 
+                       selectedProduct.status === 'inactive' ? "판매중지" :
+                       selectedProduct.status === 'out_of_stock' ? "품절" : "단종"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">브랜드:</span>
+                    <span className="font-medium">{selectedProduct.brand}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">연도:</span>
+                    <span className="font-medium">{selectedProduct.year}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">시즌:</span>
+                    <span className="font-medium">{selectedProduct.season}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">분류:</span>
+                    <span className="font-medium">{selectedProduct.classificationPath.join(" > ")}</span>
+                  </div>
+                  {selectedProduct.relatedProducts.length > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">연관상품:</span>
+                      <span className="font-medium">{selectedProduct.relatedProducts.join(", ")}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* FULGO 상품 정보 */}
+              <div className="bg-green-50 rounded-lg p-4">
+                <h4 className="text-lg font-semibold text-green-800 mb-4 flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  FULGO 상품 정보
+                </h4>
+                {fulgoProduct ? (
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">상품명:</span>
+                      <span className="font-medium">{fulgoProduct.name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">상품코드:</span>
+                      <span className="font-medium">{fulgoProduct.code}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">판매가격:</span>
+                      <span className="font-medium">₩{fulgoProduct.price.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">재고:</span>
+                      <span className="font-medium">{fulgoProduct.stock}개</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">상태:</span>
+                      <span className={`px-2 py-1 text-xs rounded ${
+                        fulgoProduct.status === 'active' ? "bg-green-100 text-green-700" :
+                        fulgoProduct.status === 'inactive' ? "bg-gray-100 text-gray-700" :
+                        fulgoProduct.status === 'out_of_stock' ? "bg-red-100 text-red-700" :
+                        "bg-orange-100 text-orange-700"
+                      }`}>
+                        {fulgoProduct.status === 'active' ? "판매중" : 
+                         fulgoProduct.status === 'inactive' ? "판매중지" :
+                         fulgoProduct.status === 'out_of_stock' ? "품절" : "단종"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">브랜드:</span>
+                      <span className="font-medium">{fulgoProduct.brand}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">연도:</span>
+                      <span className="font-medium">{fulgoProduct.year}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">시즌:</span>
+                      <span className="font-medium">{fulgoProduct.season}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">분류:</span>
+                      <span className="font-medium">{fulgoProduct.category.join(" > ")}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">설명:</span>
+                      <span className="font-medium text-right max-w-xs">{fulgoProduct.description}</span>
+                    </div>
+                    {fulgoProduct.tags.length > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">태그:</span>
+                        <span className="font-medium">{fulgoProduct.tags.join(", ")}</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.29-1.009-5.824-2.709M15 6.291A7.962 7.962 0 0012 4c-2.34 0-4.29 1.009-5.824 2.709" />
+                    </svg>
+                    <p className="text-gray-500">FULGO에 등록된 상품이 없습니다</p>
+                    <p className="text-sm text-gray-400 mt-1">상품코드: {selectedProduct.code}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 차이점 요약 */}
+            {fulgoProduct && (
+              <div className="mt-6 bg-yellow-50 rounded-lg p-4">
+                <h5 className="text-lg font-semibold text-yellow-800 mb-3">주요 차이점</h5>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h6 className="font-medium text-yellow-700 mb-2">가격 차이</h6>
+                    <p className="text-sm text-gray-600">
+                      판매처: ₩{selectedProduct.selling_price.toLocaleString()} | 
+                      FULGO: ₩{fulgoProduct.price.toLocaleString()} | 
+                      차이: ₩{(selectedProduct.selling_price - fulgoProduct.price).toLocaleString()}
+                    </p>
+                  </div>
+                  <div>
+                    <h6 className="font-medium text-yellow-700 mb-2">재고 차이</h6>
+                    <p className="text-sm text-gray-600">
+                      판매처: {selectedProduct.stock}개 | 
+                      FULGO: {fulgoProduct.stock}개 | 
+                      차이: {selectedProduct.stock - fulgoProduct.stock}개
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

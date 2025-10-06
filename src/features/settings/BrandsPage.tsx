@@ -31,7 +31,7 @@ export default function BrandsPage() {
   };
 
   const addBrand = () => {
-    if (!newBrand.trim()) return alert("브랜드명을 입력하세요");
+    if (!newBrand.trim()) return alert("브랜드명을 입력해주세요");
     const nb: Brand = {
       id: `b_${Date.now()}`,
       name: newBrand.trim(),
@@ -43,7 +43,7 @@ export default function BrandsPage() {
   };
 
   const removeBrand = (id: string) => {
-    if (!confirm("삭제하시겠습니까?")) return;
+    if (!confirm("이 브랜드를 정말 삭제하시겠습니까? 삭제된 브랜드는 복구할 수 없습니다.")) return;
     persist(brands.filter((b) => b.id !== id));
   };
 
@@ -78,7 +78,7 @@ export default function BrandsPage() {
         <div className="space-y-3">
           {brands.length === 0 && (
             <div className="text-sm text-gray-500">
-              등록된 브랜드가 없습니다.
+              아직 등록된 브랜드가 없습니다
             </div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

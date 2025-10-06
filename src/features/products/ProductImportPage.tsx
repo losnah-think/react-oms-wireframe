@@ -511,7 +511,7 @@ export default function ProductImportPage(): JSX.Element {
           <div className="py-8 text-center">로딩 중...</div>
         ) : products.length === 0 ? (
           <div className="py-8 text-center text-gray-600">
-            검색 결과가 없습니다.
+            검색 결과가 없습니다
           </div>
         ) : (
           <Card>

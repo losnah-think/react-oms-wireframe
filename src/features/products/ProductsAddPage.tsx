@@ -840,12 +840,12 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
       });
       if (!res.ok) throw new Error('API 응답 실패');
       const body = await res.json();
-      setToastMessage('상품이 등록되었습니다.');
+      setToastMessage('상품이 성공적으로 등록되었습니다!');
       onSave?.(formData);
       onNavigate?.('products-list');
     } catch (err: any) {
       console.error('상품 등록 실패', err);
-      alert('상품 등록 실패: ' + (err?.message || String(err)));
+      alert('상품 등록에 실패했습니다: ' + (err?.message || String(err)) + ' 입력 정보를 다시 확인해주세요.');
     } finally {
       setSaving(false);
     }
@@ -1517,7 +1517,7 @@ const ProductsAddPage: React.FC<ProductsAddPageProps> = ({
             <div className="mt-2 flex flex-wrap gap-2">
               {(formData.basicInfo.tags || []).length === 0 && (
                 <span className="text-sm text-gray-400">
-                  등록된 태그가 없습니다.
+                  아직 등록된 태그가 없습니다
                 </span>
               )}
               {(formData.basicInfo.tags || []).map((tag: ProductTag | string) => {

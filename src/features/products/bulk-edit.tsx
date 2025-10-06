@@ -364,31 +364,18 @@ const BulkEditPage: React.FC = () => {
               </li>
             </ul>
 
-            <div className="mt-3 text-sm text-gray-700">중요 안내:</div>
-            <ol className="text-sm list-decimal ml-6 mt-2">
-              <li>CSV는 UTF-8로 저장하세요 (엑셀에서 저장 시 인코딩 주의).</li>
-              <li>
-                업로드 시 첫 시트를 사용합니다. 컬럼명은 대소문자 구분 없이
-                매핑됩니다.
-              </li>
-              <li>
-                옵션(variant) 업데이트는 옵션 식별자(variant_id 또는
-                option_id)가 있어야 안전하게 매칭됩니다.
-              </li>
-              <li>
-                날짜/통화 포맷이 일관된지 확인하세요. (예: YYYY-MM-DD, 숫자에는
-                쉼표 제거)
-              </li>
-              <li>
-                실제 적용 전에 반드시 미리보기로 행 단위 결과를 확인하세요.
-                현재는 클라이언트 모의 적용 기능만 포함되어 있습니다.
-              </li>
+            <div className="mt-3 text-sm font-medium text-gray-800">📋 업로드 전 체크리스트</div>
+            <ol className="text-sm list-decimal ml-6 mt-2 space-y-1">
+              <li><strong>파일 인코딩:</strong> CSV를 UTF-8로 저장해주세요 (엑셀 저장 시 인코딩 주의)</li>
+              <li><strong>시트 선택:</strong> 첫 번째 시트만 사용됩니다. 컬럼명은 대소문자 구분 없이 매핑됩니다</li>
+              <li><strong>옵션 업데이트:</strong> 옵션 식별자(variant_id 또는 option_id)가 있어야 안전하게 매칭됩니다</li>
+              <li><strong>데이터 형식:</strong> 날짜는 YYYY-MM-DD 형식, 숫자는 쉼표 없이 입력해주세요</li>
+              <li><strong>미리보기 확인:</strong> 실제 적용 전에 미리보기로 결과를 확인해주세요</li>
             </ol>
 
-            <div className="mt-3 text-sm text-gray-700">
-              도움말 이미지: 엑셀을 CSV로 저장하는 방법(첨부 이미지 참조). 서버
-              반영을 위해서는 별도의 API 엔드포인트와 필드 매핑 규칙이
-              필요합니다.
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm text-gray-700">
+              <strong>💡 추가 정보:</strong> 엑셀을 CSV로 저장하는 방법은 첨부 이미지를 참고해주세요. 
+              실제 서버 반영을 위해서는 별도의 API 연동이 필요합니다.
             </div>
           </Card>
         </GridCol>

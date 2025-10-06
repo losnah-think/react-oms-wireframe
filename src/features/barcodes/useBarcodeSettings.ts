@@ -403,7 +403,7 @@ export const useBarcodeSettings = () => {
 
   const addSelectedToQueue = (selectedCatalogIds: string[]) => {
     if (selectedCatalogIds.length === 0) {
-      return showStatus("추가할 상품을 선택해주세요.");
+      return showStatus("인쇄 대기열에 추가할 상품을 먼저 선택해주세요");
     }
     const newItems: QueueItem[] = selectedCatalogIds.map((catalogId) => {
       const item = catalog.find((it) => it.id === catalogId);
@@ -427,7 +427,7 @@ export const useBarcodeSettings = () => {
 
   const updateQueueStatus = (status: QueueItem["status"]) => {
     if (selectedQueueIds.length === 0) {
-      return showStatus("먼저 대상을 선택해주세요.");
+      return showStatus("상태를 변경할 항목을 먼저 선택해주세요");
     }
     setQueue((prev) =>
       prev.map((item) => (selectedQueueIds.includes(item.id) ? { ...item, status } : item)),
@@ -438,7 +438,7 @@ export const useBarcodeSettings = () => {
 
   const removeQueueItems = () => {
     if (selectedQueueIds.length === 0) {
-      return showStatus("삭제할 항목을 선택해주세요.");
+      return showStatus("삭제할 항목을 먼저 선택해주세요");
     }
     setQueue((prev) => prev.filter((item) => !selectedQueueIds.includes(item.id)));
     setSelectedQueueIds([]);

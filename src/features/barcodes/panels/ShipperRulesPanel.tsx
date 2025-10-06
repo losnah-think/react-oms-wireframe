@@ -315,7 +315,6 @@ const ShipperRulesPanel: React.FC = () => {
                 <div className="space-y-3">
                   {selectedShipper.barcodeRules.length === 0 ? (
                     <div className="text-center py-8">
-                      <div className="text-gray-400 text-4xl mb-3">📋</div>
                       <h3 className="text-lg font-medium text-gray-900 mb-2">
                         바코드 규칙이 없습니다
                       </h3>
@@ -383,7 +382,6 @@ const ShipperRulesPanel: React.FC = () => {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <div className="text-gray-400 text-4xl mb-3">🚚</div>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">
                     화주사를 선택해주세요
                   </h3>

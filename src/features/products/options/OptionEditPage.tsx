@@ -446,9 +446,9 @@ const OptionEditPage: React.FC<OptionEditPageProps> = ({
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
           });
-          setToast("옵션 정보가 자동 저장되었습니다.");
+          setToast("옵션 정보가 자동으로 저장되었습니다");
         } catch (err) {
-          setToast("자동 저장에 실패했습니다.");
+          setToast("자동 저장에 실패했습니다. 네트워크 연결을 확인해주세요");
         } finally {
           isSaving.current = false;
           window.setTimeout(() => setToast(null), 1500);
@@ -535,7 +535,7 @@ const OptionEditPage: React.FC<OptionEditPageProps> = ({
             옵션을 찾을 수 없습니다
           </h1>
           <p className="mt-3 text-gray-600">
-            요청하신 옵션 정보가 존재하지 않거나 삭제되었습니다.
+            요청하신 옵션 정보가 존재하지 않거나 삭제되었습니다
           </p>
           <Button className="mt-6" variant="primary" onClick={handleBack}>
             목록으로 돌아가기

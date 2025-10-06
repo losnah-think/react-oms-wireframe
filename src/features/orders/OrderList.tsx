@@ -220,7 +220,7 @@ const OrderList: React.FC = () => {
       {filteredOrders.length === 0 && (
         <div className="text-center py-12">
           <span className="text-4xl text-gray-300 mb-4 block">□</span>
-          <p className="text-gray-500">검색 조건에 맞는 주문이 없습니다.</p>
+          <p className="text-gray-500">검색 조건에 맞는 주문이 없습니다</p>
         </div>
       )}
     </div>

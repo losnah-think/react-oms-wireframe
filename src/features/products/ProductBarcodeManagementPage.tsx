@@ -704,7 +704,6 @@ const ProductBarcodeManagementPage: React.FC = () => {
                   </div>
                 ) : (
                   <div className="p-8 text-center">
-                    <div className="text-gray-400 text-4xl mb-3">📋</div>
                     <h3 className="text-lg font-medium text-gray-900 mb-2">
                       템플릿을 선택해주세요
                     </h3>

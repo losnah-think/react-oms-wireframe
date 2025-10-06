@@ -307,7 +307,7 @@ const ProductGroupsPage: React.FC = () => {
                     if (group) openModal(group);
                   }}
                 >
-                  ✏️ 수정
+                  수정
                 </Button>
                 <Button 
                   size="big"

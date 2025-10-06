@@ -30,7 +30,7 @@ export default function VendorsListPage() {
         <div className="space-y-3">
           {vendors.length === 0 && (
             <div className="text-sm text-gray-500 text-center py-8">
-              등록된 판매처가 없습니다.
+              아직 등록된 판매처가 없습니다
             </div>
           )}
           <div className="grid gap-3">

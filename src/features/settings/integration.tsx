@@ -460,7 +460,7 @@ const IntegrationPage: React.FC = () => {
                               syncVendorIntegration(integration.id);
                             }}
                             disabled={isLoadingSync}
-                            className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+                            className="px-3 py-1 text-xs bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 transition-colors"
                           >
                             {isLoadingSync ? "동기화 중..." : "동기화"}
                           </button>
@@ -469,7 +469,7 @@ const IntegrationPage: React.FC = () => {
                               e.stopPropagation();
                               configureVendorIntegration(integration.id);
                             }}
-                            className="px-3 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600"
+                            className="px-3 py-1 text-xs bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
                           >
                             설정
                           </button>

@@ -1,0 +1,318 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "FULGO Mock API / FULGO 모의 API",
+    "version": "0.1.0",
+    "description": "Auto-generated OpenAPI spec for local mock endpoints used by the FULGO wireframe.\n\n영어와 한국어로 작성된 문서입니다. (English & 한국어)"
+  },
+  "servers": [
+    {
+      "url": "/api/mock",
+      "description": "Local mock API"
+    }
+  ],
+  "paths": {
+    "/suppliers": {
+      "get": {
+        "summary": "List suppliers / 공급처 목록 조회",
+        "description": "Retrieve a list of suppliers. Supports query and filtering.\n공급처 목록을 조회합니다.",
+        "parameters": [
+          { "name": "q", "in": "query", "schema": { "type": "string" }, "description": "Search by name/code/contact / 이름/코드/연락처 검색" },
+          { "name": "status", "in": "query", "schema": { "type": "string" }, "description": "Filter by status / 상태 필터" },
+          { "name": "limit", "in": "query", "schema": { "type": "integer" }, "description": "Maximum items to return / 반환할 항목 수" }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SupplierListResponse" },
+                "examples": {
+                  "sample": {
+                    "summary": "Sample supplier list / 예시",
+                    "value": { "items": [ { "id": 1, "code": "SUP-001", "name": "테크 공급", "status": "active" } ], "meta": { "pagination": { "page": 1, "limit": 20, "total": 1 } } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create supplier / 공급처 생성",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SupplierCreate" },
+              "examples": {
+                "createExample": {
+                  "summary": "Create supplier example / 공급처 생성 예시",
+                  "value": { "code": "SUP-002", "name": "New Supplier", "contact": { "person": "홍길동", "phone": "010-0000-0000", "email": "supplier@example.com" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Supplier" },
+                "examples": { "created": { "value": { "id": 2, "code": "SUP-002", "name": "New Supplier", "status": "active" } } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/products": {
+      "get": {
+        "summary": "List products / 상품 목록 조회",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ProductListResponse" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create product / 상품 생성",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProductCreate" },
+              "examples": {
+                "createProduct": { "summary": "Create product example", "value": { "code": "P-0002", "name": "Slim Jeans", "selling_price": 34900, "supplier_id": 2, "variants": [ { "sku": "P-0002-V1", "variant_name": "Blue", "stock": 40, "selling_price": 34900 } ] } }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Product" },
+                "examples": { "created": { "value": { "id": 2, "code": "P-0002", "name": "Slim Jeans", "selling_price": 34900 } } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/products/{id}": {
+      "put": {
+        "summary": "Update product / 상품 수정",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } } ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProductCreate" }, "examples": { "updateExample": { "value": { "name": "Slim Jeans (Updated)", "selling_price": 32900 } } } } } },
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Product" }, "examples": { "updated": { "value": { "id": 2, "code": "P-0002", "name": "Slim Jeans (Updated)", "selling_price": 32900 } } } } } }
+      }
+    },
+    "/orders": {
+      "get": {
+        "summary": "List orders / 주문 목록 조회",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OrderListResponse" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create order / 주문 생성",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/OrderCreate" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Order" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "message": { "type": "string" }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "page": { "type": "integer" },
+          "limit": { "type": "integer" },
+          "total": { "type": "integer" }
+        }
+      },
+      "Meta": {
+        "type": "object",
+        "properties": {
+          "pagination": { "$ref": "#/components/schemas/Pagination" }
+        }
+      },
+      "Supplier": {
+        "type": "object",
+        "description": "Supplier / 공급처 상세 정보",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "code": { "type": "string", "example": "SUP-001" },
+          "name": { "type": "string", "example": "테크 공급" },
+          "status": { "type": "string", "example": "active" },
+          "contact": { "type": "object", "properties": { "person": { "type": "string" }, "phone": { "type": "string" }, "email": { "type": "string" } }, "example": { "person": "홍길동", "phone": "010-0000-0000", "email": "supplier@example.com" } },
+          "address": { "type": "object", "properties": { "line1": { "type": "string" }, "city": { "type": "string" }, "country": { "type": "string" } }, "example": { "line1": "Seoul, Korea", "city": "Seoul", "country": "KR" } },
+          "created_at": { "type": "string", "format": "date-time", "example": "2025-01-01T12:00:00Z" }
+        }
+      },
+      "SupplierCreate": {
+        "type": "object",
+        "required": ["code", "name"],
+        "properties": {
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "contact": { "type": "object", "properties": { "person": { "type": "string" }, "phone": { "type": "string" }, "email": { "type": "string" } } },
+          "address": { "type": "object" }
+        },
+        "example": { "code": "SUP-002", "name": "New Supplier", "contact": { "person": "홍길동", "phone": "010-0000-0000", "email": "supplier@example.com" } }
+      },
+      "SupplierListResponse": {
+        "type": "object",
+        "properties": {
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/Supplier" } },
+          "meta": { "$ref": "#/components/schemas/Meta" }
+        }
+      },
+      "Variant": {
+        "type": "object",
+        "description": "Variant / 변형 상품 정보",
+        "properties": {
+          "id": { "type": "integer", "example": 101 },
+          "sku": { "type": "string", "example": "PROD-001-V1" },
+          "variant_name": { "type": "string", "example": "Red / 빨강" },
+          "option_values": { "type": "object", "description": "Key/value of options (size/color) / 옵션 값", "example": { "size": "M", "color": "Red" } },
+          "stock": { "type": "integer", "example": 50 },
+          "selling_price": { "type": "number", "example": 12900 }
+        }
+      },
+      "Product": {
+        "type": "object",
+        "description": "Product / 상품 상세 정보",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "code": { "type": "string", "example": "P-0001" },
+          "name": { "type": "string", "example": "Classic T-Shirt / 클래식 티셔츠" },
+          "supplier_id": { "type": "integer", "description": "Supplier id / 공급처 ID", "example": 2 },
+          "category": { "type": "string", "example": "Apparel" },
+          "selling_price": { "type": "number", "example": 19900 },
+          "externalMall": { "type": "object", "description": "External mall listing info / 외부몰 정보", "properties": { "mall": { "type": "string" }, "external_id": { "type": "string" } } },
+          "images": { "type": "array", "items": { "type": "string", "format": "uri" }, "example": ["/images/p-0001-1.jpg","/images/p-0001-2.jpg"] },
+          "memos": { "type": "array", "items": { "type": "string" }, "maxItems": 15, "example": ["메모1","메모2"] },
+          "variants": { "type": "array", "items": { "$ref": "#/components/schemas/Variant" } }
+        }
+      },
+      "ProductCreate": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "selling_price": { "type": "number" },
+          "supplier_id": { "type": "integer" },
+          "images": { "type": "array", "items": { "type": "string", "format": "uri" } },
+          "memos": { "type": "array", "items": { "type": "string" }, "maxItems": 15 },
+          "variants": { "type": "array", "items": { "$ref": "#/components/schemas/Variant" } }
+        },
+        "example": {
+          "code": "P-0001",
+          "name": "Classic T-Shirt / 클래식 티셔츠",
+          "selling_price": 19900,
+          "supplier_id": 2,
+          "images": ["/images/p-0001-1.jpg"],
+          "memos": ["런칭상품"],
+          "variants": [ { "id": 101, "sku": "P-0001-V1", "variant_name": "Red", "stock": 100, "selling_price": 19900 } ]
+        }
+      },
+      "ProductListResponse": {
+        "type": "object",
+        "properties": {
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/Product" } },
+          "meta": { "$ref": "#/components/schemas/Meta" }
+        }
+      },
+      "OrderItem": {
+        "type": "object",
+        "properties": {
+          "product_id": { "type": "integer", "example": 1 },
+          "product_code": { "type": "string", "example": "P-0001" },
+          "product_name": { "type": "string", "example": "Classic T-Shirt" },
+          "variant_id": { "type": "integer", "example": 101 },
+          "qty": { "type": "integer", "example": 2 },
+          "unit_price": { "type": "number", "example": 19900 },
+          "total": { "type": "number", "example": 39800 }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1001 },
+          "order_no": { "type": "string", "example": "ORD-20250920-0001" },
+          "shop_id": { "type": "string", "example": "SHOP-01" },
+          "status": { "type": "string", "example": "pending" },
+          "total_amount": { "type": "number", "example": 39800 },
+          "currency": { "type": "string", "example": "KRW" },
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/OrderItem" } },
+          "customer": { "type": "object", "properties": { "name": { "type": "string" }, "phone": { "type": "string" } }, "example": { "name": "홍길동", "phone": "010-1111-2222" } },
+          "created_at": { "type": "string", "format": "date-time", "example": "2025-09-20T10:00:00Z" }
+        }
+      },
+      "OrderCreate": {
+        "type": "object",
+        "required": ["order_no", "items"],
+        "properties": {
+          "order_no": { "type": "string" },
+          "shop_id": { "type": "string" },
+          "currency": { "type": "string" },
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/OrderItem" } }
+        },
+        "example": {
+          "order_no": "ORD-20250920-0001",
+          "shop_id": "SHOP-01",
+          "currency": "KRW",
+          "items": [ { "product_id": 1, "product_code": "P-0001", "product_name": "Classic T-Shirt", "variant_id": 101, "qty": 2, "unit_price": 19900 } ]
+        }
+      },
+      "OrderListResponse": {
+        "type": "object",
+        "properties": {
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/Order" } },
+          "meta": { "$ref": "#/components/schemas/Meta" }
+        },
+        "example": { "items": [ { "id": 1001, "order_no": "ORD-20250920-0001", "status": "pending", "total_amount": 39800, "currency": "KRW" } ], "meta": { "pagination": { "page": 1, "limit": 20, "total": 1 } } }
+      }
+    }
+  }
+}
