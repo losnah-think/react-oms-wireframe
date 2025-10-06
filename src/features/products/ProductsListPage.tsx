@@ -519,13 +519,19 @@ const ProductsListPage: React.FC = () => {
                   <input
                     type="checkbox"
                     checked={selectedProducts.includes(product.id)}
-                    onChange={() => handleSelectProduct(product.id)}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      handleSelectProduct(product.id);
+                    }}
                     className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
                   />
                 </div>
                 
                 <div className="col-span-5">
-                  <div className="flex items-start gap-3">
+                  <div 
+                    className="flex items-start gap-3 cursor-pointer hover:bg-gray-100 p-2 rounded-lg transition-colors"
+                    onClick={() => router.push(`/products/${product.id}`)}
+                  >
                     {/* 상품 이미지 */}
                     <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
                       {product.representativeImage ? (
@@ -606,13 +612,19 @@ const ProductsListPage: React.FC = () => {
                 <div className="col-span-3">
                   <div className="flex items-center gap-2">
                     <button 
-                      onClick={() => router.push(`/products/external-send?ids=${product.id}`)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/products/external-send?ids=${product.id}`);
+                      }}
                       className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
                     >
                       외부송신
                     </button>
                     <button 
-                      onClick={() => toggleProductExpansion(product.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleProductExpansion(product.id);
+                      }}
                       className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 flex items-center gap-1"
                     >
                       옵션 {expandedProducts.has(product.id) ? '접기' : '보기'}
