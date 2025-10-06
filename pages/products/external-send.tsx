@@ -49,7 +49,8 @@ const mockProducts = [
     classificationPath: ["카테고리", "카테고리", "카테고리", "카테고리"],
     brand: "MADE J",
     season: "2024 SS",
-    year: "2024"
+    year: "2024",
+    image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=300&h=300&fit=crop"
   },
   {
     id: "2", 
@@ -61,7 +62,8 @@ const mockProducts = [
     classificationPath: ["의류", "하의", "청바지"],
     brand: "FULGO",
     season: "2024 FW",
-    year: "2024"
+    year: "2024",
+    image: "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=300&h=300&fit=crop"
   }
 ];
 
@@ -362,7 +364,28 @@ const ExternalSendPage: React.FC = () => {
                         </button>
                       </div>
                       
-                      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                      <div className="flex items-start gap-4 mb-4">
+                        {/* 상품 이미지 */}
+                        <div className="w-20 h-20 bg-gray-200 rounded-lg flex-shrink-0 overflow-hidden">
+                          <img 
+                            src={product.image} 
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.nextElementSibling.style.display = 'flex';
+                            }}
+                          />
+                          <div className="w-full h-full bg-gray-200 flex items-center justify-center" style={{display: 'none'}}>
+                            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                          </div>
+                        </div>
+                        
+                        {/* 상품 기본 정보 */}
+                        <div className="flex-1">
+                          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
                         {/* 기본 상품명 */}
                         <div className="lg:col-span-2">
                           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -406,6 +429,8 @@ const ExternalSendPage: React.FC = () => {
                             placeholder="기본 재고"
                           />
                         </div>
+                          </div>
+                        </div>
                       </div>
                       
                       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
@@ -443,6 +468,9 @@ const ExternalSendPage: React.FC = () => {
                         <thead className="bg-gray-50">
                           <tr>
                             <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b border-gray-200">
+                              이미지
+                            </th>
+                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b border-gray-200">
                               판매처
                             </th>
                             <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b border-gray-200">
@@ -468,6 +496,24 @@ const ExternalSendPage: React.FC = () => {
                             
                             return (
                               <tr key={vendorId} className="hover:bg-gray-50">
+                                <td className="px-4 py-3 border-b border-gray-200">
+                                  <div className="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden">
+                                    <img 
+                                      src={product.image} 
+                                      alt={product.name}
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => {
+                                        e.currentTarget.style.display = 'none';
+                                        e.currentTarget.nextElementSibling.style.display = 'flex';
+                                      }}
+                                    />
+                                    <div className="w-full h-full bg-gray-200 flex items-center justify-center" style={{display: 'none'}}>
+                                      <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                      </svg>
+                                    </div>
+                                  </div>
+                                </td>
                                 <td className="px-4 py-3 border-b border-gray-200">
                                   <div className="font-medium text-gray-900">{vendor?.name}</div>
                                   <div className="text-xs text-gray-500 mt-1">
@@ -565,7 +611,25 @@ const ExternalSendPage: React.FC = () => {
                           
                           return (
                             <div key={product.id} className="bg-gray-50 rounded-lg p-3">
-                              <div className="flex items-start justify-between">
+                              <div className="flex items-start gap-3">
+                                {/* 상품 이미지 */}
+                                <div className="w-16 h-16 bg-gray-200 rounded-lg flex-shrink-0 overflow-hidden">
+                                  <img 
+                                    src={product.image} 
+                                    alt={product.name}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = 'none';
+                                      e.currentTarget.nextElementSibling.style.display = 'flex';
+                                    }}
+                                  />
+                                  <div className="w-full h-full bg-gray-200 flex items-center justify-center" style={{display: 'none'}}>
+                                    <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                  </div>
+                                </div>
+                                
                                 <div className="flex-1">
                                   <div className="font-medium text-gray-900 mb-1">{productName}</div>
                                   <div className="text-sm text-gray-600 space-y-1">
