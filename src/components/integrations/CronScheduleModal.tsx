@@ -54,26 +54,79 @@ const CronScheduleModal: React.FC<CronScheduleModalProps> = ({
   );
 
   const [selectedPreset, setSelectedPreset] = useState<string>('');
+  const [scheduleType, setScheduleType] = useState<'interval' | 'daily' | 'weekly' | 'custom'>('daily');
+  const [intervalValue, setIntervalValue] = useState<number>(1);
+  const [intervalUnit, setIntervalUnit] = useState<'minutes' | 'hours' | 'days'>('hours');
+  const [dailyTime, setDailyTime] = useState<string>('09:00');
+  const [weeklyDay, setWeeklyDay] = useState<number>(1); // 1=월요일
+  const [weeklyTime, setWeeklyTime] = useState<string>('09:00');
 
-  const presetSchedules = [
-    { value: 'hourly', label: '매시간', expression: '0 * * * *', description: '매시간 정각에 실행' },
-    { value: '6hourly', label: '6시간마다', expression: '0 */6 * * *', description: '6시간마다 실행' },
-    { value: 'daily', label: '매일', expression: '0 0 * * *', description: '매일 자정에 실행' },
-    { value: 'weekly', label: '매주', expression: '0 0 * * 0', description: '매주 일요일 자정에 실행' },
-    { value: 'custom', label: '사용자 정의', expression: '', description: '직접 크론 표현식 입력' }
-  ];
-
-  const handlePresetChange = (presetValue: string) => {
-    setSelectedPreset(presetValue);
-    const preset = presetSchedules.find(p => p.value === presetValue);
-    if (preset && preset.value !== 'custom') {
-      setSchedule(prev => ({
-        ...prev,
-        expression: preset.expression,
-        description: preset.description
-      }));
+  // 크론 표현식 생성 함수들
+  const generateCronExpression = (): string => {
+    switch (scheduleType) {
+      case 'interval':
+        if (intervalUnit === 'minutes') {
+          return `*/${intervalValue} * * * *`;
+        } else if (intervalUnit === 'hours') {
+          return `0 */${intervalValue} * * *`;
+        } else if (intervalUnit === 'days') {
+          return `0 0 */${intervalValue} * *`;
+        }
+        return '';
+      
+      case 'daily':
+        const [hour, minute] = dailyTime.split(':');
+        return `${minute} ${hour} * * *`;
+      
+      case 'weekly':
+        const [weekHour, weekMinute] = weeklyTime.split(':');
+        return `${weekMinute} ${weekHour} * * ${weeklyDay}`;
+      
+      case 'custom':
+        return schedule.expression;
+      
+      default:
+        return '';
     }
   };
+
+  const getScheduleDescription = (): string => {
+    switch (scheduleType) {
+      case 'interval':
+        if (intervalUnit === 'minutes') {
+          return `매 ${intervalValue}분마다 실행`;
+        } else if (intervalUnit === 'hours') {
+          return `매 ${intervalValue}시간마다 실행`;
+        } else if (intervalUnit === 'days') {
+          return `매 ${intervalValue}일마다 실행`;
+        }
+        return '';
+      
+      case 'daily':
+        return `매일 ${dailyTime}에 실행`;
+      
+      case 'weekly':
+        const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+        return `매주 ${dayNames[weeklyDay]}요일 ${weeklyTime}에 실행`;
+      
+      case 'custom':
+        return '사용자 정의 크론 표현식';
+      
+      default:
+        return '';
+    }
+  };
+
+  // 스케줄 타입 변경 시 크론 표현식 업데이트
+  React.useEffect(() => {
+    const expression = generateCronExpression();
+    const description = getScheduleDescription();
+    setSchedule(prev => ({
+      ...prev,
+      expression,
+      description
+    }));
+  }, [scheduleType, intervalValue, intervalUnit, dailyTime, weeklyDay, weeklyTime]);
 
   const handleExpressionChange = (expression: string) => {
     setSchedule(prev => ({ ...prev, expression }));
@@ -84,19 +137,6 @@ const CronScheduleModal: React.FC<CronScheduleModalProps> = ({
     return cronRegex.test(expression);
   };
 
-  const getNextRunTimes = (expression: string): string[] => {
-    // 실제로는 크론 라이브러리를 사용하여 다음 실행 시간을 계산
-    // 여기서는 예시로 하드코딩
-    const now = new Date();
-    const nextRuns = [];
-    
-    for (let i = 1; i <= 5; i++) {
-      const nextRun = new Date(now.getTime() + (i * 60 * 60 * 1000)); // 1시간씩 추가
-      nextRuns.push(nextRun.toLocaleString('ko-KR'));
-    }
-    
-    return nextRuns;
-  };
 
   const handleSave = () => {
     if (!schedule.name.trim()) {
@@ -118,7 +158,6 @@ const CronScheduleModal: React.FC<CronScheduleModalProps> = ({
     onClose();
   };
 
-  const cronExpressionParts = schedule.expression.split(' ');
   const isValid = schedule.expression.trim() && validateCronExpression(schedule.expression);
 
   return (
@@ -201,105 +240,192 @@ const CronScheduleModal: React.FC<CronScheduleModalProps> = ({
           </div>
         </div>
 
-        {/* 크론 표현식 설정 */}
-        <div className="space-y-4">
+        {/* 실행 주기 설정 */}
+        <div className="space-y-6">
           <h3 className="text-lg font-semibold text-gray-900">실행 주기 설정</h3>
           
-          {/* 미리 정의된 스케줄 */}
+          {/* 스케줄 타입 선택 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              미리 정의된 스케줄
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              실행 방식 선택
             </label>
-            <div className="grid grid-cols-2 gap-2">
-              {presetSchedules.map((preset) => (
-                <button
-                  key={preset.value}
-                  onClick={() => handlePresetChange(preset.value)}
-                  className={`p-3 text-left border rounded-lg transition-colors ${
-                    selectedPreset === preset.value
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                >
-                  <div className="font-medium">{preset.label}</div>
-                  <div className="text-sm text-gray-600">{preset.description}</div>
-                  {preset.expression && (
-                    <div className="text-xs text-gray-500 mt-1 font-mono">{preset.expression}</div>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* 크론 표현식 직접 입력 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              크론 표현식 *
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={schedule.expression}
-                onChange={(e) => handleExpressionChange(e.target.value)}
-                className={`flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono ${
-                  schedule.expression && !isValid ? 'border-red-300' : 'border-gray-300'
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setScheduleType('interval')}
+                className={`p-4 text-left border rounded-lg transition-colors ${
+                  scheduleType === 'interval'
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-gray-300 hover:border-gray-400'
                 }`}
-                placeholder="0 0 * * * (매일 자정)"
-              />
-              {isValid && (
-                <div className="flex items-center text-green-600">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                </div>
-              )}
-            </div>
-            <div className="mt-2 text-sm text-gray-600">
-              <p>형식: 분(0-59) 시(0-23) 일(1-31) 월(1-12) 요일(0-7)</p>
-              <p>예시: 0 0 * * * (매일 자정), 0 */6 * * * (6시간마다), 0 9 * * 1-5 (평일 오전 9시)</p>
+              >
+                <div className="font-medium mb-1">🔄 주기적 반복</div>
+                <div className="text-sm text-gray-600">정해진 간격으로 반복 실행</div>
+              </button>
+              
+              <button
+                onClick={() => setScheduleType('daily')}
+                className={`p-4 text-left border rounded-lg transition-colors ${
+                  scheduleType === 'daily'
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-gray-300 hover:border-gray-400'
+                }`}
+              >
+                <div className="font-medium mb-1">📅 매일 실행</div>
+                <div className="text-sm text-gray-600">매일 특정 시간에 실행</div>
+              </button>
+              
+              <button
+                onClick={() => setScheduleType('weekly')}
+                className={`p-4 text-left border rounded-lg transition-colors ${
+                  scheduleType === 'weekly'
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-gray-300 hover:border-gray-400'
+                }`}
+              >
+                <div className="font-medium mb-1">📆 매주 실행</div>
+                <div className="text-sm text-gray-600">매주 특정 요일과 시간에 실행</div>
+              </button>
+              
+              <button
+                onClick={() => setScheduleType('custom')}
+                className={`p-4 text-left border rounded-lg transition-colors ${
+                  scheduleType === 'custom'
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-gray-300 hover:border-gray-400'
+                }`}
+              >
+                <div className="font-medium mb-1">⚙️ 사용자 정의</div>
+                <div className="text-sm text-gray-600">크론 표현식으로 직접 설정</div>
+              </button>
             </div>
           </div>
 
-          {/* 크론 표현식 파싱 */}
-          {isValid && cronExpressionParts.length === 5 && (
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h4 className="font-medium text-gray-900 mb-2">실행 시간 해석</h4>
-              <div className="grid grid-cols-5 gap-2 text-sm">
-                <div className="text-center">
-                  <div className="font-medium">분</div>
-                  <div className="text-gray-600">{cronExpressionParts[0]}</div>
+          {/* 주기적 반복 설정 */}
+          {scheduleType === 'interval' && (
+            <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+              <h4 className="font-medium text-gray-900">반복 간격 설정</h4>
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-gray-700">매</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="59"
+                  value={intervalValue}
+                  onChange={(e) => setIntervalValue(parseInt(e.target.value) || 1)}
+                  className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <select
+                  value={intervalUnit}
+                  onChange={(e) => setIntervalUnit(e.target.value as any)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="minutes">분</option>
+                  <option value="hours">시간</option>
+                  <option value="days">일</option>
+                </select>
+                <span className="text-sm text-gray-700">마다 실행</span>
+              </div>
+              <div className="text-sm text-gray-600">
+                예: 매 2시간마다 실행, 매 30분마다 실행
+              </div>
+            </div>
+          )}
+
+          {/* 매일 실행 설정 */}
+          {scheduleType === 'daily' && (
+            <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+              <h4 className="font-medium text-gray-900">매일 실행 시간</h4>
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-gray-700">매일</span>
+                <input
+                  type="time"
+                  value={dailyTime}
+                  onChange={(e) => setDailyTime(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">에 실행</span>
+              </div>
+              <div className="text-sm text-gray-600">
+                예: 매일 오전 9시에 실행, 매일 오후 6시에 실행
+              </div>
+            </div>
+          )}
+
+          {/* 매주 실행 설정 */}
+          {scheduleType === 'weekly' && (
+            <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+              <h4 className="font-medium text-gray-900">매주 실행 설정</h4>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-700">매주</span>
+                  <select
+                    value={weeklyDay}
+                    onChange={(e) => setWeeklyDay(parseInt(e.target.value))}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value={0}>일요일</option>
+                    <option value={1}>월요일</option>
+                    <option value={2}>화요일</option>
+                    <option value={3}>수요일</option>
+                    <option value={4}>목요일</option>
+                    <option value={5}>금요일</option>
+                    <option value={6}>토요일</option>
+                  </select>
+                  <input
+                    type="time"
+                    value={weeklyTime}
+                    onChange={(e) => setWeeklyTime(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-700">에 실행</span>
                 </div>
-                <div className="text-center">
-                  <div className="font-medium">시</div>
-                  <div className="text-gray-600">{cronExpressionParts[1]}</div>
-                </div>
-                <div className="text-center">
-                  <div className="font-medium">일</div>
-                  <div className="text-gray-600">{cronExpressionParts[2]}</div>
-                </div>
-                <div className="text-center">
-                  <div className="font-medium">월</div>
-                  <div className="text-gray-600">{cronExpressionParts[3]}</div>
-                </div>
-                <div className="text-center">
-                  <div className="font-medium">요일</div>
-                  <div className="text-gray-600">{cronExpressionParts[4]}</div>
+                <div className="text-sm text-gray-600">
+                  예: 매주 월요일 오전 9시에 실행, 매주 금요일 오후 6시에 실행
                 </div>
               </div>
             </div>
           )}
 
-          {/* 다음 실행 시간 미리보기 */}
-          {isValid && (
-            <div className="bg-blue-50 rounded-lg p-4">
-              <h4 className="font-medium text-blue-900 mb-2">예상 다음 실행 시간</h4>
-              <div className="space-y-1 text-sm text-blue-800">
-                {getNextRunTimes(schedule.expression).map((time, index) => (
-                  <div key={index}>{index + 1}. {time}</div>
-                ))}
+          {/* 사용자 정의 크론 표현식 */}
+          {scheduleType === 'custom' && (
+            <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+              <h4 className="font-medium text-gray-900">크론 표현식 직접 입력</h4>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={schedule.expression}
+                  onChange={(e) => handleExpressionChange(e.target.value)}
+                  className={`flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono ${
+                    schedule.expression && !isValid ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  placeholder="0 0 * * * (매일 자정)"
+                />
+                {isValid && (
+                  <div className="flex items-center text-green-600">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                )}
+              </div>
+              <div className="text-sm text-gray-600">
+                <p>형식: 분(0-59) 시(0-23) 일(1-31) 월(1-12) 요일(0-7)</p>
+                <p>예시: 0 0 * * * (매일 자정), 0 */6 * * * (6시간마다), 0 9 * * 1-5 (평일 오전 9시)</p>
               </div>
             </div>
           )}
+
+          {/* 현재 설정 미리보기 */}
+          <div className="bg-blue-50 rounded-lg p-4">
+            <h4 className="font-medium text-blue-900 mb-2">현재 설정</h4>
+            <div className="text-sm text-blue-800">
+              <div className="font-medium">{getScheduleDescription()}</div>
+              <div className="text-xs text-blue-600 mt-1 font-mono">
+                크론 표현식: {schedule.expression}
+              </div>
+            </div>
+          </div>
+
         </div>
 
         {/* 활성화 설정 */}

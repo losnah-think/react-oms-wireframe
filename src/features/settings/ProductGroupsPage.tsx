@@ -8,6 +8,8 @@ import {
   Badge,
   Stack,
   Modal,
+  Table,
+  type TableColumn,
 } from "../../design-system";
 import type { Category } from "./ProductCategoryPage";
 
@@ -92,7 +94,6 @@ const ProductGroupsPage: React.FC = () => {
   const [search, setSearch] = React.useState("");
   const [isModalOpen, setModalOpen] = React.useState(false);
   const [editingId, setEditingId] = React.useState<string | null>(null);
-  const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [formState, setFormState] = React.useState({
     name: "",
     description: "",
@@ -198,189 +199,194 @@ const ProductGroupsPage: React.FC = () => {
     }
     if (!window.confirm("삭제하시겠습니까?")) return;
     setGroups((prev) => prev.filter((group) => group.id !== id));
-    if (selectedId === id) setSelectedId(null);
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* 헤더 */}
-      <div className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">상품 분류</h1>
-          <Button size="big" onClick={() => openModal()}>
-            ➕ 추가
-          </Button>
+      <div className="bg-white border-b sticky top-0 z-10 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">상품 분류</h1>
+              <p className="text-gray-600 mt-1">상품을 판매 채널별로 분류하고 관리하세요</p>
+            </div>
+            <Button size="big" onClick={() => openModal()} className="shadow-lg">
+              ➕ 새 분류 추가
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* 통계 */}
       <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-3 gap-6 mb-8">
-          <button className="bg-white rounded-xl p-8 text-center shadow-sm hover:shadow-md transition">
-            <div className="text-5xl font-bold text-gray-900 mb-2">{summary.total}</div>
-            <div className="text-gray-600">전체 분류</div>
-          </button>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-200 border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-3xl font-bold text-gray-900 mb-1">{summary.total}</div>
+                <div className="text-gray-600 font-medium">전체 분류</div>
+              </div>
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <span className="text-2xl">📁</span>
+              </div>
+            </div>
+          </div>
           
-          <button className="bg-green-50 rounded-xl p-8 text-center shadow-sm hover:shadow-md transition">
-            <div className="text-5xl font-bold text-green-600 mb-2">{summary.channelUsage}</div>
-            <div className="text-green-700 font-medium">판매 채널</div>
-          </button>
+          <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-200 border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-3xl font-bold text-green-600 mb-1">{summary.channelUsage}</div>
+                <div className="text-gray-600 font-medium">총 채널 수</div>
+              </div>
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <span className="text-2xl">🛒</span>
+              </div>
+            </div>
+          </div>
           
-          <button className="bg-purple-50 rounded-xl p-8 text-center shadow-sm hover:shadow-md transition">
-            <div className="text-5xl font-bold text-purple-600 mb-2">{summary.avgCategories}</div>
-            <div className="text-purple-700 font-medium">평균 카테고리</div>
-          </button>
+          <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-200 border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-3xl font-bold text-purple-600 mb-1">{summary.avgCategories}</div>
+                <div className="text-gray-600 font-medium">평균 카테고리</div>
+              </div>
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <span className="text-2xl">🏷️</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* 검색 */}
-        <div className="bg-white rounded-xl p-6 mb-6 shadow-sm">
-          <Input
-            placeholder="분류 검색"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            fullWidth
-          />
+        <div className="bg-white rounded-xl p-6 mb-6 shadow-sm border border-gray-100">
+          <div className="flex items-center gap-4">
+            <div className="flex-1">
+              <Input
+                placeholder="분류 이름 또는 설명으로 검색..."
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                fullWidth
+                className="text-lg"
+              />
+            </div>
+            {search && (
+              <Button 
+                variant="ghost" 
+                onClick={() => setSearch("")}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </Button>
+            )}
+          </div>
+          {search && (
+            <div className="mt-2 text-sm text-gray-500">
+              "{search}" 검색 결과: {filtered.length}개 분류
+            </div>
+          )}
         </div>
 
-        {/* 분류 목록 - 거대한 카드 */}
-        <div className="space-y-4">
-          {filtered.map((group) => {
-            const isSelected = selectedId === group.id;
-            return (
-              <button
-                key={group.id}
-                onClick={() => setSelectedId(isSelected ? null : group.id)}
-                className={`w-full bg-white rounded-xl p-6 text-left shadow-sm hover:shadow-md transition ${
-                  isSelected ? "ring-4 ring-blue-500" : ""
-                }`}
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-4">
-                    <div 
-                      className="w-6 h-6 rounded-full" 
-                      style={{ backgroundColor: group.color }}
-                    />
-                    <div>
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="text-2xl font-bold text-gray-900">{group.name}</div>
-                        {group.isDefault && (
-                          <span className="text-sm px-3 py-1 bg-gray-100 text-gray-600 rounded-full">
-                            기본
-                          </span>
+        {/* 분류 목록 테이블 */}
+        {filtered.length === 0 ? (
+          <div className="bg-white rounded-xl p-12 text-center shadow-sm border border-gray-100">
+            <div className="text-6xl mb-4">📁</div>
+            <div className="text-xl font-semibold text-gray-900 mb-2">분류가 없습니다</div>
+            <div className="text-gray-500 mb-6">새로운 상품 분류를 추가해보세요</div>
+            <Button size="big" onClick={() => openModal()}>
+              ➕ 첫 번째 분류 추가
+            </Button>
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <Table
+              data={filtered}
+              columns={[
+                {
+                  key: "name",
+                  title: "분류명",
+                  render: (value, group) => (
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="w-4 h-4 rounded-full flex-shrink-0" 
+                        style={{ backgroundColor: group.color }}
+                      />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-gray-900">{value}</span>
+                          {group.isDefault && (
+                            <Badge variant="secondary" size="small">기본</Badge>
+                          )}
+                        </div>
+                        {group.description && (
+                          <div className="text-sm text-gray-500 mt-1">{group.description}</div>
                         )}
                       </div>
-                      <div className="text-gray-500">{group.description}</div>
                     </div>
-                  </div>
-                </div>
-
-                <div className="flex gap-2 mb-3">
-                  {group.channels.map((channel) => (
-                    <span 
-                      key={channel}
-                      className="text-sm px-3 py-1 bg-blue-50 text-blue-700 rounded-full"
-                    >
-                      {channel}
-                    </span>
-                  ))}
-                </div>
-
-                <div className="text-sm text-gray-500">
-                  카테고리: {group.categoryIds.length}개
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* 선택된 분류 편집 */}
-        {selectedId && (
-          <div className="mt-8 bg-white rounded-xl p-8 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold">편집</h2>
-              <div className="flex gap-3">
-                <Button 
-                  size="big"
-                  variant="outline"
-                  onClick={() => {
-                    const group = groups.find(g => g.id === selectedId);
-                    if (group) openModal(group);
-                  }}
-                >
-                  수정
-                </Button>
-                <Button 
-                  size="big"
-                  variant="outline"
-                  onClick={() => handleDelete(selectedId)}
-                  disabled={groups.find(g => g.id === selectedId)?.isDefault}
-                >
-                  🗑️ 삭제
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  onClick={() => setSelectedId(null)}
-                >
-                  ✕
-                </Button>
-              </div>
-            </div>
-
-            {(() => {
-              const group = groups.find(g => g.id === selectedId);
-              if (!group) return null;
-              
-              return (
-                <div className="space-y-6">
-                  <div>
-                    <div className="text-sm text-gray-500 mb-2">이름</div>
-                    <div className="text-xl font-semibold">{group.name}</div>
-                  </div>
-
-                  <div>
-                    <div className="text-sm text-gray-500 mb-2">설명</div>
-                    <div className="text-lg">{group.description || "-"}</div>
-                  </div>
-
-                  <div>
-                    <div className="text-sm text-gray-500 mb-3">판매 채널</div>
-                    <div className="flex gap-2">
-                      {group.channels.map((channel) => (
-                        <span 
-                          key={channel}
-                          className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg font-medium"
-                        >
+                  ),
+                },
+                {
+                  key: "channels",
+                  title: "판매 채널",
+                  render: (channels) => (
+                    <div className="flex flex-wrap gap-1">
+                      {channels.slice(0, 4).map((channel: string) => (
+                        <Badge key={channel} variant="primary" size="small">
                           {channel}
-                        </span>
+                        </Badge>
                       ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="text-sm text-gray-500 mb-3">연결된 카테고리</div>
-                    <div className="flex flex-wrap gap-2">
-                      {group.categoryIds.length > 0 ? (
-                        group.categoryIds.map((id) => {
-                          const cat = categories.find(c => c.id === id);
-                          return (
-                            <span 
-                              key={id}
-                              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg"
-                            >
-                              {cat?.name || "알 수 없음"}
-                            </span>
-                          );
-                        })
-                      ) : (
-                        <span className="text-gray-400">없음</span>
+                      {channels.length > 4 && (
+                        <Badge variant="secondary" size="small">
+                          +{channels.length - 4}
+                        </Badge>
                       )}
                     </div>
-                  </div>
-                </div>
-              );
-            })()}
+                  ),
+                },
+                {
+                  key: "categoryIds",
+                  title: "연결된 카테고리",
+                  render: (categoryIds) => (
+                    <div className="text-sm text-gray-600">
+                      {categoryIds.length}개
+                    </div>
+                  ),
+                },
+                {
+                  key: "actions",
+                  title: "작업",
+                  render: (_, group) => (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="small"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openModal(group);
+                        }}
+                      >
+                        수정
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(group.id);
+                        }}
+                        disabled={group.isDefault}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        삭제
+                      </Button>
+                    </div>
+                  ),
+                },
+              ]}
+            />
           </div>
         )}
+
       </div>
 
       {/* 추가/수정 모달 */}

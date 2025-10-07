@@ -27,11 +27,14 @@ interface VendorIntegration {
   vendorName: string;
   platform: string;
   apiKey: string;
-  status: "연동중" | "오류" | "미연동";
+  status: "연동중" | "오류" | "미연동" | "수집중";
   lastSync: string;
   nextSync: string;
   productCount: number;
   categoryCount: number;
+  syncProgress?: number; // 수집 진행률 (0-100)
+  syncStartTime?: string; // 수집 시작 시간
+  lastRunTime?: string; // 마지막 크론 실행 시간
 }
 
 const channelOptions = [
@@ -47,12 +50,30 @@ const channelOptions = [
 // 판매처 연동 Mock 데이터 - 100개 이상 생성
 const generateMockVendorIntegrations = (): VendorIntegration[] => {
   const platforms = ["smartstore", "coupang", "11st", "cafe24", "godo", "kurly"];
-  const statuses: ("연동중" | "오류" | "미연동")[] = ["연동중", "오류", "미연동"];
+  const statuses: ("연동중" | "오류" | "미연동" | "수집중")[] = ["연동중", "오류", "미연동", "수집중"];
   const vendors: VendorIntegration[] = [];
 
   for (let i = 1; i <= 120; i++) {
     const platform = platforms[Math.floor(Math.random() * platforms.length)];
     const status = statuses[Math.floor(Math.random() * statuses.length)];
+    
+    const isCollecting = status === "수집중";
+    const syncProgress = isCollecting ? Math.floor(Math.random() * 100) : undefined;
+    const syncStartTime = isCollecting ? `2025-01-15 ${String(Math.floor(Math.random() * 24)).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}` : undefined;
+    
+    // 마지막 실행 시간 생성 (최근 7일 내 랜덤)
+    const now = new Date();
+    const randomDaysAgo = Math.floor(Math.random() * 7);
+    const randomHoursAgo = Math.floor(Math.random() * 24);
+    const randomMinutesAgo = Math.floor(Math.random() * 60);
+    const lastRunDate = new Date(now.getTime() - (randomDaysAgo * 24 * 60 * 60 * 1000) - (randomHoursAgo * 60 * 60 * 1000) - (randomMinutesAgo * 60 * 1000));
+    const lastRunTime = status === "미연동" ? "-" : lastRunDate.toLocaleString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
     
     vendors.push({
       id: `vendor-int-${i}`,
@@ -64,7 +85,10 @@ const generateMockVendorIntegrations = (): VendorIntegration[] => {
       lastSync: status === "미연동" ? "-" : `2025-01-15 ${String(Math.floor(Math.random() * 24)).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}`,
       nextSync: status === "미연동" ? "-" : `2025-01-15 ${String(Math.floor(Math.random() * 24)).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}`,
       productCount: status === "미연동" ? 0 : Math.floor(Math.random() * 3000) + 100,
-      categoryCount: status === "미연동" ? 0 : Math.floor(Math.random() * 50) + 5
+      categoryCount: status === "미연동" ? 0 : Math.floor(Math.random() * 50) + 5,
+      syncProgress,
+      syncStartTime,
+      lastRunTime
     });
   }
   
@@ -78,9 +102,12 @@ interface ConnectedShop {
   name: string;
   vendorId: string;
   platform: string;
-  status: "연동중" | "오류" | "미연동";
+  status: "연동중" | "오류" | "미연동" | "수집중";
   lastSync: string;
   nextSync: string;
+  syncProgress?: number; // 수집 진행률 (0-100)
+  syncStartTime?: string; // 수집 시작 시간
+  lastRunTime?: string; // 마지막 크론 실행 시간
 }
 
 const mockConnectedShops: ConnectedShop[] = [
@@ -89,9 +116,12 @@ const mockConnectedShops: ConnectedShop[] = [
     name: "카페24 베이직 몰",
     vendorId: "1",
     platform: "cafe24",
-    status: "연동중",
+    status: "수집중",
     lastSync: "2024-04-20 08:30",
     nextSync: "2024-04-20 12:30",
+    syncProgress: 65,
+    syncStartTime: "2024-04-20 10:15",
+    lastRunTime: "2024-04-20 10:15",
   },
   {
     id: "shop-2",
@@ -101,15 +131,19 @@ const mockConnectedShops: ConnectedShop[] = [
     status: "오류",
     lastSync: "2024-04-19 23:10",
     nextSync: "2024-04-20 11:00",
+    lastRunTime: "2024-04-19 23:10",
   },
   {
     id: "shop-3",
     name: "쿠팡 마켓플레이스",
     vendorId: "5",
     platform: "coupang",
-    status: "연동중",
+    status: "수집중",
     lastSync: "2024-04-20 09:05",
     nextSync: "2024-04-20 13:05",
+    syncProgress: 23,
+    syncStartTime: "2024-04-20 10:45",
+    lastRunTime: "2024-04-20 10:45",
   },
   {
     id: "shop-4",
@@ -119,6 +153,7 @@ const mockConnectedShops: ConnectedShop[] = [
     status: "미연동",
     lastSync: "-",
     nextSync: "-",
+    lastRunTime: "-",
   },
 ];
 
@@ -140,15 +175,59 @@ const IntegrationPage: React.FC = () => {
   const [vendorStatusFilter, setVendorStatusFilter] = React.useState<string>("");
   const [selectedVendorIntegration, setSelectedVendorIntegration] = React.useState<string | null>(null);
   const [isVendorIntegrationModalOpen, setIsVendorIntegrationModalOpen] = React.useState(false);
-  const [isLoadingSync, setIsLoadingSync] = React.useState(false);
   const [isCronModalOpen, setIsCronModalOpen] = React.useState(false);
   const [selectedCronSchedule, setSelectedCronSchedule] = React.useState<CronSchedule | undefined>(undefined);
+  
+  // 수집 진행률 실시간 업데이트를 위한 상태
+  const [vendorIntegrations, setVendorIntegrations] = React.useState<VendorIntegration[]>(mockVendorIntegrations);
+  const [isLoadingSync, setIsLoadingSync] = React.useState(false);
   const [cronSchedules, setCronSchedules] = React.useState<CronSchedule[]>([]);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = React.useState(false);
   const [selectedScheduleForHistory, setSelectedScheduleForHistory] = React.useState<CronSchedule | undefined>(undefined);
 
+  // 수집중인 항목들의 진행률을 실시간으로 업데이트
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setVendorIntegrations(prev => 
+        prev.map(integration => {
+          if (integration.status === "수집중" && integration.syncProgress !== undefined) {
+            // 진행률을 1-3%씩 증가 (완료되면 연동중으로 변경)
+            const newProgress = Math.min(integration.syncProgress + Math.floor(Math.random() * 3) + 1, 100);
+            
+            if (newProgress >= 100) {
+              const completedTime = new Date().toLocaleString('ko-KR', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+              });
+              
+              return {
+                ...integration,
+                status: "연동중" as const,
+                syncProgress: undefined,
+                syncStartTime: undefined,
+                lastSync: completedTime,
+                lastRunTime: completedTime
+              };
+            } else {
+              return {
+                ...integration,
+                syncProgress: newProgress
+              };
+            }
+          }
+          return integration;
+        })
+      );
+    }, 2000); // 2초마다 업데이트
+
+    return () => clearInterval(interval);
+  }, []);
+
   const filteredVendorIntegrations = React.useMemo(() => {
-    return mockVendorIntegrations.filter((integration) => {
+    return vendorIntegrations.filter((integration) => {
       const matchesSearch = vendorSearch
         ? integration.vendorName.includes(vendorSearch) || integration.vendorId.includes(vendorSearch)
         : true;
@@ -202,13 +281,37 @@ const IntegrationPage: React.FC = () => {
     }));
   }, []);
 
-  // 판매처 연동 동기화 함수
-  const syncVendorIntegration = async (integrationId: string) => {
+
+  // 데이터 수집 실행 함수
+  const runDataSync = async (integrationId: string) => {
     setIsLoadingSync(true);
+    
+    // 수집 상태로 변경
+    const startTime = new Date().toLocaleString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    
+    setVendorIntegrations(prev => 
+      prev.map(integration => 
+        integration.id === integrationId 
+          ? {
+              ...integration,
+              status: "수집중" as const,
+              syncProgress: 0,
+              syncStartTime: startTime,
+              lastRunTime: startTime
+            }
+          : integration
+      )
+    );
+    
     // API 호출 시뮬레이션
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 1500));
     setIsLoadingSync(false);
-    // 실제로는 상태 업데이트 로직이 들어감
   };
 
   // 판매처 연동 설정 함수
@@ -219,12 +322,13 @@ const IntegrationPage: React.FC = () => {
 
   // 판매처 연동 통계
   const vendorSummary = React.useMemo(() => {
-    const total = mockVendorIntegrations.length;
-    const active = mockVendorIntegrations.filter((integration) => integration.status === "연동중").length;
-    const pending = mockVendorIntegrations.filter((integration) => integration.status === "미연동").length;
-    const error = total - active - pending;
-    return { total, active, pending, error };
-  }, []);
+    const total = vendorIntegrations.length;
+    const active = vendorIntegrations.filter((integration) => integration.status === "연동중").length;
+    const collecting = vendorIntegrations.filter((integration) => integration.status === "수집중").length;
+    const pending = vendorIntegrations.filter((integration) => integration.status === "미연동").length;
+    const error = vendorIntegrations.filter((integration) => integration.status === "오류").length;
+    return { total, active, collecting, pending, error };
+  }, [vendorIntegrations]);
 
   const columns: TableColumn<ConnectedShop>[] = [
     {
@@ -286,33 +390,65 @@ const IntegrationPage: React.FC = () => {
 
       {/* 거대한 통계 카드 */}
       <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-4 gap-6 mb-8">
-          <button className="bg-white rounded-xl p-8 text-center shadow-sm hover:shadow-md transition">
-            <div className="text-5xl font-bold text-gray-900 mb-2">
+        <div className="grid grid-cols-5 gap-4 mb-8">
+          <button 
+            onClick={() => setVendorStatusFilter("")}
+            className={`rounded-xl p-6 text-center shadow-sm hover:shadow-md transition ${
+              vendorStatusFilter === "" ? "bg-gray-200" : "bg-white"
+            }`}
+          >
+            <div className="text-4xl font-bold text-gray-900 mb-2">
               {vendorSummary.total}
             </div>
-            <div className="text-gray-600">전체 판매처</div>
+            <div className="text-gray-600 text-sm">전체 판매처</div>
           </button>
           
-          <button className="bg-green-50 rounded-xl p-8 text-center shadow-sm hover:shadow-md transition">
-            <div className="text-5xl font-bold text-green-600 mb-2">
+          <button 
+            onClick={() => setVendorStatusFilter("연동중")}
+            className={`rounded-xl p-6 text-center shadow-sm hover:shadow-md transition ${
+              vendorStatusFilter === "연동중" ? "bg-green-200" : "bg-green-50"
+            }`}
+          >
+            <div className="text-4xl font-bold text-green-600 mb-2">
               {vendorSummary.active}
             </div>
-            <div className="text-green-700 font-medium">연동중</div>
+            <div className="text-green-700 font-medium text-sm">연동중</div>
           </button>
           
-          <button className="bg-gray-100 rounded-xl p-8 text-center shadow-sm hover:shadow-md transition">
-            <div className="text-5xl font-bold text-gray-600 mb-2">
+          <button 
+            onClick={() => setVendorStatusFilter("수집중")}
+            className={`rounded-xl p-6 text-center shadow-sm hover:shadow-md transition ${
+              vendorStatusFilter === "수집중" ? "bg-blue-200" : "bg-blue-50"
+            }`}
+          >
+            <div className="text-4xl font-bold text-blue-600 mb-2">
+              {vendorSummary.collecting}
+            </div>
+            <div className="text-blue-700 font-medium text-sm">수집중</div>
+          </button>
+          
+          <button 
+            onClick={() => setVendorStatusFilter("미연동")}
+            className={`rounded-xl p-6 text-center shadow-sm hover:shadow-md transition ${
+              vendorStatusFilter === "미연동" ? "bg-gray-300" : "bg-gray-100"
+            }`}
+          >
+            <div className="text-4xl font-bold text-gray-600 mb-2">
               {vendorSummary.pending}
             </div>
-            <div className="text-gray-700">미연동</div>
+            <div className="text-gray-700 text-sm">미연동</div>
           </button>
           
-          <button className="bg-red-50 rounded-xl p-8 text-center shadow-sm hover:shadow-md transition">
-            <div className="text-5xl font-bold text-red-600 mb-2">
+          <button 
+            onClick={() => setVendorStatusFilter("오류")}
+            className={`rounded-xl p-6 text-center shadow-sm hover:shadow-md transition ${
+              vendorStatusFilter === "오류" ? "bg-red-200" : "bg-red-50"
+            }`}
+          >
+            <div className="text-4xl font-bold text-red-600 mb-2">
               {vendorSummary.error}
             </div>
-            <div className="text-red-700 font-medium">오류</div>
+            <div className="text-red-700 font-medium text-sm">오류</div>
           </button>
         </div>
 
@@ -338,6 +474,7 @@ const IntegrationPage: React.FC = () => {
                 { value: "연동중", label: "연동중" },
                 { value: "오류", label: "오류" },
                 { value: "미연동", label: "미연동" },
+                { value: "수집중", label: "수집중" },
               ]}
               value={vendorStatusFilter}
               onChange={setVendorStatusFilter}
@@ -349,16 +486,16 @@ const IntegrationPage: React.FC = () => {
         {/* 판매처 연동 테이블 */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full table-fixed">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">판매처</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">플랫폼</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상품/카테고리</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">수집 주기</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">마지막 동기화</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">작업</th>
+                  <th className="w-1/4 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">판매처</th>
+                  <th className="w-1/6 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">플랫폼</th>
+                  <th className="w-1/6 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
+                  <th className="w-1/6 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상품/카테고리</th>
+                  <th className="w-1/6 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">수집 주기</th>
+                  <th className="w-1/6 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">마지막 실행</th>
+                  <th className="w-1/6 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">작업</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -373,7 +510,7 @@ const IntegrationPage: React.FC = () => {
                         onClick={() => setSelectedVendorIntegration(isExpanded ? null : integration.id)}
                         className="hover:bg-gray-50 cursor-pointer"
                       >
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <button
                               onClick={(e) => {
@@ -394,28 +531,50 @@ const IntegrationPage: React.FC = () => {
                             </button>
                             <div className={`w-3 h-3 rounded-full mr-3 ${
                               integration.status === "연동중" ? "bg-green-500" : 
-                              integration.status === "오류" ? "bg-red-500" : "bg-gray-400"
+                              integration.status === "오류" ? "bg-red-500" : 
+                              integration.status === "수집중" ? "bg-blue-500 animate-pulse" : "bg-gray-400"
                             }`} />
-                            <div className="text-sm font-medium text-gray-900">{integration.vendorName}</div>
+                            <div className="text-sm font-medium text-gray-900 truncate">{integration.vendorName}</div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-4 whitespace-nowrap">
                           <span className="text-sm text-gray-900">
                             {channelOptions.find(o => o.value === integration.platform)?.label}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-4 whitespace-nowrap">
                           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                             integration.status === "연동중" ? "bg-green-100 text-green-800" : 
-                            integration.status === "오류" ? "bg-red-100 text-red-800" : "bg-gray-100 text-gray-800"
+                            integration.status === "오류" ? "bg-red-100 text-red-800" : 
+                            integration.status === "수집중" ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-800"
                           }`}>
                             {integration.status}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {integration.productCount}개 / {integration.categoryCount}개
+                          {integration.status === "수집중" ? (
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="text-blue-600 font-medium">수집 중...</span>
+                                <span className="text-gray-500">{integration.syncProgress}%</span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div 
+                                  className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                                  style={{ width: `${integration.syncProgress || 0}%` }}
+                                ></div>
+                              </div>
+                              {integration.syncStartTime && (
+                                <div className="text-xs text-gray-400">
+                                  시작: {integration.syncStartTime}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            `${integration.productCount}개 / ${integration.categoryCount}개`
+                          )}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-2">
                             {vendorSchedules.length > 0 ? (
                               <div className="flex items-center gap-1">
@@ -454,25 +613,58 @@ const IntegrationPage: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {integration.lastSync}
+                          <div className="flex items-center gap-2">
+                            <span className={integration.lastRunTime === "-" ? "text-gray-400" : "text-gray-700"}>
+                              {integration.lastRunTime || "-"}
+                            </span>
+                            {integration.lastRunTime && integration.lastRunTime !== "-" && (
+                              <span className="text-xs text-gray-400">
+                                {(() => {
+                                  const lastRun = new Date(integration.lastRunTime);
+                                  const now = new Date();
+                                  const diffMs = now.getTime() - lastRun.getTime();
+                                  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                                  const diffDays = Math.floor(diffHours / 24);
+                                  
+                                  if (diffDays > 0) {
+                                    return `${diffDays}일 전`;
+                                  } else if (diffHours > 0) {
+                                    return `${diffHours}시간 전`;
+                                  } else {
+                                    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+                                    return `${diffMinutes}분 전`;
+                                  }
+                                })()}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex gap-2">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                syncVendorIntegration(integration.id);
+                                runDataSync(integration.id);
                               }}
-                              disabled={isLoadingSync}
-                              className="px-3 py-1 text-xs bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 transition-colors"
+                              disabled={isLoadingSync || integration.status === "수집중" || integration.status === "미연동"}
+                              title="데이터 수집 실행"
+                              className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                                integration.status === "수집중" || integration.status === "미연동"
+                                  ? "bg-gray-200 text-gray-500 cursor-not-allowed" 
+                                  : isLoadingSync 
+                                    ? "bg-blue-500 text-white opacity-50" 
+                                    : "bg-blue-500 text-white hover:bg-blue-600"
+                              }`}
                             >
-                              {isLoadingSync ? "동기화 중..." : "동기화"}
+                              {integration.status === "수집중" ? "수집 중..." : 
+                               isLoadingSync ? "실행 중..." : "실행"}
                             </button>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 configureVendorIntegration(integration.id);
                               }}
+                              title="연동 설정 및 상세 정보"
                               className="px-3 py-1 text-xs bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
                             >
                               상세

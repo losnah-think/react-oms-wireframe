@@ -83,6 +83,7 @@ const ProductCategoryPage: React.FC = () => {
     description: "",
   });
   const [isModalOpen, setModalOpen] = React.useState(false);
+  const [isEditModalOpen, setEditModalOpen] = React.useState(false);
   const [newCategory, setNewCategory] = React.useState({
     name: "",
     slug: "",
@@ -151,6 +152,7 @@ const ProductCategoryPage: React.FC = () => {
           : category,
       ),
     );
+    setEditModalOpen(false);
   };
 
   const handleDelete = () => {
@@ -194,156 +196,267 @@ const ProductCategoryPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* 헤더 */}
-      <div className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">카테고리</h1>
-          <Button size="big" onClick={openAddModal}>
-            ➕ 추가
-          </Button>
+      <div className="bg-white border-b sticky top-0 z-10 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">상품 카테고리</h1>
+              <p className="text-gray-600 mt-1">상품을 체계적으로 분류하고 관리하세요</p>
+            </div>
+            <Button size="big" onClick={openAddModal} className="shadow-lg">
+              ➕ 새 카테고리 추가
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* 통계 */}
       <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-5 gap-6 mb-8">
-          <button className="bg-white rounded-xl p-8 text-center shadow-sm hover:shadow-md transition">
-            <div className="text-5xl font-bold text-gray-900 mb-2">{summary.total}</div>
-            <div className="text-gray-600">전체</div>
-          </button>
-          
-          <button className="bg-blue-50 rounded-xl p-8 text-center shadow-sm hover:shadow-md transition">
-            <div className="text-5xl font-bold text-blue-600 mb-2">{summary.groupCounts["의류"] ?? 0}</div>
-            <div className="text-blue-700 font-medium">의류</div>
-          </button>
-
-          <button className="bg-purple-50 rounded-xl p-8 text-center shadow-sm hover:shadow-md transition">
-            <div className="text-5xl font-bold text-purple-600 mb-2">{summary.groupCounts["잡화"] ?? 0}</div>
-            <div className="text-purple-700 font-medium">잡화</div>
-          </button>
-
-          <button className="bg-green-50 rounded-xl p-8 text-center shadow-sm hover:shadow-md transition">
-            <div className="text-5xl font-bold text-green-600 mb-2">{summary.groupCounts["식품"] ?? 0}</div>
-            <div className="text-green-700 font-medium">식품</div>
-          </button>
-
-          <button className="bg-orange-50 rounded-xl p-8 text-center shadow-sm hover:shadow-md transition">
-            <div className="text-5xl font-bold text-orange-600 mb-2">{summary.groupCounts["생활"] ?? 0}</div>
-            <div className="text-orange-700 font-medium">생활</div>
-          </button>
-        </div>
-
-        {/* 검색 */}
-        <div className="bg-white rounded-xl p-6 mb-6 shadow-sm">
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              placeholder="카테고리 검색"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              fullWidth
-            />
-            <Dropdown
-              options={[{ value: "", label: "전체 그룹" }, ...groupOptions]}
-              value={groupFilter}
-              onChange={setGroupFilter}
-              fullWidth
-            />
-          </div>
-        </div>
-
-        {/* 카테고리 목록 - 거대한 카드 */}
-        <div className="space-y-4">
-          {filtered.map((cat) => {
-            const isSelected = selectedId === cat.id;
-            return (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedId(isSelected ? null : cat.id)}
-                className={`w-full bg-white rounded-xl p-6 text-left shadow-sm hover:shadow-md transition ${
-                  isSelected ? "ring-4 ring-blue-500" : ""
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="text-2xl font-bold text-gray-900">{cat.name}</div>
-                      {cat.isDefault && (
-                        <span className="text-sm px-3 py-1 bg-gray-100 text-gray-600 rounded-full">
-                          기본
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-gray-500">{cat.group}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm text-gray-400">{cat.slug}</div>
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* 선택된 카테고리 편집 */}
-        {selectedId && (
-          <div className="mt-8 bg-white rounded-xl p-8 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold">편집</h2>
-              <Button 
-                variant="ghost" 
-                onClick={() => setSelectedId(null)}
-              >
-                ✕
-              </Button>
-            </div>
-
-            <div className="space-y-6">
-              <Input
-                label="이름"
-                value={detailForm.name}
-                onChange={(event) => setDetailForm((prev) => ({ ...prev, name: event.target.value }))}
-                fullWidth
-              />
-              
-              <Input
-                label="경로"
-                value={detailForm.slug}
-                onChange={(event) => setDetailForm((prev) => ({ ...prev, slug: event.target.value }))}
-                fullWidth
-              />
-              
-              <Dropdown
-                label="그룹"
-                options={groupOptions}
-                value={detailForm.group}
-                onChange={(value) => setDetailForm((prev) => ({ ...prev, group: value }))}
-                fullWidth
-              />
-              
-              <Input
-                label="설명"
-                value={detailForm.description}
-                onChange={(event) => setDetailForm((prev) => ({ ...prev, description: event.target.value }))}
-                fullWidth
-              />
-
-              <div className="flex gap-4 pt-4">
-                <Button size="big" onClick={handleDetailSave} fullWidth>
-                  💾 저장
-                </Button>
-                <Button
-                  size="big"
-                  variant="outline"
-                  onClick={handleDelete}
-                  disabled={categories.find((category) => category.id === selectedId)?.isDefault}
-                  fullWidth
-                >
-                  🗑️ 삭제
-                </Button>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+          <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-200 border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-gray-900 mb-1">{summary.total}</div>
+                <div className="text-gray-600 font-medium">전체</div>
+              </div>
+              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                <span className="text-xl">📋</span>
               </div>
             </div>
           </div>
+          
+          <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-200 border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-blue-600 mb-1">{summary.groupCounts["의류"] ?? 0}</div>
+                <div className="text-gray-600 font-medium">의류</div>
+              </div>
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <span className="text-xl">👕</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-200 border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-purple-600 mb-1">{summary.groupCounts["잡화"] ?? 0}</div>
+                <div className="text-gray-600 font-medium">잡화</div>
+              </div>
+              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                <span className="text-xl">👜</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-200 border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-green-600 mb-1">{summary.groupCounts["식품"] ?? 0}</div>
+                <div className="text-gray-600 font-medium">식품</div>
+              </div>
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <span className="text-xl">🍎</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-200 border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-orange-600 mb-1">{summary.groupCounts["생활"] ?? 0}</div>
+                <div className="text-gray-600 font-medium">생활</div>
+              </div>
+              <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                <span className="text-xl">🏠</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 검색 */}
+        <div className="bg-white rounded-xl p-6 mb-6 shadow-sm border border-gray-100">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Input
+                placeholder="카테고리 이름 또는 경로로 검색..."
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                fullWidth
+                className="text-lg"
+              />
+            </div>
+            <div>
+              <Dropdown
+                options={[{ value: "", label: "전체 그룹" }, ...groupOptions]}
+                value={groupFilter}
+                onChange={setGroupFilter}
+                fullWidth
+              />
+            </div>
+          </div>
+          {(search || groupFilter) && (
+            <div className="mt-3 text-sm text-gray-500">
+              {search && `"${search}" 검색 결과: `}
+              {groupFilter && `${groupOptions.find(g => g.value === groupFilter)?.label} 그룹: `}
+              {filtered.length}개 카테고리
+            </div>
+          )}
+        </div>
+
+        {/* 카테고리 목록 테이블 */}
+        {filtered.length === 0 ? (
+          <div className="bg-white rounded-xl p-12 text-center shadow-sm border border-gray-100">
+            <div className="text-6xl mb-4">🏷️</div>
+            <div className="text-xl font-semibold text-gray-900 mb-2">카테고리가 없습니다</div>
+            <div className="text-gray-500 mb-6">새로운 상품 카테고리를 추가해보세요</div>
+            <Button size="big" onClick={openAddModal}>
+              ➕ 첫 번째 카테고리 추가
+            </Button>
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <Table
+              data={filtered}
+              columns={[
+                {
+                  key: "name",
+                  title: "카테고리명",
+                  render: (value, cat) => (
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-gray-900">{value}</span>
+                        {cat.isDefault && (
+                          <Badge variant="secondary" size="small">기본</Badge>
+                        )}
+                      </div>
+                      {cat.description && (
+                        <div className="text-sm text-gray-500 mt-1">{cat.description}</div>
+                      )}
+                    </div>
+                  ),
+                },
+                {
+                  key: "group",
+                  title: "그룹",
+                  render: (group) => {
+                    const groupColors = {
+                      "의류": "bg-blue-50 text-blue-700 border-blue-200",
+                      "잡화": "bg-purple-50 text-purple-700 border-purple-200",
+                      "식품": "bg-green-50 text-green-700 border-green-200",
+                      "생활": "bg-orange-50 text-orange-700 border-orange-200",
+                      "기타": "bg-gray-50 text-gray-700 border-gray-200"
+                    };
+                    return (
+                      <Badge 
+                        className={groupColors[group as keyof typeof groupColors] || groupColors["기타"]}
+                      >
+                        {group}
+                      </Badge>
+                    );
+                  },
+                },
+                {
+                  key: "slug",
+                  title: "경로",
+                  render: (slug) => (
+                    <div className="font-mono text-sm text-gray-600 bg-gray-50 px-2 py-1 rounded">
+                      {slug}
+                    </div>
+                  ),
+                },
+                {
+                  key: "actions",
+                  title: "작업",
+                  render: (_, cat) => (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="small"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedId(cat.id);
+                          setDetailForm({
+                            name: cat.name,
+                            slug: cat.slug,
+                            group: cat.group,
+                            description: cat.description ?? "",
+                          });
+                          setEditModalOpen(true);
+                        }}
+                      >
+                        편집
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedId(cat.id);
+                          handleDelete();
+                        }}
+                        disabled={cat.isDefault}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        삭제
+                      </Button>
+                    </div>
+                  ),
+                },
+              ]}
+            />
+          </div>
         )}
+
       </div>
+
+      {/* 편집 모달 */}
+      <Modal
+        open={isEditModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        title="카테고리 편집"
+        footer={
+          <div className="flex gap-4">
+            <Button variant="ghost" onClick={() => setEditModalOpen(false)} fullWidth>
+              취소
+            </Button>
+            <Button onClick={handleDetailSave} fullWidth>
+              저장
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-6">
+          <Input
+            label="이름"
+            value={detailForm.name}
+            onChange={(event) => setDetailForm((prev) => ({ ...prev, name: event.target.value }))}
+            fullWidth
+          />
+          
+          <Input
+            label="경로"
+            value={detailForm.slug}
+            onChange={(event) => setDetailForm((prev) => ({ ...prev, slug: event.target.value }))}
+            fullWidth
+          />
+          
+          <Dropdown
+            label="그룹"
+            options={groupOptions}
+            value={detailForm.group}
+            onChange={(value) => setDetailForm((prev) => ({ ...prev, group: value }))}
+            fullWidth
+          />
+          
+          <Input
+            label="설명"
+            value={detailForm.description}
+            onChange={(event) => setDetailForm((prev) => ({ ...prev, description: event.target.value }))}
+            fullWidth
+          />
+        </div>
+      </Modal>
 
       {/* 추가 모달 */}
       <Modal
