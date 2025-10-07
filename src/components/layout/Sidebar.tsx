@@ -308,6 +308,16 @@ const Sidebar: React.FC<SidebarProps> = ({
     "barcodes-settings": "/barcodes/settings",
   });
 
+  // users mappings
+  Object.assign(idToPath, {
+    users: "/users",
+    "users-list": "/users/list",
+    "users-roles": "/users/roles",
+    "users-groups": "/users/groups",
+    "users-activity": "/users/activity",
+    "users-settings": "/users/settings",
+  });
+
   // malls mappings
   Object.assign(idToPath, {
     malls: "/malls",
@@ -324,6 +334,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     if (id === "orders" && currentPage.startsWith("orders-")) return true;
     if (id === "shopping-mall" && (currentPage.startsWith("malls-") || currentPage.startsWith("vendors-"))) return true;
     if (id === "barcodes" && currentPage.startsWith("barcodes-")) return true;
+    if (id === "users" && currentPage.startsWith("users-")) return true;
     if (id === "basic" && currentPage.startsWith("basic-")) return true;
     if (id === "settings" && (currentPage.startsWith("settings-") || currentPage === "category-mapping")) return true;
     return false;
@@ -347,6 +358,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             "vendors",
             "malls",
             "categories",
+            "users",
           ].includes(parts[0])
         ) {
           return "/" + parts.join("/");
