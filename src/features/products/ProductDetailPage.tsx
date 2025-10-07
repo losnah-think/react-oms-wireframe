@@ -10,6 +10,9 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ productId: propPr
   const productId = propProductId || (router.query.id as string);
   
   const [activeTab, setActiveTab] = useState('images');
+  const [images, setImages] = useState<string[]>([]);
+  const [additionalImages, setAdditionalImages] = useState<string[]>([]);
+  const [isLocked, setIsLocked] = useState(false);
   
   const [formData, setFormData] = useState({
     productName: '라뮤즈 본딩 하프코트 SET',
@@ -79,6 +82,54 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ productId: propPr
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>, type: 'main' | 'additional') => {
+    const files = event.target.files;
+    if (files) {
+      const fileArray = Array.from(files);
+      const imageUrls = fileArray.map(file => URL.createObjectURL(file));
+      
+      if (type === 'main') {
+        setImages(prev => [...prev, ...imageUrls]);
+      } else {
+        setAdditionalImages(prev => [...prev, ...imageUrls]);
+        // 추가 이미지가 등록되면 첫 번째 추가 이미지를 대표 이미지의 첫 번째로 이동
+        if (imageUrls.length > 0 && images.length === 0) {
+          setImages(prev => [imageUrls[0], ...prev]);
+        }
+      }
+    }
+  };
+
+  const handleImageRemove = (index: number, type: 'main' | 'additional') => {
+    if (type === 'main') {
+      setImages(prev => prev.filter((_, i) => i !== index));
+    } else {
+      setAdditionalImages(prev => prev.filter((_, i) => i !== index));
+    }
+  };
+
+  const handleLockToggle = () => {
+    setIsLocked(!isLocked);
+  };
+
+  const handleDelete = () => {
+    if (confirm('정말로 이 상품을 삭제하시겠습니까?')) {
+      console.log('상품 삭제:', productId);
+      router.push('/products');
+    }
+  };
+
+  const handleUpdateRegistrationDate = () => {
+    const today = new Date().toISOString().split('T')[0];
+    console.log('상품등록일자를 오늘로 갱신:', today);
+    alert('상품등록일자가 오늘로 갱신되었습니다.');
+  };
+
+  const handleOptionAdd = () => {
+    console.log('옵션 추가');
+    alert('옵션 추가 기능이 호출되었습니다.');
+  };
+
   const handleSave = () => {
     console.log('상품 저장:', formData);
     router.push('/products');
@@ -98,7 +149,6 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ productId: propPr
       <div className="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-10">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-sm text-gray-500 mb-1">1depth &gt; 2depth &gt; 3depth</div>
             <button 
               onClick={() => router.back()}
               className="text-blue-600 hover:text-blue-800 text-sm"
@@ -106,12 +156,6 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ productId: propPr
             ← 목록으로
             </button>
             </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-700">api_test님 (api_test@example.com)</span>
-            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-        </div>
               </div>
               </div>
 
@@ -143,9 +187,24 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ productId: propPr
             <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900">상품 상세</h2>
               <div className="flex items-center gap-3">
-                <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">잠금</button>
-                <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">삭제</button>
-                <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">상품등록일자 오늘로 갱신</button>
+                <button 
+                  onClick={handleLockToggle}
+                  className={`px-4 py-2 border rounded-lg ${isLocked ? 'bg-red-600 text-white border-red-600' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                >
+                  {isLocked ? '잠금해제' : '잠금'}
+                </button>
+                <button 
+                  onClick={handleDelete}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                >
+                  삭제
+                </button>
+                <button 
+                  onClick={handleUpdateRegistrationDate}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  상품등록일자 오늘로 갱신
+                </button>
               </div>
             </div>
             <div className="flex space-x-1 px-6 py-4 bg-gray-50">
@@ -169,32 +228,48 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ productId: propPr
           <div className="space-y-6">
             {/* 대표 이미지 섹션 */}
             <div 
-              ref={(el) => sectionRefs.current['images'] = el}
+              ref={(el) => { sectionRefs.current['images'] = el; }}
               className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
             >
               <h3 className="text-lg font-semibold text-gray-900 mb-4">대표 이미지</h3>
               <div className="grid grid-cols-3 gap-4">
                 {[1, 2, 3, 4, 5, 6].map((index) => (
-                  <div key={index} className="aspect-square bg-gray-200 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
-                    {index === 1 ? (
-                      <img 
-                        src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=300&h=300&fit=crop" 
-                        alt="상품 이미지"
-                        className="w-full h-full object-cover rounded-lg"
-                      />
+                  <div key={index} className="aspect-square bg-gray-200 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300 relative">
+                    {images[index - 1] ? (
+                      <>
+                        <img 
+                          src={images[index - 1]} 
+                          alt="상품 이미지"
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                        <button
+                          onClick={() => handleImageRemove(index - 1, 'main')}
+                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                        >
+                          ×
+                        </button>
+                      </>
                     ) : (
-                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
+                      <label className="cursor-pointer w-full h-full flex items-center justify-center">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleImageUpload(e, 'main')}
+                          className="hidden"
+                        />
+                        <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </label>
                     )}
-                      </div>
+                  </div>
                 ))}
               </div>
             </div>
 
             {/* 상품명 섹션 */}
             <div 
-              ref={(el) => sectionRefs.current['name'] = el}
+              ref={(el) => { sectionRefs.current['name'] = el; }}
               className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
             >
               <h3 className="text-lg font-semibold text-gray-900 mb-4">상품명</h3>
@@ -211,7 +286,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ productId: propPr
 
             {/* 기본 정보 섹션 */}
             <div 
-              ref={(el) => sectionRefs.current['basic'] = el}
+              ref={(el) => { sectionRefs.current['basic'] = el; }}
               className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
             >
               <h3 className="text-lg font-semibold text-gray-900 mb-4">기본 정보</h3>
@@ -281,7 +356,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ productId: propPr
 
             {/* 가격 정보 섹션 */}
             <div 
-              ref={(el) => sectionRefs.current['price'] = el}
+              ref={(el) => { sectionRefs.current['price'] = el; }}
               className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
             >
               <h3 className="text-lg font-semibold text-gray-900 mb-4">가격 정보</h3>
@@ -333,12 +408,15 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ productId: propPr
 
             {/* 상품 옵션 섹션 */}
             <div 
-              ref={(el) => sectionRefs.current['options'] = el}
+              ref={(el) => { sectionRefs.current['options'] = el; }}
               className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
             >
           <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">상품 옵션</h3>
-                <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                <button 
+                  onClick={handleOptionAdd}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
                   옵션 추가
                 </button>
           </div>
@@ -384,32 +462,48 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ productId: propPr
 
             {/* 추가 이미지 섹션 */}
             <div 
-              ref={(el) => sectionRefs.current['additional-images'] = el}
+              ref={(el) => { sectionRefs.current['additional-images'] = el; }}
               className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
             >
               <h3 className="text-lg font-semibold text-gray-900 mb-4">추가 이미지</h3>
               <div className="grid grid-cols-5 gap-4">
                 {[1, 2, 3, 4, 5].map((index) => (
-                  <div key={index} className="aspect-square bg-gray-200 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
-                    {index === 1 ? (
-                      <div className="w-full h-full bg-blue-500 rounded-lg flex items-center justify-center">
-                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
-                </div>
+                  <div key={index} className="aspect-square bg-gray-200 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300 relative">
+                    {additionalImages[index - 1] ? (
+                      <>
+                        <img 
+                          src={additionalImages[index - 1]} 
+                          alt="추가 이미지"
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                        <button
+                          onClick={() => handleImageRemove(index - 1, 'additional')}
+                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                        >
+                          ×
+                        </button>
+                      </>
                     ) : (
-                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                )}
-          </div>
+                      <label className="cursor-pointer w-full h-full flex items-center justify-center">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleImageUpload(e, 'additional')}
+                          className="hidden"
+                        />
+                        <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </label>
+                    )}
+                  </div>
                 ))}
             </div>
             </div>
 
             {/* 추가 속성 섹션 */}
             <div 
-              ref={(el) => sectionRefs.current['attributes'] = el}
+              ref={(el) => { sectionRefs.current['attributes'] = el; }}
               className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
             >
               <h3 className="text-lg font-semibold text-gray-900 mb-4">추가 속성</h3>
@@ -517,7 +611,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ productId: propPr
 
             {/* 물류 정보 섹션 */}
             <div 
-              ref={(el) => sectionRefs.current['dimensions'] = el}
+              ref={(el) => { sectionRefs.current['dimensions'] = el; }}
               className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
             >
               <h3 className="text-lg font-semibold text-gray-900 mb-4">물류 정보</h3>
@@ -586,7 +680,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ productId: propPr
 
             {/* 태그 섹션 */}
             <div 
-              ref={(el) => sectionRefs.current['tags'] = el}
+              ref={(el) => { sectionRefs.current['tags'] = el; }}
               className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
             >
               <h3 className="text-lg font-semibold text-gray-900 mb-4">태그</h3>
@@ -597,7 +691,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ productId: propPr
 
             {/* 상품 상세 설명 섹션 */}
             <div 
-              ref={(el) => sectionRefs.current['description'] = el}
+              ref={(el) => { sectionRefs.current['description'] = el; }}
               className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
             >
               <h3 className="text-lg font-semibold text-gray-900 mb-4">상품 상세 설명</h3>

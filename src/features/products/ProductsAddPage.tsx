@@ -4,6 +4,8 @@ import { useRouter } from 'next/router';
 const ProductsAddPage: React.FC = () => {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('images');
+  const [images, setImages] = useState<string[]>([]);
+  const [additionalImages, setAdditionalImages] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     productName: '라뮤즈 본딩 하프코트 SET',
     brand: 'default',
@@ -72,6 +74,42 @@ const ProductsAddPage: React.FC = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>, type: 'main' | 'additional') => {
+    const files = event.target.files;
+    if (files) {
+      const fileArray = Array.from(files);
+      const imageUrls = fileArray.map(file => URL.createObjectURL(file));
+      
+      if (type === 'main') {
+        setImages(prev => [...prev, ...imageUrls]);
+      } else {
+        setAdditionalImages(prev => [...prev, ...imageUrls]);
+        // 추가 이미지가 등록되면 첫 번째 추가 이미지를 대표 이미지의 첫 번째로 이동
+        if (imageUrls.length > 0 && images.length === 0) {
+          setImages(prev => [imageUrls[0], ...prev]);
+        }
+      }
+    }
+  };
+
+  const handleImageRemove = (index: number, type: 'main' | 'additional') => {
+    if (type === 'main') {
+      setImages(prev => prev.filter((_, i) => i !== index));
+    } else {
+      setAdditionalImages(prev => prev.filter((_, i) => i !== index));
+    }
+  };
+
+  const handleOptionAdd = () => {
+    console.log('옵션 추가');
+    alert('옵션 추가 기능이 호출되었습니다.');
+  };
+
+  const handleHtmlToggle = () => {
+    console.log('HTML 모드 토글');
+    alert('HTML 모드가 토글되었습니다.');
+  };
+
   const handleSubmit = () => {
     console.log('상품 등록:', formData);
     router.push('/products');
@@ -91,19 +129,12 @@ const ProductsAddPage: React.FC = () => {
       <div className="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-10">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-sm text-gray-500 mb-1">1depth &gt; 2depth &gt; 3depth</div>
             <button 
               onClick={() => router.back()}
               className="text-blue-600 hover:text-blue-800 text-sm"
             >
               ← 목록으로
             </button>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-700">api_test님 (api_test@example.com)</span>
-            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
           </div>
         </div>
       </div>
@@ -163,17 +194,33 @@ const ProductsAddPage: React.FC = () => {
               <h3 className="text-lg font-semibold text-gray-900 mb-4">대표 이미지</h3>
               <div className="grid grid-cols-5 gap-4">
                 {[1, 2, 3, 4, 5].map((index) => (
-                  <div key={index} className="aspect-square bg-gray-200 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
-                    {index === 1 ? (
-                      <img 
-                        src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=300&h=300&fit=crop" 
-                        alt="상품 이미지"
-                        className="w-full h-full object-cover rounded-lg"
-                      />
+                  <div key={index} className="aspect-square bg-gray-200 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300 relative">
+                    {images[index - 1] ? (
+                      <>
+                        <img 
+                          src={images[index - 1]} 
+                          alt="상품 이미지"
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                        <button
+                          onClick={() => handleImageRemove(index - 1, 'main')}
+                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                        >
+                          ×
+                        </button>
+                      </>
                     ) : (
-                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
+                      <label className="cursor-pointer w-full h-full flex items-center justify-center">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleImageUpload(e, 'main')}
+                          className="hidden"
+                        />
+                        <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </label>
                     )}
                   </div>
                 ))}
@@ -414,7 +461,10 @@ const ProductsAddPage: React.FC = () => {
             >
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">상품 옵션</h3>
-                <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                <button 
+                  onClick={handleOptionAdd}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
                   옵션 추가
                 </button>
               </div>
@@ -473,17 +523,33 @@ const ProductsAddPage: React.FC = () => {
                 <h4 className="text-md font-medium text-gray-800 mb-3">추가 이미지</h4>
                 <div className="grid grid-cols-4 gap-4">
                   {[1, 2, 3, 4].map((index) => (
-                    <div key={index} className="aspect-square bg-gray-200 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
-                      {index === 1 ? (
-                        <div className="w-full h-full bg-blue-500 rounded-lg flex items-center justify-center">
-                          <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                          </svg>
-                        </div>
+                    <div key={index} className="aspect-square bg-gray-200 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300 relative">
+                      {additionalImages[index - 1] ? (
+                        <>
+                          <img 
+                            src={additionalImages[index - 1]} 
+                            alt="추가 이미지"
+                            className="w-full h-full object-cover rounded-lg"
+                          />
+                          <button
+                            onClick={() => handleImageRemove(index - 1, 'additional')}
+                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                          >
+                            ×
+                          </button>
+                        </>
                       ) : (
-                        <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
+                        <label className="cursor-pointer w-full h-full flex items-center justify-center">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleImageUpload(e, 'additional')}
+                            className="hidden"
+                          />
+                          <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                        </label>
                       )}
                     </div>
                   ))}
@@ -860,7 +926,10 @@ const ProductsAddPage: React.FC = () => {
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="상품 상세페이지에 들어갈 설명 HTML 코드를 포함해서 입력해주세요."
                 />
-                <button className="absolute bottom-3 left-3 px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200">
+                <button 
+                  onClick={handleHtmlToggle}
+                  className="absolute bottom-3 left-3 px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                >
                   HTML
                 </button>
               </div>
