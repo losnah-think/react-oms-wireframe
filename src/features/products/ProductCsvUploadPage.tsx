@@ -94,6 +94,11 @@ const ProductCsvUploadPage: React.FC = () => {
     text: string;
   } | null>(null);
 
+  // 상태 관리: 업로드 전/후 화면 구분
+  const [showUploadResult, setShowUploadResult] = useState<boolean>(false);
+  // 스크롤 이동을 위한 ref
+  const tableRef = React.useRef<HTMLTableElement>(null);
+
   // Lightweight RFC4180-style CSV parser supporting quoted fields and newlines
   const parseCSV = (text: string, delimiter = ","): string[][] => {
     const rows: string[][] = [];
@@ -154,6 +159,43 @@ const ProductCsvUploadPage: React.FC = () => {
   ) => {
     setMessage({ type, text });
     window.setTimeout(() => setMessage(null), 4000);
+  };
+
+  // 토스트 메시지 상태
+  const [toastMessage, setToastMessage] = useState<{message: string, type: 'success' | 'info' | 'error'} | null>(null);
+
+  // 토스트 메시지 표시 함수
+  const showToast = (message: string, type: 'success' | 'info' | 'error' = 'info') => {
+    setToastMessage({ message, type });
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  // 오류 클릭 시 해당 행으로 이동하고 포커스를 주는 함수
+  const scrollToRow = (rowIndex: number, fieldName?: string) => {
+    if (tableRef.current) {
+      const targetRow = tableRef.current.querySelector(`[data-row-index="${rowIndex}"]`);
+      if (targetRow) {
+        targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // 토스트 메시지 표시
+        showToast(`행 ${rowIndex + 1}로 이동했습니다. 수정해주세요!`, 'info');
+        
+        // 잠시 하이라이트 효과
+        targetRow.classList.add('bg-yellow-100');
+        setTimeout(() => {
+          targetRow.classList.remove('bg-yellow-100');
+          
+          // 특정 필드가 지정된 경우 해당 셀로 포커스 이동
+          if (fieldName) {
+            const fieldInput = targetRow.querySelector(`input[data-field="${fieldName}"]`) as HTMLInputElement;
+            if (fieldInput) {
+              fieldInput.focus();
+              fieldInput.select();
+            }
+          }
+        }, 500);
+      }
+    }
   };
   const [uploadHistory, setUploadHistory] = useState<UploadHistory[]>([]);
   const [showHistory, setShowHistory] = useState<boolean>(false);
@@ -381,7 +423,7 @@ const ProductCsvUploadPage: React.FC = () => {
       const headers = (rows[0] || []).map((h) =>
         String(h).replace(/['"]/g, ""),
       );
-      const dataRows = rows.slice(1, 6);
+      const dataRows = rows.slice(1); // 모든 데이터 행 가져오기
 
       // 플랫폼 자동 감지
       setTimeout(() => {
@@ -400,20 +442,22 @@ const ProductCsvUploadPage: React.FC = () => {
           totalRows: rows.length - 1,
           totalColumns: headers.length,
           headers: headers,
-          sampleData: dataRows,
+          sampleData: dataRows.slice(0, 6), // 미리보기용 샘플 데이터
         });
 
         setPreviewData([headers, ...dataRows]);
-        // Build editable previewRows (array of objects)
+        
+        // Build editable previewRows (array of objects) - 모든 행 처리
         const previewObjs: any[] = [];
-        for (let i = 1; i < Math.min(6, rows.length); ++i) {
+        for (let i = 1; i < rows.length; ++i) {
           const obj: any = {};
           headers.forEach((h, idx) => {
             obj[h] = rows[i][idx] ?? "";
           });
           previewObjs.push(obj);
         }
-        // Validate preview rows
+        
+        // Validate all rows
         const errors: Record<number, Record<string, string>> = {};
         previewObjs.forEach((row, idx) => {
           const rowErrors: Record<string, string> = {};
@@ -426,7 +470,7 @@ const ProductCsvUploadPage: React.FC = () => {
             // Generate code
             const today = new Date();
             const ymd = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
-            row["상품코드"] = `PRD-${ymd}-${idx + 1}`;
+            row["상품코드"] = `PRD-${ymd}-${String(idx + 1).padStart(4, "0")}`;
           }
           // 판매가 missing
           if (!row["판매가"] || row["판매가"].trim() === "") {
@@ -532,15 +576,9 @@ const ProductCsvUploadPage: React.FC = () => {
       let created = 0;
       let updated = 0;
       let errors: { row: number, field: string, message: string }[] = [];
+      
+      // 유효성 검사 오류가 있는 행들을 먼저 수집
       for (let i = 0; i < previewRows.length; ++i) {
-        const row = previewRows[i];
-        const code = row["상품코드"];
-        if (existingProductCodes.includes(code)) {
-          updated++;
-        } else {
-          created++;
-        }
-        // Also collect validation errors
         if (validationErrors[i]) {
           Object.entries(validationErrors[i]).forEach(([field, msg]) => {
             errors.push({
@@ -549,6 +587,20 @@ const ProductCsvUploadPage: React.FC = () => {
               message: msg,
             });
           });
+        }
+      }
+      
+      // 유효성 검사 통과한 행들만 생성/수정 처리
+      const validRows = previewRows.filter((_, index) => !validationErrors[index]);
+      
+      for (let i = 0; i < validRows.length; ++i) {
+        const row = validRows[i];
+        const code = row["상품코드"];
+        // 기존 상품코드가 있는지 확인 (실제로는 서버에서 확인해야 함)
+        if (existingProductCodes.length > 0 && existingProductCodes.includes(code)) {
+          updated++;
+        } else {
+          created++;
         }
       }
       setCreatedCount(created);
@@ -563,6 +615,7 @@ const ProductCsvUploadPage: React.FC = () => {
       };
 
       setUploadResults(results);
+      setShowUploadResult(true); // 결과 화면 표시
 
       // 업로드 이력에 추가
       if (detectedPlatform) {
@@ -598,30 +651,24 @@ const ProductCsvUploadPage: React.FC = () => {
     setCreatedCount(0);
     setUpdatedCount(0);
     setValidationErrors({});
+    setShowUploadResult(false);
   };
 
   return (
+ 
     <Container
       maxWidth="full"
       padding="md"
-      className="min-h-screen bg-gray-50 overflow-x-hidden"
+        className="overflow-x-hidden"
     >
       <div className="mx-auto w-full max-w-screen-2xl">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
+          <div className="mb-6">
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              CSV 상품 등록
+              CSV 상품 관리
             </h1>
             <p className="text-gray-600">
-              CSV 파일을 업로드하면 자동으로 판매처 플랫폼을 감지하여 상품을
-              등록합니다.
+              CSV 파일을 업로드하면 자동으로 쇼핑몰 플랫폼을 감지하여 상품을 등록합니다.
             </p>
-          </div>
-          <Stack direction="row" gap={3}>
-            <Button variant="secondary" onClick={() => setShowHistory(true)}>
-              □ 등록 이력 보기
-            </Button>
-          </Stack>
         </div>
 
         {/* 등록 이력 모달 */}
@@ -755,11 +802,23 @@ const ProductCsvUploadPage: React.FC = () => {
           </div>
         )}
 
-        {/* 파일 업로드 */}
-        <div className="bg-white border rounded-lg p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            1. CSV 파일 업로드
+          {/* 파일 업로드 후 화면 (두번째 이미지) */}
+          {uploadedFile && !showUploadResult && (
+            <>
+              {/* CSV 파일 업로드 섹션 */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <div className="bg-white border rounded-lg p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      CSV 파일 업로드
           </h2>
+                    <button 
+                      onClick={() => setIsHelpOpen(true)}
+                      className="text-blue-600 text-sm hover:text-blue-800"
+                    >
+                      CSV 도움말
+                    </button>
+                  </div>
 
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-colors">
             <input
@@ -770,508 +829,423 @@ const ProductCsvUploadPage: React.FC = () => {
               id="csv-upload"
             />
             <label htmlFor="csv-upload" className="cursor-pointer">
-              <div className="text-4xl text-gray-400 mb-4">□</div>
-              <div className="text-lg font-medium text-gray-700 mb-2">
+                      <div className="text-sm text-gray-500 mb-2">
+                        지원 형식 CSV (UTF-8) 최대 크기 50MB
+                      </div>
+                      <div className="text-lg font-medium text-gray-700 mb-4">
                 CSV 파일을 선택하거나 여기로 드래그하세요
               </div>
-              <div className="text-sm text-gray-500 mb-4">
-                지원 형식: CSV (UTF-8) | 최대 크기: 50MB
-              </div>
               <div className="inline-flex items-center px-4 py-2 bg-blue-500 text-white text-sm rounded hover:bg-blue-600">
-                파일 선택
+                        📁 파일 선택
               </div>
             </label>
           </div>
 
           {uploadedFile && (
-            <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                    <div className="mt-4">
+                      <div className="text-sm text-gray-500 mb-1">업로드한 파일이 없습니다.</div>
+                      <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
               <div className="flex items-center justify-between">
                 <div>
                   <div className="font-medium text-gray-900">
                     {uploadedFile.name}
                   </div>
                   <div className="text-sm text-gray-500">
-                    크기: {(uploadedFile.size / 1024 / 1024).toFixed(2)}MB
+                              크기 {(uploadedFile.size / 1024 / 1024).toFixed(2)}MB
                   </div>
                 </div>
-                {isAnalyzing && (
-                  <div className="flex items-center text-blue-600">
-                    <svg
-                      className="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-600"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    분석 중...
+                          <button 
+                            onClick={() => setUploadedFile(null)}
+                            className="text-gray-400 hover:text-gray-600"
+                          >
+                            ✕
+                          </button>
                   </div>
-                )}
               </div>
             </div>
           )}
         </div>
 
-        {/* 플랫폼 감지 결과 */}
-        {detectedPlatform && (
-          <div className="bg-white border rounded-lg p-6 mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              2. 플랫폼 감지 결과
+                {/* 파일 분석 정보 */}
+                <div className="bg-white border rounded-lg p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      파일 분석 정보
             </h2>
-            <div className="flex items-center justify-between p-4 border rounded-lg bg-blue-50 border-blue-200">
-              <div className="flex items-center">
-                <span className="text-3xl mr-4">{detectedPlatform.logo}</span>
-                <div>
-                  <div className="text-lg font-semibold text-gray-900">
-                    {detectedPlatform.name}
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    {detectedPlatform.description}
-                  </div>
-                </div>
-              </div>
               <button
-                onClick={() => setShowPlatformSelector(true)}
-                className="px-4 py-2 text-sm text-blue-600 border border-blue-300 rounded hover:bg-blue-50"
-              >
-                다른 플랫폼 선택
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Help / 가이드 토글 (드로어로 이동) */}
-        <div className="flex items-center justify-end mb-4">
-          <button
-            className="px-3 py-2 bg-white border rounded text-sm"
             onClick={() => setIsHelpOpen(true)}
+                      className="text-blue-600 text-sm hover:text-blue-800"
           >
             CSV 도움말
           </button>
         </div>
 
-        <HelpDrawer open={isHelpOpen} onClose={() => setIsHelpOpen(false)} title="CSV 업로드 도움말">
-          <ul className="list-disc pl-5 text-sm text-gray-600 space-y-2">
-            <li><strong>파일 형식:</strong> UTF-8 인코딩의 CSV 파일만 지원됩니다</li>
-            <li><strong>필수 매핑:</strong> 플랫폼별 필수 필드를 반드시 매핑해주세요. 매핑이 없으면 업로드가 불가능합니다</li>
-            <li><strong>이미지 처리:</strong> 이미지 URL을 사용할 때는 '이미지 필드 URL로 처리' 옵션을 체크해주세요</li>
-            <li><strong>복잡한 데이터:</strong> 따옴표나 줄바꿈이 포함된 CSV도 자동으로 처리되지만, 문제가 있다면 템플릿을 사용해보세요</li>
-            <li><strong>템플릿 활용:</strong> 템플릿 다운로드로 플랫폼별 샘플 파일을 받아 참고하세요</li>
-          </ul>
-        </HelpDrawer>
+                  <div className="space-y-3 mb-4">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">총 행수</span>
+                      <span className="text-sm font-medium">{fileAnalysis?.totalRows || '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">총 열수</span>
+                      <span className="text-sm font-medium">{fileAnalysis?.totalColumns || '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">파일 크기</span>
+                      <span className="text-sm font-medium">{fileAnalysis ? `${(fileAnalysis.fileSize / 1024 / 1024).toFixed(1)}MB` : '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">인코딩</span>
+                      <span className="text-sm font-medium">UTF-8</span>
+                    </div>
+                  </div>
 
-        {/* inline toast */}
-        {message && (
-          <div
-            className={`fixed right-6 bottom-6 z-50 px-4 py-3 rounded shadow-lg ${message.type === "error" ? "bg-red-600 text-white" : message.type === "success" ? "bg-green-600 text-white" : "bg-blue-600 text-white"}`}
-          >
-            {message.text}
+                  {detectedPlatform && (
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                      <div className="flex items-start">
+                        <span className="text-blue-600 mr-2">💡</span>
+                        <div className="text-sm text-blue-800">
+                          매칭된 필드: 상품코드, 상품명, 판매가, 공급가, 카테고리, 브랜드, 상품설명
+                        </div>
+                      </div>
           </div>
         )}
+                </div>
+              </div>
 
-        {/* 플랫폼 수동 선택 */}
-        {showPlatformSelector && (
+              {/* 플랫폼 선택 */}
           <div className="bg-white border rounded-lg p-6 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">
-                플랫폼 수동 선택
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  플랫폼 선택
               </h2>
-              <button
-                onClick={() => setShowPlatformSelector(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                □
-              </button>
-            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {platforms.map((platform) => (
                 <div
                   key={platform.id}
                   onClick={() => handlePlatformSelect(platform.id)}
-                  className="p-4 border rounded-lg cursor-pointer transition-all hover:shadow-md hover:border-blue-300"
-                >
-                  <div className="text-center">
-                    <span className="text-2xl mb-2 block">{platform.logo}</span>
+                      className={`p-4 border rounded-lg cursor-pointer transition-all hover:shadow-md ${
+                        (detectedPlatform?.id === platform.id || selectedPlatform === platform.id)
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-blue-300'
+                      }`}
+                    >
+                      <div className="flex items-center mb-2">
+                        <input
+                          type="radio"
+                          checked={detectedPlatform?.id === platform.id || selectedPlatform === platform.id}
+                          onChange={() => {}}
+                          className="mr-3"
+                        />
+                        <span className="text-2xl mr-2">{platform.logo}</span>
+                        <div>
                     <div className="font-medium text-gray-900 text-sm">
                       {platform.name}
+                            {detectedPlatform?.id === platform.id && (
+                              <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">예상</span>
+                            )}
                     </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {platform.description}
                     </div>
-                    {(platform.confidence ?? 0) > 0 && (
-                      <div className="text-xs text-blue-600 mt-1">
-                        매칭률: {(platform.confidence ?? 0)}%
                       </div>
-                    )}
+                      <div className="text-xs text-gray-500">
+                        SSSSSSSSSSSSSSSSSSSSSSS
                   </div>
                 </div>
               ))}
             </div>
-          </div>
-        )}
 
-        {/* 파일 분석 정보 */}
-        {fileAnalysis && (
-          <div className="bg-white border rounded-lg p-6 mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              3. 파일 분석 정보
-            </h2>
-
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-4">
-              <div className="text-center p-3 bg-gray-50 rounded-lg">
-                <div className="text-lg font-bold text-gray-900">
-                  {fileAnalysis.totalRows}
+                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <div className="text-sm text-yellow-800">
+                    <strong>💡 TIP:</strong> CSV 파일을 업로드하면 자동으로 어떤 쇼핑몰의 파일인지 감지합니다. 감지 실패 시 수동으로 플랫폼을 선택할 수 있습니다.
                 </div>
-                <div className="text-sm text-gray-600">총 행 수</div>
-              </div>
-              <div className="text-center p-3 bg-gray-50 rounded-lg">
-                <div className="text-lg font-bold text-gray-900">
-                  {fileAnalysis.totalColumns}
-                </div>
-                <div className="text-sm text-gray-600">총 열 수</div>
-              </div>
-              <div className="text-center p-3 bg-gray-50 rounded-lg">
-                <div className="text-lg font-bold text-gray-900">
-                  {(fileAnalysis.fileSize / 1024 / 1024).toFixed(1)}MB
-                </div>
-                <div className="text-sm text-gray-600">파일 크기</div>
-              </div>
-              <div className="text-center p-3 bg-gray-50 rounded-lg">
-                <div className="text-lg font-bold text-gray-900">UTF-8</div>
-                <div className="text-sm text-gray-600">인코딩</div>
               </div>
             </div>
 
-            {detectedPlatform && (
-              <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-                <div className="text-sm text-green-800">
-                  <strong>매칭된 필드:</strong>{" "}
-                  {detectedPlatform.matchedKeywords?.join(", ") || "없음"}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* 플랫폼별 필드 매핑 및 옵션 (MakeShop 전용 섹션 포함) */}
-        {fileAnalysis && detectedPlatform && (
+              {/* 필드 매핑 */}
           <div className="bg-white border rounded-lg p-6 mb-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              4-1. 필드 매핑 & 옵션
+                  필드 매핑
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                  {/* 왼쪽 컬럼 */}
               <div>
-                <div className="text-sm text-gray-600 mb-2">
-                  필수 필드 자동 매핑 (수동 조정 가능)
-                </div>
-                <div className="space-y-2">
-                  {detectedPlatform.requiredFields.map((rf) => (
-                    <div key={rf} className="flex items-center gap-2">
-                      <div className="w-36 text-sm text-gray-700">{rf}</div>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <label className="w-20 text-sm text-gray-700">상품명</label>
                       <select
-                        value={fieldMapping[rf] ?? ""}
+                          value={fieldMapping['상품명'] || ''}
                         onChange={(e) => {
                           const val = e.target.value || null;
                           setFieldMapping((prev) => {
-                            const next = { ...prev, [rf]: val };
+                              const next = { ...prev, '상품명': val };
                             setMappingValid(
                               Object.values(next).every((v) => !!v),
                             );
                             return next;
                           });
                         }}
-                        className="flex-1 border rounded px-2 py-1 text-sm"
+                          className="flex-1 border rounded px-3 py-2 text-sm"
                       >
                         <option value="">(매칭 헤더 선택)</option>
-                        {fileAnalysis.headers.map((h) => (
+                          {fileAnalysis?.headers.map((h) => (
                           <option key={h} value={h}>
                             {h}
                           </option>
                         ))}
                       </select>
                     </div>
-                  ))}
+                      <div className="flex items-center gap-3">
+                        <label className="w-20 text-sm text-gray-700">상품코드</label>
+                        <select
+                          value={fieldMapping['상품코드'] || ''}
+                          onChange={(e) => {
+                            const val = e.target.value || null;
+                            setFieldMapping((prev) => {
+                              const next = { ...prev, '상품코드': val };
+                              setMappingValid(
+                                Object.values(next).every((v) => !!v),
+                              );
+                              return next;
+                            });
+                          }}
+                          className="flex-1 border rounded px-3 py-2 text-sm"
+                        >
+                          <option value="">(매칭 헤더 선택)</option>
+                          {fileAnalysis?.headers.map((h) => (
+                            <option key={h} value={h}>
+                              {h}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                 </div>
               </div>
 
+                  {/* 오른쪽 컬럼 */}
               <div>
-                <div className="text-sm text-gray-600 mb-2">업로드 옵션</div>
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={handleImagesAsUrls}
-                      onChange={(e) => setHandleImagesAsUrls(e.target.checked)}
-                    />
-                    <span className="text-sm">이미지 필드 URL로 처리</span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <span className="text-sm">헤더로 처리할 행 수</span>
-                    <input
-                      type="number"
-                      min={0}
-                      value={skipHeaderRows}
-                      onChange={(e) =>
-                        setSkipHeaderRows(Number(e.target.value))
-                      }
-                      className="w-20 border rounded px-2 py-1 text-sm"
-                    />
-                  </label>
-                  <div className="pt-2 flex items-center gap-2">
-                    <button
-                      className="px-4 py-2 bg-gray-100 rounded border"
-                      onClick={() => {
-                        // download template for MakeShop
-                        let tpl = "";
-                        if (detectedPlatform.id === "makeshop") {
-                          const headers = [
-                            ...detectedPlatform.requiredFields,
-                            "상품코드(옵션용)",
-                            "이미지1",
-                            "이미지2",
-                            "재고",
-                          ];
-                          tpl =
-                            headers.join(",") +
-                            "\n" +
-                            headers.map(() => "샘플값").join(",");
-                        } else {
-                          tpl = `${detectedPlatform.name} 템플릿,헤더,예시\nexample,1,2`;
-                        }
-                        const blob = new Blob([tpl], {
-                          type: "text/csv;charset=utf-8;",
-                        });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement("a");
-                        a.href = url;
-                        a.download = `${detectedPlatform.id}_template.csv`;
-                        document.body.appendChild(a);
-                        a.click();
-                        a.remove();
-                        URL.revokeObjectURL(url);
-                      }}
-                    >
-                      템플릿 다운로드
-                    </button>
-
-                    <button
-                      className="px-4 py-2 bg-white rounded border"
-                      onClick={() => {
-                        // save mapping
-                        try {
-                          if (!fileAnalysis)
-                            return showMessage(
-                              "파일 분석 정보가 필요합니다.",
-                              "error",
-                            );
-                          const key = `csv_mapping_${detectedPlatform.id}_${fileAnalysis.fileName}`;
-                          localStorage.setItem(
-                            key,
-                            JSON.stringify(fieldMapping),
-                          );
-                          showMessage("매핑을 저장했습니다.", "success");
-                        } catch (e) {
-                          showMessage("저장에 실패했습니다.", "error");
-                        }
-                      }}
-                    >
-                      매핑 저장
-                    </button>
-
-                    <button
-                      className="px-4 py-2 bg-white rounded border"
-                      onClick={() => {
-                        try {
-                          if (!fileAnalysis)
-                            return showMessage(
-                              "파일 분석 정보가 필요합니다.",
-                              "error",
-                            );
-                          const key = `csv_mapping_${detectedPlatform.id}_${fileAnalysis.fileName}`;
-                          const raw = localStorage.getItem(key);
-                          if (!raw)
-                            return showMessage(
-                              "저장된 매핑이 없습니다.",
-                              "info",
-                            );
-                          const parsed = JSON.parse(raw);
-                          setFieldMapping(parsed);
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <label className="w-20 text-sm text-gray-700">브랜드</label>
+                        <select
+                          value={fieldMapping['브랜드'] || ''}
+                          onChange={(e) => {
+                            const val = e.target.value || null;
+                            setFieldMapping((prev) => {
+                              const next = { ...prev, '브랜드': val };
+                              setMappingValid(
+                                Object.values(next).every((v) => !!v),
+                              );
+                              return next;
+                            });
+                          }}
+                          className="flex-1 border rounded px-3 py-2 text-sm"
+                        >
+                          <option value="">(매칭 헤더 선택)</option>
+                          {fileAnalysis?.headers.map((h) => (
+                            <option key={h} value={h}>
+                              {h}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <label className="w-20 text-sm text-gray-700">판매가</label>
+                        <select
+                          value={fieldMapping['판매가'] || ''}
+                          onChange={(e) => {
+                            const val = e.target.value || null;
+                            setFieldMapping((prev) => {
+                              const next = { ...prev, '판매가': val };
                           setMappingValid(
-                            Object.values(parsed).every((v: any) => !!v),
-                          );
-                          showMessage("저장된 매핑을 불러왔습니다.", "success");
-                        } catch (e) {
-                          showMessage("불러오기 실패", "error");
-                        }
-                      }}
-                    >
-                      매핑 불러오기
-                    </button>
+                                Object.values(next).every((v) => !!v),
+                              );
+                              return next;
+                            });
+                          }}
+                          className="flex-1 border rounded px-3 py-2 text-sm"
+                        >
+                          <option value="">(매칭 헤더 선택)</option>
+                          {fileAnalysis?.headers.map((h) => (
+                            <option key={h} value={h}>
+                              {h}
+                            </option>
+                          ))}
+                        </select>
                   </div>
                 </div>
               </div>
             </div>
 
-            {!mappingValid && (
-              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
-                필수 필드가 모두 매핑되지 않았습니다. 업로드 전에 필수 필드를
-                매핑해주세요.
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={fullEditMode}
+                    onChange={(e) => setFullEditMode(e.target.checked)}
+                    className="mr-2"
+                  />
+                  <span className="text-sm text-gray-700">시트 전체 편집 (헤더 + 모든 행)</span>
               </div>
-            )}
           </div>
+
+              {/* 수정 가능한 데이터 테이블 */}
+              {previewData.length > 0 && (
+                <div className="bg-white border rounded-lg p-6 mb-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      데이터 편집 ({previewRows.length}개 행)
+                    </h2>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={fullEditMode}
+                        onChange={(e) => setFullEditMode(e.target.checked)}
+                        className="mr-2"
+                      />
+                      <span className="text-sm text-gray-700">시트 전체 편집 (헤더 + 모든 행)</span>
+                    </div>
+                  </div>
+                  
+                  <div className="overflow-x-auto max-w-full max-h-96 overflow-y-auto border rounded-lg">
+                    <table ref={tableRef} className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50 sticky top-0">
+                        <tr>
+                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
+                            No.
+                          </th>
+                          {previewData[0]?.map((header, index) => (
+                            <th
+                              key={index}
+                              className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-32"
+                            >
+                              {header}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {previewRows.map((row, rowIndex) => (
+                          <tr 
+                            key={rowIndex} 
+                            className="hover:bg-gray-50 transition-colors"
+                            data-row-index={rowIndex}
+                          >
+                            <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 font-medium">
+                              {rowIndex + 1}
+                            </td>
+                            {previewData[0].map((header, cellIndex) => (
+                              <td
+                                key={cellIndex}
+                                className="px-3 py-2 text-sm text-gray-900"
+                              >
+                                <div>
+                                  <input
+                                    data-field={header}
+                                    className={`border rounded px-2 py-1 text-sm w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                                      validationErrors[rowIndex] && validationErrors[rowIndex][header] 
+                                        ? 'border-red-300 bg-red-50' 
+                                        : ''
+                                    }`}
+                                    value={
+                                      Array.isArray(row[header])
+                                        ? row[header].join(";")
+                                        : (row[header] ?? "")
+                                    }
+                                    onChange={e => {
+                                      const val = e.target.value;
+                                      setPreviewRows(prev => {
+                                        const newRows = [...prev];
+                                        // If 브랜드, handle array split
+                                        if (header === "브랜드" && val.includes(";")) {
+                                          newRows[rowIndex][header] = val.split(";").map(s => s.trim()).filter(Boolean);
+                                        } else {
+                                          newRows[rowIndex][header] = val;
+                                        }
+                                        // revalidate this field
+                                        setValidationErrors(prevErrs => {
+                                          const errs = { ...prevErrs };
+                                          const rowErrs = { ...(errs[rowIndex] || {}) };
+                                          // 상품명
+                                          if (header === "상품명") {
+                                            if (!val || val.trim() === "") {
+                                              rowErrs["상품명"] = "상품명은 필수입니다.";
+                                            } else {
+                                              delete rowErrs["상품명"];
+                                            }
+                                          }
+                                          // 상품코드
+                                          if (header === "상품코드") {
+                                            if (!val || val.trim() === "") {
+                                              // Generate code
+                                              const today = new Date();
+                                              const ymd = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
+                                              newRows[rowIndex][header] = `PRD-${ymd}-${String(rowIndex + 1).padStart(4, "0")}`;
+                                            }
+                                          }
+                                          // 판매가
+                                          if (header === "판매가") {
+                                            if (!val || val.trim() === "") {
+                                              rowErrs["판매가"] = "판매가는 필수입니다.";
+                                            } else {
+                                              delete rowErrs["판매가"];
+                                            }
+                                          }
+                                          // 브랜드
+                                          if (header === "브랜드") {
+                                            if (!val || val.trim() === "") {
+                                              rowErrs["브랜드"] = "브랜드는 필수입니다.";
+                                            } else {
+                                              delete rowErrs["브랜드"];
+                                            }
+                                          }
+                                          // Clean up empty error object
+                                          if (Object.keys(rowErrs).length === 0) {
+                                            delete errs[rowIndex];
+                                          } else {
+                                            errs[rowIndex] = rowErrs;
+                                          }
+                                          return errs;
+                                        });
+                                        return newRows;
+                                      });
+                                    }}
+                                    type="text"
+                                  />
+                                  {validationErrors[rowIndex] && validationErrors[rowIndex][header] && (
+                                    <div className="text-red-500 text-xs mt-1">
+                                      {validationErrors[rowIndex][header]}
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="mt-4 flex justify-between items-center">
+                    <div className="text-sm text-gray-500">
+                      * 전체 {previewRows.length}개 행을 편집할 수 있습니다. 스크롤하여 모든 데이터를 확인하세요.
+                    </div>
+                    <div className="flex gap-2">
+                      <button className="px-4 py-2 bg-gray-100 rounded border text-sm hover:bg-gray-200">
+                        상품코드 자동생성
+                      </button>
+                      <button
+                        onClick={handleUpload}
+                        disabled={isUploading}
+                        className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+                      >
+                        상품 등록 시작
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
         )}
 
-        {/* 파일 미리보기 */}
-        {previewData.length > 0 && detectedPlatform && (
-          <div className="bg-white border rounded-lg p-6 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">
-                4. 파일 미리보기
-              </h2>
-              <button
-                className={`px-4 py-2 text-sm rounded border ${fullEditMode ? "bg-blue-100 text-blue-700 border-blue-300" : "bg-white text-gray-700 border-gray-300"} ml-2`}
-                onClick={() => setFullEditMode((prev) => !prev)}
-                type="button"
-              >
-                {fullEditMode ? "미리보기 모드" : "전체 편집 모드"}
-              </button>
-            </div>
-            <div className="overflow-x-auto max-w-full">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    {previewData[0]?.map((header, index) => (
-                      <th
-                        key={index}
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
-                        {header}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {(fullEditMode ? previewRows : previewRows.slice(0, 5)).map((row, rowIndex) => (
-                    <tr key={rowIndex}>
-                      {previewData[0].map((header, cellIndex) => (
-                        <td
-                          key={cellIndex}
-                          className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                        >
-                          <div>
-                            <input
-                              className="border rounded px-2 py-1 text-sm w-full"
-                              value={
-                                Array.isArray(row[header])
-                                  ? row[header].join(";")
-                                  : (row[header] ?? "")
-                              }
-                              onChange={e => {
-                                const val = e.target.value;
-                                setPreviewRows(prev => {
-                                  const newRows = [...prev];
-                                  // If 브랜드, handle array split
-                                  if (header === "브랜드" && val.includes(";")) {
-                                    newRows[rowIndex][header] = val.split(";").map(s => s.trim()).filter(Boolean);
-                                  } else {
-                                    newRows[rowIndex][header] = val;
-                                  }
-                                  // revalidate this field
-                                  setValidationErrors(prevErrs => {
-                                    const errs = { ...prevErrs };
-                                    const rowErrs = { ...(errs[rowIndex] || {}) };
-                                    // 상품명
-                                    if (header === "상품명") {
-                                      if (!val || val.trim() === "") {
-                                        rowErrs["상품명"] = "상품명은 필수입니다.";
-                                      } else {
-                                        delete rowErrs["상품명"];
-                                      }
-                                    }
-                                    // 상품코드
-                                    if (header === "상품코드") {
-                                      if (!val || val.trim() === "") {
-                                        // Generate code
-                                        const today = new Date();
-                                        const ymd = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
-                                        newRows[rowIndex][header] = `PRD-${ymd}-${rowIndex + 1}`;
-                                      }
-                                    }
-                                    // 판매가
-                                    if (header === "판매가") {
-                                      if (!val || val.trim() === "") {
-                                        rowErrs["판매가"] = "판매가는 필수입니다.";
-                                      } else {
-                                        delete rowErrs["판매가"];
-                                      }
-                                    }
-                                    // 브랜드
-                                    if (header === "브랜드") {
-                                      if (!val || val.trim() === "") {
-                                        rowErrs["브랜드"] = "브랜드는 필수입니다.";
-                                      } else {
-                                        delete rowErrs["브랜드"];
-                                      }
-                                    }
-                                    // Clean up empty error object
-                                    if (Object.keys(rowErrs).length === 0) {
-                                      delete errs[rowIndex];
-                                    } else {
-                                      errs[rowIndex] = rowErrs;
-                                    }
-                                    return errs;
-                                  });
-                                  return newRows;
-                                });
-                              }}
-                              type="text"
-                            />
-                            {validationErrors[rowIndex] && validationErrors[rowIndex][header] && (
-                              <div className="text-red-500 text-xs mt-1">
-                                {validationErrors[rowIndex][header]}
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="mt-4 flex items-center justify-between">
-              <div className="text-sm text-gray-500">
-                {fullEditMode
-                  ? "* 전체 시트를 편집할 수 있습니다."
-                  : "* 상위 5개 행만 미리보기로 표시됩니다. 전체 편집 모드로 전환하려면 버튼을 클릭하세요."
-                }
-              </div>
-              {detectedPlatform && (
-                <button
-                  onClick={handleUpload}
-                  disabled={isUploading}
-                  className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
-                >
-                  {isUploading ? "업로드 중..." : "상품 등록 시작"}
-                </button>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* 업로드 진행률 */}
         {isUploading && (
@@ -1294,73 +1268,248 @@ const ProductCsvUploadPage: React.FC = () => {
           </div>
         )}
 
-        {/* 업로드 결과 */}
-        {uploadResults && (
+          {/* 업로드 결과 화면 (첫번째 이미지) */}
+          {showUploadResult && uploadResults && (
+            <div className="space-y-6">
+              {/* CSV 파일 업로드 섹션 */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white border rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900">
-                상품 등록 결과
+                      CSV 파일 업로드
               </h2>
-              <div className="text-sm text-gray-500">
-                차수: {uploadResults.batchNumber}
-              </div>
-            </div>
+                    <button 
+                      onClick={() => setIsHelpOpen(true)}
+                      className="text-blue-600 text-sm hover:text-blue-800"
+                    >
+                      CSV 도움말
+                    </button>
+                  </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">
-                  {uploadResults.total}
-                </div>
-                <div className="text-sm text-blue-600">전체 상품</div>
-              </div>
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">
-                  {uploadResults.success}
-                </div>
-                <div className="text-sm text-green-600">등록 성공</div>
-              </div>
-              <div className="text-center p-4 bg-red-50 rounded-lg">
-                <div className="text-2xl font-bold text-red-600">
-                  {uploadResults.error}
-                </div>
-                <div className="text-sm text-red-600">등록 실패</div>
-              </div>
-              <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <div className="text-2xl font-bold text-purple-600">
-                  {createdCount}
-                </div>
-                <div className="text-sm text-purple-600">생성된 건수</div>
-              </div>
-              <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                <div className="text-2xl font-bold text-yellow-600">
-                  {updatedCount}
-                </div>
-                <div className="text-sm text-yellow-600">수정된 건수</div>
-              </div>
-            </div>
-
-            {uploadResults.errors.length > 0 && (
-              <div>
-                <h3 className="font-medium text-gray-900 mb-3">오류 내역</h3>
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <div className="space-y-2">
-                    {uploadResults.errors.map((error, index) => (
-                      <div key={index} className="text-sm">
-                        <span className="font-medium text-red-800">
-                          행 {error.row}:
-                        </span>
-                        <span className="text-red-700">
-                          {" "}
-                          [{error.field}] {error.message}
-                        </span>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-colors">
+                    <input
+                      type="file"
+                      accept=".csv"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      id="csv-upload"
+                    />
+                    <label htmlFor="csv-upload" className="cursor-pointer">
+                      <div className="text-4xl text-gray-400 mb-4">📄</div>
+                      <div className="text-lg font-medium text-gray-700 mb-2">
+                        CSV 파일을 선택하거나 여기로 드래그하세요
                       </div>
-                    ))}
+                      <div className="text-sm text-gray-500 mb-4">
+                        지원 형식: CSV (UTF-8) | 최대 크기: 50MB
+                      </div>
+                      <div className="inline-flex items-center px-4 py-2 bg-blue-500 text-white text-sm rounded hover:bg-blue-600">
+                        📁 파일 선택
+                      </div>
+                    </label>
+                  </div>
+
+                  {uploadedFile && (
+                    <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            {uploadedFile.name}
+                          </div>
+              <div className="text-sm text-gray-500">
+                            크기 {(uploadedFile.size / 1024 / 1024).toFixed(2)}MB
+              </div>
+                        </div>
+                        <button 
+                          onClick={() => setUploadedFile(null)}
+                          className="text-gray-400 hover:text-gray-600"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  )}
+            </div>
+
+                {/* 파일 분석 정보 */}
+                {fileAnalysis && (
+                  <div className="bg-white border rounded-lg p-6">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                      파일 분석 정보
+                    </h2>
+
+                    <div className="space-y-3 mb-4">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">총 행수</span>
+                        <span className="text-sm font-medium">{fileAnalysis.totalRows}</span>
+                </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">총 열수</span>
+                        <span className="text-sm font-medium">{fileAnalysis.totalColumns}</span>
+              </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">파일 크기</span>
+                        <span className="text-sm font-medium">{(fileAnalysis.fileSize / 1024 / 1024).toFixed(1)}MB</span>
+                </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">인코딩</span>
+                        <span className="text-sm font-medium">UTF-8</span>
+              </div>
+                </div>
+
+                    {detectedPlatform && (
+                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                        <div className="flex items-start">
+                          <span className="text-blue-600 mr-2">💡</span>
+                          <div className="text-sm text-blue-800">
+                            매칭된 필드: 상품코드, 상품명, 판매가, 공급가, 카테고리, 브랜드, 상품설명
+              </div>
+                </div>
+              </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* 플랫폼 선택 */}
+              <div className="bg-white border rounded-lg p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  플랫폼 선택
+                </h2>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {platforms.map((platform) => (
+                    <div
+                      key={platform.id}
+                      className={`p-4 border rounded-lg cursor-pointer transition-all hover:shadow-md ${
+                        (detectedPlatform?.id === platform.id || selectedPlatform === platform.id)
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-blue-300'
+                      }`}
+                    >
+                      <div className="flex items-center mb-2">
+                        <input
+                          type="radio"
+                          checked={detectedPlatform?.id === platform.id || selectedPlatform === platform.id}
+                          onChange={() => {}}
+                          className="mr-3"
+                        />
+                        <span className="text-2xl mr-2">{platform.logo}</span>
+                        <div>
+                          <div className="font-medium text-gray-900 text-sm">
+                            {platform.name}
+                            {detectedPlatform?.id === platform.id && (
+                              <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">예상</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        SSSSSSSSSSSSSSSSSSSSSSS
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <div className="text-sm text-yellow-800">
+                    <strong>💡 TIP:</strong> CSV 파일을 업로드하면 자동으로 어떤 쇼핑몰의 파일인지 감지합니다. 감지 실패 시 수동으로 플랫폼을 선택할 수 있습니다.
                   </div>
                 </div>
               </div>
-            )}
 
-            <div className="mt-6 flex justify-center space-x-4">
+              {/* 상품 등록 결과 */}
+              <div className="bg-white border rounded-lg p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  상품 등록 결과
+                </h2>
+
+                <div className="mb-4">
+                  <div className="text-lg font-medium text-gray-900 mb-2">
+                    전체 상품 {uploadResults.total}
+                  </div>
+                  <div className="grid grid-cols-3 gap-4 mb-4">
+                    <div className="text-center p-3 bg-green-50 rounded-lg">
+                      <div className="text-lg font-bold text-green-600">
+                        {uploadResults.success}
+                      </div>
+                      <div className="text-sm text-green-600">등록 성공</div>
+                    </div>
+                    <div className="text-center p-3 bg-blue-50 rounded-lg">
+                      <div className="text-lg font-bold text-blue-600">
+                  {updatedCount}
+                </div>
+                      <div className="text-sm text-blue-600">업데이트 성공</div>
+                    </div>
+                    <div className="text-center p-3 bg-red-50 rounded-lg">
+                      <div className="text-lg font-bold text-red-600">
+                        {uploadResults.error}
+                      </div>
+                      <div className="text-sm text-red-600">등록 실패</div>
+                    </div>
+              </div>
+            </div>
+
+                {uploadResults.errors.length > 0 && (
+                  <div className="mb-4">
+                    <div className="flex items-center mb-3">
+                      <span className="text-sm font-medium text-gray-900">
+                        오류 내역 {uploadResults.errors.length}건
+                      </span>
+                      <span className="ml-2 text-blue-600">ℹ️</span>
+                    </div>
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                      <div className="space-y-2 max-h-80 overflow-y-auto">
+                        {(() => {
+                          // 같은 행의 오류들을 그룹화
+                          const groupedErrors = uploadResults.errors.reduce((acc, error) => {
+                            const rowKey = error.row;
+                            if (!acc[rowKey]) {
+                              acc[rowKey] = [];
+                            }
+                            acc[rowKey].push(error);
+                            return acc;
+                          }, {} as Record<number, typeof uploadResults.errors>);
+
+                          return Object.entries(groupedErrors)
+                            .map(([row, errors]) => {
+                              const rowIndex = parseInt(row) - 2; // CSV 행 번호를 배열 인덱스로 변환
+                              const firstError = errors[0];
+                              const errorFields = errors.map(e => e.field);
+                              
+                              return (
+                                <div 
+                                  key={row} 
+                                  className="text-sm cursor-pointer hover:bg-red-100 p-3 rounded transition-colors group"
+                                  onClick={() => scrollToRow(rowIndex, firstError.field)}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <span className="font-medium text-red-800">
+                                        행 {row}:
+                                      </span>
+                                      <span className="text-red-700">
+                                        {" "}[{errorFields.join(', ')}] 는 필수입니다.
+                                      </span>
+                                    </div>
+                                    <span className="text-xs text-gray-400 group-hover:text-blue-600 transition-colors">
+                                      📍 클릭
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            });
+                        })()}
+                      </div>
+                      {uploadResults.errors.length > 0 && (
+                        <div className="text-xs text-gray-500 mt-3 pt-2 border-t border-red-200">
+                          총 {uploadResults.errors.length}건의 오류가 있습니다. 스크롤하여 모든 오류를 확인하세요.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-end space-x-4">
               <button
                 onClick={resetUpload}
                 className="px-6 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-50"
@@ -1371,15 +1520,363 @@ const ProductCsvUploadPage: React.FC = () => {
                 상품 목록으로 이동
               </button>
             </div>
+              </div>
+
+              {/* 필드 매핑 */}
+              <div className="bg-white border rounded-lg p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  필드 매핑
+                </h2>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                  {/* 왼쪽 컬럼 */}
+                  <div>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <label className="w-20 text-sm text-gray-700">상품명</label>
+                        <select
+                          value={fieldMapping['상품명'] || ''}
+                          onChange={(e) => {
+                            const val = e.target.value || null;
+                            setFieldMapping((prev) => {
+                              const next = { ...prev, '상품명': val };
+                              setMappingValid(
+                                Object.values(next).every((v) => !!v),
+                              );
+                              return next;
+                            });
+                          }}
+                          className="flex-1 border rounded px-3 py-2 text-sm"
+                        >
+                          <option value="">(매칭 헤더 선택)</option>
+                          {fileAnalysis?.headers.map((h) => (
+                            <option key={h} value={h}>
+                              {h}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <label className="w-20 text-sm text-gray-700">상품코드</label>
+                        <select
+                          value={fieldMapping['상품코드'] || ''}
+                          onChange={(e) => {
+                            const val = e.target.value || null;
+                            setFieldMapping((prev) => {
+                              const next = { ...prev, '상품코드': val };
+                              setMappingValid(
+                                Object.values(next).every((v) => !!v),
+                              );
+                              return next;
+                            });
+                          }}
+                          className="flex-1 border rounded px-3 py-2 text-sm"
+                        >
+                          <option value="">(매칭 헤더 선택)</option>
+                          {fileAnalysis?.headers.map((h) => (
+                            <option key={h} value={h}>
+                              {h}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 오른쪽 컬럼 */}
+                  <div>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <label className="w-20 text-sm text-gray-700">브랜드</label>
+                        <select
+                          value={fieldMapping['브랜드'] || ''}
+                          onChange={(e) => {
+                            const val = e.target.value || null;
+                            setFieldMapping((prev) => {
+                              const next = { ...prev, '브랜드': val };
+                              setMappingValid(
+                                Object.values(next).every((v) => !!v),
+                              );
+                              return next;
+                            });
+                          }}
+                          className="flex-1 border rounded px-3 py-2 text-sm"
+                        >
+                          <option value="">(매칭 헤더 선택)</option>
+                          {fileAnalysis?.headers.map((h) => (
+                            <option key={h} value={h}>
+                              {h}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <label className="w-20 text-sm text-gray-700">판매가</label>
+                        <select
+                          value={fieldMapping['판매가'] || ''}
+                          onChange={(e) => {
+                            const val = e.target.value || null;
+                            setFieldMapping((prev) => {
+                              const next = { ...prev, '판매가': val };
+                              setMappingValid(
+                                Object.values(next).every((v) => !!v),
+                              );
+                              return next;
+                            });
+                          }}
+                          className="flex-1 border rounded px-3 py-2 text-sm"
+                        >
+                          <option value="">(매칭 헤더 선택)</option>
+                          {fileAnalysis?.headers.map((h) => (
+                            <option key={h} value={h}>
+                              {h}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={fullEditMode}
+                    onChange={(e) => setFullEditMode(e.target.checked)}
+                    className="mr-2"
+                  />
+                  <span className="text-sm text-gray-700">시트 전체 편집 (헤더 + 모든 행)</span>
+                </div>
+              </div>
+
+              {/* 수정 가능한 데이터 테이블 */}
+              <div className="bg-white border rounded-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    데이터 편집
+                  </h2>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={fullEditMode}
+                      onChange={(e) => setFullEditMode(e.target.checked)}
+                      className="mr-2"
+                    />
+                    <span className="text-sm text-gray-700">시트 전체 편집 (헤더 + 모든 행)</span>
+                  </div>
+                </div>
+                
+                <div className="overflow-x-auto max-w-full">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        {previewData[0]?.map((header, index) => (
+                          <th
+                            key={index}
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          >
+                            {header}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {(fullEditMode ? previewRows : previewRows.slice(0, 10)).map((row, rowIndex) => {
+                        const hasError = uploadResults.errors.some(error => error.row === rowIndex + 2);
+                        return (
+                          <tr key={rowIndex} className={`hover:bg-gray-50 ${hasError ? 'bg-red-50' : ''}`}>
+                            {previewData[0].map((header, cellIndex) => (
+                              <td
+                                key={cellIndex}
+                                className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                              >
+                                <div>
+                                  <input
+                                    className={`border rounded px-2 py-1 text-sm w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${hasError ? 'border-red-300' : ''}`}
+                                    value={
+                                      Array.isArray(row[header])
+                                        ? row[header].join(";")
+                                        : (row[header] ?? "")
+                                    }
+                                    onChange={e => {
+                                      const val = e.target.value;
+                                      setPreviewRows(prev => {
+                                        const newRows = [...prev];
+                                        // If 브랜드, handle array split
+                                        if (header === "브랜드" && val.includes(";")) {
+                                          newRows[rowIndex][header] = val.split(";").map(s => s.trim()).filter(Boolean);
+                                        } else {
+                                          newRows[rowIndex][header] = val;
+                                        }
+                                        // revalidate this field
+                                        setValidationErrors(prevErrs => {
+                                          const errs = { ...prevErrs };
+                                          const rowErrs = { ...(errs[rowIndex] || {}) };
+                                          // 상품명
+                                          if (header === "상품명") {
+                                            if (!val || val.trim() === "") {
+                                              rowErrs["상품명"] = "상품명은 필수입니다.";
+                                            } else {
+                                              delete rowErrs["상품명"];
+                                            }
+                                          }
+                                          // 상품코드
+                                          if (header === "상품코드") {
+                                            if (!val || val.trim() === "") {
+                                              // Generate code
+                                              const today = new Date();
+                                              const ymd = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
+                                              newRows[rowIndex][header] = `PRD-${ymd}-${rowIndex + 1}`;
+                                            }
+                                          }
+                                          // 판매가
+                                          if (header === "판매가") {
+                                            if (!val || val.trim() === "") {
+                                              rowErrs["판매가"] = "판매가는 필수입니다.";
+                                            } else {
+                                              delete rowErrs["판매가"];
+                                            }
+                                          }
+                                          // 브랜드
+                                          if (header === "브랜드") {
+                                            if (!val || val.trim() === "") {
+                                              rowErrs["브랜드"] = "브랜드는 필수입니다.";
+                                            } else {
+                                              delete rowErrs["브랜드"];
+                                            }
+                                          }
+                                          // Clean up empty error object
+                                          if (Object.keys(rowErrs).length === 0) {
+                                            delete errs[rowIndex];
+                                          } else {
+                                            errs[rowIndex] = rowErrs;
+                                          }
+                                          return errs;
+                                        });
+                                        return newRows;
+                                      });
+                                    }}
+                                    type="text"
+                                  />
+                                  {validationErrors[rowIndex] && validationErrors[rowIndex][header] && (
+                                    <div className="text-red-500 text-xs mt-1">
+                                      {validationErrors[rowIndex][header]}
           </div>
         )}
+                                </div>
+                              </td>
+                            ))}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
 
-        {/* 지원 플랫폼 안내 */}
+                <div className="mt-4 flex justify-between items-center">
+                  <div className="text-sm text-gray-500">
+                    {fullEditMode
+                      ? "* 전체 시트를 편집할 수 있습니다."
+                      : "* 상위 10개 행만 표시됩니다. 전체 편집 모드로 전환하려면 체크박스를 클릭하세요."
+                    }
+                  </div>
+                  <div className="flex gap-2">
+                    <button className="px-4 py-2 bg-gray-100 rounded border text-sm hover:bg-gray-200">
+                      상품코드 자동생성
+                    </button>
+                    <button className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                      상품 등록 시작
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 파일 업로드 전 초기 화면 */}
         {!uploadedFile && (
+            <>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                {/* CSV 파일 업로드 섹션 */}
           <div className="bg-white border rounded-lg p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                    CSV 파일 업로드
+                  </h2>
+
+                  <div className="border-2 border-dashed border-blue-400 rounded-lg p-8 text-center hover:border-blue-500 transition-colors">
+                    <input
+                      type="file"
+                      accept=".csv"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      id="csv-upload"
+                    />
+                    <label htmlFor="csv-upload" className="cursor-pointer">
+                      <div className="text-sm text-gray-500 mb-2">
+                        지원 형식 CSV (UTF-8) 최대 크기 50MB
+                      </div>
+                      <div className="text-lg font-medium text-gray-700 mb-4">
+                        CSV 파일을 선택하거나 여기로 드래그하세요
+                      </div>
+                      <div className="inline-flex items-center px-4 py-2 bg-blue-500 text-white text-sm rounded hover:bg-blue-600">
+                        📁 파일 선택
+                      </div>
+                    </label>
+                  </div>
+
+                  <div className="mt-4">
+                    <div className="text-sm text-gray-500">업로드한 파일이 없습니다.</div>
+                  </div>
+                </div>
+
+                {/* 파일 분석 정보 */}
+                <div className="bg-white border rounded-lg p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      파일 분석 정보
+                    </h2>
+                    <button 
+                      onClick={() => setIsHelpOpen(true)}
+                      className="text-blue-600 text-sm hover:text-blue-800"
+                    >
+                      CSV 도움말
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">총 행수</span>
+                      <span className="text-sm font-medium">-</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">총 열수</span>
+                      <span className="text-sm font-medium">-</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">파일 크기</span>
+                      <span className="text-sm font-medium">-</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">인코딩</span>
+                      <span className="text-sm font-medium">-</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 지원 플랫폼 안내 */}
+              <div className="bg-white border rounded-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900">
               지원되는 플랫폼 (총 6개)
             </h2>
+                  <button 
+                    onClick={() => setIsHelpOpen(true)}
+                    className="text-blue-600 text-sm hover:text-blue-800"
+                  >
+                    CSV 도움말
+                  </button>
+                </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {platforms.map((platform) => (
@@ -1388,7 +1885,7 @@ const ProductCsvUploadPage: React.FC = () => {
                       className="p-4 border border-gray-200 rounded-lg"
                     >
                       <div className="flex items-center mb-2">
-                        <span className="text-xl mr-2">{platform.logo}</span>
+                        <span className="text-xl mr-2">📄</span>
                         <div className="font-medium text-gray-900 text-sm">
                           {platform.name}
                         </div>
@@ -1397,8 +1894,7 @@ const ProductCsvUploadPage: React.FC = () => {
                         {platform.description}
                       </div>
                       <div className="text-xs text-gray-400 mt-1">
-                        자동 감지 키워드:{" "}
-                        {platform.detectionKeywords.slice(0, 3).join(", ")}
+                        SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
                       </div>
                     </div>
                   ))}
@@ -1406,14 +1902,34 @@ const ProductCsvUploadPage: React.FC = () => {
 
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
               <div className="text-sm text-blue-800">
-                <strong>□ 팁:</strong> CSV 파일을 업로드하면 자동으로 어떤
-                판매처의 파일인지 감지합니다. 감지 실패 시 수동으로 플랫폼을
-                선택할 수 있습니다.
+                    <strong>💡 TIP:</strong> CSV 파일을 업로드하면 자동으로 어떤 쇼핑몰의 파일인지 감지합니다. 감지 실패 시 수동으로 플랫폼을 선택할 수 있습니다.
               </div>
             </div>
           </div>
+            </>
         )}
       </div>
+
+      {/* 토스트 메시지 */}
+      {toastMessage && (
+        <div className="fixed top-4 right-4 z-50 animate-in slide-in-from-right-full duration-300">
+          <div className={`px-6 py-3 rounded-lg shadow-lg border ${
+            toastMessage.type === 'success' 
+              ? 'bg-green-50 border-green-200 text-green-800' 
+              : toastMessage.type === 'error'
+              ? 'bg-red-50 border-red-200 text-red-800'
+              : 'bg-blue-50 border-blue-200 text-blue-800'
+          }`}>
+            <div className="flex items-center gap-2">
+              <span className="text-lg">
+                {toastMessage.type === 'success' ? '✅' : 
+                 toastMessage.type === 'error' ? '❌' : 'ℹ️'}
+              </span>
+              <span className="font-medium">{toastMessage.message}</span>
+            </div>
+          </div>
+        </div>
+      )}
     </Container>
   );
 };

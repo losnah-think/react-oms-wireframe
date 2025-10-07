@@ -17,6 +17,8 @@ import ConnectionsList from "../../components/integrations/ConnectionsList";
 import RegisterIntegrationForm from "../../components/integrations/RegisterIntegrationForm";
 import ConnectorTable from "../../components/integrations/ConnectorTable";
 import CollectionScheduleManager from "../../components/integrations/CollectionScheduleManager";
+import CronScheduleModal, { CronSchedule } from "../../components/integrations/CronScheduleModal";
+import ScheduleHistoryModal from "../../components/integrations/ScheduleHistoryModal";
 
 // 판매처 연동 관리 타입 정의
 interface VendorIntegration {
@@ -32,57 +34,34 @@ interface VendorIntegration {
   categoryCount: number;
 }
 
-// 판매처 연동 Mock 데이터
-const mockVendorIntegrations: VendorIntegration[] = [
-  {
-    id: "vendor-int-1",
-    vendorId: "V001",
-    vendorName: "네이버 스마트스토어",
-    platform: "smartstore",
-    apiKey: "smartstore_api_key_1234",
-    status: "연동중",
-    lastSync: "2025-01-15 10:30",
-    nextSync: "2025-01-15 14:30",
-    productCount: 1250,
-    categoryCount: 15
-  },
-  {
-    id: "vendor-int-2",
-    vendorId: "V002",
-    vendorName: "쿠팡 파트너스",
-    platform: "coupang",
-    apiKey: "coupang_api_key_5678",
-    status: "연동중",
-    lastSync: "2025-01-15 09:15",
-    nextSync: "2025-01-15 13:15",
-    productCount: 2100,
-    categoryCount: 8
-  },
-  {
-    id: "vendor-int-3",
-    vendorId: "V003",
-    vendorName: "11번가",
-    platform: "11st",
-    apiKey: "11st_api_key_9012",
-    status: "오류",
-    lastSync: "2025-01-14 15:20",
-    nextSync: "2025-01-15 11:00",
-    productCount: 1800,
-    categoryCount: 12
-  },
-  {
-    id: "vendor-int-4",
-    vendorId: "V004",
-    vendorName: "카페24",
-    platform: "cafe24",
-    apiKey: "",
-    status: "미연동",
-    lastSync: "-",
-    nextSync: "-",
-    productCount: 0,
-    categoryCount: 0
+// 판매처 연동 Mock 데이터 - 100개 이상 생성
+const generateMockVendorIntegrations = (): VendorIntegration[] => {
+  const platforms = ["smartstore", "coupang", "11st", "cafe24", "godo", "kurly"];
+  const statuses: ("연동중" | "오류" | "미연동")[] = ["연동중", "오류", "미연동"];
+  const vendors: VendorIntegration[] = [];
+
+  for (let i = 1; i <= 120; i++) {
+    const platform = platforms[Math.floor(Math.random() * platforms.length)];
+    const status = statuses[Math.floor(Math.random() * statuses.length)];
+    
+    vendors.push({
+      id: `vendor-int-${i}`,
+      vendorId: `V${i.toString().padStart(3, '0')}`,
+      vendorName: `${channelOptions.find(o => o.value === platform)?.label || platform} 스토어 ${i}`,
+      platform: platform,
+      apiKey: status === "미연동" ? "" : `${platform}_api_key_${i}`,
+      status: status,
+      lastSync: status === "미연동" ? "-" : `2025-01-15 ${String(Math.floor(Math.random() * 24)).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}`,
+      nextSync: status === "미연동" ? "-" : `2025-01-15 ${String(Math.floor(Math.random() * 24)).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}`,
+      productCount: status === "미연동" ? 0 : Math.floor(Math.random() * 3000) + 100,
+      categoryCount: status === "미연동" ? 0 : Math.floor(Math.random() * 50) + 5
+    });
   }
-];
+  
+  return vendors;
+};
+
+const mockVendorIntegrations: VendorIntegration[] = generateMockVendorIntegrations();
 
 const channelOptions = [
   { value: "", label: "전체" },
@@ -157,34 +136,71 @@ const IntegrationPage: React.FC = () => {
   const [selectedShop, setSelectedShop] = React.useState<string | null>(null);
   
   // 판매처 연동 관리 상태
-  const [activeTab, setActiveTab] = React.useState<"shops" | "vendors">("shops");
   const [vendorSearch, setVendorSearch] = React.useState("");
   const [vendorStatusFilter, setVendorStatusFilter] = React.useState<string>("");
   const [selectedVendorIntegration, setSelectedVendorIntegration] = React.useState<string | null>(null);
   const [isVendorIntegrationModalOpen, setIsVendorIntegrationModalOpen] = React.useState(false);
   const [isLoadingSync, setIsLoadingSync] = React.useState(false);
+  const [isCronModalOpen, setIsCronModalOpen] = React.useState(false);
+  const [selectedCronSchedule, setSelectedCronSchedule] = React.useState<CronSchedule | undefined>(undefined);
+  const [cronSchedules, setCronSchedules] = React.useState<CronSchedule[]>([]);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = React.useState(false);
+  const [selectedScheduleForHistory, setSelectedScheduleForHistory] = React.useState<CronSchedule | undefined>(undefined);
 
-  const filteredShops = React.useMemo(() => {
-    return mockConnectedShops.filter((shop) => {
-      const matchesSearch = search
-        ? shop.name.includes(search) || shop.id.includes(search)
-        : true;
-      const matchesChannel = channelFilter ? shop.platform === channelFilter : true;
-      const matchesStatus = statusFilter ? shop.status === statusFilter : true;
-      return matchesSearch && matchesChannel && matchesStatus;
-    });
-  }, [search, channelFilter, statusFilter]);
-
-  // 판매처 연동 필터링
   const filteredVendorIntegrations = React.useMemo(() => {
     return mockVendorIntegrations.filter((integration) => {
       const matchesSearch = vendorSearch
         ? integration.vendorName.includes(vendorSearch) || integration.vendorId.includes(vendorSearch)
         : true;
+      const matchesChannel = channelFilter ? integration.platform === channelFilter : true;
       const matchesStatus = vendorStatusFilter ? integration.status === vendorStatusFilter : true;
-      return matchesSearch && matchesStatus;
+      return matchesSearch && matchesChannel && matchesStatus;
     });
-  }, [vendorSearch, vendorStatusFilter]);
+  }, [vendorSearch, channelFilter, vendorStatusFilter]);
+
+  // 크론 스케줄 관리 함수
+  const handleCronScheduleSave = (schedule: CronSchedule) => {
+    if (selectedCronSchedule?.id) {
+      // 수정
+      setCronSchedules(prev => prev.map(s => s.id === selectedCronSchedule.id ? { ...schedule, id: selectedCronSchedule.id } : s));
+    } else {
+      // 새로 추가
+      const newSchedule = { ...schedule, id: Date.now().toString() };
+      setCronSchedules(prev => [...prev, newSchedule]);
+    }
+    setSelectedCronSchedule(undefined);
+  };
+
+  const handleCronScheduleEdit = (schedule: CronSchedule) => {
+    setSelectedCronSchedule(schedule);
+    setIsCronModalOpen(true);
+  };
+
+  const handleCronScheduleDelete = (scheduleId: string) => {
+    if (confirm('정말로 이 스케줄을 삭제하시겠습니까?')) {
+      setCronSchedules(prev => prev.filter(s => s.id !== scheduleId));
+    }
+  };
+
+  const handleViewHistory = (schedule: CronSchedule) => {
+    setSelectedScheduleForHistory(schedule);
+    setIsHistoryModalOpen(true);
+  };
+
+  const handleCronScheduleToggle = (scheduleId: string) => {
+    setCronSchedules(prev => prev.map(s => 
+      s.id === scheduleId ? { ...s, isActive: !s.isActive } : s
+    ));
+  };
+
+  // 판매처 목록을 크론 스케줄 모달에 전달하기 위한 변환
+  const vendorOptions = React.useMemo(() => {
+    return mockVendorIntegrations.map(integration => ({
+      id: integration.id,
+      name: integration.vendorName,
+      platform: integration.platform
+    }));
+  }, []);
 
   // 판매처 연동 동기화 함수
   const syncVendorIntegration = async (integrationId: string) => {
@@ -200,14 +216,6 @@ const IntegrationPage: React.FC = () => {
     setSelectedVendorIntegration(integrationId);
     setIsVendorIntegrationModalOpen(true);
   };
-
-  const summary = React.useMemo(() => {
-    const total = mockConnectedShops.length;
-    const active = mockConnectedShops.filter((shop) => shop.status === "연동중").length;
-    const pending = mockConnectedShops.filter((shop) => shop.status === "미연동").length;
-    const error = total - active - pending;
-    return { total, active, pending, error };
-  }, []);
 
   // 판매처 연동 통계
   const vendorSummary = React.useMemo(() => {
@@ -258,36 +266,20 @@ const IntegrationPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-bold">외부 연동 관리</h1>
-            <Button 
-              size="big"
-              onClick={() => setRegisterOpen(true)}
-            >
-              ➕ 새 판매처 연결
-            </Button>
-          </div>
-          
-          {/* 탭 메뉴 */}
-          <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
-            <button
-              onClick={() => setActiveTab("shops")}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                activeTab === "shops"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              판매처 연동
-            </button>
-            <button
-              onClick={() => setActiveTab("vendors")}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                activeTab === "vendors"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              판매처 연동
-            </button>
+            <div className="flex gap-3">
+              <Button 
+                size="big"
+                onClick={() => setIsCronModalOpen(true)}
+              >
+                ⏰ 수집 주기 설정
+              </Button>
+              <Button 
+                size="big"
+                onClick={() => setRegisterOpen(true)}
+              >
+                ➕ 새 판매처 연결
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -297,28 +289,28 @@ const IntegrationPage: React.FC = () => {
         <div className="grid grid-cols-4 gap-6 mb-8">
           <button className="bg-white rounded-xl p-8 text-center shadow-sm hover:shadow-md transition">
             <div className="text-5xl font-bold text-gray-900 mb-2">
-              {activeTab === "shops" ? summary.total : vendorSummary.total}
+              {vendorSummary.total}
             </div>
-            <div className="text-gray-600">전체</div>
+            <div className="text-gray-600">전체 판매처</div>
           </button>
           
           <button className="bg-green-50 rounded-xl p-8 text-center shadow-sm hover:shadow-md transition">
             <div className="text-5xl font-bold text-green-600 mb-2">
-              {activeTab === "shops" ? summary.active : vendorSummary.active}
+              {vendorSummary.active}
             </div>
-            <div className="text-green-700 font-medium">정상</div>
+            <div className="text-green-700 font-medium">연동중</div>
           </button>
           
           <button className="bg-gray-100 rounded-xl p-8 text-center shadow-sm hover:shadow-md transition">
             <div className="text-5xl font-bold text-gray-600 mb-2">
-              {activeTab === "shops" ? summary.pending : vendorSummary.pending}
+              {vendorSummary.pending}
             </div>
-            <div className="text-gray-700">대기</div>
+            <div className="text-gray-700">미연동</div>
           </button>
           
           <button className="bg-red-50 rounded-xl p-8 text-center shadow-sm hover:shadow-md transition">
             <div className="text-5xl font-bold text-red-600 mb-2">
-              {activeTab === "shops" ? summary.error : vendorSummary.error}
+              {vendorSummary.error}
             </div>
             <div className="text-red-700 font-medium">오류</div>
           </button>
@@ -328,159 +320,336 @@ const IntegrationPage: React.FC = () => {
         <div className="bg-white rounded-xl p-6 mb-6 shadow-sm">
           <div className="grid grid-cols-3 gap-4">
             <Input
-              placeholder={activeTab === "shops" ? "판매처 검색" : "판매처 검색"}
-              value={activeTab === "shops" ? search : vendorSearch}
-              onChange={(event) => activeTab === "shops" ? setSearch(event.target.value) : setVendorSearch(event.target.value)}
+              placeholder="판매처 검색"
+              value={vendorSearch}
+              onChange={(event) => setVendorSearch(event.target.value)}
               fullWidth
               className="text-lg py-3"
             />
             <Dropdown
               options={channelOptions}
-              value={activeTab === "shops" ? channelFilter : ""}
-              onChange={activeTab === "shops" ? setChannelFilter : () => {}}
+              value={channelFilter}
+              onChange={setChannelFilter}
               fullWidth
             />
             <Dropdown
               options={[
                 { value: "", label: "모든 상태" },
-                { value: "연동중", label: "정상" },
+                { value: "연동중", label: "연동중" },
                 { value: "오류", label: "오류" },
-                { value: "미연동", label: "대기" },
+                { value: "미연동", label: "미연동" },
               ]}
-              value={activeTab === "shops" ? statusFilter : vendorStatusFilter}
-              onChange={activeTab === "shops" ? setStatusFilter : setVendorStatusFilter}
+              value={vendorStatusFilter}
+              onChange={setVendorStatusFilter}
               fullWidth
             />
           </div>
         </div>
 
-        {/* 메인 콘텐츠 */}
-        {activeTab === "shops" ? (
-          <>
-            {/* 판매처 목록 - 거대한 카드로 */}
-            <div className="space-y-4">
-              {filteredShops.map((shop) => {
-                const isSelected = selectedShop === shop.id;
-                return (
-                  <button
-                    key={shop.id}
-                    onClick={() => setSelectedShop(isSelected ? null : shop.id)}
-                    className={`w-full bg-white rounded-xl p-6 text-left shadow-sm hover:shadow-md transition ${
-                      isSelected ? "ring-4 ring-blue-500" : ""
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-6">
-                        <div className={`w-4 h-4 rounded-full ${
-                          shop.status === "연동중" ? "bg-green-500" : 
-                          shop.status === "오류" ? "bg-red-500" : "bg-gray-400"
-                        }`} />
-                        <div>
-                          <div className="text-xl font-bold text-gray-900 mb-1">{shop.name}</div>
-                          <div className="text-gray-500">{channelOptions.find(o => o.value === shop.platform)?.label}</div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className={`text-lg font-semibold mb-1 ${
-                          shop.status === "연동중" ? "text-green-600" : 
-                          shop.status === "오류" ? "text-red-600" : "text-gray-600"
-                        }`}>
-                          {shop.status}
-                        </div>
-                        <div className="text-sm text-gray-500">마지막: {shop.lastSync}</div>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* 선택된 판매처 상세 */}
-            {selectedShop && (
-              <div className="mt-8 bg-white rounded-xl p-8 shadow-sm">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold">설정</h2>
-                  <Button 
-                    variant="ghost" 
-                    onClick={() => setSelectedShop(null)}
-                    className="text-lg"
-                  >
-                    ✕ 닫기
-                  </Button>
-                </div>
-                <RegisterIntegrationForm
-                  initialShop={mockConnectedShops.find((shop) => shop.id === selectedShop)}
-                  vendors={mockVendors}
-                  onClose={() => setSelectedShop(null)}
-                  onRegistered={() => setSelectedShop(null)}
-                />
-              </div>
-            )}
-          </>
-        ) : (
-          <>
-            {/* 판매처 연동 목록 */}
-            <div className="space-y-4">
-              {filteredVendorIntegrations.map((integration) => {
-                const isSelected = selectedVendorIntegration === integration.id;
-                return (
-                  <button
-                    key={integration.id}
-                    onClick={() => setSelectedVendorIntegration(isSelected ? null : integration.id)}
-                    className={`w-full bg-white rounded-xl p-6 text-left shadow-sm hover:shadow-md transition ${
-                      isSelected ? "ring-4 ring-blue-500" : ""
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-6">
-                        <div className={`w-4 h-4 rounded-full ${
-                          integration.status === "연동중" ? "bg-green-500" : 
-                          integration.status === "오류" ? "bg-red-500" : "bg-gray-400"
-                        }`} />
-                        <div>
-                          <div className="text-xl font-bold text-gray-900 mb-1">{integration.vendorName}</div>
-                          <div className="text-gray-500">{channelOptions.find(o => o.value === integration.platform)?.label}</div>
-                          <div className="text-sm text-gray-400 mt-1">
-                            상품 {integration.productCount}개 • 카테고리 {integration.categoryCount}개
+        {/* 판매처 연동 테이블 */}
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">판매처</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">플랫폼</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상품/카테고리</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">수집 주기</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">마지막 동기화</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">작업</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredVendorIntegrations.map((integration) => {
+                  const isExpanded = selectedVendorIntegration === integration.id;
+                  const vendorSchedules = cronSchedules.filter(s => s.vendorId === integration.id);
+                  const activeSchedules = vendorSchedules.filter(s => s.isActive);
+                  
+                  return (
+                    <React.Fragment key={integration.id}>
+                      <tr 
+                        onClick={() => setSelectedVendorIntegration(isExpanded ? null : integration.id)}
+                        className="hover:bg-gray-50 cursor-pointer"
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedVendorIntegration(isExpanded ? null : integration.id);
+                              }}
+                              className="mr-2 p-1 hover:bg-gray-200 rounded"
+                            >
+                              {isExpanded ? (
+                                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              ) : (
+                                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                              )}
+                            </button>
+                            <div className={`w-3 h-3 rounded-full mr-3 ${
+                              integration.status === "연동중" ? "bg-green-500" : 
+                              integration.status === "오류" ? "bg-red-500" : "bg-gray-400"
+                            }`} />
+                            <div className="text-sm font-medium text-gray-900">{integration.vendorName}</div>
                           </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className={`text-lg font-semibold mb-1 ${
-                          integration.status === "연동중" ? "text-green-600" : 
-                          integration.status === "오류" ? "text-red-600" : "text-gray-600"
-                        }`}>
-                          {integration.status}
-                        </div>
-                        <div className="text-sm text-gray-500">마지막: {integration.lastSync}</div>
-                        <div className="flex gap-2 mt-2">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              syncVendorIntegration(integration.id);
-                            }}
-                            disabled={isLoadingSync}
-                            className="px-3 py-1 text-xs bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 transition-colors"
-                          >
-                            {isLoadingSync ? "동기화 중..." : "동기화"}
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              configureVendorIntegration(integration.id);
-                            }}
-                            className="px-3 py-1 text-xs bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
-                          >
-                            설정
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm text-gray-900">
+                            {channelOptions.find(o => o.value === integration.platform)?.label}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            integration.status === "연동중" ? "bg-green-100 text-green-800" : 
+                            integration.status === "오류" ? "bg-red-100 text-red-800" : "bg-gray-100 text-gray-800"
+                          }`}>
+                            {integration.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {integration.productCount}개 / {integration.categoryCount}개
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            {vendorSchedules.length > 0 ? (
+                              <div className="flex items-center gap-1">
+                                <span className="text-blue-600">⏰</span>
+                                <span className="text-sm text-gray-600">
+                                  {activeSchedules.length}/{vendorSchedules.length}개 활성
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-sm text-gray-400">설정 없음</span>
+                            )}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedCronSchedule({
+                                  name: '',
+                                  expression: '',
+                                  description: '',
+                                  isActive: true,
+                                  type: 'product',
+                                  vendorId: integration.id,
+                                  vendorName: integration.vendorName,
+                                  platform: integration.platform,
+                                  runCount: 0,
+                                  successCount: 0,
+                                  errorCount: 0,
+                                  createdAt: new Date().toISOString(),
+                                  updatedAt: new Date().toISOString()
+                                });
+                                setIsCronModalOpen(true);
+                              }}
+                              className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+                            >
+                              설정
+                            </button>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {integration.lastSync}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                syncVendorIntegration(integration.id);
+                              }}
+                              disabled={isLoadingSync}
+                              className="px-3 py-1 text-xs bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 transition-colors"
+                            >
+                              {isLoadingSync ? "동기화 중..." : "동기화"}
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                configureVendorIntegration(integration.id);
+                              }}
+                              className="px-3 py-1 text-xs bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
+                            >
+                              상세
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                      
+                      {/* 확장된 하위 컨텐츠 - 수집 주기 목록 및 내역 */}
+                      {isExpanded && (
+                        <tr>
+                          <td colSpan={7} className="px-6 py-4 bg-gray-50">
+                            <div className="space-y-6">
+                              {/* 수집 주기 목록 */}
+                              <div>
+                                <div className="flex items-center justify-between mb-4">
+                                  <h3 className="text-lg font-semibold text-gray-900">수집 주기 목록</h3>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedCronSchedule({
+                                        name: '',
+                                        expression: '',
+                                        description: '',
+                                        isActive: true,
+                                        type: 'product',
+                                        vendorId: integration.id,
+                                        vendorName: integration.vendorName,
+                                        platform: integration.platform,
+                                        runCount: 0,
+                                        successCount: 0,
+                                        errorCount: 0,
+                                        createdAt: new Date().toISOString(),
+                                        updatedAt: new Date().toISOString()
+                                      });
+                                      setIsCronModalOpen(true);
+                                    }}
+                                    className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                                  >
+                                    + 새 스케줄 추가
+                                  </button>
+                                </div>
+                                
+                                {vendorSchedules.length > 0 ? (
+                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {vendorSchedules.map((schedule) => (
+                                      <div key={schedule.id} className="bg-white border border-gray-200 rounded-lg p-4">
+                                        <div className="flex items-start justify-between mb-3">
+                                          <div className="flex items-center gap-3">
+                                            <div className={`w-3 h-3 rounded-full ${schedule.isActive ? 'bg-green-500' : 'bg-gray-400'}`} />
+                                            <div className="flex-1">
+                                              <div className="font-semibold text-gray-900 text-sm">{schedule.name}</div>
+                                              <div className="text-xs text-gray-500">
+                                                {schedule.type === 'product' ? '상품 정보' :
+                                                 schedule.type === 'inventory' ? '재고 정보' :
+                                                 schedule.type === 'category' ? '카테고리 정보' : '주문 정보'}
+                                              </div>
+                                            </div>
+                                          </div>
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleCronScheduleToggle(schedule.id!);
+                                            }}
+                                            className={`px-2 py-1 text-xs rounded-full transition-colors ${
+                                              schedule.isActive 
+                                                ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                            }`}
+                                          >
+                                            {schedule.isActive ? '활성' : '비활성'}
+                                          </button>
+                                        </div>
+
+                                        <div className="space-y-2 mb-4">
+                                          <div className="text-xs text-gray-600">
+                                            <span className="font-medium">주기:</span> 
+                                            <span className="ml-1 font-mono bg-gray-100 px-1 rounded">{schedule.expression}</span>
+                                          </div>
+                                          <div className="text-xs text-gray-500">{schedule.description}</div>
+                                        </div>
+
+                                        <div className="flex items-center justify-between">
+                                          <div className="flex items-center gap-2">
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleViewHistory(schedule);
+                                              }}
+                                              className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                                            >
+                                              📊 내역
+                                            </button>
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleCronScheduleEdit(schedule);
+                                              }}
+                                              className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+                                            >
+                                              ✏️ 수정
+                                            </button>
+                                          </div>
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleCronScheduleDelete(schedule.id!);
+                                            }}
+                                            className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
+                                          >
+                                            🗑️ 삭제
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <div className="text-center py-8 bg-gray-50 rounded-lg">
+                                    <div className="text-gray-400 text-4xl mb-2">⏰</div>
+                                    <p className="text-gray-600 mb-4">아직 수집 주기가 설정되지 않았습니다.</p>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedCronSchedule({
+                                          name: '',
+                                          expression: '',
+                                          description: '',
+                                          isActive: true,
+                                          type: 'product',
+                                          vendorId: integration.id,
+                                          vendorName: integration.vendorName,
+                                          platform: integration.platform,
+                                          runCount: 0,
+                                          successCount: 0,
+                                          errorCount: 0,
+                                          createdAt: new Date().toISOString(),
+                                          updatedAt: new Date().toISOString()
+                                        });
+                                        setIsCronModalOpen(true);
+                                      }}
+                                      className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                                    >
+                                      첫 번째 스케줄 만들기
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* 페이지네이션 */}
+        {filteredVendorIntegrations.length > 10 && (
+          <div className="mt-6 flex items-center justify-between">
+            <div className="text-sm text-gray-700">
+              총 <span className="font-medium">{filteredVendorIntegrations.length}</span>개의 판매처
             </div>
-          </>
+            <div className="flex items-center gap-2">
+              <button className="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50">
+                이전
+              </button>
+              <span className="px-3 py-2 text-sm bg-blue-50 text-blue-600 rounded-md">1</span>
+              <span className="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50">2</span>
+              <span className="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50">3</span>
+              <button className="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50">
+                다음
+              </button>
+            </div>
+          </div>
         )}
       </div>
 
@@ -605,6 +774,30 @@ const IntegrationPage: React.FC = () => {
           </div>
         )}
       </Modal>
+
+      {/* 크론 스케줄 설정 모달 */}
+      <CronScheduleModal
+        open={isCronModalOpen}
+        onClose={() => {
+          setIsCronModalOpen(false);
+          setSelectedCronSchedule(undefined);
+        }}
+        onSave={handleCronScheduleSave}
+        initialSchedule={selectedCronSchedule}
+        vendors={vendorOptions}
+      />
+
+      {/* 스케줄 실행 내역 모달 */}
+      {selectedScheduleForHistory && (
+        <ScheduleHistoryModal
+          open={isHistoryModalOpen}
+          onClose={() => {
+            setIsHistoryModalOpen(false);
+            setSelectedScheduleForHistory(undefined);
+          }}
+          schedule={selectedScheduleForHistory}
+        />
+      )}
     </div>
   );
 };
