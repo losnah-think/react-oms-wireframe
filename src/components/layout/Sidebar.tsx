@@ -372,7 +372,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     // Use Next.js router for navigation
     try {
       if (router && typeof router.push === "function") {
-        router.push(targetPath).catch(() => {
+        router.push(targetPath, undefined, { scroll: false }).catch(() => {
           try {
             window.location.assign(targetPath);
           } catch (_) {
