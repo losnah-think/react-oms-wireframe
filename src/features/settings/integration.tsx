@@ -34,6 +34,16 @@ interface VendorIntegration {
   categoryCount: number;
 }
 
+const channelOptions = [
+  { value: "", label: "전체" },
+  { value: "cafe24", label: "카페24" },
+  { value: "smartstore", label: "스마트스토어" },
+  { value: "coupang", label: "쿠팡" },
+  { value: "kurly", label: "마켓컬리" },
+  { value: "godo", label: "고도몰" },
+  { value: "wisa", label: "위사" },
+];
+
 // 판매처 연동 Mock 데이터 - 100개 이상 생성
 const generateMockVendorIntegrations = (): VendorIntegration[] => {
   const platforms = ["smartstore", "coupang", "11st", "cafe24", "godo", "kurly"];
@@ -62,16 +72,6 @@ const generateMockVendorIntegrations = (): VendorIntegration[] => {
 };
 
 const mockVendorIntegrations: VendorIntegration[] = generateMockVendorIntegrations();
-
-const channelOptions = [
-  { value: "", label: "전체" },
-  { value: "cafe24", label: "카페24" },
-  { value: "smartstore", label: "스마트스토어" },
-  { value: "coupang", label: "쿠팡" },
-  { value: "kurly", label: "마켓컬리" },
-  { value: "godo", label: "고도몰" },
-  { value: "wisa", label: "위사" },
-];
 
 interface ConnectedShop {
   id: string;
