@@ -187,15 +187,42 @@ class UserService {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || '사용자 통계를 가져오는데 실패했습니다');
       }
 
       const data = await response.json();
-      return data.stats;
+      return data.stats || {
+        total: 0,
+        active: 0,
+        inactive: 0,
+        pending: 0,
+        suspended: 0,
+        admins: 0,
+        managers: 0,
+        operators: 0,
+        users: 0,
+        todayLogins: 0,
+        weeklyLogins: 0,
+        monthlyLogins: 0
+      };
     } catch (error) {
       console.error('UserService.getUserStats error:', error);
-      throw error;
+      // 에러 발생 시 기본값 반환
+      return {
+        total: 0,
+        active: 0,
+        inactive: 0,
+        pending: 0,
+        suspended: 0,
+        admins: 0,
+        managers: 0,
+        operators: 0,
+        users: 0,
+        todayLogins: 0,
+        weeklyLogins: 0,
+        monthlyLogins: 0
+      };
     }
   }
 

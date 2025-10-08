@@ -83,6 +83,21 @@ export const useUsers = (options: UseUsersOptions = {}): UseUsersReturn => {
       setStats(statsData);
     } catch (err) {
       console.error('사용자 통계 조회 실패:', err);
+      // 에러 발생 시 기본 통계로 설정
+      setStats({
+        total: 0,
+        active: 0,
+        inactive: 0,
+        pending: 0,
+        suspended: 0,
+        admins: 0,
+        managers: 0,
+        operators: 0,
+        users: 0,
+        todayLogins: 0,
+        weeklyLogins: 0,
+        monthlyLogins: 0
+      });
     }
   }, []);
 
