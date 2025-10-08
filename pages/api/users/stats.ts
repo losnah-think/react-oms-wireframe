@@ -22,14 +22,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  try {
-    // Mock 데이터로 통계 계산
-    const stats = calculateUserStats(mockUsers);
-    
-    res.json({ stats });
-  } catch (error) {
-    console.error('Error calculating stats:', error);
-    return res.status(500).json({ error: 'Failed to calculate stats' });
+  // 개발 모드에서는 인증 우회
+  if (process.env.NODE_ENV !== 'production') {
+    try {
+      // Mock 데이터로 통계 계산
+      const stats = calculateUserStats(mockUsers);
+      
+      res.json({ stats });
+    } catch (error) {
+      console.error('Error calculating stats:', error);
+      return res.status(500).json({ error: 'Failed to calculate stats' });
+    }
+  } else {
+    // 프로덕션에서는 인증 체크 (나중에 구현)
+    return res.status(401).json({ error: 'Authentication required' });
   }
 }
 

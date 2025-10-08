@@ -11,19 +11,25 @@ let mockRoles = DEFAULT_ROLES.map((role, index) => ({
 }));
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  try {
-    switch (req.method) {
-      case 'GET':
-        return await getRoles(req, res);
-      case 'POST':
-        return await createRole(req, res);
-      default:
-        return res.status(405).json({ error: 'Method not allowed' });
+  // 개발 모드에서는 인증 우회
+  if (process.env.NODE_ENV !== 'production') {
+    try {
+      switch (req.method) {
+        case 'GET':
+          return await getRoles(req, res);
+        case 'POST':
+          return await createRole(req, res);
+        default:
+          return res.status(405).json({ error: 'Method not allowed' });
+      }
+    } catch (error) {
+      console.error('API Error:', error);
+      return res.status(500).json({ error: 'Internal server error' });
     }
-  } catch (error) {
-    console.error('API Error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
   }
+  
+  // 프로덕션에서는 인증 체크 (나중에 구현)
+  return res.status(401).json({ error: 'Authentication required' });
 }
 
 async function getRoles(req: NextApiRequest, res: NextApiResponse) {
