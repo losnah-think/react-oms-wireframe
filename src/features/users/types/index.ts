@@ -78,6 +78,7 @@ export interface UserGroup {
   companyName?: string;
   description: string;
   memberCount: number;
+  permissions: string[];
   createdAt: string;
   members: string[];
 }

@@ -45,6 +45,16 @@ const UsersListPage: React.FC = () => {
     }));
   };
 
+  // 사용자의 전체 권한 계산 (역할 + 그룹 권한 상속)
+  const getUserTotalPermissions = (user: User) => {
+    const rolePermissions = user.permissions || [];
+    const groupPermissions: string[] = []; // 실제로는 그룹에서 가져와야 하지만 프로토타입이므로 생략
+    
+    // 중복 제거
+    const allPermissions = Array.from(new Set([...rolePermissions, ...groupPermissions]));
+    return allPermissions;
+  };
+
   const columns: TableColumn<User>[] = [
     {
       key: "name",
@@ -67,7 +77,14 @@ const UsersListPage: React.FC = () => {
       key: "department",
       title: "부서",
       render: (value, user) => (
-        <span className="text-sm text-gray-900">{user.department}</span>
+        <div>
+          <div className="text-sm text-gray-900">{user.department}</div>
+          {user.groups && user.groups.length > 0 && (
+            <div className="text-xs text-gray-500 mt-0.5">
+              그룹: {user.groups.join(', ')}
+            </div>
+          )}
+        </div>
       ),
     },
     {
