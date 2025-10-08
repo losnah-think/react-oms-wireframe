@@ -44,46 +44,57 @@ const UsersListPage: React.FC = () => {
     {
       key: "name",
       title: "사용자",
-      render: (user) => (
-        <UserAvatar 
-          name={user.name} 
-          email={user.email} 
-          size="md" 
-          showName 
-          showEmail 
-        />
+      render: (value, user) => (
+        <div>
+          <div className="font-medium text-gray-900">{user.name}</div>
+          <div className="text-sm text-gray-500">{user.email}</div>
+        </div>
       ),
     },
     {
       key: "role",
       title: "역할",
-      render: (user) => <UserRoleBadge role={user.role} size="small" />,
+      render: (value, user) => <UserRoleBadge role={user.role} size="small" />,
     },
     {
       key: "department",
       title: "부서",
-      render: (user) => (
+      render: (value, user) => (
         <span className="text-sm text-gray-900">{user.department}</span>
       ),
     },
     {
       key: "status",
       title: "상태",
-      render: (user) => <UserStatusBadge status={user.status} size="small" />,
+      render: (value, user) => <UserStatusBadge status={user.status} size="small" />,
     },
     {
       key: "lastLogin",
       title: "마지막 로그인",
-      render: (user) => (
-        <span className="text-sm text-gray-500">
-          {user.lastLogin === "-" ? "-" : user.lastLogin}
-        </span>
-      ),
+      render: (value, user) => {
+        if (!user.lastLogin || user.lastLogin === "-") {
+          return <span className="text-sm text-gray-500">-</span>;
+        }
+        try {
+          const date = new Date(user.lastLogin);
+          return (
+            <span className="text-sm text-gray-500">
+              {date.toLocaleDateString('ko-KR', { 
+                year: 'numeric', 
+                month: '2-digit', 
+                day: '2-digit' 
+              })}
+            </span>
+          );
+        } catch (e) {
+          return <span className="text-sm text-gray-500">-</span>;
+        }
+      },
     },
     {
       key: "actions",
       title: "작업",
-      render: (user) => (
+      render: (value, user) => (
         <div className="flex gap-2">
           <Button
             variant="ghost"

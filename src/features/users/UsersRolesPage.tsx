@@ -78,8 +78,8 @@ const UsersRolesPage: React.FC = () => {
   const columns: TableColumn<Role>[] = [
     {
       key: 'name',
-      label: '역할명',
-      render: (role) => {
+      title: '역할명',
+      render: (value, role) => {
         if (!role) return <span>-</span>;
         return (
           <div className="flex items-center gap-2">
@@ -97,15 +97,15 @@ const UsersRolesPage: React.FC = () => {
     },
     {
       key: 'description',
-      label: '설명',
-      render: (role) => (
+      title: '설명',
+      render: (value, role) => (
         <span className="text-gray-700">{role?.description || '-'}</span>
       )
     },
     {
       key: 'permissions',
-      label: '권한 수',
-      render: (role) => {
+      title: '권한 수',
+      render: (value, role) => {
         if (!role) return <span className="text-sm text-gray-600">-</span>;
         const permissions = role.permissions || [];
         return (
@@ -117,18 +117,17 @@ const UsersRolesPage: React.FC = () => {
     },
     {
       key: 'actions',
-      label: '작업',
-      render: (role) => {
+      title: '작업',
+      render: (value, role) => {
         if (!role) return null;
         return (
-          <PermissionButton
-            permission="users:update"
+          <Button
+            size="small"
+            variant="ghost"
             onClick={() => handleEditRole(role)}
-            disabled={role.isSystem && !hasPermission('*')}
-            className="text-blue-600 hover:text-blue-800 text-sm"
           >
             권한 수정
-          </PermissionButton>
+          </Button>
         );
       }
     }
@@ -148,29 +147,23 @@ const UsersRolesPage: React.FC = () => {
   }
 
   return (
-    <Container>
-      <div className="py-8">
-        <div className="flex justify-between items-center mb-8">
+    <Container maxWidth="full" centered={false} padding="lg">
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">역할 관리</h1>
-            <p className="text-gray-600 mt-2">
-              사용자 역할과 권한을 관리합니다.
+            <h1 className="text-2xl font-bold text-gray-900">권한 관리</h1>
+            <p className="text-sm text-gray-600 mt-1">
+              사용자 역할과 권한을 관리합니다
             </p>
           </div>
-          <PermissionGate permission="users:create">
-            <Button>
-              새 역할 생성
-            </Button>
-          </PermissionGate>
         </div>
 
         {/* 역할 목록 */}
-        <Card padding="lg">
+        <Card padding="none">
           <Table
             data={roles}
             columns={columns}
             loading={loading}
-            emptyMessage="역할이 없습니다"
           />
         </Card>
 
