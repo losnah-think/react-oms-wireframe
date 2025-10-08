@@ -242,44 +242,6 @@ const UsersSettingsPage: React.FC = () => {
         </div>
       </Card>
 
-      {/* 시스템 정보 */}
-      <Card padding="lg">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">시스템 정보</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-2">현재 설정 요약</h4>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600">비밀번호 최소 길이:</span>
-                <Badge variant="secondary" size="small">{passwordPolicy.minLength}자</Badge>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">세션 타임아웃:</span>
-                <Badge variant="secondary" size="small">{sessionSettings.timeoutMinutes}분</Badge>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">최대 동시 세션:</span>
-                <Badge variant="secondary" size="small">{sessionSettings.maxConcurrentSessions}개</Badge>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">활성 알림:</span>
-                <Badge variant="secondary" size="small">
-                  {Object.values(notificationSettings).filter(Boolean).length}개
-                </Badge>
-              </div>
-            </div>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-2">권장 설정</h4>
-            <div className="space-y-2 text-sm text-gray-600">
-              <p>• 비밀번호는 최소 8자 이상 권장</p>
-              <p>• 세션 타임아웃은 30분 이하 권장</p>
-              <p>• 보안 알림은 항상 활성화 권장</p>
-              <p>• 정기적인 비밀번호 변경 권장</p>
-            </div>
-          </div>
-        </div>
-      </Card>
     </Container>
   );
 };

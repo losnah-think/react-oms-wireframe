@@ -37,14 +37,18 @@ class RoleService {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || '역할 목록을 가져오는데 실패했습니다');
       }
 
       return await response.json();
     } catch (error) {
       console.error('RoleService.getRoles error:', error);
-      throw error;
+      // 에러 발생 시 빈 배열 반환
+      return {
+        roles: [],
+        total: 0
+      };
     }
   }
 

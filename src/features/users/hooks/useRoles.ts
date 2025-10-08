@@ -39,12 +39,15 @@ export const useRoles = (options: UseRolesOptions = {}): UseRolesReturn => {
       
       const response = await roleService.getRoles(filters);
       
-      setRoles(response.roles);
-      setTotal(response.total);
+      setRoles(response.roles || []);
+      setTotal(response.total || 0);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '역할 목록을 가져오는데 실패했습니다';
       setError(errorMessage);
       console.error('역할 목록 조회 실패:', err);
+      // 에러 발생 시 빈 배열로 설정
+      setRoles([]);
+      setTotal(0);
     } finally {
       setLoading(false);
     }
