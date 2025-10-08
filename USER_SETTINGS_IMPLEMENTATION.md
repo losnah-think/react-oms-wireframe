@@ -3,54 +3,36 @@
 ## 개요
 각 사용자(계정)별로 상품 분류의 기본값을 설정하고 관리할 수 있는 기능을 구현했습니다.
 
+## 데이터 저장 방식
+**localStorage 기반 목업 구현**
+- DB 연결 없이 브라우저의 localStorage를 사용하여 기본값 관리
+- 키: `defaultProductClassification`
+- 값: 카테고리 ID (예: `"default-1"`)
+
 ## 구현 내용
 
-### 1. 데이터베이스 스키마 변경
-**파일**: `prisma/schema.prisma`
-
-User 모델에 `defaultClassificationId` 필드를 추가했습니다:
-```prisma
-model User {
-  ...
-  defaultClassificationId String? // 기본 상품 분류
-  ...
-}
-```
-
-#### 마이그레이션 실행 방법
-```bash
-# Prisma 클라이언트 재생성
-npx prisma generate
-
-# 마이그레이션 생성 및 실행
-npx prisma migrate dev --name add_user_default_classification
-
-# 또는 프로덕션 환경
-npx prisma migrate deploy
-```
-
-### 2. API 엔드포인트
+### 1. API 엔드포인트 (목업 모드)
 **파일**: `pages/api/users/settings.ts`
 
-사용자 설정을 저장하고 조회하는 API를 생성했습니다.
+목업 데이터를 사용하는 API를 생성했습니다. 실제로는 메모리에 임시 저장하지만, 프론트엔드는 localStorage를 우선 사용합니다.
 
 #### GET `/api/users/settings?userId={userId}`
-사용자의 기본 분류 설정을 조회합니다.
+사용자의 기본 분류 설정을 조회합니다 (목업).
 
 **응답 예시**:
 ```json
 {
-  "defaultClassificationId": "category-id-123"
+  "defaultClassificationId": "default-1"
 }
 ```
 
 #### PUT `/api/users/settings?userId={userId}`
-사용자의 기본 분류 설정을 업데이트합니다.
+사용자의 기본 분류 설정을 업데이트합니다 (목업).
 
 **요청 본문**:
 ```json
 {
-  "defaultClassificationId": "category-id-123"
+  "defaultClassificationId": "default-1"
 }
 ```
 
@@ -58,11 +40,13 @@ npx prisma migrate deploy
 ```json
 {
   "success": true,
-  "defaultClassificationId": "category-id-123"
+  "defaultClassificationId": "default-1"
 }
 ```
 
-### 3. 상품 분류 페이지 UI 개선
+**참고**: API는 백업용이며, 실제 데이터는 프론트엔드 localStorage에 저장됩니다.
+
+### 2. 상품 분류 페이지 UI 개선
 **파일**: `src/features/settings/ProductCategoryPage.tsx`
 
 #### 추가된 기능:
@@ -78,7 +62,7 @@ npx prisma migrate deploy
 3. 해당 카테고리에 **"기본값"** 배지가 표시됨
 4. 다른 카테고리를 기본값으로 설정하면 이전 기본값은 자동 해제
 
-### 4. 상품 등록 시 기본값 자동 적용
+### 3. 상품 등록 시 기본값 자동 적용
 **파일**: 
 - `src/features/products/ProductsAddPage.tsx`
 - `src/features/products/individual-registration.tsx`
@@ -112,43 +96,45 @@ npx prisma migrate deploy
 3. 필요시 다른 분류로 변경 가능
 
 ## 기술 스택
-- **데이터베이스**: PostgreSQL (Prisma ORM)
-- **백엔드**: Next.js API Routes
+- **데이터 저장**: localStorage (브라우저)
+- **백엔드**: Next.js API Routes (목업 모드)
 - **프론트엔드**: React, TypeScript
+
+## 현재 구현 특징
+- ✅ **DB 연결 불필요**: localStorage만으로 동작
+- ✅ **단일 기본값**: 한 번에 하나의 기본 분류만 설정 가능
+- ✅ **즉시 적용**: 설정 즉시 상품 등록 시 반영
+- ✅ **브라우저 저장**: 브라우저별로 설정 유지
 
 ## 개선 사항 제안
 
-### 1. 인증 통합
-현재는 임시로 localStorage에서 `currentUserId`를 가져오고 있습니다.
-실제 프로덕션에서는 NextAuth 세션에서 사용자 정보를 가져와야 합니다:
-
+### 1. 데이터베이스 연동 (선택사항)
+실제 DB 연동이 필요한 경우:
 ```typescript
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "../auth/[...nextauth]";
+// Prisma Schema에 추가
+model User {
+  ...
+  defaultClassificationId String?
+  ...
+}
 
-// API에서
-const session = await getServerSession(req, res, authOptions);
-const userId = session?.user?.id;
-
-// 프론트엔드에서
-import { useSession } from "next-auth/react";
-const { data: session } = useSession();
-const userId = session?.user?.id;
+// API에서 DB 사용
+const user = await prisma.user.update({
+  where: { id: userId },
+  data: { defaultClassificationId }
+});
 ```
 
 ### 2. 에러 핸들링 개선
 - Toast 알림 사용 (현재는 window.alert 사용)
-- 네트워크 에러 재시도 로직
-- 낙관적 업데이트 (Optimistic Update)
+- 로컬스토리지 쿼터 초과 처리
+- 폴백 처리
 
-### 3. 성능 최적화
-- React Query 또는 SWR을 사용한 캐싱
-- 사용자 설정을 Context API로 전역 관리
-
-### 4. 추가 기능
-- 사용자별 즐겨찾기 분류 목록
+### 3. 추가 기능
+- 사용자별 즐겨찾기 분류 목록 (다중 선택)
 - 최근 사용한 분류 히스토리
 - 분류별 사용 통계
+- 프로필 페이지에서 기본값 설정
 
 ## 테스트 방법
 
@@ -166,21 +152,32 @@ const userId = session?.user?.id;
 # 3. 상품 분류 필드에 "의류"가 자동 선택되었는지 확인
 ```
 
-### 3. API 테스트
+### 3. localStorage 확인
+```javascript
+// 브라우저 콘솔에서
+localStorage.getItem('defaultProductClassification')
+// 결과: "default-1" 또는 null
+
+// 삭제
+localStorage.removeItem('defaultProductClassification')
+```
+
+### 4. API 테스트 (목업 모드)
 ```bash
 # 기본 분류 조회
-curl -X GET "http://localhost:3000/api/users/settings?userId=temp-user-1"
+curl -X GET "http://localhost:3000/api/users/settings?userId=mock-user-1"
 
 # 기본 분류 설정
-curl -X PUT "http://localhost:3000/api/users/settings?userId=temp-user-1" \
+curl -X PUT "http://localhost:3000/api/users/settings?userId=mock-user-1" \
   -H "Content-Type: application/json" \
   -d '{"defaultClassificationId":"default-1"}'
 ```
 
 ## 주의사항
-1. 데이터베이스 마이그레이션을 먼저 실행해야 합니다
-2. 기존 사용자들의 `defaultClassificationId`는 `null`이 기본값입니다
-3. 카테고리 삭제 시 해당 카테고리를 기본값으로 설정한 사용자들의 설정도 자동 해제됩니다
+1. **브라우저별 저장**: localStorage는 브라우저마다 다르게 저장됩니다
+2. **시크릿 모드**: 시크릿 모드에서는 설정이 유지되지 않습니다
+3. **카테고리 삭제**: 삭제된 카테고리가 기본값이면 자동으로 해제됩니다
+4. **목업 모드**: `NEXT_PUBLIC_USE_MOCKS=1` 환경변수 필요
 
 ## 작성일
 2025-10-08
