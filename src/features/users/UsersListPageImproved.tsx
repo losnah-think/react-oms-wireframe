@@ -57,9 +57,11 @@ const UsersListPage: React.FC = () => {
       ),
     },
     {
-      key: "role",
-      title: "역할",
-      render: (value, user) => <UserRoleBadge role={user.role} size="small" />,
+      key: "companyName",
+      title: "회사",
+      render: (value, user) => (
+        <span className="text-sm text-gray-900">{user.companyName || '-'}</span>
+      ),
     },
     {
       key: "department",
@@ -67,6 +69,11 @@ const UsersListPage: React.FC = () => {
       render: (value, user) => (
         <span className="text-sm text-gray-900">{user.department}</span>
       ),
+    },
+    {
+      key: "role",
+      title: "역할",
+      render: (value, user) => <UserRoleBadge role={user.role} size="small" />,
     },
     {
       key: "status",
@@ -191,12 +198,23 @@ const UsersListPage: React.FC = () => {
 
       {/* 검색 및 필터 */}
       <Card padding="lg" className="mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Input
-            placeholder="이름, 이메일, 부서로 검색"
+            placeholder="이름, 이메일, 회사로 검색"
             value={filters.search || ''}
             onChange={(e) => handleSearch(e.target.value)}
           />
+          <select
+            value={filters.companyId || ''}
+            onChange={(e) => setFilters(prev => ({ ...prev, companyId: e.target.value }))}
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">모든 회사</option>
+            <option value="company-1">플고물류</option>
+            <option value="company-2">에이스전자</option>
+            <option value="company-3">베스트패션</option>
+            <option value="company-4">스마트식품</option>
+          </select>
           <select
             value={filters.role || ''}
             onChange={(e) => handleRoleFilter(e.target.value)}
@@ -204,7 +222,7 @@ const UsersListPage: React.FC = () => {
           >
             <option value="">모든 역할</option>
             <option value="admin">관리자</option>
-            <option value="manager">운영자</option>
+            <option value="manager">매니저</option>
             <option value="operator">운영자</option>
             <option value="user">사용자</option>
           </select>

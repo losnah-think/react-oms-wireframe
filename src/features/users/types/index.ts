@@ -1,9 +1,20 @@
 // src/features/users/types/index.ts
+
+export interface Company {
+  id: string;
+  name: string;
+  code: string;
+  description?: string;
+  createdAt: string;
+}
+
 export interface User {
   id: string;
   name: string;
   email: string;
   role: UserRole;
+  companyId: string;
+  companyName?: string;
   department: string;
   status: UserStatus;
   lastLogin: string;
@@ -63,12 +74,11 @@ export type UserRole = 'admin' | 'manager' | 'operator' | 'user';
 export interface UserGroup {
   id: string;
   name: string;
+  companyId: string;
+  companyName?: string;
   description: string;
   memberCount: number;
-  department: string;
-  manager: string;
   createdAt: string;
-  permissions: string[];
   members: string[];
 }
 
@@ -146,6 +156,7 @@ export interface UserFilters {
   search?: string;
   role?: UserRole;
   status?: UserStatus;
+  companyId?: string;
   department?: string;
   group?: string;
   lastLoginFrom?: string;

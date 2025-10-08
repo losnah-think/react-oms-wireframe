@@ -4,79 +4,50 @@ import { Container, Card, Button, Input, Badge, Table, type TableColumn } from "
 interface ActivityLog {
   id: string;
   user: string;
+  company: string;
   action: string;
   resource: string;
+  details: string;
   ipAddress: string;
-  userAgent: string;
   timestamp: string;
   status: "success" | "failed" | "warning";
 }
 
 const mockLogs: ActivityLog[] = [
-  {
-    id: "1",
-    user: "김철수",
-    action: "로그인",
-    resource: "시스템",
-    ipAddress: "192.168.1.100",
-    userAgent: "Chrome/120.0.0.0",
-    timestamp: "2025-01-15 09:30:15",
-    status: "success",
-  },
-  {
-    id: "2",
-    user: "이영희",
-    action: "사용자 생성",
-    resource: "사용자 관리",
-    ipAddress: "192.168.1.101",
-    userAgent: "Firefox/121.0.0.0",
-    timestamp: "2025-01-15 09:25:42",
-    status: "success",
-  },
-  {
-    id: "3",
-    user: "박민수",
-    action: "로그인 시도",
-    resource: "시스템",
-    ipAddress: "192.168.1.102",
-    userAgent: "Safari/17.2.0",
-    timestamp: "2025-01-15 09:20:18",
-    status: "failed",
-  },
-  {
-    id: "4",
-    user: "정수진",
-    action: "데이터 수정",
-    resource: "상품 관리",
-    ipAddress: "192.168.1.103",
-    userAgent: "Chrome/120.0.0.0",
-    timestamp: "2025-01-15 09:15:33",
-    status: "success",
-  },
-  {
-    id: "5",
-    user: "최동현",
-    action: "권한 변경",
-    resource: "권한 관리",
-    ipAddress: "192.168.1.104",
-    userAgent: "Edge/120.0.0.0",
-    timestamp: "2025-01-15 09:10:27",
-    status: "warning",
-  },
+  { id: "1", user: "김철수", company: "플고물류", action: "로그인", resource: "시스템", details: "정상 로그인", ipAddress: "192.168.1.100", timestamp: "2025-10-08 09:30:15", status: "success" },
+  { id: "2", user: "이영희", company: "플고물류", action: "사용자 생성", resource: "사용자", details: "신규 사용자 등록 (오민지)", ipAddress: "192.168.1.101", timestamp: "2025-10-08 09:25:42", status: "success" },
+  { id: "3", user: "박민수", company: "에이스전자", action: "로그인 시도", resource: "시스템", details: "비밀번호 오류", ipAddress: "192.168.1.102", timestamp: "2025-10-08 09:20:18", status: "failed" },
+  { id: "4", user: "정수진", company: "플고물류", action: "상품 수정", resource: "상품", details: "상품 가격 변경 (상품ID: P-1001)", ipAddress: "192.168.1.103", timestamp: "2025-10-08 09:15:33", status: "success" },
+  { id: "5", user: "김철수", company: "플고물류", action: "권한 변경", resource: "권한", details: "이영희 권한 수정", ipAddress: "192.168.1.100", timestamp: "2025-10-08 09:10:27", status: "warning" },
+  { id: "6", user: "강미래", company: "베스트패션", action: "로그인", resource: "시스템", details: "정상 로그인", ipAddress: "192.168.2.50", timestamp: "2025-10-08 09:05:11", status: "success" },
+  { id: "7", user: "한지민", company: "스마트식품", action: "주문 조회", resource: "주문", details: "주문 목록 조회", ipAddress: "192.168.3.30", timestamp: "2025-10-08 09:00:45", status: "success" },
+  { id: "8", user: "최동욱", company: "에이스전자", action: "상품 등록", resource: "상품", details: "신규 상품 5개 등록", ipAddress: "192.168.1.105", timestamp: "2025-10-08 08:55:22", status: "success" },
+  { id: "9", user: "윤서연", company: "베스트패션", action: "로그아웃", resource: "시스템", details: "정상 로그아웃", ipAddress: "192.168.2.51", timestamp: "2025-10-08 08:50:33", status: "success" },
+  { id: "10", user: "송지훈", company: "스마트식품", action: "비밀번호 변경", resource: "계정", details: "비밀번호 재설정", ipAddress: "192.168.3.31", timestamp: "2025-10-08 08:45:19", status: "success" },
+  { id: "11", user: "박민수", company: "에이스전자", action: "로그인 시도", resource: "시스템", details: "계정 잠금", ipAddress: "192.168.1.102", timestamp: "2025-10-08 08:40:08", status: "failed" },
+  { id: "12", user: "김철수", company: "플고물류", action: "사용자 삭제", resource: "사용자", details: "비활성 계정 삭제", ipAddress: "192.168.1.100", timestamp: "2025-10-08 08:35:55", status: "warning" },
+  { id: "13", user: "이영희", company: "플고물류", action: "주문 처리", resource: "주문", details: "주문 50건 처리 완료", ipAddress: "192.168.1.101", timestamp: "2025-10-08 08:30:44", status: "success" },
+  { id: "14", user: "정수진", company: "플고물류", action: "재고 조정", resource: "재고", details: "재고 100개 입고", ipAddress: "192.168.1.103", timestamp: "2025-10-08 08:25:17", status: "success" },
+  { id: "15", user: "한지민", company: "스마트식품", action: "배송 처리", resource: "배송", details: "배송 준비 20건", ipAddress: "192.168.3.30", timestamp: "2025-10-08 08:20:05", status: "success" },
+  { id: "16", user: "강미래", company: "베스트패션", action: "상품 삭제", resource: "상품", details: "단종 상품 삭제", ipAddress: "192.168.2.50", timestamp: "2025-10-08 08:15:29", status: "warning" },
+  { id: "17", user: "김철수", company: "플고물류", action: "시스템 설정", resource: "설정", details: "연동 설정 변경", ipAddress: "192.168.1.100", timestamp: "2025-10-08 08:10:12", status: "success" },
+  { id: "18", user: "오민지", company: "플고물류", action: "로그인", resource: "시스템", details: "정상 로그인", ipAddress: "192.168.1.106", timestamp: "2025-10-08 08:05:39", status: "success" },
+  { id: "19", user: "배성호", company: "에이스전자", action: "로그인 시도", resource: "시스템", details: "계정 정지 상태", ipAddress: "192.168.1.107", timestamp: "2025-10-08 08:00:26", status: "failed" },
+  { id: "20", user: "서지우", company: "베스트패션", action: "데이터 조회", resource: "보고서", details: "월간 매출 보고서 조회", ipAddress: "192.168.2.52", timestamp: "2025-10-08 07:55:13", status: "success" },
 ];
 
 const UsersActivityPage: React.FC = () => {
   const [search, setSearch] = useState("");
-  const [actionFilter, setActionFilter] = useState("");
+  const [companyFilter, setCompanyFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
   const filteredLogs = mockLogs.filter((log) => {
     const matchesSearch = search
-      ? log.user.includes(search) || log.action.includes(search) || log.resource.includes(search)
+      ? log.user.includes(search) || log.action.includes(search) || log.resource.includes(search) || log.company.includes(search)
       : true;
-    const matchesAction = actionFilter ? log.action === actionFilter : true;
+    const matchesCompany = companyFilter ? log.company === companyFilter : true;
     const matchesStatus = statusFilter ? log.status === statusFilter : true;
-    return matchesSearch && matchesAction && matchesStatus;
+    return matchesSearch && matchesCompany && matchesStatus;
   });
 
   const getStatusBadge = (status: string) => {
@@ -92,73 +63,53 @@ const UsersActivityPage: React.FC = () => {
     }
   };
 
-  const getActionBadge = (action: string) => {
-    switch (action) {
-      case "로그인":
-        return <Badge variant="primary" size="small">로그인</Badge>;
-      case "사용자 생성":
-        return <Badge variant="success" size="small">사용자 생성</Badge>;
-      case "로그인 시도":
-        return <Badge variant="warning" size="small">로그인 시도</Badge>;
-      case "데이터 수정":
-        return <Badge variant="info" size="small">데이터 수정</Badge>;
-      case "권한 변경":
-        return <Badge variant="danger" size="small">권한 변경</Badge>;
-      default:
-        return <Badge variant="secondary" size="small">{action}</Badge>;
-    }
-  };
-
   const columns: TableColumn<ActivityLog>[] = [
     {
       key: "user",
       title: "사용자",
-      render: (log) => (
-        <div className="flex items-center">
-          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-            <span className="text-sm font-medium text-blue-600">
-              {(log.user || "").charAt(0) || "?"}
-            </span>
-          </div>
-          <span className="font-medium text-gray-900">{log.user}</span>
+      render: (value, log) => (
+        <div>
+          <div className="font-medium text-gray-900">{log.user}</div>
+          <div className="text-sm text-gray-500">{log.company}</div>
         </div>
       ),
     },
     {
       key: "action",
       title: "작업",
-      render: (log) => getActionBadge(log.action),
+      render: (value, log) => (
+        <span className="text-sm text-gray-900">{log.action}</span>
+      ),
     },
     {
       key: "resource",
       title: "리소스",
-      render: (log) => (
-        <span className="text-sm text-gray-900">{log.resource}</span>
+      render: (value, log) => (
+        <span className="text-sm text-gray-700">{log.resource}</span>
       ),
     },
     {
-      key: "ipAddress",
-      title: "IP 주소",
-      render: (log) => (
-        <span className="text-sm text-gray-500 font-mono">{log.ipAddress}</span>
+      key: "details",
+      title: "상세",
+      render: (value, log) => (
+        <span className="text-sm text-gray-600">{log.details}</span>
       ),
     },
     {
       key: "timestamp",
       title: "시간",
-      render: (log) => (
+      render: (value, log) => (
         <span className="text-sm text-gray-500">{log.timestamp}</span>
       ),
     },
     {
       key: "status",
       title: "상태",
-      render: (log) => getStatusBadge(log.status),
+      render: (value, log) => getStatusBadge(log.status),
     },
   ];
 
-  const actions = Array.from(new Set(mockLogs.map(log => log.action)));
-  const statuses = Array.from(new Set(mockLogs.map(log => log.status)));
+  const companies = Array.from(new Set(mockLogs.map(log => log.company)));
 
   return (
     <Container maxWidth="full" centered={false} padding="lg">
@@ -180,57 +131,24 @@ const UsersActivityPage: React.FC = () => {
           </div>
         </div>
 
-        {/* 통계 카드 */}
-        <div className="grid grid-cols-4 gap-4 mb-6">
-          <Card padding="md">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">{mockLogs.length}</div>
-              <div className="text-sm text-gray-600">전체 로그</div>
-            </div>
-          </Card>
-          <Card padding="md">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
-                {mockLogs.filter(log => log.status === "success").length}
-              </div>
-              <div className="text-sm text-gray-600">성공</div>
-            </div>
-          </Card>
-          <Card padding="md">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-red-600">
-                {mockLogs.filter(log => log.status === "failed").length}
-              </div>
-              <div className="text-sm text-gray-600">실패</div>
-            </div>
-          </Card>
-          <Card padding="md">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">
-                {mockLogs.filter(log => log.status === "warning").length}
-              </div>
-              <div className="text-sm text-gray-600">경고</div>
-            </div>
-          </Card>
-        </div>
       </div>
 
       {/* 검색 및 필터 */}
       <Card padding="lg" className="mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Input
-            placeholder="사용자, 작업, 리소스로 검색"
+            placeholder="사용자, 회사, 작업으로 검색"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
           <select
-            value={actionFilter}
-            onChange={(e) => setActionFilter(e.target.value)}
+            value={companyFilter}
+            onChange={(e) => setCompanyFilter(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="">모든 작업</option>
-            {actions.map((action) => (
-              <option key={action} value={action}>{action}</option>
+            <option value="">모든 회사</option>
+            {companies.map((company) => (
+              <option key={company} value={company}>{company}</option>
             ))}
           </select>
           <select
@@ -239,11 +157,9 @@ const UsersActivityPage: React.FC = () => {
             className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">모든 상태</option>
-            {statuses.map((status) => (
-              <option key={status} value={status}>
-                {status === "success" ? "성공" : status === "failed" ? "실패" : "경고"}
-              </option>
-            ))}
+            <option value="success">성공</option>
+            <option value="failed">실패</option>
+            <option value="warning">경고</option>
           </select>
         </div>
       </Card>
@@ -256,46 +172,6 @@ const UsersActivityPage: React.FC = () => {
         />
       </Card>
 
-      {/* 보안 이벤트 요약 */}
-      <Card padding="lg" className="mt-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">보안 이벤트 요약</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h4 className="font-medium text-gray-900 mb-3">최근 실패한 로그인</h4>
-            <div className="space-y-2">
-              {mockLogs
-                .filter(log => log.status === "failed")
-                .slice(0, 3)
-                .map((log) => (
-                  <div key={log.id} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                    <div>
-                      <div className="font-medium text-red-900">{log.user}</div>
-                      <div className="text-sm text-red-600">{log.ipAddress}</div>
-                    </div>
-                    <div className="text-sm text-red-500">{log.timestamp}</div>
-                  </div>
-                ))}
-            </div>
-          </div>
-          <div>
-            <h4 className="font-medium text-gray-900 mb-3">권한 변경 이력</h4>
-            <div className="space-y-2">
-              {mockLogs
-                .filter(log => log.action === "권한 변경")
-                .slice(0, 3)
-                .map((log) => (
-                  <div key={log.id} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
-                    <div>
-                      <div className="font-medium text-orange-900">{log.user}</div>
-                      <div className="text-sm text-orange-600">{log.resource}</div>
-                    </div>
-                    <div className="text-sm text-orange-500">{log.timestamp}</div>
-                  </div>
-                ))}
-            </div>
-          </div>
-        </div>
-      </Card>
     </Container>
   );
 };

@@ -70,7 +70,6 @@ const menuItems: MenuItem[] = [
       { id: "users-roles", label: "권한 관리", icon: "shield" },
       { id: "users-groups", label: "사용자 그룹", icon: "users" },
       { id: "users-activity", label: "활동 로그", icon: "clock" },
-      { id: "users-settings", label: "사용자 설정", icon: "settings" },
     ],
   },
   // 주문 관리 - 현재 숨김 처리

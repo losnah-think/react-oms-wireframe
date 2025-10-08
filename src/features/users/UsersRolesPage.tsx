@@ -1,9 +1,7 @@
 // src/features/users/UsersRolesPage.tsx
 import React, { useState } from 'react';
-import { Container, Card, Button, Table, TableColumn, Badge } from '../../design-system';
-import PermissionGate, { PermissionButton } from './components/PermissionGate';
+import { Container, Card, Button, Table, TableColumn, Badge, Modal } from '../../design-system';
 import { Role, Permission, PERMISSION_GROUPS, getPermissionDisplayName } from './types/permissions';
-import { usePermissions } from './hooks/usePermissions';
 import { useRoles } from './hooks/useRoles';
 
 const UsersRolesPage: React.FC = () => {
@@ -11,7 +9,6 @@ const UsersRolesPage: React.FC = () => {
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [editingPermissions, setEditingPermissions] = useState<Permission[]>([]);
 
-  const { permissions: userPermissions, hasPermission } = usePermissions();
   const { roles, loading, updateRolePermissions } = useRoles();
 
   const handleEditRole = (role: Role) => {
@@ -65,52 +62,25 @@ const UsersRolesPage: React.FC = () => {
     }
   };
 
-  const getRoleBadgeColor = (roleName: string) => {
-    switch (roleName) {
-      case 'ADMIN': return 'red';
-      case 'MANAGER': return 'blue';
-      case 'OPERATOR': return 'green';
-      case 'USER': return 'gray';
-      default: return 'gray';
-    }
-  };
-
   const columns: TableColumn<Role>[] = [
     {
       key: 'name',
-      title: '역할명',
-      render: (value, role) => {
-        if (!role) return <span>-</span>;
-        return (
-          <div className="flex items-center gap-2">
-            <Badge color={getRoleBadgeColor(role.name)} size="small">
-              {role.name || '-'}
-            </Badge>
-            {role.isSystem && (
-              <Badge color="gray" size="small">
-                시스템
-              </Badge>
-            )}
-          </div>
-        );
-      }
-    },
-    {
-      key: 'description',
-      title: '설명',
+      title: '역할',
       render: (value, role) => (
-        <span className="text-gray-700">{role?.description || '-'}</span>
+        <div>
+          <div className="font-medium text-gray-900">{role.name}</div>
+          <div className="text-sm text-gray-500">{role.description}</div>
+        </div>
       )
     },
     {
       key: 'permissions',
-      title: '권한 수',
+      title: '권한',
       render: (value, role) => {
-        if (!role) return <span className="text-sm text-gray-600">-</span>;
         const permissions = role.permissions || [];
         return (
           <span className="text-sm text-gray-600">
-            {permissions.includes('*') ? '모든 권한' : `${permissions.length}개`}
+            {permissions.includes('*') ? '모든 권한' : `${permissions.length}개 권한`}
           </span>
         );
       }
@@ -118,33 +88,17 @@ const UsersRolesPage: React.FC = () => {
     {
       key: 'actions',
       title: '작업',
-      render: (value, role) => {
-        if (!role) return null;
-        return (
-          <Button
-            size="small"
-            variant="ghost"
-            onClick={() => handleEditRole(role)}
-          >
-            권한 수정
-          </Button>
-        );
-      }
+      render: (value, role) => (
+        <Button
+          size="small"
+          variant="ghost"
+          onClick={() => handleEditRole(role)}
+        >
+          수정
+        </Button>
+      )
     }
   ];
-
-  if (loading) {
-    return (
-      <Container>
-        <div className="py-8">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-            <div className="h-64 bg-gray-200 rounded"></div>
-          </div>
-        </div>
-      </Container>
-    );
-  }
 
   return (
     <Container maxWidth="full" centered={false} padding="lg">
@@ -153,7 +107,7 @@ const UsersRolesPage: React.FC = () => {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">권한 관리</h1>
             <p className="text-sm text-gray-600 mt-1">
-              사용자 역할과 권한을 관리합니다
+              역할별 권한 설정
             </p>
           </div>
         </div>
@@ -169,82 +123,60 @@ const UsersRolesPage: React.FC = () => {
 
         {/* 권한 수정 모달 */}
         {showRoleModal && selectedRole && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[80vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold">
-                  {selectedRole.name} 권한 수정
-                </h2>
-                <button
-                  onClick={() => setShowRoleModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  ✕
-                </button>
-              </div>
+          <Modal
+            open={showRoleModal}
+            onClose={() => setShowRoleModal(false)}
+            title={`${selectedRole.name} 권한 설정`}
+          >
+            <div className="space-y-4">
+              {PERMISSION_GROUPS.map((group) => {
+                const groupPermissions = group.permissions;
+                const hasAllGroupPermissions = groupPermissions.every(p => editingPermissions.includes(p));
 
-              <div className="space-y-6">
-                {PERMISSION_GROUPS.map((group) => {
-                  const groupPermissions = group.permissions;
-                  const hasAllGroupPermissions = groupPermissions.every(p => editingPermissions.includes(p));
-                  const hasSomeGroupPermissions = groupPermissions.some(p => editingPermissions.includes(p));
+                return (
+                  <div key={group.name} className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-medium text-gray-900">{group.name}</h3>
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={hasAllGroupPermissions}
+                          onChange={() => handleGroupPermissionToggle(groupPermissions)}
+                          className="w-4 h-4 text-blue-600 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">전체</span>
+                      </label>
+                    </div>
 
-                  return (
-                    <div key={group.name} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <h3 className="font-medium text-gray-900">{group.name}</h3>
-                          <p className="text-sm text-gray-600">{group.description}</p>
-                        </div>
-                        <label className="flex items-center">
+                    <div className="grid grid-cols-2 gap-2">
+                      {groupPermissions.map((permission) => (
+                        <label key={permission} className="flex items-center">
                           <input
                             type="checkbox"
-                            checked={hasAllGroupPermissions}
-                            ref={(input) => {
-                              if (input) {
-                                input.indeterminate = hasSomeGroupPermissions && !hasAllGroupPermissions;
-                              }
-                            }}
-                            onChange={() => handleGroupPermissionToggle(groupPermissions)}
-                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            checked={editingPermissions.includes(permission)}
+                            onChange={() => handlePermissionToggle(permission)}
+                            className="w-4 h-4 text-blue-600 rounded"
                           />
-                          <span className="ml-2 text-sm text-gray-700">전체 선택</span>
+                          <span className="ml-2 text-sm text-gray-700">
+                            {getPermissionDisplayName(permission)}
+                          </span>
                         </label>
-                      </div>
-
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        {groupPermissions.map((permission) => (
-                          <label key={permission} className="flex items-center">
-                            <input
-                              type="checkbox"
-                              checked={editingPermissions.includes(permission)}
-                              onChange={() => handlePermissionToggle(permission)}
-                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                            />
-                            <span className="ml-2 text-sm text-gray-700">
-                              {getPermissionDisplayName(permission)}
-                            </span>
-                          </label>
-                        ))}
-                      </div>
+                      ))}
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+                );
+              })}
 
-              <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
-                <Button
-                  variant="ghost"
-                  onClick={() => setShowRoleModal(false)}
-                >
+              <div className="flex gap-3 pt-4">
+                <Button variant="ghost" onClick={() => setShowRoleModal(false)} fullWidth>
                   취소
                 </Button>
-                <Button onClick={handleSaveRole}>
+                <Button onClick={handleSaveRole} fullWidth>
                   저장
                 </Button>
               </div>
             </div>
-          </div>
+          </Modal>
         )}
       </div>
     </Container>
