@@ -86,43 +86,22 @@ const mockRoles: Role[] = [
 ];
 
 export const usePermissions = (options: UsePermissionsOptions = {}): UsePermissionsReturn => {
-  const [permissions, setPermissions] = useState<Permission[]>([]);
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [permissions, setPermissions] = useState<Permission[]>(['*']); // 개발 모드: 모든 권한
+  const [roles, setRoles] = useState<Role[]>(mockRoles);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchPermissions = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+    // 개발 모드: 즉시 권한 설정
+    setRoles(mockRoles);
     
-    try {
-      // 실제로는 API에서 사용자 권한을 가져옴
-      // 현재는 Mock 데이터 사용
-      await new Promise(resolve => setTimeout(resolve, 500)); // API 호출 시뮬레이션
-      
-      setRoles(mockRoles);
-      
-      // 사용자 ID가 제공된 경우 해당 사용자의 권한을 가져옴
-      if (options.userId) {
-        // Mock: 사용자 ID에 따라 다른 권한 부여
-        const userRole = mockRoles.find(role => role.name === 'MANAGER'); // 기본값
-        setPermissions(userRole?.permissions || []);
-      } else if (options.permissions) {
-        // 직접 권한이 제공된 경우
-        setPermissions(options.permissions);
-      } else {
-        // 기본 권한 (관리자)
-        setPermissions(['*']);
-      }
-    } catch (err) {
-      console.error('권한 로드 실패:', err);
-      setError('권한 정보를 불러오는데 실패했습니다');
-      setPermissions([]);
-      setRoles([]);
-    } finally {
-      setLoading(false);
+    if (options.permissions) {
+      setPermissions(options.permissions);
+    } else {
+      // 기본 권한 (관리자 - 모든 권한)
+      setPermissions(['*']);
     }
-  }, [options.userId, options.permissions]);
+  }, [options.permissions]);
 
   useEffect(() => {
     fetchPermissions();
