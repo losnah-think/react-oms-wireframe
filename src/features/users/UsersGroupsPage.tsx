@@ -109,7 +109,13 @@ const UsersGroupsPage: React.FC = () => {
   const [groups, setGroups] = useState<UserGroup[]>(mockGroups);
   const [selectedGroup, setSelectedGroup] = useState<UserGroup | null>(null);
   const [showPermissionModal, setShowPermissionModal] = useState(false);
+  const [showAddGroupModal, setShowAddGroupModal] = useState(false);
   const [editingPermissions, setEditingPermissions] = useState<Permission[]>([]);
+  const [newGroupForm, setNewGroupForm] = useState({
+    name: '',
+    companyId: '',
+    description: ''
+  });
 
   const filteredGroups = groups.filter((group) => {
     const matchesSearch = search
@@ -164,6 +170,28 @@ const UsersGroupsPage: React.FC = () => {
       setSelectedGroup(null);
       setEditingPermissions([]);
     }
+  };
+
+  const handleCreateGroup = () => {
+    const companyName = 
+      newGroupForm.companyId === 'company-1' ? '플고물류' :
+      newGroupForm.companyId === 'company-2' ? '에이스전자' :
+      newGroupForm.companyId === 'company-3' ? '베스트패션' :
+      newGroupForm.companyId === 'company-4' ? '스마트식품' : '';
+
+    const newGroup: UserGroup = {
+      id: String(groups.length + 1),
+      name: newGroupForm.name,
+      companyId: newGroupForm.companyId,
+      companyName: companyName,
+      description: newGroupForm.description,
+      memberCount: 0,
+      permissions: []
+    };
+
+    setGroups(prev => [...prev, newGroup]);
+    setShowAddGroupModal(false);
+    setNewGroupForm({ name: '', companyId: '', description: '' });
   };
 
   const columns: TableColumn<UserGroup>[] = [
@@ -234,7 +262,7 @@ const UsersGroupsPage: React.FC = () => {
               그룹별 사용자 관리
             </p>
           </div>
-          <Button onClick={() => console.log("Add group")}>
+          <Button onClick={() => setShowAddGroupModal(true)}>
             그룹 추가
           </Button>
         </div>
@@ -268,6 +296,53 @@ const UsersGroupsPage: React.FC = () => {
             columns={columns}
           />
         </Card>
+
+        {/* 그룹 추가 모달 */}
+        <Modal
+          open={showAddGroupModal}
+          onClose={() => setShowAddGroupModal(false)}
+          title="그룹 추가"
+        >
+          <div className="space-y-4">
+            <Input
+              label="그룹명"
+              placeholder="예: IT팀, 영업팀"
+              value={newGroupForm.name}
+              onChange={(e) => setNewGroupForm(prev => ({ ...prev, name: e.target.value }))}
+              fullWidth
+            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">회사</label>
+              <select
+                value={newGroupForm.companyId}
+                onChange={(e) => setNewGroupForm(prev => ({ ...prev, companyId: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">회사 선택</option>
+                <option value="company-1">플고물류</option>
+                <option value="company-2">에이스전자</option>
+                <option value="company-3">베스트패션</option>
+                <option value="company-4">스마트식품</option>
+              </select>
+            </div>
+            <Input
+              label="설명"
+              placeholder="그룹에 대한 설명"
+              value={newGroupForm.description}
+              onChange={(e) => setNewGroupForm(prev => ({ ...prev, description: e.target.value }))}
+              fullWidth
+            />
+            
+            <div className="flex gap-3 pt-4">
+              <Button variant="ghost" onClick={() => setShowAddGroupModal(false)} fullWidth>
+                취소
+              </Button>
+              <Button onClick={handleCreateGroup} fullWidth>
+                등록
+              </Button>
+            </div>
+          </div>
+        </Modal>
 
         {/* 권한 설정 모달 */}
         {showPermissionModal && selectedGroup && (
