@@ -21,18 +21,25 @@ interface ProductGroup {
 
 const defaultGroups: ProductGroup[] = [
   {
+    id: "group-default",
+    name: "미분류",
+    description: "분류되지 않은 상품",
+    channels: [],
+    isDefault: true,
+  },
+  {
     id: "group-1",
     name: "온라인 전용",
     description: "온라인 판매처 전용",
     channels: ["스마트스토어", "쿠팡"],
-    isDefault: true,
+    isDefault: false,
   },
   {
     id: "group-2",
     name: "오프라인 매장",
     description: "실제 매장 판매",
     channels: ["백화점", "직영점"],
-    isDefault: true,
+    isDefault: false,
   },
 ];
 
@@ -124,10 +131,6 @@ const ProductClassificationPage: React.FC = () => {
       window.alert("분류 이름을 입력하세요");
       return;
     }
-    if (!formState.channels.length) {
-      window.alert("판매 채널을 1개 이상 선택하세요");
-      return;
-    }
 
     const nextGroup: ProductGroup = {
       id: editingId ?? `group-${Date.now()}`,
@@ -145,10 +148,20 @@ const ProductClassificationPage: React.FC = () => {
     setModalOpen(false);
   };
 
+  const handleSetDefault = (id: string) => {
+    setGroups((prev) => 
+      prev.map(group => ({
+        ...group,
+        isDefault: group.id === id
+      }))
+    );
+  };
+
   const handleDelete = (id: string) => {
     const target = groups.find((group) => group.id === id);
-    if (!target || target.isDefault) {
-      window.alert("기본 분류는 삭제할 수 없습니다");
+    if (!target) return;
+    if (target.isDefault) {
+      window.alert("기본 분류는 삭제할 수 없습니다. 먼저 다른 분류를 기본값으로 설정하세요.");
       return;
     }
     if (!window.confirm("삭제하시겠습니까?")) return;
@@ -161,7 +174,14 @@ const ProductClassificationPage: React.FC = () => {
       title: "분류명",
       render: (value, group) => (
         <div>
-          <div className="font-medium text-gray-900">{value}</div>
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-gray-900">{value}</span>
+            {group.isDefault && (
+              <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 rounded">
+                기본값
+              </span>
+            )}
+          </div>
           {group.description && (
             <div className="text-sm text-gray-500 mt-1">{group.description}</div>
           )}
@@ -173,7 +193,7 @@ const ProductClassificationPage: React.FC = () => {
       title: "판매 채널",
       render: (channels) => (
         <div className="text-sm text-gray-600">
-          {channels.join(", ")}
+          {channels.length > 0 ? channels.join(", ") : "-"}
         </div>
       ),
     },
@@ -182,6 +202,15 @@ const ProductClassificationPage: React.FC = () => {
       title: "작업",
       render: (_, group) => (
         <div className="flex items-center gap-2">
+          {!group.isDefault && (
+            <Button
+              size="small"
+              variant="ghost"
+              onClick={() => handleSetDefault(group.id)}
+            >
+              기본값으로
+            </Button>
+          )}
           <Button
             size="small"
             variant="ghost"
@@ -258,7 +287,9 @@ const ProductClassificationPage: React.FC = () => {
           />
 
           <div>
-            <div className="text-sm font-medium text-gray-700 mb-2">판매 채널</div>
+            <div className="text-sm font-medium text-gray-700 mb-2">
+              판매 채널 <span className="text-gray-500 text-xs">(선택사항)</span>
+            </div>
             <div className="flex flex-wrap gap-2">
               {channelPresets.map((channel) => {
                 const checked = formState.channels.includes(channel);
@@ -278,6 +309,11 @@ const ProductClassificationPage: React.FC = () => {
                 );
               })}
             </div>
+            {formState.channels.length === 0 && (
+              <p className="text-xs text-gray-500 mt-2">
+                채널을 선택하지 않으면 모든 채널에서 사용할 수 있습니다
+              </p>
+            )}
           </div>
 
           <div className="flex gap-3 pt-4">

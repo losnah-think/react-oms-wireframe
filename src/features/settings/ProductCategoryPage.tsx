@@ -69,13 +69,43 @@ const ProductCategoryPage: React.FC = () => {
     saveCategories(categories);
   }, [categories]);
 
+  // 계층 구조로 정렬하는 함수
+  const sortCategoriesHierarchically = (cats: Category[]): Category[] => {
+    const result: Category[] = [];
+    const categoryMap = new Map(cats.map(cat => [cat.id, cat]));
+    
+    // 1단계(depth 0) 카테고리부터 시작
+    const addCategoryAndChildren = (category: Category) => {
+      result.push(category);
+      
+      // 이 카테고리를 부모로 하는 자식들을 찾아서 추가
+      const children = cats
+        .filter(cat => cat.parentId === category.id)
+        .sort((a, b) => a.name.localeCompare(b.name));
+      
+      children.forEach(child => addCategoryAndChildren(child));
+    };
+    
+    // 최상위(depth 0) 카테고리들을 찾아서 정렬
+    const topLevel = cats
+      .filter(cat => cat.parentId === null)
+      .sort((a, b) => a.name.localeCompare(b.name));
+    
+    topLevel.forEach(cat => addCategoryAndChildren(cat));
+    
+    return result;
+  };
+
   const filtered = React.useMemo(() => {
-    return categories.filter((category) => {
+    const searchFiltered = categories.filter((category) => {
       const matchesSearch = search
         ? category.name.includes(search)
         : true;
       return matchesSearch;
     });
+    
+    // 계층 구조로 정렬
+    return sortCategoriesHierarchically(searchFiltered);
   }, [categories, search]);
 
   const getParentCategories = (currentDepth: number) => {
@@ -140,11 +170,38 @@ const ProductCategoryPage: React.FC = () => {
       isDefault: editingId ? categories.find((c) => c.id === editingId)?.isDefault : false,
     };
 
-    setCategories((prev) =>
-      editingId
-        ? prev.map((category) => (category.id === editingId ? categoryData : category))
-        : [categoryData, ...prev],
-    );
+    setCategories((prev) => {
+      if (editingId) {
+        // 수정: depth나 parentId가 변경되면 하위 카테고리들도 업데이트
+        const oldCategory = prev.find(c => c.id === editingId);
+        if (oldCategory && (oldCategory.depth !== depth || oldCategory.parentId !== formState.parentId)) {
+          const updateChildrenDepth = (parentId: string, baseDepth: number): Category[] => {
+            return prev.map(cat => {
+              if (cat.parentId === parentId) {
+                const newDepth = baseDepth + 1;
+                return { ...cat, depth: newDepth };
+              }
+              return cat;
+            });
+          };
+          
+          let updated = prev.map((category) => 
+            category.id === editingId ? categoryData : category
+          );
+          
+          // 하위 카테고리 depth 재계산
+          const children = updated.filter(c => c.parentId === editingId);
+          children.forEach(child => {
+            updated = updateChildrenDepth(child.id, depth);
+          });
+          
+          return updated;
+        }
+        return prev.map((category) => (category.id === editingId ? categoryData : category));
+      } else {
+        return [...prev, categoryData];
+      }
+    });
     setModalOpen(false);
   };
 
