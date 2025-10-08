@@ -167,7 +167,7 @@ const UsersActivityPage: React.FC = () => {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">활동 로그</h1>
             <p className="text-sm text-gray-600 mt-1">
-              사용자의 시스템 활동을 추적하고 모니터링할 수 있습니다.
+              사용자 활동 추적
             </p>
           </div>
           <div className="flex gap-2">
@@ -253,7 +253,6 @@ const UsersActivityPage: React.FC = () => {
         <Table
           data={filteredLogs}
           columns={columns}
-          keyField="id"
         />
       </Card>
 

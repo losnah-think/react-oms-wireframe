@@ -1,108 +1,43 @@
+// src/features/users/UsersListPage.tsx (개선된 버전)
 import React, { useState } from "react";
-import { Container, Card, Button, Input, Badge, Table, type TableColumn } from "../../design-system";
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  department: string;
-  status: "active" | "inactive" | "pending";
-  lastLogin: string;
-  createdAt: string;
-}
-
-const mockUsers: User[] = [
-  {
-    id: "1",
-    name: "김철수",
-    email: "kim@company.com",
-    role: "관리자",
-    department: "IT팀",
-    status: "active",
-    lastLogin: "2025-01-15 09:30",
-    createdAt: "2024-01-15",
-  },
-  {
-    id: "2",
-    name: "이영희",
-    email: "lee@company.com",
-    role: "운영자",
-    department: "마케팅팀",
-    status: "active",
-    lastLogin: "2025-01-15 08:45",
-    createdAt: "2024-02-20",
-  },
-  {
-    id: "3",
-    name: "박민수",
-    email: "park@company.com",
-    role: "사용자",
-    department: "영업팀",
-    status: "inactive",
-    lastLogin: "2025-01-10 14:20",
-    createdAt: "2024-03-10",
-  },
-  {
-    id: "4",
-    name: "정수진",
-    email: "jung@company.com",
-    role: "운영자",
-    department: "고객서비스팀",
-    status: "active",
-    lastLogin: "2025-01-15 10:15",
-    createdAt: "2024-04-05",
-  },
-  {
-    id: "5",
-    name: "최동현",
-    email: "choi@company.com",
-    role: "사용자",
-    department: "재무팀",
-    status: "pending",
-    lastLogin: "-",
-    createdAt: "2025-01-14",
-  },
-];
+import { Container, Card, Button, Input, Table, type TableColumn } from "../../design-system";
+import { useUsers } from "./hooks/useUsers";
+import { User, UserFilters, UserSort } from "./types";
+import UserAvatar from "./components/UserAvatar";
+import UserStatusBadge from "./components/UserStatusBadge";
+import UserRoleBadge from "./components/UserRoleBadge";
+import UserStatsCard from "./components/UserStatsCard";
 
 const UsersListPage: React.FC = () => {
-  const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [filters, setFilters] = useState<UserFilters>({});
+  const [sort, setSort] = useState<UserSort>({ field: 'name', direction: 'asc' });
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
-  const filteredUsers = mockUsers.filter((user) => {
-    const matchesSearch = search
-      ? user.name.includes(search) || user.email.includes(search) || user.department.includes(search)
-      : true;
-    const matchesRole = roleFilter ? user.role === roleFilter : true;
-    const matchesStatus = statusFilter ? user.status === statusFilter : true;
-    return matchesSearch && matchesRole && matchesStatus;
+  const { users, loading, stats, total, refresh, updateUser, deleteUser } = useUsers({
+    filters,
+    sort,
+    page,
+    pageSize
   });
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "active":
-        return <Badge variant="success" size="small">활성</Badge>;
-      case "inactive":
-        return <Badge variant="secondary" size="small">비활성</Badge>;
-      case "pending":
-        return <Badge variant="warning" size="small">대기중</Badge>;
-      default:
-        return <Badge variant="secondary" size="small">{status}</Badge>;
-    }
+  const handleSearch = (value: string) => {
+    setFilters(prev => ({ ...prev, search: value }));
   };
 
-  const getRoleBadge = (role: string) => {
-    switch (role) {
-      case "관리자":
-        return <Badge variant="danger" size="small">관리자</Badge>;
-      case "운영자":
-        return <Badge variant="primary" size="small">운영자</Badge>;
-      case "사용자":
-        return <Badge variant="secondary" size="small">사용자</Badge>;
-      default:
-        return <Badge variant="secondary" size="small">{role}</Badge>;
-    }
+  const handleRoleFilter = (role: string) => {
+    setFilters(prev => ({ ...prev, role: role as any }));
+  };
+
+  const handleStatusFilter = (status: string) => {
+    setFilters(prev => ({ ...prev, status: status as any }));
+  };
+
+  const handleSort = (field: keyof User) => {
+    setSort(prev => ({
+      field,
+      direction: prev.field === field && prev.direction === 'asc' ? 'desc' : 'asc'
+    }));
   };
 
   const columns: TableColumn<User>[] = [
@@ -110,23 +45,19 @@ const UsersListPage: React.FC = () => {
       key: "name",
       title: "사용자",
       render: (user) => (
-        <div className="flex items-center">
-          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-            <span className="text-sm font-medium text-blue-600">
-              {(user.name || "").charAt(0) || "?"}
-            </span>
-          </div>
-          <div>
-            <div className="font-medium text-gray-900">{user.name}</div>
-            <div className="text-sm text-gray-500">{user.email}</div>
-          </div>
-        </div>
+        <UserAvatar 
+          name={user.name} 
+          email={user.email} 
+          size="md" 
+          showName 
+          showEmail 
+        />
       ),
     },
     {
       key: "role",
       title: "역할",
-      render: (user) => getRoleBadge(user.role),
+      render: (user) => <UserRoleBadge role={user.role} size="small" />,
     },
     {
       key: "department",
@@ -138,7 +69,7 @@ const UsersListPage: React.FC = () => {
     {
       key: "status",
       title: "상태",
-      render: (user) => getStatusBadge(user.status),
+      render: (user) => <UserStatusBadge status={user.status} size="small" />,
     },
     {
       key: "lastLogin",
@@ -164,7 +95,7 @@ const UsersListPage: React.FC = () => {
           <Button
             variant="ghost"
             size="small"
-            onClick={() => console.log("Delete user", user.id)}
+            onClick={() => deleteUser(user.id)}
           >
             삭제
           </Button>
@@ -180,7 +111,7 @@ const UsersListPage: React.FC = () => {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">사용자 목록</h1>
             <p className="text-sm text-gray-600 mt-1">
-              시스템 사용자를 조회하고 관리할 수 있습니다.
+              사용자 조회 및 관리
             </p>
           </div>
           <Button onClick={() => console.log("Add user")}>
@@ -190,36 +121,49 @@ const UsersListPage: React.FC = () => {
 
         {/* 통계 카드 */}
         <div className="grid grid-cols-4 gap-4 mb-6">
-          <Card padding="md">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">{mockUsers.length}</div>
-              <div className="text-sm text-gray-600">전체 사용자</div>
-            </div>
-          </Card>
-          <Card padding="md">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
-                {mockUsers.filter(u => u.status === "active").length}
-              </div>
-              <div className="text-sm text-gray-600">활성 사용자</div>
-            </div>
-          </Card>
-          <Card padding="md">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">
-                {mockUsers.filter(u => u.role === "관리자").length}
-              </div>
-              <div className="text-sm text-gray-600">관리자</div>
-            </div>
-          </Card>
-          <Card padding="md">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">
-                {mockUsers.filter(u => u.status === "pending").length}
-              </div>
-              <div className="text-sm text-gray-600">대기중</div>
-            </div>
-          </Card>
+          <UserStatsCard
+            title="전체 사용자"
+            value={stats?.total || 0}
+            color="blue"
+            icon={
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+              </svg>
+            }
+            onClick={() => setFilters({})}
+          />
+          <UserStatsCard
+            title="활성 사용자"
+            value={stats?.active || 0}
+            color="green"
+            icon={
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            }
+            onClick={() => setFilters({ status: 'active' })}
+          />
+          <UserStatsCard
+            title="관리자"
+            value={stats?.admins || 0}
+            color="purple"
+            icon={
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            }
+            onClick={() => setFilters({ role: 'admin' })}
+          />
+          <UserStatsCard
+            title="오늘 로그인"
+            value={stats?.todayLogins || 0}
+            color="orange"
+            icon={
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            }
+          />
         </div>
       </div>
 
@@ -228,28 +172,30 @@ const UsersListPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Input
             placeholder="이름, 이메일, 부서로 검색"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={filters.search || ''}
+            onChange={(e) => handleSearch(e.target.value)}
           />
           <select
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
+            value={filters.role || ''}
+            onChange={(e) => handleRoleFilter(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">모든 역할</option>
-            <option value="관리자">관리자</option>
-            <option value="운영자">운영자</option>
-            <option value="사용자">사용자</option>
+            <option value="admin">관리자</option>
+            <option value="manager">운영자</option>
+            <option value="operator">운영자</option>
+            <option value="user">사용자</option>
           </select>
           <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            value={filters.status || ''}
+            onChange={(e) => handleStatusFilter(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">모든 상태</option>
             <option value="active">활성</option>
             <option value="inactive">비활성</option>
             <option value="pending">대기중</option>
+            <option value="suspended">정지</option>
           </select>
         </div>
       </Card>
@@ -257,9 +203,15 @@ const UsersListPage: React.FC = () => {
       {/* 사용자 테이블 */}
       <Card padding="none">
         <Table
-          data={filteredUsers}
+          data={users}
           columns={columns}
-          keyField="id"
+          loading={loading}
+          pagination={{
+            current: page,
+            pageSize: pageSize,
+            total: total,
+            onChange: (newPage) => setPage(newPage)
+          }}
         />
       </Card>
     </Container>

@@ -1,3 +1,3 @@
-import ProductGroupsPage from "@/features/settings/ProductGroupsPage";
+import ProductClassificationPage from "@/features/settings/ProductClassificationPage";
 
-export default ProductGroupsPage;
+export default ProductClassificationPage;

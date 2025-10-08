@@ -24,6 +24,7 @@
     "react-dom": "^18.3.1",
     "react-quill": "^2.0.0",
     "swagger-ui-react": "^5.29.0",
+    "validator": "^13.15.15",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
@@ -73,6 +74,13 @@
     "lint": "next lint",
     "diagrams:render": "./node_modules/.bin/mmdc -i docs/diagrams/orders-list.mmd -o docs/diagrams/orders-list.png -b transparent && ./node_modules/.bin/mmdc -i docs/diagrams/order-detail.mmd -o docs/diagrams/order-detail.png -b transparent && ./node_modules/.bin/mmdc -i docs/diagrams/products-list.mmd -o docs/diagrams/products-list.png -b transparent && ./node_modules/.bin/mmdc -i docs/diagrams/product-detail.mmd -o docs/diagrams/product-detail.png -b transparent && ./node_modules/.bin/mmdc -i docs/diagrams/settings-integration.mmd -o docs/diagrams/settings-integration.png -b transparent && ./node_modules/.bin/mmdc -i docs/diagrams/settings-users.mmd -o docs/diagrams/settings-users.png -b transparent",
     "diagrams:clean": "rm -f docs/diagrams/*.png docs/diagrams/*.svg || true",
-    "deploy:docs": "gh-pages -d docs"
+    "deploy:docs": "gh-pages -d docs",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:studio": "prisma studio",
+    "db:reset": "prisma migrate reset",
+    "test:users": "node scripts/test-user-management.js"
   }
 }

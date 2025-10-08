@@ -7,7 +7,7 @@ const UsersIndexPage: React.FC = () => {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">사용자 관리</h1>
         <p className="text-gray-600">
-          시스템 사용자와 권한을 관리하고 활동을 모니터링합니다.
+          사용자와 권한 관리
         </p>
       </div>
 
@@ -84,11 +84,11 @@ const UsersIndexPage: React.FC = () => {
             </div>
             <div>
               <h2 className="text-lg font-semibold text-gray-900">사용자 목록</h2>
-              <p className="text-sm text-gray-600">전체 사용자 조회 및 관리</p>
+              <p className="text-sm text-gray-600">사용자 조회 및 관리</p>
             </div>
           </div>
           <div className="text-sm text-gray-500">
-            사용자 정보 조회, 수정, 삭제 및 상태 관리
+            사용자 정보 관리
           </div>
         </Link>
 
@@ -108,7 +108,7 @@ const UsersIndexPage: React.FC = () => {
             </div>
           </div>
           <div className="text-sm text-gray-500">
-            사용자 역할 정의, 권한 할당 및 접근 제어
+            역할 및 권한 설정
           </div>
         </Link>
 
@@ -128,7 +128,7 @@ const UsersIndexPage: React.FC = () => {
             </div>
           </div>
           <div className="text-sm text-gray-500">
-            부서별, 팀별 사용자 그룹 생성 및 관리
+            그룹 생성 및 관리
           </div>
         </Link>
 
@@ -148,7 +148,7 @@ const UsersIndexPage: React.FC = () => {
             </div>
           </div>
           <div className="text-sm text-gray-500">
-            로그인 기록, 작업 이력 및 보안 이벤트 모니터링
+            작업 이력 조회
           </div>
         </Link>
 
@@ -169,7 +169,7 @@ const UsersIndexPage: React.FC = () => {
             </div>
           </div>
           <div className="text-sm text-gray-500">
-            비밀번호 정책, 세션 관리, 알림 설정 등
+            비밀번호 정책 및 세션 관리
           </div>
         </Link>
       </div>

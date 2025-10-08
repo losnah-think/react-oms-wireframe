@@ -1,241 +1,259 @@
-import React, { useState } from "react";
-import { Container, Card, Button, Input, Badge, Table, type TableColumn } from "../../design-system";
-
-interface Role {
-  id: string;
-  name: string;
-  description: string;
-  permissions: string[];
-  userCount: number;
-  createdAt: string;
-}
-
-const mockRoles: Role[] = [
-  {
-    id: "1",
-    name: "시스템 관리자",
-    description: "시스템 전체 관리 권한",
-    permissions: ["사용자 관리", "시스템 설정", "데이터 관리", "보고서 조회"],
-    userCount: 3,
-    createdAt: "2024-01-01",
-  },
-  {
-    id: "2",
-    name: "운영 관리자",
-    description: "일반 운영 관리 권한",
-    permissions: ["사용자 조회", "데이터 조회", "보고서 생성"],
-    userCount: 8,
-    createdAt: "2024-01-15",
-  },
-  {
-    id: "3",
-    name: "일반 사용자",
-    description: "기본 사용자 권한",
-    permissions: ["데이터 조회", "보고서 조회"],
-    userCount: 145,
-    createdAt: "2024-02-01",
-  },
-];
+// src/features/users/UsersRolesPage.tsx
+import React, { useState } from 'react';
+import { Container, Card, Button, Table, TableColumn, Badge } from '../../design-system';
+import PermissionGate, { PermissionButton } from './components/PermissionGate';
+import { Role, Permission, PERMISSION_GROUPS, getPermissionDisplayName } from './types/permissions';
+import { usePermissions } from './hooks/usePermissions';
+import { useRoles } from './hooks/useRoles';
 
 const UsersRolesPage: React.FC = () => {
-  const [search, setSearch] = useState("");
+  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [showRoleModal, setShowRoleModal] = useState(false);
+  const [editingPermissions, setEditingPermissions] = useState<Permission[]>([]);
 
-  const filteredRoles = mockRoles.filter((role) =>
-    search
-      ? role.name.includes(search) || role.description.includes(search)
-      : true
-  );
+  const { permissions: userPermissions, hasPermission } = usePermissions();
+  const { roles, loading, updateRolePermissions } = useRoles();
+
+  const handleEditRole = (role: Role) => {
+    setSelectedRole(role);
+    setEditingPermissions([...(role.permissions || [])]);
+    setShowRoleModal(true);
+  };
+
+  const handlePermissionToggle = (permission: Permission) => {
+    setEditingPermissions(prev => {
+      if (prev.includes(permission)) {
+        return prev.filter(p => p !== permission);
+      } else {
+        return [...prev, permission];
+      }
+    });
+  };
+
+  const handleGroupPermissionToggle = (groupPermissions: Permission[]) => {
+    const hasAllGroupPermissions = groupPermissions.every(p => editingPermissions.includes(p));
+    
+    if (hasAllGroupPermissions) {
+      // 모든 권한이 있으면 제거
+      setEditingPermissions(prev => prev.filter(p => !groupPermissions.includes(p)));
+    } else {
+      // 일부만 있으면 모두 추가
+      setEditingPermissions(prev => {
+        const newPermissions = [...prev];
+        groupPermissions.forEach(p => {
+          if (!newPermissions.includes(p)) {
+            newPermissions.push(p);
+          }
+        });
+        return newPermissions;
+      });
+    }
+  };
+
+  const handleSaveRole = async () => {
+    if (selectedRole) {
+      try {
+        await updateRolePermissions(selectedRole.id, editingPermissions);
+        
+        setShowRoleModal(false);
+        setSelectedRole(null);
+        setEditingPermissions([]);
+      } catch (error) {
+        console.error('권한 저장 실패:', error);
+        alert('권한 저장에 실패했습니다.');
+      }
+    }
+  };
+
+  const getRoleBadgeColor = (roleName: string) => {
+    switch (roleName) {
+      case 'ADMIN': return 'red';
+      case 'MANAGER': return 'blue';
+      case 'OPERATOR': return 'green';
+      case 'USER': return 'gray';
+      default: return 'gray';
+    }
+  };
 
   const columns: TableColumn<Role>[] = [
     {
-      key: "name",
-      title: "역할명",
-      render: (role) => (
-        <div>
-          <div className="font-medium text-gray-900">{role.name}</div>
-          <div className="text-sm text-gray-500">{role.description}</div>
-        </div>
-      ),
-    },
-    {
-      key: "permissions",
-      title: "권한",
-      render: (role) => (
-        <div className="flex flex-wrap gap-1">
-          {(role.permissions || []).map((permission, index) => (
-            <Badge key={index} variant="secondary" size="small">
-              {permission}
+      key: 'name',
+      label: '역할명',
+      render: (role) => {
+        if (!role) return <span>-</span>;
+        return (
+          <div className="flex items-center gap-2">
+            <Badge color={getRoleBadgeColor(role.name)} size="small">
+              {role.name || '-'}
             </Badge>
-          ))}
-        </div>
-      ),
+            {role.isSystem && (
+              <Badge color="gray" size="small">
+                시스템
+              </Badge>
+            )}
+          </div>
+        );
+      }
     },
     {
-      key: "userCount",
-      title: "사용자 수",
+      key: 'description',
+      label: '설명',
       render: (role) => (
-        <span className="text-sm text-gray-900">{role.userCount}명</span>
-      ),
+        <span className="text-gray-700">{role?.description || '-'}</span>
+      )
     },
     {
-      key: "createdAt",
-      title: "생성일",
-      render: (role) => (
-        <span className="text-sm text-gray-500">{role.createdAt}</span>
-      ),
+      key: 'permissions',
+      label: '권한 수',
+      render: (role) => {
+        if (!role) return <span className="text-sm text-gray-600">-</span>;
+        const permissions = role.permissions || [];
+        return (
+          <span className="text-sm text-gray-600">
+            {permissions.includes('*') ? '모든 권한' : `${permissions.length}개`}
+          </span>
+        );
+      }
     },
     {
-      key: "actions",
-      title: "작업",
-      render: (role) => (
-        <div className="flex gap-2">
-          <Button
-            variant="ghost"
-            size="small"
-            onClick={() => console.log("Edit role", role.id)}
+      key: 'actions',
+      label: '작업',
+      render: (role) => {
+        if (!role) return null;
+        return (
+          <PermissionButton
+            permission="users:update"
+            onClick={() => handleEditRole(role)}
+            disabled={role.isSystem && !hasPermission('*')}
+            className="text-blue-600 hover:text-blue-800 text-sm"
           >
-            수정
-          </Button>
-          <Button
-            variant="ghost"
-            size="small"
-            onClick={() => console.log("Delete role", role.id)}
-          >
-            삭제
-          </Button>
-        </div>
-      ),
-    },
+            권한 수정
+          </PermissionButton>
+        );
+      }
+    }
   ];
 
+  if (loading) {
+    return (
+      <Container>
+        <div className="py-8">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
+            <div className="h-64 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      </Container>
+    );
+  }
+
   return (
-    <Container maxWidth="full" centered={false} padding="lg">
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
+    <Container>
+      <div className="py-8">
+        <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">권한 관리</h1>
-            <p className="text-sm text-gray-600 mt-1">
-              사용자 역할과 권한을 정의하고 관리할 수 있습니다.
+            <h1 className="text-3xl font-bold text-gray-900">역할 관리</h1>
+            <p className="text-gray-600 mt-2">
+              사용자 역할과 권한을 관리합니다.
             </p>
           </div>
-          <Button onClick={() => console.log("Add role")}>
-            역할 추가
-          </Button>
+          <PermissionGate permission="users:create">
+            <Button>
+              새 역할 생성
+            </Button>
+          </PermissionGate>
         </div>
 
-        {/* 통계 카드 */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <Card padding="md">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">{mockRoles.length}</div>
-              <div className="text-sm text-gray-600">전체 역할</div>
-            </div>
-          </Card>
-          <Card padding="md">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">
-                {mockRoles.reduce((sum, role) => sum + role.userCount, 0)}
+        {/* 역할 목록 */}
+        <Card padding="lg">
+          <Table
+            data={roles}
+            columns={columns}
+            loading={loading}
+            emptyMessage="역할이 없습니다"
+          />
+        </Card>
+
+        {/* 권한 수정 모달 */}
+        {showRoleModal && selectedRole && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[80vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold">
+                  {selectedRole.name} 권한 수정
+                </h2>
+                <button
+                  onClick={() => setShowRoleModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
               </div>
-              <div className="text-sm text-gray-600">할당된 사용자</div>
-            </div>
-          </Card>
-          <Card padding="md">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
-                {mockRoles.reduce((sum, role) => sum + role.permissions.length, 0)}
+
+              <div className="space-y-6">
+                {PERMISSION_GROUPS.map((group) => {
+                  const groupPermissions = group.permissions;
+                  const hasAllGroupPermissions = groupPermissions.every(p => editingPermissions.includes(p));
+                  const hasSomeGroupPermissions = groupPermissions.some(p => editingPermissions.includes(p));
+
+                  return (
+                    <div key={group.name} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h3 className="font-medium text-gray-900">{group.name}</h3>
+                          <p className="text-sm text-gray-600">{group.description}</p>
+                        </div>
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={hasAllGroupPermissions}
+                            ref={(input) => {
+                              if (input) {
+                                input.indeterminate = hasSomeGroupPermissions && !hasAllGroupPermissions;
+                              }
+                            }}
+                            onChange={() => handleGroupPermissionToggle(groupPermissions)}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span className="ml-2 text-sm text-gray-700">전체 선택</span>
+                        </label>
+                      </div>
+
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {groupPermissions.map((permission) => (
+                          <label key={permission} className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={editingPermissions.includes(permission)}
+                              onChange={() => handlePermissionToggle(permission)}
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="ml-2 text-sm text-gray-700">
+                              {getPermissionDisplayName(permission)}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <div className="text-sm text-gray-600">총 권한 수</div>
+
+              <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowRoleModal(false)}
+                >
+                  취소
+                </Button>
+                <Button onClick={handleSaveRole}>
+                  저장
+                </Button>
+              </div>
             </div>
-          </Card>
-        </div>
+          </div>
+        )}
       </div>
-
-      {/* 검색 */}
-      <Card padding="lg" className="mb-6">
-        <Input
-          placeholder="역할명 또는 설명으로 검색"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </Card>
-
-      {/* 권한 테이블 */}
-      <Card padding="none">
-        <Table
-          data={filteredRoles}
-          columns={columns}
-          keyField="id"
-        />
-      </Card>
-
-      {/* 권한 매트릭스 */}
-      <Card padding="lg" className="mt-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">권한 매트릭스</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b">
-                <th className="text-left py-2 px-3">역할</th>
-                <th className="text-center py-2 px-3">사용자 관리</th>
-                <th className="text-center py-2 px-3">시스템 설정</th>
-                <th className="text-center py-2 px-3">데이터 관리</th>
-                <th className="text-center py-2 px-3">데이터 조회</th>
-                <th className="text-center py-2 px-3">보고서 생성</th>
-                <th className="text-center py-2 px-3">보고서 조회</th>
-              </tr>
-            </thead>
-            <tbody>
-              {mockRoles.map((role) => (
-                <tr key={role.id} className="border-b">
-                  <td className="py-2 px-3 font-medium">{role.name}</td>
-                  <td className="text-center py-2 px-3">
-                    {(role.permissions || []).includes("사용자 관리") ? (
-                      <Badge variant="success" size="small">✓</Badge>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
-                  </td>
-                  <td className="text-center py-2 px-3">
-                    {(role.permissions || []).includes("시스템 설정") ? (
-                      <Badge variant="success" size="small">✓</Badge>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
-                  </td>
-                  <td className="text-center py-2 px-3">
-                    {(role.permissions || []).includes("데이터 관리") ? (
-                      <Badge variant="success" size="small">✓</Badge>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
-                  </td>
-                  <td className="text-center py-2 px-3">
-                    {(role.permissions || []).includes("데이터 조회") ? (
-                      <Badge variant="success" size="small">✓</Badge>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
-                  </td>
-                  <td className="text-center py-2 px-3">
-                    {(role.permissions || []).includes("보고서 생성") ? (
-                      <Badge variant="success" size="small">✓</Badge>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
-                  </td>
-                  <td className="text-center py-2 px-3">
-                    {(role.permissions || []).includes("보고서 조회") ? (
-                      <Badge variant="success" size="small">✓</Badge>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
     </Container>
   );
 };

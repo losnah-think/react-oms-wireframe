@@ -836,7 +836,7 @@ const ProductCsvUploadPage: React.FC = () => {
                 CSV 파일을 선택하거나 여기로 드래그하세요
               </div>
               <div className="inline-flex items-center px-4 py-2 bg-blue-500 text-white text-sm rounded hover:bg-blue-600">
-                        📁 파일 선택
+                         파일 선택
               </div>
             </label>
           </div>
@@ -902,7 +902,7 @@ const ProductCsvUploadPage: React.FC = () => {
                   {detectedPlatform && (
                     <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
                       <div className="flex items-start">
-                        <span className="text-blue-600 mr-2">💡</span>
+                        <span className="text-blue-600 mr-2"></span>
                         <div className="text-sm text-blue-800">
                           매칭된 필드: 상품코드, 상품명, 판매가, 공급가, 카테고리, 브랜드, 상품설명
                         </div>
@@ -955,7 +955,7 @@ const ProductCsvUploadPage: React.FC = () => {
 
                 <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
                   <div className="text-sm text-yellow-800">
-                    <strong>💡 TIP:</strong> CSV 파일을 업로드하면 자동으로 어떤 쇼핑몰의 파일인지 감지합니다. 감지 실패 시 수동으로 플랫폼을 선택할 수 있습니다.
+                    <strong> TIP:</strong> CSV 파일을 업로드하면 자동으로 어떤 쇼핑몰의 파일인지 감지합니다. 감지 실패 시 수동으로 플랫폼을 선택할 수 있습니다.
                 </div>
               </div>
             </div>
@@ -1303,7 +1303,7 @@ const ProductCsvUploadPage: React.FC = () => {
                         지원 형식: CSV (UTF-8) | 최대 크기: 50MB
                       </div>
                       <div className="inline-flex items-center px-4 py-2 bg-blue-500 text-white text-sm rounded hover:bg-blue-600">
-                        📁 파일 선택
+                         파일 선택
                       </div>
                     </label>
                   </div>
@@ -1359,7 +1359,7 @@ const ProductCsvUploadPage: React.FC = () => {
                     {detectedPlatform && (
                       <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
                         <div className="flex items-start">
-                          <span className="text-blue-600 mr-2">💡</span>
+                          <span className="text-blue-600 mr-2"></span>
                           <div className="text-sm text-blue-800">
                             매칭된 필드: 상품코드, 상품명, 판매가, 공급가, 카테고리, 브랜드, 상품설명
               </div>
@@ -1412,7 +1412,7 @@ const ProductCsvUploadPage: React.FC = () => {
 
                 <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
                   <div className="text-sm text-yellow-800">
-                    <strong>💡 TIP:</strong> CSV 파일을 업로드하면 자동으로 어떤 쇼핑몰의 파일인지 감지합니다. 감지 실패 시 수동으로 플랫폼을 선택할 수 있습니다.
+                    <strong> TIP:</strong> CSV 파일을 업로드하면 자동으로 어떤 쇼핑몰의 파일인지 감지합니다. 감지 실패 시 수동으로 플랫폼을 선택할 수 있습니다.
                   </div>
                 </div>
               </div>
@@ -1455,7 +1455,7 @@ const ProductCsvUploadPage: React.FC = () => {
                       <span className="text-sm font-medium text-gray-900">
                         오류 내역 {uploadResults.errors.length}건
                       </span>
-                      <span className="ml-2 text-blue-600">ℹ️</span>
+                      <span className="ml-2 text-blue-600"></span>
                     </div>
                     <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                       <div className="space-y-2 max-h-80 overflow-y-auto">
@@ -1819,7 +1819,7 @@ const ProductCsvUploadPage: React.FC = () => {
                         CSV 파일을 선택하거나 여기로 드래그하세요
                       </div>
                       <div className="inline-flex items-center px-4 py-2 bg-blue-500 text-white text-sm rounded hover:bg-blue-600">
-                        📁 파일 선택
+                         파일 선택
                       </div>
                     </label>
                   </div>
@@ -1902,7 +1902,7 @@ const ProductCsvUploadPage: React.FC = () => {
 
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
               <div className="text-sm text-blue-800">
-                    <strong>💡 TIP:</strong> CSV 파일을 업로드하면 자동으로 어떤 쇼핑몰의 파일인지 감지합니다. 감지 실패 시 수동으로 플랫폼을 선택할 수 있습니다.
+                    <strong> TIP:</strong> CSV 파일을 업로드하면 자동으로 어떤 쇼핑몰의 파일인지 감지합니다. 감지 실패 시 수동으로 플랫폼을 선택할 수 있습니다.
               </div>
             </div>
           </div>
@@ -1922,8 +1922,8 @@ const ProductCsvUploadPage: React.FC = () => {
           }`}>
             <div className="flex items-center gap-2">
               <span className="text-lg">
-                {toastMessage.type === 'success' ? '✅' : 
-                 toastMessage.type === 'error' ? '❌' : 'ℹ️'}
+                {toastMessage.type === 'success' ? '' : 
+                 toastMessage.type === 'error' ? '' : ''}
               </span>
               <span className="font-medium">{toastMessage.message}</span>
             </div>

@@ -152,7 +152,7 @@ const UsersGroupsPage: React.FC = () => {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">사용자 그룹</h1>
             <p className="text-sm text-gray-600 mt-1">
-              부서별, 팀별 사용자 그룹을 관리할 수 있습니다.
+              그룹별 사용자 관리
             </p>
           </div>
           <Button onClick={() => console.log("Add group")}>
@@ -219,7 +219,6 @@ const UsersGroupsPage: React.FC = () => {
         <Table
           data={filteredGroups}
           columns={columns}
-          keyField="id"
         />
       </Card>
 

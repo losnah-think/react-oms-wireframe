@@ -221,8 +221,8 @@ export class PageRenderer {
   }
 
   private renderProductGroups(): JSX.Element {
-    const ProductGroupsPage = require("../features/settings/ProductGroupsPage").default;
-    return <ProductGroupsPage />;
+    const ProductClassificationPage = require("../features/settings/ProductClassificationPage").default;
+    return <ProductClassificationPage />;
   }
 
   private renderIntegrations(): JSX.Element {

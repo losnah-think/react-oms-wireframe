@@ -62,7 +62,7 @@ const UsersSettingsPage: React.FC = () => {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">사용자 설정</h1>
             <p className="text-sm text-gray-600 mt-1">
-              시스템 사용자 관련 설정을 관리할 수 있습니다.
+              사용자 관련 설정 관리
             </p>
           </div>
           <Button onClick={handleSave}>

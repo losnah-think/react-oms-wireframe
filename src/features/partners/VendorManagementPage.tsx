@@ -291,7 +291,7 @@ const VendorManagementPage = () => {
               onClick={openAddModal}
               className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold whitespace-nowrap"
             >
-              ➕ {selectedType} 추가
+               {selectedType} 추가
             </button>
           </div>
           <p className="text-sm text-gray-500 mt-2">
@@ -372,7 +372,7 @@ const VendorManagementPage = () => {
                           : 'bg-green-50 text-green-600 hover:bg-green-100'
                       }`}
                     >
-                      {vendor.status === '사용중' ? '⏸️ 정지' : '▶️ 재개'}
+                      {vendor.status === '사용중' ? ' 정지' : ' 재개'}
                     </button>
                     <button
                       onClick={() => openEditModal(vendor)}
@@ -384,7 +384,7 @@ const VendorManagementPage = () => {
                       onClick={() => handleDelete(vendor)}
                       className="px-4 py-2 bg-red-100 text-red-600 rounded hover:bg-red-200 text-sm font-medium"
                     >
-                      🗑️ 삭제
+                       삭제
                     </button>
                   </div>
                 </div>

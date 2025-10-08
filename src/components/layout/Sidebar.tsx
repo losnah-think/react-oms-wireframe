@@ -22,7 +22,7 @@ interface SidebarProps {
 }
 
 const SETTINGS_DESCRIPTION =
-  "시스템 전반의 환경설정(연동, 상품 그룹, 브랜드/연도/시즌 등)을 관리합니다.";
+  "시스템 전반의 환경설정(연동, 상품 분류, 브랜드/연도/시즌 등)을 관리합니다.";
 
 const menuItems: MenuItem[] = [
   {
@@ -115,7 +115,7 @@ const menuItems: MenuItem[] = [
         label: "외부 연동",
         icon: "externalLink",
       },
-      { id: "settings-product-groups", label: "상품 그룹", icon: "copy" },
+      { id: "settings-product-groups", label: "상품 분류", icon: "copy" },
       {
         id: "settings-product-classifications",
         label: "상품 카테고리",

@@ -107,3 +107,90 @@ model InventoryMovement {
 
   @@map("inventory_movements")
 }
+
+// 사용자 관리 시스템 모델
+model User {
+  id          String    @id @default(cuid())
+  name        String
+  email       String    @unique
+  password    String
+  role        UserRole
+  department  String?
+  status      UserStatus @default(ACTIVE)
+  avatar      String?
+  phone       String?
+  lastLogin   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  groups      UserGroup[]
+  activityLogs ActivityLog[]
+
+  @@map("users")
+}
+
+model UserGroup {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  users       User[]
+
+  @@map("user_groups")
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  permissions Json     // 권한 배열을 JSON으로 저장
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("roles")
+}
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  userId      String
+  userName    String
+  action      String
+  resource    String
+  details     Json?    // 추가 세부사항을 JSON으로 저장
+  ipAddress   String?
+  userAgent   String?
+  timestamp   DateTime @default(now())
+  status      LogStatus @default(SUCCESS)
+  sessionId   String?
+
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("activity_logs")
+}
+
+// Enums
+enum UserRole {
+  ADMIN
+  MANAGER
+  OPERATOR
+  USER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  PENDING
+  SUSPENDED
+}
+
+enum LogStatus {
+  SUCCESS
+  FAILED
+  WARNING
+}

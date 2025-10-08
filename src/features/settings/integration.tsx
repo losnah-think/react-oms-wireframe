@@ -381,7 +381,7 @@ const IntegrationPage: React.FC = () => {
                 size="big"
                 onClick={() => setRegisterOpen(true)}
               >
-                ➕ 새 판매처 연결
+                새 판매처 연결
               </Button>
             </div>
           </div>
@@ -756,7 +756,7 @@ const IntegrationPage: React.FC = () => {
                                               }}
                                               className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
                                             >
-                                              📊 내역
+                                              내역
                                             </button>
                                             <button
                                               onClick={(e) => {
@@ -765,7 +765,7 @@ const IntegrationPage: React.FC = () => {
                                               }}
                                               className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
                                             >
-                                              ✏️ 수정
+                                              수정
                                             </button>
                                           </div>
                                           <button
@@ -775,7 +775,7 @@ const IntegrationPage: React.FC = () => {
                                             }}
                                             className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
                                           >
-                                            🗑️ 삭제
+                                            삭제
                                           </button>
                                         </div>
                                       </div>
