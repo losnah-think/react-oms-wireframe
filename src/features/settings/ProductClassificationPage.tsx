@@ -15,7 +15,6 @@ interface ProductGroup {
   id: string;
   name: string;
   description?: string;
-  channels: string[];
   isDefault?: boolean;
 }
 
@@ -24,21 +23,18 @@ const defaultGroups: ProductGroup[] = [
     id: "group-default",
     name: "미분류",
     description: "분류되지 않은 상품",
-    channels: [],
     isDefault: true,
   },
   {
     id: "group-1",
     name: "온라인 전용",
     description: "온라인 판매처 전용",
-    channels: ["스마트스토어", "쿠팡"],
     isDefault: false,
   },
   {
     id: "group-2",
     name: "오프라인 매장",
     description: "실제 매장 판매",
-    channels: ["백화점", "직영점"],
     isDefault: false,
   },
 ];
@@ -67,14 +63,6 @@ const saveGroups = (groups: ProductGroup[]) => {
   }
 };
 
-const channelPresets = [
-  "스마트스토어",
-  "쿠팡",
-  "지그재그",
-  "자사몰",
-  "오프라인",
-];
-
 const ProductClassificationPage: React.FC = () => {
   const [groups, setGroups] = React.useState<ProductGroup[]>(loadGroups);
   const [search, setSearch] = React.useState("");
@@ -83,7 +71,6 @@ const ProductClassificationPage: React.FC = () => {
   const [formState, setFormState] = React.useState({
     name: "",
     description: "",
-    channels: [] as string[],
   });
 
   React.useEffect(() => {
@@ -103,26 +90,15 @@ const ProductClassificationPage: React.FC = () => {
       setFormState({
         name: group.name,
         description: group.description ?? "",
-        channels: group.channels,
       });
     } else {
       setEditingId(null);
       setFormState({
         name: "",
         description: "",
-        channels: [],
       });
     }
     setModalOpen(true);
-  };
-
-  const toggleChannel = (channel: string) => {
-    setFormState((prev) => ({
-      ...prev,
-      channels: prev.channels.includes(channel)
-        ? prev.channels.filter((item) => item !== channel)
-        : [...prev.channels, channel],
-    }));
   };
 
 
@@ -136,7 +112,6 @@ const ProductClassificationPage: React.FC = () => {
       id: editingId ?? `group-${Date.now()}`,
       name: formState.name.trim(),
       description: formState.description.trim() || undefined,
-      channels: formState.channels,
       isDefault: editingId ? groups.find((g) => g.id === editingId)?.isDefault : false,
     };
 
@@ -189,15 +164,6 @@ const ProductClassificationPage: React.FC = () => {
       ),
     },
     {
-      key: "channels",
-      title: "판매 채널",
-      render: (channels) => (
-        <div className="text-sm text-gray-600">
-          {channels.length > 0 ? channels.join(", ") : "-"}
-        </div>
-      ),
-    },
-    {
       key: "actions",
       title: "작업",
       render: (_, group) => (
@@ -237,7 +203,7 @@ const ProductClassificationPage: React.FC = () => {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">상품 분류</h1>
-            <p className="text-sm text-gray-600 mt-1">판매 채널별 상품 분류 관리</p>
+            <p className="text-sm text-gray-600 mt-1">상품을 분류하여 관리할 수 있습니다</p>
           </div>
           <Button onClick={() => openModal()}>
             분류 추가
@@ -272,7 +238,7 @@ const ProductClassificationPage: React.FC = () => {
         <div className="space-y-4">
           <Input
             label="분류명"
-            placeholder="온라인 전용"
+            placeholder="예: 온라인 전용"
             value={formState.name}
             onChange={(event) => setFormState((prev) => ({ ...prev, name: event.target.value }))}
             fullWidth
@@ -280,41 +246,11 @@ const ProductClassificationPage: React.FC = () => {
           
           <Input
             label="설명"
-            placeholder="온라인 판매처 전용"
+            placeholder="예: 온라인 판매처 전용"
             value={formState.description}
             onChange={(event) => setFormState((prev) => ({ ...prev, description: event.target.value }))}
             fullWidth
           />
-
-          <div>
-            <div className="text-sm font-medium text-gray-700 mb-2">
-              판매 채널 <span className="text-gray-500 text-xs">(선택사항)</span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {channelPresets.map((channel) => {
-                const checked = formState.channels.includes(channel);
-                return (
-                  <button
-                    key={channel}
-                    type="button"
-                    onClick={() => toggleChannel(channel)}
-                    className={`px-3 py-1.5 rounded text-sm font-medium transition ${
-                      checked
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
-                  >
-                    {channel}
-                  </button>
-                );
-              })}
-            </div>
-            {formState.channels.length === 0 && (
-              <p className="text-xs text-gray-500 mt-2">
-                채널을 선택하지 않으면 모든 채널에서 사용할 수 있습니다
-              </p>
-            )}
-          </div>
 
           <div className="flex gap-3 pt-4">
             <Button variant="ghost" onClick={() => setModalOpen(false)} fullWidth>
