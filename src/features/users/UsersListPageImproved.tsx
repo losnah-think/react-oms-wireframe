@@ -1,22 +1,29 @@
 // src/features/users/UsersListPage.tsx (개선된 버전)
 import React, { useState } from "react";
-import { Container, Card, Button, Input, Table, type TableColumn } from "../../design-system";
+import { Container, Card, Button, Input, Table, type TableColumn, Modal } from "../../design-system";
 import { useUsers } from "./hooks/useUsers";
 import { usePermissions } from "./hooks/usePermissions";
 import { User, UserFilters, UserSort } from "./types";
-import UserAvatar from "./components/UserAvatar";
 import UserStatusBadge from "./components/UserStatusBadge";
 import UserRoleBadge from "./components/UserRoleBadge";
 import UserStatsCard from "./components/UserStatsCard";
-import PermissionGate from "./components/PermissionGate";
 
 const UsersListPage: React.FC = () => {
   const [filters, setFilters] = useState<UserFilters>({});
   const [sort, setSort] = useState<UserSort>({ field: 'name', direction: 'asc' });
   const [page, setPage] = useState(1);
   const pageSize = 10;
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: 'user' as any,
+    department: '',
+    phone: ''
+  });
 
-  const { users, loading, stats, total, refresh, updateUser, deleteUser } = useUsers({
+  const { users, loading, stats, total, refresh, updateUser, deleteUser, createUser } = useUsers({
     filters,
     sort,
     page,
@@ -158,11 +165,9 @@ const UsersListPage: React.FC = () => {
               시스템 사용자를 조회하고 관리할 수 있습니다.
             </p>
           </div>
-          <PermissionGate permission="users:create">
-            <Button onClick={() => console.log("Add user")}>
-              사용자 추가
-            </Button>
-          </PermissionGate>
+          <Button onClick={() => setShowAddModal(true)}>
+            사용자 추가
+          </Button>
         </div>
 
         {/* 통계 카드 */}
@@ -271,6 +276,82 @@ const UsersListPage: React.FC = () => {
           }}
         />
       </Card>
+
+      {/* 사용자 추가 모달 */}
+      <Modal
+        open={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        title="사용자 추가"
+      >
+        <div className="space-y-4">
+          <Input
+            label="이름"
+            placeholder="홍길동"
+            value={formData.name}
+            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+            fullWidth
+          />
+          <Input
+            label="이메일"
+            type="email"
+            placeholder="user@company.com"
+            value={formData.email}
+            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+            fullWidth
+          />
+          <Input
+            label="비밀번호"
+            type="password"
+            placeholder="••••••••"
+            value={formData.password}
+            onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+            fullWidth
+          />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">역할</label>
+            <select
+              value={formData.role}
+              onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value as any }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="user">사용자</option>
+              <option value="operator">운영자</option>
+              <option value="manager">매니저</option>
+              <option value="admin">관리자</option>
+            </select>
+          </div>
+          <Input
+            label="부서"
+            placeholder="IT팀"
+            value={formData.department}
+            onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
+            fullWidth
+          />
+          <Input
+            label="연락처"
+            placeholder="010-1234-5678"
+            value={formData.phone}
+            onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+            fullWidth
+          />
+          
+          <div className="flex gap-3 pt-4">
+            <Button variant="ghost" onClick={() => setShowAddModal(false)} fullWidth>
+              취소
+            </Button>
+            <Button 
+              onClick={async () => {
+                await createUser(formData);
+                setShowAddModal(false);
+                setFormData({ name: '', email: '', password: '', role: 'user', department: '', phone: '' });
+              }} 
+              fullWidth
+            >
+              등록
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </Container>
   );
 };

@@ -1,15 +1,20 @@
 // src/features/users/UsersRolesPage.tsx
 import React, { useState } from 'react';
-import { Container, Card, Button, Table, TableColumn, Badge, Modal } from '../../design-system';
+import { Container, Card, Button, Table, TableColumn, Badge, Modal, Input } from '../../design-system';
 import { Role, Permission, PERMISSION_GROUPS, getPermissionDisplayName } from './types/permissions';
 import { useRoles } from './hooks/useRoles';
 
 const UsersRolesPage: React.FC = () => {
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [showRoleModal, setShowRoleModal] = useState(false);
+  const [showAddRoleModal, setShowAddRoleModal] = useState(false);
   const [editingPermissions, setEditingPermissions] = useState<Permission[]>([]);
+  const [newRoleForm, setNewRoleForm] = useState({
+    name: '',
+    description: ''
+  });
 
-  const { roles, loading, updateRolePermissions } = useRoles();
+  const { roles, loading, updateRolePermissions, createRole } = useRoles();
 
   const handleEditRole = (role: Role) => {
     setSelectedRole(role);
@@ -62,6 +67,16 @@ const UsersRolesPage: React.FC = () => {
     }
   };
 
+  const handleCreateRole = async () => {
+    await createRole({
+      name: newRoleForm.name,
+      description: newRoleForm.description,
+      permissions: []
+    });
+    setShowAddRoleModal(false);
+    setNewRoleForm({ name: '', description: '' });
+  };
+
   const columns: TableColumn<Role>[] = [
     {
       key: 'name',
@@ -110,6 +125,9 @@ const UsersRolesPage: React.FC = () => {
               역할별 권한 설정
             </p>
           </div>
+          <Button onClick={() => setShowAddRoleModal(true)}>
+            역할 추가
+          </Button>
         </div>
 
         {/* 역할 목록 */}
@@ -120,6 +138,39 @@ const UsersRolesPage: React.FC = () => {
             loading={loading}
           />
         </Card>
+
+        {/* 역할 추가 모달 */}
+        <Modal
+          open={showAddRoleModal}
+          onClose={() => setShowAddRoleModal(false)}
+          title="역할 추가"
+        >
+          <div className="space-y-4">
+            <Input
+              label="역할명"
+              placeholder="예: 고객 지원팀"
+              value={newRoleForm.name}
+              onChange={(e) => setNewRoleForm(prev => ({ ...prev, name: e.target.value }))}
+              fullWidth
+            />
+            <Input
+              label="설명"
+              placeholder="역할에 대한 설명"
+              value={newRoleForm.description}
+              onChange={(e) => setNewRoleForm(prev => ({ ...prev, description: e.target.value }))}
+              fullWidth
+            />
+            
+            <div className="flex gap-3 pt-4">
+              <Button variant="ghost" onClick={() => setShowAddRoleModal(false)} fullWidth>
+                취소
+              </Button>
+              <Button onClick={handleCreateRole} fullWidth>
+                등록
+              </Button>
+            </div>
+          </div>
+        </Modal>
 
         {/* 권한 수정 모달 */}
         {showRoleModal && selectedRole && (

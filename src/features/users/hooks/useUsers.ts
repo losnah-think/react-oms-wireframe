@@ -1,6 +1,5 @@
 // src/features/users/hooks/useUsers.ts
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { userService } from '../../../lib/services/UserService';
+import { useState, useCallback } from 'react';
 import { User, UserFilters, CreateUserRequest, UpdateUserRequest, UserStats } from '../types';
 
 interface UseUsersOptions {
@@ -8,8 +7,6 @@ interface UseUsersOptions {
   sort?: any;
   page?: number;
   pageSize?: number;
-  autoRefresh?: boolean;
-  refreshInterval?: number;
 }
 
 interface UseUsersReturn {
@@ -31,206 +28,136 @@ interface UseUsersReturn {
   resetPasswords: (userIds: string[]) => Promise<{ success: number; failed: number }>;
 }
 
+// Mock 사용자 데이터
+const mockUsersData: User[] = [
+  { id: '1', name: '김철수', email: 'kim@fulgo.com', role: 'admin', companyId: 'company-1', companyName: '플고물류', department: 'IT팀', status: 'active', lastLogin: new Date().toISOString(), createdAt: '2024-01-15T00:00:00Z', updatedAt: new Date().toISOString(), avatar: '', phone: '010-1234-5678', groups: ['IT팀'], permissions: ['*'] },
+  { id: '2', name: '이영희', email: 'lee@fulgo.com', role: 'manager', companyId: 'company-1', companyName: '플고물류', department: '마케팅팀', status: 'active', lastLogin: new Date().toISOString(), createdAt: '2024-02-20T00:00:00Z', updatedAt: new Date().toISOString(), avatar: '', phone: '010-2345-6789', groups: ['마케팅팀'], permissions: ['users:read', 'users:create', 'users:update'] },
+  { id: '3', name: '정수진', email: 'jung@fulgo.com', role: 'operator', companyId: 'company-1', companyName: '플고물류', department: '운영팀', status: 'active', lastLogin: new Date().toISOString(), createdAt: '2024-04-05T00:00:00Z', updatedAt: new Date().toISOString(), avatar: '', phone: '010-4567-8901', groups: ['운영팀'], permissions: ['users:read', 'users:update'] },
+  { id: '4', name: '박민수', email: 'park@ace.com', role: 'manager', companyId: 'company-2', companyName: '에이스전자', department: '영업팀', status: 'active', lastLogin: new Date().toISOString(), createdAt: '2024-03-10T00:00:00Z', updatedAt: new Date().toISOString(), avatar: '', phone: '010-3456-7890', groups: ['영업팀'], permissions: ['users:read', 'users:create', 'users:update'] },
+  { id: '5', name: '최동욱', email: 'choi@ace.com', role: 'user', companyId: 'company-2', companyName: '에이스전자', department: 'IT팀', status: 'active', lastLogin: new Date().toISOString(), createdAt: '2024-05-01T00:00:00Z', updatedAt: new Date().toISOString(), avatar: '', phone: '010-5678-9012', groups: ['IT팀'], permissions: ['users:read:self'] },
+  { id: '6', name: '강미래', email: 'kang@best.com', role: 'manager', companyId: 'company-3', companyName: '베스트패션', department: '디자인팀', status: 'active', lastLogin: '2025-01-14T15:30:00Z', createdAt: '2024-06-15T00:00:00Z', updatedAt: '2025-01-14T15:30:00Z', avatar: '', phone: '010-6789-0123', groups: ['디자인팀'], permissions: ['users:read', 'users:create', 'users:update'] },
+  { id: '7', name: '윤서연', email: 'yoon@best.com', role: 'user', companyId: 'company-3', companyName: '베스트패션', department: '영업팀', status: 'active', lastLogin: new Date().toISOString(), createdAt: '2024-07-10T00:00:00Z', updatedAt: new Date().toISOString(), avatar: '', phone: '010-7890-1234', groups: ['영업팀'], permissions: ['users:read:self'] },
+  { id: '8', name: '한지민', email: 'han@smart.com', role: 'operator', companyId: 'company-4', companyName: '스마트식품', department: '물류팀', status: 'active', lastLogin: new Date().toISOString(), createdAt: '2024-08-01T00:00:00Z', updatedAt: new Date().toISOString(), avatar: '', phone: '010-8901-2345', groups: ['물류팀'], permissions: ['users:read', 'users:update'] },
+  { id: '9', name: '송지훈', email: 'song@smart.com', role: 'user', companyId: 'company-4', companyName: '스마트식품', department: '영업팀', status: 'pending', lastLogin: '-', createdAt: '2025-01-10T00:00:00Z', updatedAt: '2025-01-10T00:00:00Z', avatar: '', phone: '010-9012-3456', groups: [], permissions: [] },
+  { id: '10', name: '오민지', email: 'oh@fulgo.com', role: 'user', companyId: 'company-1', companyName: '플고물류', department: '고객지원팀', status: 'active', lastLogin: new Date().toISOString(), createdAt: '2024-09-01T00:00:00Z', updatedAt: new Date().toISOString(), avatar: '', phone: '010-0123-4567', groups: ['고객지원팀'], permissions: ['users:read:self'] },
+  { id: '11', name: '배성호', email: 'bae@ace.com', role: 'user', companyId: 'company-2', companyName: '에이스전자', department: '재무팀', status: 'suspended', lastLogin: '2025-01-05T10:00:00Z', createdAt: '2024-10-01T00:00:00Z', updatedAt: '2025-01-05T10:00:00Z', avatar: '', phone: '010-1234-0987', groups: ['재무팀'], permissions: [] },
+  { id: '12', name: '서지우', email: 'seo@best.com', role: 'user', companyId: 'company-3', companyName: '베스트패션', department: '마케팅팀', status: 'active', lastLogin: new Date().toISOString(), createdAt: '2024-11-01T00:00:00Z', updatedAt: new Date().toISOString(), avatar: '', phone: '010-2345-0987', groups: ['마케팅팀'], permissions: ['users:read:self'] }
+];
+
+const mockStats: UserStats = {
+  total: 12,
+  active: 9,
+  inactive: 0,
+  pending: 1,
+  suspended: 1,
+  admins: 1,
+  managers: 3,
+  operators: 2,
+  users: 6,
+  todayLogins: 8,
+  weeklyLogins: 10,
+  monthlyLogins: 12
+};
+
 export const useUsers = (options: UseUsersOptions = {}): UseUsersReturn => {
   const { 
     filters = {}, 
-    sort, 
     page: initialPage = 1, 
-    pageSize = 20,
-    autoRefresh = false, 
-    refreshInterval = 30000 
+    pageSize = 10
   } = options;
   
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [allUsers, setAllUsers] = useState<User[]>(mockUsersData);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [stats, setStats] = useState<UserStats | null>(null);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(initialPage);
-  const [totalPages, setTotalPages] = useState(0);
+  const [stats, setStats] = useState<UserStats | null>(mockStats);
+  const [currentPage, setCurrentPage] = useState(initialPage);
 
-  // 사용자 목록 조회
-  const fetchUsers = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const response = await userService.getUsers({
-        ...filters,
-        page: filters.page || page,
-        limit: filters.limit || pageSize,
-        sortBy: sort?.field,
-        sortOrder: sort?.direction
-      });
-      
-      setUsers(response.users);
-      setTotal(response.total);
-      setPage(response.page);
-      setTotalPages(response.totalPages);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '사용자 목록을 가져오는데 실패했습니다';
-      setError(errorMessage);
-      console.error('사용자 목록 조회 실패:', err);
-    } finally {
-      setLoading(false);
+  // 필터링된 사용자 목록
+  const filteredUsers = allUsers.filter(user => {
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      const matches = 
+        user.name.toLowerCase().includes(searchLower) ||
+        user.email.toLowerCase().includes(searchLower) ||
+        (user.companyName && user.companyName.toLowerCase().includes(searchLower));
+      if (!matches) return false;
     }
-  }, [filters, page, pageSize, sort]);
+    if (filters.companyId && user.companyId !== filters.companyId) return false;
+    if (filters.role && user.role !== filters.role) return false;
+    if (filters.status && user.status !== filters.status) return false;
+    if (filters.department && !user.department.includes(filters.department)) return false;
+    return true;
+  });
 
-  // 통계 조회
-  const fetchStats = useCallback(async () => {
-    try {
-      const statsData = await userService.getUserStats();
-      setStats(statsData);
-    } catch (err) {
-      console.error('사용자 통계 조회 실패:', err);
-      // 에러 발생 시 기본 통계로 설정
-      setStats({
-        total: 0,
-        active: 0,
-        inactive: 0,
-        pending: 0,
-        suspended: 0,
-        admins: 0,
-        managers: 0,
-        operators: 0,
-        users: 0,
-        todayLogins: 0,
-        weeklyLogins: 0,
-        monthlyLogins: 0
-      });
-    }
-  }, []);
+  const total = filteredUsers.length;
+  const totalPages = Math.ceil(total / pageSize);
+  
+  // 페이지네이션
+  const startIndex = (currentPage - 1) * pageSize;
+  const users = filteredUsers.slice(startIndex, startIndex + pageSize);
 
-  // 새로고침
   const refresh = useCallback(async () => {
-    await Promise.all([fetchUsers(), fetchStats()]);
-  }, [fetchUsers, fetchStats]);
+    setStats(mockStats);
+  }, []);
 
-  // 사용자 생성
   const createUser = useCallback(async (userData: CreateUserRequest) => {
-    try {
-      setError(null);
-      await userService.createUser(userData);
-      await refresh(); // 목록 새로고침
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '사용자 생성에 실패했습니다';
-      setError(errorMessage);
-      throw err;
-    }
-  }, [refresh]);
+    const newUser: User = {
+      id: String(allUsers.length + 1),
+      name: userData.name,
+      email: userData.email,
+      role: userData.role,
+      companyId: 'company-1',
+      companyName: '플고물류',
+      department: userData.department || '',
+      status: 'active',
+      lastLogin: '-',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      avatar: '',
+      phone: userData.phone || '',
+      groups: [],
+      permissions: []
+    };
+    setAllUsers(prev => [...prev, newUser]);
+  }, [allUsers.length]);
 
-  // 사용자 수정
   const updateUser = useCallback(async (id: string, updates: UpdateUserRequest) => {
-    try {
-      setError(null);
-      await userService.updateUser(id, updates);
-      await refresh(); // 목록 새로고침
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '사용자 수정에 실패했습니다';
-      setError(errorMessage);
-      throw err;
-    }
-  }, [refresh]);
+    setAllUsers(prev => prev.map(user =>
+      user.id === id ? { ...user, ...updates, updatedAt: new Date().toISOString() } : user
+    ));
+  }, []);
 
-  // 사용자 삭제
   const deleteUser = useCallback(async (id: string) => {
-    try {
-      setError(null);
-      await userService.deleteUser(id);
-      await refresh(); // 목록 새로고침
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '사용자 삭제에 실패했습니다';
-      setError(errorMessage);
-      throw err;
-    }
-  }, [refresh]);
+    setAllUsers(prev => prev.filter(user => user.id !== id));
+  }, []);
 
-  // 일괄 상태 변경
   const batchUpdateStatus = useCallback(async (userIds: string[], status: 'active' | 'inactive' | 'pending' | 'suspended') => {
-    try {
-      setError(null);
-      await userService.batchUpdateStatus(userIds, status);
-      await refresh(); // 목록 새로고침
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '일괄 상태 변경에 실패했습니다';
-      setError(errorMessage);
-      throw err;
-    }
-  }, [refresh]);
+    setAllUsers(prev => prev.map(user =>
+      userIds.includes(user.id) ? { ...user, status } : user
+    ));
+  }, []);
 
-  // 일괄 삭제
   const batchDeleteUsers = useCallback(async (userIds: string[]) => {
-    try {
-      setError(null);
-      await userService.batchDeleteUsers(userIds);
-      await refresh(); // 목록 새로고침
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '일괄 삭제에 실패했습니다';
-      setError(errorMessage);
-      throw err;
-    }
-  }, [refresh]);
+    setAllUsers(prev => prev.filter(user => !userIds.includes(user.id)));
+  }, []);
 
-  // 사용자 검색
   const searchUsers = useCallback(async (query: string): Promise<User[]> => {
-    try {
-      return await userService.searchUsers(query);
-    } catch (err) {
-      console.error('사용자 검색 실패:', err);
-      return [];
-    }
-  }, []);
+    return allUsers.filter(user =>
+      user.name.toLowerCase().includes(query.toLowerCase()) ||
+      user.email.toLowerCase().includes(query.toLowerCase())
+    );
+  }, [allUsers]);
 
-  // 사용자 데이터 내보내기
   const exportUsers = useCallback(async (userIds: string[], format: 'csv' | 'json' = 'csv') => {
-    try {
-      setError(null);
-      const result = await userService.exportUsers(userIds, format);
-      
-      if (format === 'csv') {
-        const filename = `users_export_${new Date().toISOString().split('T')[0]}.csv`;
-        userService.downloadCSV(result as Blob, filename);
-      }
-      
-      return result;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '사용자 데이터 내보내기에 실패했습니다';
-      setError(errorMessage);
-      throw err;
-    }
-  }, []);
+    const exportData = allUsers.filter(user => userIds.includes(user.id));
+    console.log('Export users:', exportData, format);
+    return exportData;
+  }, [allUsers]);
 
-  // 비밀번호 초기화
   const resetPasswords = useCallback(async (userIds: string[]) => {
-    try {
-      setError(null);
-      return await userService.resetPasswords(userIds);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '비밀번호 초기화에 실패했습니다';
-      setError(errorMessage);
-      throw err;
-    }
+    console.log('Reset passwords for:', userIds);
+    return { success: userIds.length, failed: 0 };
   }, []);
-
-  // 초기 데이터 로드
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
-
-  // 자동 새로고침
-  useEffect(() => {
-    if (!autoRefresh) return;
-
-    const interval = setInterval(refresh, refreshInterval);
-    return () => clearInterval(interval);
-  }, [autoRefresh, refreshInterval, refresh]);
-
-  // 필터 변경 시 페이지 초기화
-  useEffect(() => {
-    if (filters.search || filters.role || filters.status || filters.department) {
-      setPage(1);
-    }
-  }, [filters.search, filters.role, filters.status, filters.department]);
 
   return {
     users,
@@ -238,7 +165,7 @@ export const useUsers = (options: UseUsersOptions = {}): UseUsersReturn => {
     error,
     stats,
     total,
-    page,
+    page: currentPage,
     totalPages,
     refresh,
     updateUser,
