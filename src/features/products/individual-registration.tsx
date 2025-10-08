@@ -19,6 +19,24 @@ const IndividualRegistrationPage: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
 
+  // 사용자의 기본 분류 불러오기 (localStorage 사용)
+  React.useEffect(() => {
+    const loadDefaultClassification = () => {
+      try {
+        const saved = localStorage.getItem("defaultProductClassification");
+        if (saved) {
+          setFormData(prev => ({
+            ...prev,
+            category: saved
+          }));
+        }
+      } catch (error) {
+        console.error("기본 분류 불러오기 실패:", error);
+      }
+    };
+    loadDefaultClassification();
+  }, []);
+
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
       ...prev,

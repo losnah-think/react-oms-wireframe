@@ -64,6 +64,26 @@ const ProductCategoryPage: React.FC = () => {
     parentId: null as string | null,
     description: "",
   });
+  const [defaultClassificationId, setDefaultClassificationId] = React.useState<string | null>(null);
+  const [isSavingDefault, setIsSavingDefault] = React.useState(false);
+
+  // localStorage를 사용한 기본 분류 키
+  const DEFAULT_CLASSIFICATION_KEY = "defaultProductClassification";
+
+  // 사용자의 기본 분류 불러오기 (localStorage 사용)
+  React.useEffect(() => {
+    const loadDefaultClassification = () => {
+      try {
+        const saved = localStorage.getItem(DEFAULT_CLASSIFICATION_KEY);
+        if (saved) {
+          setDefaultClassificationId(saved);
+        }
+      } catch (error) {
+        console.error("기본 분류 불러오기 실패:", error);
+      }
+    };
+    loadDefaultClassification();
+  }, []);
 
   React.useEffect(() => {
     saveCategories(categories);
@@ -213,7 +233,39 @@ const ProductCategoryPage: React.FC = () => {
       return;
     }
     if (!window.confirm("삭제하시겠습니까?")) return;
+    
+    // 기본값으로 설정된 카테고리를 삭제하는 경우 기본값 해제
+    if (defaultClassificationId === id) {
+      setDefaultClassificationId(null);
+      saveDefaultClassification(null);
+    }
+    
     setCategories((prev) => prev.filter((category) => category.id !== id));
+  };
+
+  const saveDefaultClassification = (classificationId: string | null) => {
+    setIsSavingDefault(true);
+    try {
+      // localStorage에 저장
+      if (classificationId) {
+        localStorage.setItem(DEFAULT_CLASSIFICATION_KEY, classificationId);
+      } else {
+        localStorage.removeItem(DEFAULT_CLASSIFICATION_KEY);
+      }
+      
+      setDefaultClassificationId(classificationId);
+      window.alert(classificationId ? "기본 분류가 저장되었습니다" : "기본 분류가 해제되었습니다");
+    } catch (error) {
+      console.error("기본 분류 저장 실패:", error);
+      window.alert("기본 분류 저장에 실패했습니다");
+    } finally {
+      setIsSavingDefault(false);
+    }
+  };
+
+  const handleSetAsDefault = (id: string) => {
+    if (!window.confirm("이 카테고리를 기본값으로 설정하시겠습니까?")) return;
+    saveDefaultClassification(id);
   };
 
   const columns: TableColumn<Category>[] = [
@@ -222,9 +274,12 @@ const ProductCategoryPage: React.FC = () => {
       title: "카테고리",
       render: (value, cat) => (
         <div style={{ paddingLeft: `${cat.depth * 24}px` }}>
-          <div className="font-medium text-gray-900">
+          <div className="font-medium text-gray-900 flex items-center gap-2">
             {cat.depth > 0 && <span className="text-gray-400 mr-2">└</span>}
             {value}
+            {defaultClassificationId === cat.id && (
+              <Badge variant="primary">기본값</Badge>
+            )}
           </div>
           {cat.description && (
             <div className="text-sm text-gray-500 mt-1">{cat.description}</div>
@@ -261,6 +316,25 @@ const ProductCategoryPage: React.FC = () => {
           >
             삭제
           </Button>
+          {defaultClassificationId !== cat.id ? (
+            <Button
+              size="small"
+              variant="ghost"
+              onClick={() => handleSetAsDefault(cat.id)}
+              disabled={isSavingDefault}
+            >
+              기본값 설정
+            </Button>
+          ) : (
+            <Button
+              size="small"
+              variant="ghost"
+              onClick={() => saveDefaultClassification(null)}
+              disabled={isSavingDefault}
+            >
+              기본값 해제
+            </Button>
+          )}
         </div>
       ),
     },

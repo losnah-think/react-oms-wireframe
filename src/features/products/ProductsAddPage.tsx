@@ -55,6 +55,24 @@ const ProductsAddPage: React.FC = () => {
     description: '상품 상세페이지에 들어갈 설명 HTML 코드를 포함해서 입력해주세요.'
   });
 
+  // 사용자의 기본 분류 불러오기 (localStorage 사용)
+  React.useEffect(() => {
+    const loadDefaultClassification = () => {
+      try {
+        const saved = localStorage.getItem("defaultProductClassification");
+        if (saved) {
+          setFormData(prev => ({
+            ...prev,
+            productClassification: saved
+          }));
+        }
+      } catch (error) {
+        console.error("기본 분류 불러오기 실패:", error);
+      }
+    };
+    loadDefaultClassification();
+  }, []);
+
   const sections = [
     { id: 'images', label: '대표 이미지' },
     { id: 'name', label: '상품명' },
