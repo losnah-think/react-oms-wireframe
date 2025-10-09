@@ -49,7 +49,11 @@ const saveCategories = (categories: Category[]) => {
   }
 };
 
-const ProductCategoryPage: React.FC = () => {
+interface ProductCategoryPageProps {
+  pageType?: 'category' | 'classification';
+}
+
+const ProductCategoryPage: React.FC<ProductCategoryPageProps> = ({ pageType }) => {
   const router = useRouter();
   const [categories, setCategories] = React.useState<Category[]>(loadCategories);
   const [search, setSearch] = React.useState("");
@@ -63,10 +67,10 @@ const ProductCategoryPage: React.FC = () => {
   const [defaultClassificationId, setDefaultClassificationId] = React.useState<string | null>(null);
   const [isSavingDefault, setIsSavingDefault] = React.useState(false);
 
-  // 현재 페이지가 "상품 분류" 페이지인지 확인 (product-classifications)
+  // 현재 페이지가 "상품 분류" 페이지인지 확인
   // product-categories는 기본값 기능 없음
   // product-classifications는 기본값 기능 있음
-  const isClassificationPage = router.pathname === '/settings/product-classifications';
+  const isClassificationPage = pageType === 'classification' || router.pathname === '/settings/product-classifications';
 
   // localStorage를 사용한 기본 분류 키
   const DEFAULT_CLASSIFICATION_KEY = "defaultProductClassification";

@@ -1,3 +1,6 @@
-const ProductCategoryPage =
-  require("@/features/settings/ProductCategoryPage").default;
-export default ProductCategoryPage;
+import React from "react";
+import ProductCategoryPage from "@/features/settings/ProductCategoryPage";
+
+export default function ProductClassificationsPage() {
+  return <ProductCategoryPage pageType="classification" />;
+}
