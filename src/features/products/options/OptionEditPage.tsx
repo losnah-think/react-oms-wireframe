@@ -166,8 +166,10 @@ const OptionEditPage: React.FC<OptionEditPageProps> = ({
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
                   placeholder="옵션명을 입력하세요"
-                  error={errors.name}
                 />
+                {errors.name && (
+                  <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+                )}
               </div>
 
               <div>
@@ -178,8 +180,10 @@ const OptionEditPage: React.FC<OptionEditPageProps> = ({
                   value={formData.sku}
                   onChange={(e) => handleInputChange('sku', e.target.value)}
                   placeholder="SKU를 입력하세요"
-                  error={errors.sku}
                 />
+                {errors.sku && (
+                  <p className="mt-1 text-sm text-red-600">{errors.sku}</p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -192,8 +196,10 @@ const OptionEditPage: React.FC<OptionEditPageProps> = ({
                     value={formData.price}
                     onChange={(e) => handleInputChange('price', e.target.value)}
                     placeholder="0"
-                    error={errors.price}
                   />
+                  {errors.price && (
+                    <p className="mt-1 text-sm text-red-600">{errors.price}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -204,8 +210,10 @@ const OptionEditPage: React.FC<OptionEditPageProps> = ({
                     value={formData.cost}
                     onChange={(e) => handleInputChange('cost', e.target.value)}
                     placeholder="0"
-                    error={errors.cost}
                   />
+                  {errors.cost && (
+                    <p className="mt-1 text-sm text-red-600">{errors.cost}</p>
+                  )}
                 </div>
               </div>
 
@@ -218,8 +226,10 @@ const OptionEditPage: React.FC<OptionEditPageProps> = ({
                   value={formData.stock}
                   onChange={(e) => handleInputChange('stock', e.target.value)}
                   placeholder="0"
-                  error={errors.stock}
                 />
+                {errors.stock && (
+                  <p className="mt-1 text-sm text-red-600">{errors.stock}</p>
+                )}
               </div>
             </div>
           </Card>
