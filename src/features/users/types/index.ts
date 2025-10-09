@@ -1,4 +1,5 @@
 // src/features/users/types/index.ts
+import { Permission as PermissionType } from './permissions';
 
 export interface Company {
   id: string;
@@ -22,8 +23,10 @@ export interface User {
   updatedAt: string;
   avatar?: string;
   phone?: string;
-  groups: string[];
-  permissions: string[];
+  groups: string[]; // 그룹 이름 배열 (표시용)
+  groupIds: string[]; // 그룹 ID 배열
+  permissions: PermissionType[]; // 개별 권한
+  effectivePermissions?: PermissionType[]; // 그룹 권한 + 개별 권한
 }
 
 // API 요청/응답 타입

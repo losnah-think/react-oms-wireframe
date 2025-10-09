@@ -4,6 +4,7 @@ export { default as UserStatusBadge } from './UserStatusBadge';
 export { default as UserRoleBadge } from './UserRoleBadge';
 export { default as UserStatsCard } from './UserStatsCard';
 export { default as UserFormModal } from './UserFormModal';
+export { default as UserPermissionsModal } from './UserPermissionsModal';
 export { default as ConfirmModal } from './ConfirmModal';
 export { default as BatchActions } from './BatchActions';
 export { default as UserFilters } from './UserFilters';

@@ -1,7 +1,8 @@
 // src/features/users/components/UserFormModal.tsx
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Input, Container } from '../../../design-system';
-import { User, CreateUserRequest, UpdateUserRequest, UserRole, UserStatus } from '../types';
+import { Modal, Button, Input, Container, Badge } from '../../../design-system';
+import { User, CreateUserRequest, UpdateUserRequest, UserRole, UserStatus, UserGroup } from '../types';
+import { Permission, PERMISSION_GROUPS, getPermissionDisplayName } from '../types/permissions';
 
 interface UserFormData {
   name: string;
@@ -12,24 +13,28 @@ interface UserFormData {
   department: string;
   phone: string;
   status: UserStatus;
+  groupIds: string[];
+  companyId: string;
 }
 
 interface UserFormModalProps {
-  isOpen: boolean;
+  open: boolean;
   onClose: () => void;
   user?: User;
   mode: 'create' | 'edit';
   onSave: (userData: CreateUserRequest | UpdateUserRequest) => Promise<void>;
   loading?: boolean;
+  availableGroups?: UserGroup[];
 }
 
 const UserFormModal: React.FC<UserFormModalProps> = ({
-  isOpen,
+  open,
   onClose,
   user,
   mode,
   onSave,
-  loading = false
+  loading = false,
+  availableGroups = []
 }) => {
   const [formData, setFormData] = useState<UserFormData>({
     name: '',
@@ -39,7 +44,9 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     role: 'USER',
     department: '',
     phone: '',
-    status: 'ACTIVE'
+    status: 'ACTIVE',
+    groupIds: [],
+    companyId: ''
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -56,7 +63,9 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         role: user.role as UserRole,
         department: user.department || '',
         phone: user.phone || '',
-        status: user.status as UserStatus
+        status: user.status as UserStatus,
+        groupIds: user.groupIds || [],
+        companyId: user.companyId || ''
       });
     } else {
       // 생성 모드일 때 폼 초기화
@@ -68,13 +77,15 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         role: 'USER',
         department: '',
         phone: '',
-        status: 'ACTIVE'
+        status: 'ACTIVE',
+        groupIds: [],
+        companyId: ''
       });
     }
     setErrors({});
-  }, [mode, user, isOpen]);
+  }, [mode, user, open]);
 
-  const handleInputChange = (field: keyof UserFormData, value: string) => {
+  const handleInputChange = (field: keyof UserFormData, value: string | string[]) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -88,6 +99,27 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
       }));
     }
   };
+
+  const handleGroupToggle = (groupId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      groupIds: prev.groupIds.includes(groupId)
+        ? prev.groupIds.filter(id => id !== groupId)
+        : [...prev.groupIds, groupId]
+    }));
+  };
+
+  // 선택된 그룹들의 총 권한 계산
+  const getGroupPermissions = (): Permission[] => {
+    const selectedGroups = availableGroups.filter(g => formData.groupIds.includes(g.id));
+    const allPermissions = new Set<Permission>();
+    selectedGroups.forEach(group => {
+      group.permissions.forEach(p => allPermissions.add(p as Permission));
+    });
+    return Array.from(allPermissions);
+  };
+
+  const groupPermissions = getGroupPermissions();
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -184,7 +216,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose}>
+    <Modal open={open} onClose={handleClose}>
       <div className="p-6">
         <div className="mb-6">
           <h2 className="text-xl font-semibold text-gray-900">
@@ -326,6 +358,90 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
               />
             </div>
           </div>
+
+          {/* 회사 선택 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              회사
+            </label>
+            <select
+              value={formData.companyId}
+              onChange={(e) => handleInputChange('companyId', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              disabled={isSubmitting}
+            >
+              <option value="">회사 선택</option>
+              <option value="company-1">플고물류</option>
+              <option value="company-2">에이스전자</option>
+              <option value="company-3">베스트패션</option>
+              <option value="company-4">스마트식품</option>
+            </select>
+          </div>
+
+          {/* 사용자 그룹 선택 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              사용자 그룹 {formData.groupIds.length > 0 && `(${formData.groupIds.length}개 선택됨)`}
+            </label>
+            <div className="border border-gray-300 rounded-md p-3 max-h-48 overflow-y-auto">
+              {availableGroups.length === 0 ? (
+                <p className="text-sm text-gray-500">사용 가능한 그룹이 없습니다</p>
+              ) : (
+                <div className="space-y-2">
+                  {availableGroups
+                    .filter(group => !formData.companyId || group.companyId === formData.companyId)
+                    .map((group) => (
+                      <label
+                        key={group.id}
+                        className="flex items-start p-2 hover:bg-gray-50 rounded cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={formData.groupIds.includes(group.id)}
+                          onChange={() => handleGroupToggle(group.id)}
+                          className="mt-1 w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                          disabled={isSubmitting}
+                        />
+                        <div className="ml-3 flex-1">
+                          <div className="text-sm font-medium text-gray-900">{group.name}</div>
+                          <div className="text-xs text-gray-500">{group.description}</div>
+                          <div className="text-xs text-gray-400 mt-1">
+                            {group.permissions.length}개 권한 • {group.companyName}
+                          </div>
+                        </div>
+                      </label>
+                    ))}
+                </div>
+              )}
+            </div>
+            <p className="mt-1 text-xs text-gray-500">
+              선택한 그룹의 권한이 이 사용자에게 자동으로 적용됩니다
+            </p>
+          </div>
+
+          {/* 그룹에서 상속되는 권한 표시 */}
+          {groupPermissions.length > 0 && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h4 className="text-sm font-medium text-blue-900 mb-2">
+                그룹에서 상속되는 권한 ({groupPermissions.length}개)
+              </h4>
+              <div className="flex flex-wrap gap-1">
+                {groupPermissions.slice(0, 10).map((permission) => (
+                  <Badge key={permission} variant="primary" size="small">
+                    {getPermissionDisplayName(permission)}
+                  </Badge>
+                ))}
+                {groupPermissions.length > 10 && (
+                  <Badge variant="secondary" size="small">
+                    +{groupPermissions.length - 10}개 더
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs text-blue-700 mt-2">
+                이 권한들은 선택한 그룹에서 자동으로 상속됩니다
+              </p>
+            </div>
+          )}
 
           {/* 제출 에러 */}
           {errors.submit && (

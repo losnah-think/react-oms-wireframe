@@ -2,17 +2,39 @@
 import React, { useState } from "react";
 import { Container, Card, Button, Input, Table, type TableColumn } from "../../design-system";
 import { useUsers } from "./hooks/useUsers";
-import { User, UserFilters, UserSort } from "./types";
+import { User, UserFilters, UserSort, CreateUserRequest, UpdateUserRequest, UserGroup } from "./types";
 import UserAvatar from "./components/UserAvatar";
 import UserStatusBadge from "./components/UserStatusBadge";
 import UserRoleBadge from "./components/UserRoleBadge";
 import UserStatsCard from "./components/UserStatsCard";
+import UserFormModal from "./components/UserFormModal";
+import UserPermissionsModal from "./components/UserPermissionsModal";
+import { Permission } from "./types/permissions";
+
+// Mock 그룹 데이터 (실제로는 API에서 가져와야 함)
+const mockGroups: UserGroup[] = [
+  { id: "1", name: "IT팀", companyId: "company-1", companyName: "플고물류", description: "시스템 개발 및 유지보수", memberCount: 3, permissions: ['products:read', 'products:update', 'orders:read', 'settings:read', 'system:logs'], createdAt: '2024-01-01', members: [] },
+  { id: "2", name: "마케팅팀", companyId: "company-1", companyName: "플고물류", description: "마케팅 전략 및 캠페인 관리", memberCount: 1, permissions: ['products:read', 'orders:read', 'reports:read', 'reports:export'], createdAt: '2024-01-01', members: [] },
+  { id: "3", name: "운영팀", companyId: "company-1", companyName: "플고물류", description: "일반 운영 업무", memberCount: 1, permissions: ['products:read', 'products:update', 'orders:read', 'orders:update', 'orders:process'], createdAt: '2024-01-01', members: [] },
+  { id: "4", name: "영업팀", companyId: "company-2", companyName: "에이스전자", description: "제품 영업", memberCount: 1, permissions: ['products:read', 'orders:read', 'orders:create', 'reports:read'], createdAt: '2024-01-01', members: [] },
+  { id: "5", name: "IT팀", companyId: "company-2", companyName: "에이스전자", description: "시스템 관리", memberCount: 1, permissions: ['products:read', 'products:update', 'settings:read'], createdAt: '2024-01-01', members: [] },
+  { id: "6", name: "디자인팀", companyId: "company-3", companyName: "베스트패션", description: "제품 디자인", memberCount: 1, permissions: ['products:read', 'products:create', 'products:update'], createdAt: '2024-01-01', members: [] },
+  { id: "7", name: "영업팀", companyId: "company-3", companyName: "베스트패션", description: "판매 영업", memberCount: 1, permissions: ['products:read', 'orders:read', 'orders:create'], createdAt: '2024-01-01', members: [] },
+  { id: "8", name: "물류팀", companyId: "company-4", companyName: "스마트식품", description: "배송 및 물류", memberCount: 1, permissions: ['orders:read', 'orders:update', 'orders:process'], createdAt: '2024-01-01', members: [] },
+  { id: "9", name: "영업팀", companyId: "company-4", companyName: "스마트식품", description: "영업 관리", memberCount: 1, permissions: ['products:read', 'orders:read', 'orders:create', 'reports:read'], createdAt: '2024-01-01', members: [] },
+];
 
 const UsersListPage: React.FC = () => {
   const [filters, setFilters] = useState<UserFilters>({});
   const [sort, setSort] = useState<UserSort>({ field: 'name', direction: 'asc' });
   const [page, setPage] = useState(1);
   const pageSize = 10;
+
+  // 모달 상태
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showPermissionsModal, setShowPermissionsModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   const { users, loading, stats, total, refresh, updateUser, deleteUser } = useUsers({
     filters,
@@ -38,6 +60,80 @@ const UsersListPage: React.FC = () => {
       field,
       direction: prev.field === field && prev.direction === 'asc' ? 'desc' : 'asc'
     }));
+  };
+
+  // 사용자 추가
+  const handleAddUser = () => {
+    setSelectedUser(null);
+    setShowAddModal(true);
+  };
+
+  // 사용자 수정
+  const handleEditUser = (user: User) => {
+    setSelectedUser(user);
+    setShowEditModal(true);
+  };
+
+  // 권한 설정
+  const handleEditPermissions = (user: User) => {
+    setSelectedUser(user);
+    setShowPermissionsModal(true);
+  };
+
+  // 사용자 생성 저장
+  const handleSaveNewUser = async (userData: CreateUserRequest | UpdateUserRequest) => {
+    try {
+      // TODO: API 호출로 교체
+      console.log('사용자 생성:', userData);
+      await new Promise(resolve => setTimeout(resolve, 500)); // 임시 딜레이
+      refresh();
+      setShowAddModal(false);
+    } catch (error) {
+      console.error('사용자 생성 실패:', error);
+      throw error;
+    }
+  };
+
+  // 사용자 수정 저장
+  const handleSaveEditUser = async (userData: CreateUserRequest | UpdateUserRequest) => {
+    if (!selectedUser) return;
+    
+    try {
+      await updateUser(selectedUser.id, userData as UpdateUserRequest);
+      refresh();
+      setShowEditModal(false);
+      setSelectedUser(null);
+    } catch (error) {
+      console.error('사용자 수정 실패:', error);
+      throw error;
+    }
+  };
+
+  // 권한 저장
+  const handleSavePermissions = async (userId: string, permissions: Permission[]) => {
+    try {
+      // TODO: API 호출로 교체
+      console.log('권한 저장:', { userId, permissions });
+      await new Promise(resolve => setTimeout(resolve, 500)); // 임시 딜레이
+      refresh();
+      setShowPermissionsModal(false);
+      setSelectedUser(null);
+    } catch (error) {
+      console.error('권한 저장 실패:', error);
+      throw error;
+    }
+  };
+
+  // 사용자 삭제
+  const handleDeleteUser = async (userId: string) => {
+    if (window.confirm('정말로 이 사용자를 삭제하시겠습니까?')) {
+      try {
+        await deleteUser(userId);
+        refresh();
+      } catch (error) {
+        console.error('사용자 삭제 실패:', error);
+      }
+    }
   };
 
   const columns: TableColumn<User>[] = [
@@ -106,14 +202,21 @@ const UsersListPage: React.FC = () => {
           <Button
             variant="ghost"
             size="small"
-            onClick={() => console.log("Edit user", user.id)}
+            onClick={() => handleEditUser(user)}
           >
             수정
           </Button>
           <Button
             variant="ghost"
             size="small"
-            onClick={() => deleteUser(user.id)}
+            onClick={() => handleEditPermissions(user)}
+          >
+            권한
+          </Button>
+          <Button
+            variant="ghost"
+            size="small"
+            onClick={() => handleDeleteUser(user.id)}
           >
             삭제
           </Button>
@@ -132,7 +235,7 @@ const UsersListPage: React.FC = () => {
               사용자 조회 및 관리
             </p>
           </div>
-          <Button onClick={() => console.log("Add user")}>
+          <Button onClick={handleAddUser}>
             사용자 추가
           </Button>
         </div>
@@ -243,6 +346,43 @@ const UsersListPage: React.FC = () => {
           }}
         />
       </Card>
+
+      {/* 사용자 추가 모달 */}
+      <UserFormModal
+        open={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        mode="create"
+        onSave={handleSaveNewUser}
+        loading={loading}
+        availableGroups={mockGroups}
+      />
+
+      {/* 사용자 수정 모달 */}
+      <UserFormModal
+        open={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedUser(null);
+        }}
+        user={selectedUser || undefined}
+        mode="edit"
+        onSave={handleSaveEditUser}
+        loading={loading}
+        availableGroups={mockGroups}
+      />
+
+      {/* 권한 설정 모달 */}
+      <UserPermissionsModal
+        open={showPermissionsModal}
+        onClose={() => {
+          setShowPermissionsModal(false);
+          setSelectedUser(null);
+        }}
+        user={selectedUser}
+        onSave={handleSavePermissions}
+        loading={loading}
+        userGroups={mockGroups}
+      />
     </Container>
   );
 };
