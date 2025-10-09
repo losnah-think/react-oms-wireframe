@@ -1,4 +1,5 @@
 import React from "react";
+import { useRouter } from "next/router";
 import {
   Container,
   Card,
@@ -55,6 +56,7 @@ const saveCategories = (categories: Category[]) => {
 };
 
 const ProductCategoryPage: React.FC = () => {
+  const router = useRouter();
   const [categories, setCategories] = React.useState<Category[]>(loadCategories);
   const [search, setSearch] = React.useState("");
   const [isModalOpen, setModalOpen] = React.useState(false);
@@ -67,11 +69,16 @@ const ProductCategoryPage: React.FC = () => {
   const [defaultClassificationId, setDefaultClassificationId] = React.useState<string | null>(null);
   const [isSavingDefault, setIsSavingDefault] = React.useState(false);
 
+  // 현재 페이지가 "상품 분류" 페이지인지 확인 (product-classifications)
+  const isClassificationPage = router.pathname.includes('product-classifications');
+
   // localStorage를 사용한 기본 분류 키
   const DEFAULT_CLASSIFICATION_KEY = "defaultProductClassification";
 
-  // 사용자의 기본 분류 불러오기 (localStorage 사용)
+  // 사용자의 기본 분류 불러오기 (localStorage 사용) - 상품 분류 페이지에서만
   React.useEffect(() => {
+    if (!isClassificationPage) return;
+    
     const loadDefaultClassification = () => {
       try {
         const saved = localStorage.getItem(DEFAULT_CLASSIFICATION_KEY);
@@ -83,7 +90,7 @@ const ProductCategoryPage: React.FC = () => {
       }
     };
     loadDefaultClassification();
-  }, []);
+  }, [isClassificationPage]);
 
   React.useEffect(() => {
     saveCategories(categories);
@@ -234,8 +241,8 @@ const ProductCategoryPage: React.FC = () => {
     }
     if (!window.confirm("삭제하시겠습니까?")) return;
     
-    // 기본값으로 설정된 카테고리를 삭제하는 경우 기본값 해제
-    if (defaultClassificationId === id) {
+    // 상품 분류 페이지에서만: 기본값으로 설정된 카테고리를 삭제하는 경우 기본값 해제
+    if (isClassificationPage && defaultClassificationId === id) {
       setDefaultClassificationId(null);
       saveDefaultClassification(null);
     }
@@ -277,7 +284,7 @@ const ProductCategoryPage: React.FC = () => {
           <div className="font-medium text-gray-900 flex items-center gap-2">
             {cat.depth > 0 && <span className="text-gray-400 mr-2">└</span>}
             {value}
-            {defaultClassificationId === cat.id && (
+            {isClassificationPage && defaultClassificationId === cat.id && (
               <Badge variant="primary">기본값</Badge>
             )}
           </div>
@@ -316,24 +323,29 @@ const ProductCategoryPage: React.FC = () => {
           >
             삭제
           </Button>
-          {defaultClassificationId !== cat.id ? (
-            <Button
-              size="small"
-              variant="ghost"
-              onClick={() => handleSetAsDefault(cat.id)}
-              disabled={isSavingDefault}
-            >
-              기본값 설정
-            </Button>
-          ) : (
-            <Button
-              size="small"
-              variant="ghost"
-              onClick={() => saveDefaultClassification(null)}
-              disabled={isSavingDefault}
-            >
-              기본값 해제
-            </Button>
+          {/* 상품 분류 페이지에서만 기본값 설정 버튼 표시 */}
+          {isClassificationPage && (
+            <>
+              {defaultClassificationId !== cat.id ? (
+                <Button
+                  size="small"
+                  variant="ghost"
+                  onClick={() => handleSetAsDefault(cat.id)}
+                  disabled={isSavingDefault}
+                >
+                  기본값 설정
+                </Button>
+              ) : (
+                <Button
+                  size="small"
+                  variant="ghost"
+                  onClick={() => saveDefaultClassification(null)}
+                  disabled={isSavingDefault}
+                >
+                  기본값 해제
+                </Button>
+              )}
+            </>
           )}
         </div>
       ),
