@@ -1044,28 +1044,10 @@ const IntegrationPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">동기화 설정</label>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">상품 정보 동기화</span>
-                        <input type="checkbox" defaultChecked className="rounded" />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">주문 정보 동기화</span>
-                        <input type="checkbox" defaultChecked className="rounded" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">동기화 주기</label>
-                    <select className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                      <option value="1">1시간마다</option>
-                      <option value="6">6시간마다</option>
-                      <option value="12">12시간마다</option>
-                      <option value="24">24시간마다</option>
-                    </select>
+                  <div className="bg-blue-50 rounded-lg p-4">
+                    <p className="text-sm text-blue-800">
+                      💡 동기화는 <strong>스케줄 관리</strong>에서 설정할 수 있습니다.
+                    </p>
                   </div>
 
                   <div className="flex justify-end gap-3 pt-4 border-t">
