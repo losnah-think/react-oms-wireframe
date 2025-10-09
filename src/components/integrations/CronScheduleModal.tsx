@@ -162,8 +162,15 @@ const CronScheduleModal: React.FC<CronScheduleModalProps> = ({
   };
 
   const validateCronExpression = (expression: string): boolean => {
-    const cronRegex = /^(\*|([0-5]?\d)) (\*|([01]?\d|2[0-3])) (\*|([0-2]?\d|3[01])) (\*|([0]?\d|1[0-2])) (\*|([0-6]))$/;
-    return cronRegex.test(expression);
+    if (!expression.trim()) return false;
+    
+    // 기본적인 크론 표현식 형태 검증 (더 유연하게)
+    const parts = expression.trim().split(/\s+/);
+    if (parts.length !== 5) return false;
+    
+    // 각 부분이 숫자, *, 또는 */숫자 형태인지 확인
+    const cronPartRegex = /^(\*|\*\/\d+|\d+(-\d+)?(,\d+(-\d+)?)*)$/;
+    return parts.every(part => cronPartRegex.test(part));
   };
 
 
@@ -210,7 +217,6 @@ const CronScheduleModal: React.FC<CronScheduleModalProps> = ({
     onClose();
   };
 
-  const isValid = schedule.expression.trim() && validateCronExpression(schedule.expression);
 
   return (
     <Modal
@@ -499,18 +505,9 @@ const CronScheduleModal: React.FC<CronScheduleModalProps> = ({
                   type="text"
                   value={schedule.expression}
                   onChange={(e) => handleExpressionChange(e.target.value)}
-                  className={`flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono ${
-                    schedule.expression && !isValid ? 'border-red-300' : 'border-gray-300'
-                  }`}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
                   placeholder="0 0 * * * (매일 자정)"
                 />
-                {isValid && (
-                  <div className="flex items-center text-green-600">
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                )}
               </div>
               <div className="text-sm text-gray-600">
                 <p>형식: 분(0-59) 시(0-23) 일(1-31) 월(1-12) 요일(0-7)</p>
@@ -560,7 +557,7 @@ const CronScheduleModal: React.FC<CronScheduleModalProps> = ({
             </Button>
             <Button
               onClick={handleSave}
-              disabled={!schedule.name.trim() || !schedule.expression.trim() || !isValid || !(schedule.types && schedule.types.length > 0)}
+              disabled={!schedule.name.trim() || !schedule.expression.trim() || !(schedule.types && schedule.types.length > 0)}
             >
               저장
             </Button>
