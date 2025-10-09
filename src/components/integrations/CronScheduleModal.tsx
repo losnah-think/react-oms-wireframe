@@ -76,6 +76,7 @@ const CronScheduleModal: React.FC<CronScheduleModalProps> = ({
           description: '',
           isActive: true,
           type: 'product',
+          types: ['product'],
           vendorId: '',
           vendorName: '',
           platform: '',
@@ -173,8 +174,8 @@ const CronScheduleModal: React.FC<CronScheduleModalProps> = ({
     }
     
     // 수집 유형 검증
-    const selectedTypes = schedule.types || [schedule.type];
-    if (!selectedTypes.length || selectedTypes.filter(t => t).length === 0) {
+    const selectedTypes = schedule.types || [];
+    if (!selectedTypes.length) {
       alert('최소 하나 이상의 수집 유형을 선택해주세요.');
       return;
     }
@@ -223,6 +224,8 @@ const CronScheduleModal: React.FC<CronScheduleModalProps> = ({
         <div className="grid grid-cols-2 gap-6">
           {/* 왼쪽: 기본 정보 */}
           <div className="space-y-4">
+          <h3 className="text-base font-semibold text-gray-900 mb-3">기본 정보</h3>
+          
           {/* 판매처 선택 */}
           {schedule.isGlobal ? (
             // 전체 판매처 일괄 적용
@@ -323,6 +326,17 @@ const CronScheduleModal: React.FC<CronScheduleModalProps> = ({
               rows={3}
               placeholder="스케줄에 대한 설명을 입력하세요"
             />
+          </div>
+
+          <div className="bg-gray-50 rounded-lg p-3">
+            <div className="text-xs text-gray-600">
+              <div className="font-medium mb-1">스케줄 설정 가이드</div>
+              <div className="space-y-1">
+                <div>• 전체 적용: 모든 판매처에 동일한 스케줄 적용</div>
+                <div>• 개별 적용: 특정 판매처에만 적용</div>
+                <div>• 수집 유형은 복수 선택 가능</div>
+              </div>
+            </div>
           </div>
           </div>
 
@@ -546,7 +560,7 @@ const CronScheduleModal: React.FC<CronScheduleModalProps> = ({
             </Button>
             <Button
               onClick={handleSave}
-              disabled={!schedule.name.trim() || !schedule.expression.trim() || !isValid}
+              disabled={!schedule.name.trim() || !schedule.expression.trim() || !isValid || !(schedule.types && schedule.types.length > 0)}
             >
               저장
             </Button>
