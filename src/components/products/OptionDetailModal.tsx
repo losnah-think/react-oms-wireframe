@@ -313,7 +313,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     onChange={(e) => handleChange('productName', e.target.value)}
                     placeholder="상품명을 입력하세요"
                     error={errors.productName}
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
                 <div>
@@ -322,7 +322,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     value={formData.optionName}
                     onChange={(e) => handleChange('optionName', e.target.value)}
                     placeholder="옵션명을 입력하세요"
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
                 <div>
@@ -331,7 +331,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     value={formData.purchaseOptionName}
                     onChange={(e) => handleChange('purchaseOptionName', e.target.value)}
                     placeholder="사입옵션명을 입력하세요"
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
                 <div>
@@ -340,7 +340,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     value={formData.optionCode}
                     onChange={(e) => handleChange('optionCode', e.target.value)}
                     placeholder="옵션코드를 입력하세요"
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
                 <div>
@@ -349,7 +349,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     value={formData.barcode}
                     onChange={(e) => handleChange('barcode', e.target.value)}
                     placeholder="바코드번호를 입력하세요"
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
                 <div>
@@ -358,7 +358,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     value={formData.barcode2}
                     onChange={(e) => handleChange('barcode2', e.target.value)}
                     placeholder="바코드번호2를 입력하세요"
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
                 <div>
@@ -367,7 +367,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     value={formData.barcode3}
                     onChange={(e) => handleChange('barcode3', e.target.value)}
                     placeholder="바코드번호3를 입력하세요"
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
               </div>
@@ -384,7 +384,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     value={formData.sellingPrice}
                     onChange={(e) => handleChange('sellingPrice', e.target.value)}
                     placeholder="0"
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
                 <div>
@@ -394,7 +394,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     value={formData.currentPrice}
                     onChange={(e) => handleChange('currentPrice', e.target.value)}
                     placeholder="0"
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
                 <div>
@@ -404,7 +404,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     value={formData.costPrice}
                     onChange={(e) => handleChange('costPrice', e.target.value)}
                     placeholder="0"
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
                 <div>
@@ -414,7 +414,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     value={formData.supplyPrice}
                     onChange={(e) => handleChange('supplyPrice', e.target.value)}
                     placeholder="0"
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
               </div>
@@ -431,7 +431,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     value={formData.stock}
                     onChange={(e) => handleChange('stock', e.target.value)}
                     placeholder="0"
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
                 <div>
@@ -441,7 +441,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     value={formData.safetyStock}
                     onChange={(e) => handleChange('safetyStock', e.target.value)}
                     placeholder="0"
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
                 <div>
@@ -450,7 +450,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     value={formData.location}
                     onChange={(e) => handleChange('location', e.target.value)}
                     placeholder="상품위치를 입력하세요"
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
                 <div>
@@ -525,7 +525,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     type="date"
                     value={formData.expectedArrivalDate}
                     onChange={(e) => handleChange('expectedArrivalDate', e.target.value)}
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
                 <div>
@@ -535,7 +535,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     value={formData.expectedArrivalQuantity}
                     onChange={(e) => handleChange('expectedArrivalQuantity', e.target.value)}
                     placeholder="0"
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
                 <div>
@@ -558,7 +558,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     value={formData.registrationDate}
                     onChange={(e) => handleChange('registrationDate', e.target.value)}
                     disabled
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
                 <div>
@@ -568,7 +568,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     value={formData.lastModifiedDate}
                     onChange={(e) => handleChange('lastModifiedDate', e.target.value)}
                     disabled
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
                 <div>
@@ -577,7 +577,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     value={formData.color}
                     onChange={(e) => handleChange('color', e.target.value)}
                     placeholder="색상을 입력하세요"
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
                 <div>
@@ -586,7 +586,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     value={formData.size}
                     onChange={(e) => handleChange('size', e.target.value)}
                     placeholder="사이즈를 입력하세요"
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
                 <div>
@@ -595,7 +595,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     value={formData.manufacturer}
                     onChange={(e) => handleChange('manufacturer', e.target.value)}
                     placeholder="제조사를 입력하세요"
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
                 <div>
@@ -604,7 +604,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     value={formData.countryOfOrigin}
                     onChange={(e) => handleChange('countryOfOrigin', e.target.value)}
                     placeholder="제조국을 입력하세요"
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
                 <div>
@@ -613,7 +613,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     value={formData.material}
                     onChange={(e) => handleChange('material', e.target.value)}
                     placeholder="소재를 입력하세요"
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
                 <div>
@@ -623,7 +623,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     value={formData.weight}
                     onChange={(e) => handleChange('weight', e.target.value)}
                     placeholder="0"
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
                 <div>
@@ -633,7 +633,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     value={formData.width}
                     onChange={(e) => handleChange('width', e.target.value)}
                     placeholder="0"
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
                 <div>
@@ -643,7 +643,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     value={formData.length}
                     onChange={(e) => handleChange('length', e.target.value)}
                     placeholder="0"
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
                 <div>
@@ -653,7 +653,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     value={formData.height}
                     onChange={(e) => handleChange('height', e.target.value)}
                     placeholder="0"
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -672,7 +672,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     value={formData.optionMemo1}
                     onChange={(e) => handleChange('optionMemo1', e.target.value)}
                     placeholder="옵션메모1"
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
                 <div>
@@ -681,7 +681,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     value={formData.optionMemo2}
                     onChange={(e) => handleChange('optionMemo2', e.target.value)}
                     placeholder="옵션메모2"
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
                 <div>
@@ -690,7 +690,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     value={formData.optionMemo3}
                     onChange={(e) => handleChange('optionMemo3', e.target.value)}
                     placeholder="옵션메모3"
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
                 <div>
@@ -699,7 +699,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     value={formData.optionMemo4}
                     onChange={(e) => handleChange('optionMemo4', e.target.value)}
                     placeholder="옵션메모4"
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
                 <div>
@@ -708,7 +708,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     value={formData.optionMemo5}
                     onChange={(e) => handleChange('optionMemo5', e.target.value)}
                     placeholder="옵션메모5"
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
                 <div>
@@ -717,7 +717,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     value={formData.englishOptionName}
                     onChange={(e) => handleChange('englishOptionName', e.target.value)}
                     placeholder="영문옵션명을 입력하세요"
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
                 <div>
@@ -726,7 +726,7 @@ const OptionDetailModal: React.FC<OptionDetailModalProps> = ({ isOpen, option, o
                     value={formData.foreignCurrencyPrice}
                     onChange={(e) => handleChange('foreignCurrencyPrice', e.target.value)}
                     placeholder="해외통화옵션가를 입력하세요"
-                    className="w-full"
+                    fullWidth={true}
                   />
                 </div>
                 <div>
