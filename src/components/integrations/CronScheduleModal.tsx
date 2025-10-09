@@ -15,10 +15,13 @@ export interface CronSchedule {
   expression: string;
   description: string;
   isActive: boolean;
-  type: 'product' | 'inventory' | 'category' | 'order';
+  type: 'product' | 'inventory' | 'category' | 'order'; // 하위 호환성을 위해 유지
+  types?: ('product' | 'inventory' | 'category' | 'order')[]; // 멀티 셀렉트
   vendorId: string;
   vendorName: string;
   platform: string;
+  isGlobal?: boolean; // 전체 판매처 대상 여부
+  vendorIds?: string[]; // 글로벌 스케줄일 경우 선택된 판매처 ID 목록
   lastRun?: string;
   nextRun?: string;
   runCount?: number;
@@ -60,6 +63,31 @@ const CronScheduleModal: React.FC<CronScheduleModalProps> = ({
   const [dailyTime, setDailyTime] = useState<string>('09:00');
   const [weeklyDay, setWeeklyDay] = useState<number>(1); // 1=월요일
   const [weeklyTime, setWeeklyTime] = useState<string>('09:00');
+
+  // initialSchedule이 변경될 때 schedule 업데이트
+  React.useEffect(() => {
+    if (open) {
+      if (initialSchedule) {
+        setSchedule(initialSchedule);
+      } else {
+        setSchedule({
+          name: '',
+          expression: '',
+          description: '',
+          isActive: true,
+          type: 'product',
+          vendorId: '',
+          vendorName: '',
+          platform: '',
+          runCount: 0,
+          successCount: 0,
+          errorCount: 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      }
+    }
+  }, [open, initialSchedule]);
 
   // 크론 표현식 생성 함수들
   const generateCronExpression = (): string => {
@@ -144,6 +172,13 @@ const CronScheduleModal: React.FC<CronScheduleModalProps> = ({
       return;
     }
     
+    // 수집 유형 검증
+    const selectedTypes = schedule.types || [schedule.type];
+    if (!selectedTypes.length || selectedTypes.filter(t => t).length === 0) {
+      alert('최소 하나 이상의 수집 유형을 선택해주세요.');
+      return;
+    }
+    
     if (!schedule.expression.trim()) {
       alert('크론 표현식을 입력해주세요.');
       return;
@@ -154,7 +189,23 @@ const CronScheduleModal: React.FC<CronScheduleModalProps> = ({
       return;
     }
     
-    onSave(schedule);
+    // 판매처 선택 검증
+    if (schedule.isGlobal) {
+      // 글로벌 스케줄: 자동으로 모든 판매처 ID 설정
+      const finalSchedule = {
+        ...schedule,
+        vendorIds: vendors.map(v => v.id)
+      };
+      onSave(finalSchedule);
+    } else {
+      // 개별 스케줄: vendorId 필수
+      if (!schedule.vendorId) {
+        alert('판매처를 선택해주세요.');
+        return;
+      }
+      onSave(schedule);
+    }
+    
     onClose();
   };
 
@@ -171,31 +222,46 @@ const CronScheduleModal: React.FC<CronScheduleModalProps> = ({
       <div className="p-6 space-y-6">
         {/* 기본 정보 */}
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              판매처 선택 *
-            </label>
-            <select
-              value={schedule.vendorId}
-              onChange={(e) => {
-                const selectedVendor = vendors.find(v => v.id === e.target.value);
-                setSchedule(prev => ({ 
-                  ...prev, 
-                  vendorId: e.target.value,
-                  vendorName: selectedVendor?.name || '',
-                  platform: selectedVendor?.platform || ''
-                }));
-              }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">판매처를 선택하세요</option>
-              {vendors.map((vendor) => (
-                <option key={vendor.id} value={vendor.id}>
-                  {vendor.name} ({vendor.platform})
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* 판매처 선택 */}
+          {schedule.isGlobal ? (
+            // 전체 판매처 일괄 적용
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <div className="space-y-2">
+                <div className="text-gray-900 font-medium">적용 대상</div>
+                <div className="text-gray-700 text-sm">
+                  전체 판매처 일괄 적용 (현재 {vendors.length}개)
+                </div>
+              </div>
+            </div>
+          ) : (
+            // 개별 판매처 선택
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                판매처 선택 *
+              </label>
+              <select
+                value={schedule.vendorId}
+                onChange={(e) => {
+                  const selectedVendor = vendors.find(v => v.id === e.target.value);
+                  setSchedule(prev => ({ 
+                    ...prev, 
+                    vendorId: e.target.value,
+                    vendorName: selectedVendor?.name || '',
+                    platform: selectedVendor?.platform || ''
+                  }));
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={!!initialSchedule?.vendorId}
+              >
+                <option value="">판매처를 선택하세요</option>
+                {vendors.map((vendor) => (
+                  <option key={vendor.id} value={vendor.id}>
+                    {vendor.name} ({vendor.platform})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -212,18 +278,37 @@ const CronScheduleModal: React.FC<CronScheduleModalProps> = ({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              수집 유형 *
+              수집 유형 * (복수 선택 가능)
             </label>
-            <select
-              value={schedule.type}
-              onChange={(e) => setSchedule(prev => ({ ...prev, type: e.target.value as any }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="product">상품 정보</option>
-              <option value="inventory">재고 정보</option>
-              <option value="category">카테고리 정보</option>
-              <option value="order">주문 정보</option>
-            </select>
+            <div className="space-y-2 border border-gray-300 rounded-lg p-3">
+              {[
+                { value: 'product', label: '상품 정보' },
+                { value: 'order', label: '주문 정보' }
+              ].map((option) => (
+                <div key={option.value} className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id={`type-${option.value}`}
+                    checked={(schedule.types || [schedule.type]).includes(option.value as any)}
+                    onChange={(e) => {
+                      const currentTypes = schedule.types || [schedule.type];
+                      const newTypes = e.target.checked
+                        ? [...currentTypes.filter(t => t), option.value as any]
+                        : currentTypes.filter(t => t !== option.value);
+                      setSchedule(prev => ({ 
+                        ...prev, 
+                        types: newTypes,
+                        type: newTypes[0] || 'product' // 하위 호환성
+                      }));
+                    }}
+                    className="rounded border-gray-300"
+                  />
+                  <label htmlFor={`type-${option.value}`} className="text-sm text-gray-700 cursor-pointer">
+                    {option.label}
+                  </label>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div>
@@ -254,11 +339,11 @@ const CronScheduleModal: React.FC<CronScheduleModalProps> = ({
                 onClick={() => setScheduleType('interval')}
                 className={`p-4 text-left border rounded-lg transition-colors ${
                   scheduleType === 'interval'
-                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-300 hover:border-gray-400'
                 }`}
               >
-                <div className="font-medium mb-1">🔄 주기적 반복</div>
+                <div className="font-medium mb-1">주기적 반복</div>
                 <div className="text-sm text-gray-600">정해진 간격으로 반복 실행</div>
               </button>
               
@@ -266,11 +351,11 @@ const CronScheduleModal: React.FC<CronScheduleModalProps> = ({
                 onClick={() => setScheduleType('daily')}
                 className={`p-4 text-left border rounded-lg transition-colors ${
                   scheduleType === 'daily'
-                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-300 hover:border-gray-400'
                 }`}
               >
-                <div className="font-medium mb-1">📅 매일 실행</div>
+                <div className="font-medium mb-1">매일 실행</div>
                 <div className="text-sm text-gray-600">매일 특정 시간에 실행</div>
               </button>
               
@@ -278,11 +363,11 @@ const CronScheduleModal: React.FC<CronScheduleModalProps> = ({
                 onClick={() => setScheduleType('weekly')}
                 className={`p-4 text-left border rounded-lg transition-colors ${
                   scheduleType === 'weekly'
-                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-300 hover:border-gray-400'
                 }`}
               >
-                <div className="font-medium mb-1">📆 매주 실행</div>
+                <div className="font-medium mb-1">매주 실행</div>
                 <div className="text-sm text-gray-600">매주 특정 요일과 시간에 실행</div>
               </button>
               
@@ -290,11 +375,11 @@ const CronScheduleModal: React.FC<CronScheduleModalProps> = ({
                 onClick={() => setScheduleType('custom')}
                 className={`p-4 text-left border rounded-lg transition-colors ${
                   scheduleType === 'custom'
-                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-300 hover:border-gray-400'
                 }`}
               >
-                <div className="font-medium mb-1">⚙️ 사용자 정의</div>
+                <div className="font-medium mb-1">직접 설정</div>
                 <div className="text-sm text-gray-600">크론 표현식으로 직접 설정</div>
               </button>
             </div>

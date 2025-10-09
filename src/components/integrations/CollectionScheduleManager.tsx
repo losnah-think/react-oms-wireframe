@@ -20,7 +20,7 @@ export interface ConnectedShopOption {
   platform: string;
 }
 
-type ResourceType = "orders" | "products" | "stock" | "deliveries";
+type ResourceType = "orders" | "products";
 
 type FrequencyOption = "15m" | "30m" | "1h" | "4h" | "12h" | "24h";
 
@@ -40,8 +40,6 @@ type CollectionSchedule = {
 const resourceOptions = [
   { value: "orders", label: "주문" },
   { value: "products", label: "상품" },
-  { value: "stock", label: "재고" },
-  { value: "deliveries", label: "배송" },
 ];
 
 const frequencyOptions: { value: FrequencyOption; label: string }[] = [

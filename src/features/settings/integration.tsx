@@ -373,9 +373,29 @@ const IntegrationPage: React.FC = () => {
             <div className="flex gap-3">
               <Button 
                 size="big"
-                onClick={() => setIsCronModalOpen(true)}
+                onClick={() => {
+                  setSelectedCronSchedule({
+                    name: '',
+                    expression: '',
+                    description: '',
+                    isActive: true,
+                    type: 'product',
+                    types: [],
+                    vendorId: '',
+                    vendorName: '',
+                    platform: '',
+                    isGlobal: true,
+                    vendorIds: [],
+                    runCount: 0,
+                    successCount: 0,
+                    errorCount: 0,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                  });
+                  setIsCronModalOpen(true);
+                }}
               >
-                ⏰ 수집 주기 설정
+                전체 판매처 스케줄 추가
               </Button>
               <Button 
                 size="big"
@@ -452,6 +472,108 @@ const IntegrationPage: React.FC = () => {
           </button>
         </div>
 
+        {/* 전체 판매처 스케줄 목록 */}
+        {(() => {
+          const globalSchedules = cronSchedules.filter(s => s.isGlobal);
+          if (globalSchedules.length === 0) return null;
+          
+          return (
+            <div className="bg-blue-50 rounded-xl p-6 mb-6 shadow-sm border border-blue-200">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">전체 판매처 스케줄</h2>
+                  <p className="text-sm text-gray-600 mt-1">모든 판매처에 일괄 적용</p>
+                </div>
+                <div className="text-sm text-gray-600">
+                  활성 {globalSchedules.filter(s => s.isActive).length}개 / 전체 {globalSchedules.length}개
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {globalSchedules.map((schedule) => (
+                  <div key={schedule.id} className="bg-white border border-blue-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className={`w-3 h-3 rounded-full flex-shrink-0 ${schedule.isActive ? 'bg-green-500' : 'bg-gray-400'}`} />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-gray-900 text-sm truncate">{schedule.name}</div>
+                          <div className="text-xs text-gray-500">
+                            {(() => {
+                              const types = schedule.types || [schedule.type];
+                              const typeLabels = types.map(t => 
+                                t === 'product' ? '상품' :
+                                t === 'inventory' ? '재고' :
+                                t === 'category' ? '카테고리' : '주문'
+                              );
+                              return typeLabels.join(', ');
+                            })()}
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCronScheduleToggle(schedule.id!);
+                        }}
+                        className={`px-2 py-1 text-xs rounded-full transition-colors flex-shrink-0 ${
+                          schedule.isActive 
+                            ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {schedule.isActive ? '활성' : '비활성'}
+                      </button>
+                    </div>
+
+                    <div className="space-y-2 mb-4">
+                      <div className="text-xs text-gray-600">
+                        <span className="font-medium">주기:</span> 
+                        <span className="ml-1 font-mono bg-gray-100 px-1 rounded">{schedule.expression}</span>
+                      </div>
+                      <div className="text-xs text-gray-500">{schedule.description}</div>
+                      <div className="text-xs text-gray-600">
+                        전체 판매처 ({schedule.vendorIds?.length || vendorIntegrations.length}개)
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewHistory(schedule);
+                          }}
+                          className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                        >
+                          내역
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCronScheduleEdit(schedule);
+                          }}
+                          className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+                        >
+                          수정
+                        </button>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCronScheduleDelete(schedule.id!);
+                        }}
+                        className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* 검색 필터 - 크고 단순하게 */}
         <div className="bg-white rounded-xl p-6 mb-6 shadow-sm">
           <div className="grid grid-cols-3 gap-4">
@@ -492,7 +614,7 @@ const IntegrationPage: React.FC = () => {
                   <th className="w-1/4 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">판매처</th>
                   <th className="w-1/6 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">플랫폼</th>
                   <th className="w-1/6 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
-                  <th className="w-1/6 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상품/카테고리</th>
+                  <th className="w-1/6 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상품 수</th>
                   <th className="w-1/6 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">수집 주기</th>
                   <th className="w-1/6 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">마지막 실행</th>
                   <th className="w-1/6 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">작업</th>
@@ -501,7 +623,7 @@ const IntegrationPage: React.FC = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredVendorIntegrations.map((integration) => {
                   const isExpanded = selectedVendorIntegration === integration.id;
-                  const vendorSchedules = cronSchedules.filter(s => s.vendorId === integration.id);
+                  const vendorSchedules = cronSchedules.filter(s => !s.isGlobal && s.vendorId === integration.id);
                   const activeSchedules = vendorSchedules.filter(s => s.isActive);
                   
                   return (
@@ -571,18 +693,15 @@ const IntegrationPage: React.FC = () => {
                               )}
                             </div>
                           ) : (
-                            `${integration.productCount}개 / ${integration.categoryCount}개`
+                            `${integration.productCount}개`
                           )}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-2">
                             {vendorSchedules.length > 0 ? (
-                              <div className="flex items-center gap-1">
-                                <span className="text-blue-600">⏰</span>
-                                <span className="text-sm text-gray-600">
-                                  {activeSchedules.length}/{vendorSchedules.length}개 활성
-                                </span>
-                              </div>
+                              <span className="text-sm text-gray-600">
+                                {activeSchedules.length}/{vendorSchedules.length}개 활성
+                              </span>
                             ) : (
                               <span className="text-sm text-gray-400">설정 없음</span>
                             )}
@@ -595,9 +714,11 @@ const IntegrationPage: React.FC = () => {
                                   description: '',
                                   isActive: true,
                                   type: 'product',
+                                  types: [],
                                   vendorId: integration.id,
                                   vendorName: integration.vendorName,
                                   platform: integration.platform,
+                                  isGlobal: false,
                                   runCount: 0,
                                   successCount: 0,
                                   errorCount: 0,
@@ -608,7 +729,7 @@ const IntegrationPage: React.FC = () => {
                               }}
                               className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
                             >
-                              설정
+                              추가
                             </button>
                           </div>
                         </td>
@@ -691,9 +812,11 @@ const IntegrationPage: React.FC = () => {
                                         description: '',
                                         isActive: true,
                                         type: 'product',
+                                        types: [],
                                         vendorId: integration.id,
                                         vendorName: integration.vendorName,
                                         platform: integration.platform,
+                                        isGlobal: false,
                                         runCount: 0,
                                         successCount: 0,
                                         errorCount: 0,
@@ -704,7 +827,7 @@ const IntegrationPage: React.FC = () => {
                                     }}
                                     className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                                   >
-                                    + 새 스케줄 추가
+                                    스케줄 추가
                                   </button>
                                 </div>
                                 
@@ -715,14 +838,20 @@ const IntegrationPage: React.FC = () => {
                                         <div className="flex items-start justify-between mb-3">
                                           <div className="flex items-center gap-3">
                                             <div className={`w-3 h-3 rounded-full ${schedule.isActive ? 'bg-green-500' : 'bg-gray-400'}`} />
-                                            <div className="flex-1">
-                                              <div className="font-semibold text-gray-900 text-sm">{schedule.name}</div>
-                                              <div className="text-xs text-gray-500">
-                                                {schedule.type === 'product' ? '상품 정보' :
-                                                 schedule.type === 'inventory' ? '재고 정보' :
-                                                 schedule.type === 'category' ? '카테고리 정보' : '주문 정보'}
-                                              </div>
-                                            </div>
+                                        <div className="flex-1">
+                                          <div className="font-semibold text-gray-900 text-sm">{schedule.name}</div>
+                                          <div className="text-xs text-gray-500">
+                                            {(() => {
+                                              const types = schedule.types || [schedule.type];
+                                              const typeLabels = types.map(t => 
+                                                t === 'product' ? '상품' :
+                                                t === 'inventory' ? '재고' :
+                                                t === 'category' ? '카테고리' : '주문'
+                                              );
+                                              return typeLabels.join(', ');
+                                            })()}
+                                          </div>
+                                        </div>
                                           </div>
                                           <button
                                             onClick={(e) => {
@@ -783,8 +912,7 @@ const IntegrationPage: React.FC = () => {
                                   </div>
                                 ) : (
                                   <div className="text-center py-8 bg-gray-50 rounded-lg">
-                                    <div className="text-gray-400 text-4xl mb-2">⏰</div>
-                                    <p className="text-gray-600 mb-4">아직 수집 주기가 설정되지 않았습니다.</p>
+                                    <p className="text-gray-500 mb-4">설정된 수집 주기가 없습니다.</p>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -794,9 +922,11 @@ const IntegrationPage: React.FC = () => {
                                           description: '',
                                           isActive: true,
                                           type: 'product',
+                                          types: [],
                                           vendorId: integration.id,
                                           vendorName: integration.vendorName,
                                           platform: integration.platform,
+                                          isGlobal: false,
                                           runCount: 0,
                                           successCount: 0,
                                           errorCount: 0,
@@ -807,7 +937,7 @@ const IntegrationPage: React.FC = () => {
                                       }}
                                       className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                                     >
-                                      첫 번째 스케줄 만들기
+                                      스케줄 추가
                                     </button>
                                   </div>
                                 )}
@@ -896,10 +1026,6 @@ const IntegrationPage: React.FC = () => {
                         <span className="text-gray-600">상품 수:</span>
                         <span className="ml-2 font-medium">{integration.productCount}개</span>
                       </div>
-                      <div>
-                        <span className="text-gray-600">카테고리 수:</span>
-                        <span className="ml-2 font-medium">{integration.categoryCount}개</span>
-                      </div>
                     </div>
                   </div>
 
@@ -926,11 +1052,7 @@ const IntegrationPage: React.FC = () => {
                         <input type="checkbox" defaultChecked className="rounded" />
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm">카테고리 동기화</span>
-                        <input type="checkbox" defaultChecked className="rounded" />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">재고 동기화</span>
+                        <span className="text-sm">주문 정보 동기화</span>
                         <input type="checkbox" defaultChecked className="rounded" />
                       </div>
                     </div>
