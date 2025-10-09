@@ -384,9 +384,12 @@ const ProductCategoryPage: React.FC = () => {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="ghost" onClick={handleResetData}>
-              데이터 초기화
-            </Button>
+            {/* 상품 분류 페이지에서만 데이터 초기화 버튼 표시 */}
+            {isClassificationPage && (
+              <Button variant="ghost" onClick={handleResetData}>
+                데이터 초기화
+              </Button>
+            )}
             <Button onClick={() => openModal()}>
               카테고리 추가
             </Button>
