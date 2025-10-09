@@ -359,7 +359,7 @@ const IntegrationPage: React.FC = () => {
     },
     { 
       key: "lastSync", 
-      title: "마지막 동기화",
+      title: "마지막 수집",
     },
   ];
 
@@ -1046,7 +1046,7 @@ const IntegrationPage: React.FC = () => {
 
                   <div className="bg-blue-50 rounded-lg p-4">
                     <p className="text-sm text-blue-800">
-                      💡 동기화는 <strong>스케줄 관리</strong>에서 설정할 수 있습니다.
+                      수집 스케줄은 <strong>스케줄 관리</strong>에서 설정할 수 있습니다.
                     </p>
                   </div>
 
