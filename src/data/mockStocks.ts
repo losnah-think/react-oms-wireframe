@@ -2,7 +2,7 @@
 import { mockProducts } from './mockProducts';
 import { mockWarehouses } from './mockWarehouses';
 
-export const mockStocks = Array.from({length: 100}, (_, i) => ({
+export const mockStocks = Array.from({length: 20}, (_, i) => ({
   id: i+1,
   product_id: mockProducts[i % mockProducts.length].id,
   variant_id: (mockProducts[i % mockProducts.length].variants && mockProducts[i % mockProducts.length].variants[0]?.id) || 1,

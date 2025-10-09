@@ -1,19 +1,19 @@
 import { mockProducts } from './mockProducts';
 import { mockOrderStatus, mockShippingStatus, mockPaymentStatus } from './mockStatus';
 
-const mockShops = Array.from({length: 10}, (_, i) => ({
+const mockShops = Array.from({length: 5}, (_, i) => ({
   shop_no: `SHOP${i+1}`,
   shop_name: `판매처${i+1}`,
   site_id: i+1,
   mall_id: `MALL${i+1}`
 }));
 
-const mockSuppliers = Array.from({length: 20}, (_, i) => ({
+const mockSuppliers = Array.from({length: 5}, (_, i) => ({
   supplier_id: i+1,
   supplier_name: `공급사${i+1}`
 }));
 
-export const mockOrders = Array.from({length: 100}, (_, i) => {
+export const mockOrders = Array.from({length: 20}, (_, i) => {
   const product = mockProducts[i % mockProducts.length];
   const shop = mockShops[i % mockShops.length];
   const supplier = mockSuppliers[product.supplier_id % mockSuppliers.length];

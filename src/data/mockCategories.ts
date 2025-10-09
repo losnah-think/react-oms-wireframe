@@ -7,7 +7,7 @@ function generateCategoryCode(i: number) {
   return `${prefix}-${dateStr}-${rand}-${i+1}`;
 }
 
-export const mockCategories = Array.from({length: 100}, (_, i) => ({
+export const mockCategories = Array.from({length: 20}, (_, i) => ({
   id: `cat-${i+1}`,
   code: generateCategoryCode(i),
   name: `카테고리${i+1}`

@@ -53,7 +53,7 @@ const generateMockVendorIntegrations = (): VendorIntegration[] => {
   const statuses: ("연동중" | "오류" | "미연동" | "수집중")[] = ["연동중", "오류", "미연동", "수집중"];
   const vendors: VendorIntegration[] = [];
 
-  for (let i = 1; i <= 120; i++) {
+  for (let i = 1; i <= 20; i++) {
     const platform = platforms[Math.floor(Math.random() * platforms.length)];
     const status = statuses[Math.floor(Math.random() * statuses.length)];
     

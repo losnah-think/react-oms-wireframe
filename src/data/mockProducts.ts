@@ -76,7 +76,7 @@ export const mockProducts = (() => {
   let idx = 0;
 
   for (let ci = 0; ci < classificationsArr.length; ci++) {
-    for (let j = 0; j < perType; j++) {
+    for (let j = 0; j < 4; j++) { // 5개 타입 * 4개 = 20개
       const i = idx;
       const productId = i + 1;
       const yearData = generateYearDate(i);
