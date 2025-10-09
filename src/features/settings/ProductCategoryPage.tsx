@@ -354,23 +354,6 @@ const ProductCategoryPage: React.FC = () => {
     },
   ];
 
-  // 데이터 초기화 함수
-  const handleResetData = () => {
-    if (!window.confirm("모든 카테고리와 설정을 초기화하시겠습니까? (기본 카테고리로 복원됩니다)")) return;
-    
-    // 카테고리 초기화
-    setCategories(defaultCategories);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultCategories));
-    
-    // 기본값 초기화 (상품 분류 페이지에서만)
-    if (isClassificationPage) {
-      setDefaultClassificationId(null);
-      localStorage.removeItem(DEFAULT_CLASSIFICATION_KEY);
-    }
-    
-    window.alert("초기화가 완료되었습니다");
-  };
-
   return (
     <Container maxWidth="full" centered={false} padding="lg">
       <div className="mb-6">
@@ -383,17 +366,9 @@ const ProductCategoryPage: React.FC = () => {
               {isClassificationPage ? "상품 분류 관리" : "상품 카테고리 관리"}
             </p>
           </div>
-          <div className="flex gap-2">
-            {/* 상품 분류 페이지에서만 데이터 초기화 버튼 표시 */}
-            {isClassificationPage && (
-              <Button variant="ghost" onClick={handleResetData}>
-                데이터 초기화
-              </Button>
-            )}
-            <Button onClick={() => openModal()}>
-              카테고리 추가
-            </Button>
-          </div>
+          <Button onClick={() => openModal()}>
+            카테고리 추가
+          </Button>
         </div>
 
         {/* 검색 */}

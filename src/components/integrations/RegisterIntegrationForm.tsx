@@ -230,70 +230,66 @@ export default function RegisterIntegrationForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <Card padding="lg" className="space-y-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="space-y-1">
-            <h3 className="text-lg font-semibold text-gray-900">샵 정보</h3>
-            <p className="tex-xs text-gray-500">
-              플랫폼을 선택하고 필수 정보를 입력하세요. 필요 시 채널 관리자에서 정보를 확인할 수 있습니다.
-            </p>
-          </div>
-          {initialShop && (
-            <Badge size="small" variant="secondary">
-              기존 연동 수정
-            </Badge>
-          )}
+    <form onSubmit={handleSubmit} className="p-6 space-y-6">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="space-y-1">
+          <p className="text-sm text-gray-600">
+            플랫폼을 선택하고 필수 정보를 입력하세요.
+          </p>
         </div>
+        {initialShop && (
+          <Badge size="small" variant="secondary">
+            기존 연동 수정
+          </Badge>
+        )}
+      </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <Dropdown
-            label="플랫폼"
-            options={platformOptions}
-            value={platform}
-            onChange={(value) => setPlatform(value)}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Dropdown
+          label="플랫폼"
+          options={platformOptions}
+          value={platform}
+          onChange={(value) => setPlatform(value)}
+          fullWidth
+        />
+        <Dropdown
+          label="연동할 거래처 (선택)"
+          options={[{ value: "", label: "직접 입력" }, ...vendorsForSelect]}
+          value={vendorId}
+          onChange={(value) => setVendorId(value)}
+          fullWidth
+        />
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        {visibleFields.map((fieldKey) => (
+          <Input
+            key={fieldKey}
+            label={`${fieldLabel[fieldKey]}${isRequired(fieldKey) ? " *" : ""}`}
+            value={getStateValue(fieldKey)}
+            onChange={(event) => setStateValue(fieldKey, event.target.value)}
+            placeholder={fieldLabel[fieldKey]}
             fullWidth
           />
-          <Dropdown
-            label="연동할 거래처 (선택)"
-            options={[{ value: "", label: "직접 입력" }, ...vendorsForSelect]}
-            value={vendorId}
-            onChange={(value) => setVendorId(value)}
-            fullWidth
-          />
-        </div>
+        ))}
+      </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          {visibleFields.map((fieldKey) => (
-            <Input
-              key={fieldKey}
-              label={`${fieldLabel[fieldKey]}${isRequired(fieldKey) ? " *" : ""}`}
-              value={getStateValue(fieldKey)}
-              onChange={(event) => setStateValue(fieldKey, event.target.value)}
-              placeholder={fieldLabel[fieldKey]}
-              fullWidth
-            />
-          ))}
-        </div>
-
-        <Stack direction="row" gap={3} className="flex-wrap">
-          <Button
-            type="button"
-            variant="outline"
-            size="small"
-            onClick={handleTestConnection}
-            disabled={isTesting}
-          >
-            {isTesting ? "테스트 중..." : "테스트 연결"}
-          </Button>
-          <Button type="submit" size="small">
-            저장
-          </Button>
-          <Button type="button" variant="outline" size="small" onClick={onClose}>
-            취소
-          </Button>
-        </Stack>
-      </Card>
+      <div className="flex justify-end gap-3 pt-4 border-t">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleTestConnection}
+          disabled={isTesting}
+        >
+          {isTesting ? "테스트 중..." : "테스트 연결"}
+        </Button>
+        <Button type="button" variant="outline" onClick={onClose}>
+          취소
+        </Button>
+        <Button type="submit">
+          저장
+        </Button>
+      </div>
     </form>
   );
 }

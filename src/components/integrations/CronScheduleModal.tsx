@@ -219,9 +219,10 @@ const CronScheduleModal: React.FC<CronScheduleModalProps> = ({
       size="big"
       footer={null}
     >
-      <div className="p-6 space-y-6">
-        {/* 기본 정보 */}
-        <div className="space-y-4">
+      <div className="p-6">
+        <div className="grid grid-cols-2 gap-6">
+          {/* 왼쪽: 기본 정보 */}
+          <div className="space-y-4">
           {/* 판매처 선택 */}
           {schedule.isGlobal ? (
             // 전체 판매처 일괄 적용
@@ -319,76 +320,80 @@ const CronScheduleModal: React.FC<CronScheduleModalProps> = ({
               value={schedule.description}
               onChange={(e) => setSchedule(prev => ({ ...prev, description: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              rows={2}
+              rows={3}
               placeholder="스케줄에 대한 설명을 입력하세요"
             />
           </div>
-        </div>
+          </div>
 
-        {/* 실행 주기 설정 */}
-        <div className="space-y-6">
-          <h3 className="text-lg font-semibold text-gray-900">실행 주기 설정</h3>
+          {/* 오른쪽: 실행 주기 설정 */}
+          <div className="space-y-4">
+          <h3 className="text-base font-semibold text-gray-900 mb-3">실행 주기 설정</h3>
           
           {/* 스케줄 타입 선택 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               실행 방식 선택
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
               <button
+                type="button"
                 onClick={() => setScheduleType('interval')}
-                className={`p-4 text-left border rounded-lg transition-colors ${
+                className={`w-full p-3 text-left border rounded-lg transition-colors ${
                   scheduleType === 'interval'
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-300 hover:border-gray-400'
                 }`}
               >
-                <div className="font-medium mb-1">주기적 반복</div>
-                <div className="text-sm text-gray-600">정해진 간격으로 반복 실행</div>
+                <div className="font-medium text-sm">주기적 반복</div>
+                <div className="text-xs text-gray-600">정해진 간격으로 반복</div>
               </button>
               
               <button
+                type="button"
                 onClick={() => setScheduleType('daily')}
-                className={`p-4 text-left border rounded-lg transition-colors ${
+                className={`w-full p-3 text-left border rounded-lg transition-colors ${
                   scheduleType === 'daily'
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-300 hover:border-gray-400'
                 }`}
               >
-                <div className="font-medium mb-1">매일 실행</div>
-                <div className="text-sm text-gray-600">매일 특정 시간에 실행</div>
+                <div className="font-medium text-sm">매일 실행</div>
+                <div className="text-xs text-gray-600">특정 시간에 실행</div>
               </button>
               
               <button
+                type="button"
                 onClick={() => setScheduleType('weekly')}
-                className={`p-4 text-left border rounded-lg transition-colors ${
+                className={`w-full p-3 text-left border rounded-lg transition-colors ${
                   scheduleType === 'weekly'
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-300 hover:border-gray-400'
                 }`}
               >
-                <div className="font-medium mb-1">매주 실행</div>
-                <div className="text-sm text-gray-600">매주 특정 요일과 시간에 실행</div>
+                <div className="font-medium text-sm">매주 실행</div>
+                <div className="text-xs text-gray-600">특정 요일과 시간</div>
               </button>
               
               <button
+                type="button"
                 onClick={() => setScheduleType('custom')}
-                className={`p-4 text-left border rounded-lg transition-colors ${
+                className={`w-full p-3 text-left border rounded-lg transition-colors ${
                   scheduleType === 'custom'
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-300 hover:border-gray-400'
                 }`}
               >
-                <div className="font-medium mb-1">직접 설정</div>
-                <div className="text-sm text-gray-600">크론 표현식으로 직접 설정</div>
+                <div className="font-medium text-sm">직접 설정</div>
+                <div className="text-xs text-gray-600">크론 표현식</div>
               </button>
             </div>
           </div>
 
           {/* 주기적 반복 설정 */}
           {scheduleType === 'interval' && (
-            <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-              <h4 className="font-medium text-gray-900">반복 간격 설정</h4>
+            <div className="bg-gray-50 rounded-lg p-3 space-y-3">
+              <h4 className="font-medium text-gray-900 text-sm">반복 간격 설정</h4>
               <div className="flex items-center gap-3">
                 <span className="text-sm text-gray-700">매</span>
                 <input
@@ -418,8 +423,8 @@ const CronScheduleModal: React.FC<CronScheduleModalProps> = ({
 
           {/* 매일 실행 설정 */}
           {scheduleType === 'daily' && (
-            <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-              <h4 className="font-medium text-gray-900">매일 실행 시간</h4>
+            <div className="bg-gray-50 rounded-lg p-3 space-y-3">
+              <h4 className="font-medium text-gray-900 text-sm">매일 실행 시간</h4>
               <div className="flex items-center gap-3">
                 <span className="text-sm text-gray-700">매일</span>
                 <input
@@ -438,8 +443,8 @@ const CronScheduleModal: React.FC<CronScheduleModalProps> = ({
 
           {/* 매주 실행 설정 */}
           {scheduleType === 'weekly' && (
-            <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-              <h4 className="font-medium text-gray-900">매주 실행 설정</h4>
+            <div className="bg-gray-50 rounded-lg p-3 space-y-3">
+              <h4 className="font-medium text-gray-900 text-sm">매주 실행 설정</h4>
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <span className="text-sm text-gray-700">매주</span>
@@ -473,8 +478,8 @@ const CronScheduleModal: React.FC<CronScheduleModalProps> = ({
 
           {/* 사용자 정의 크론 표현식 */}
           {scheduleType === 'custom' && (
-            <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-              <h4 className="font-medium text-gray-900">크론 표현식 직접 입력</h4>
+            <div className="bg-gray-50 rounded-lg p-3 space-y-3">
+              <h4 className="font-medium text-gray-900 text-sm">크론 표현식 직접 입력</h4>
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -501,49 +506,51 @@ const CronScheduleModal: React.FC<CronScheduleModalProps> = ({
           )}
 
           {/* 현재 설정 미리보기 */}
-          <div className="bg-blue-50 rounded-lg p-4">
-            <h4 className="font-medium text-blue-900 mb-2">현재 설정</h4>
+          <div className="bg-blue-50 rounded-lg p-3">
+            <h4 className="font-medium text-blue-900 mb-1 text-sm">현재 설정</h4>
             <div className="text-sm text-blue-800">
-              <div className="font-medium">{getScheduleDescription()}</div>
+              <div className="font-medium text-sm">{getScheduleDescription()}</div>
               <div className="text-xs text-blue-600 mt-1 font-mono">
-                크론 표현식: {schedule.expression}
+                {schedule.expression}
               </div>
             </div>
           </div>
-
-        </div>
-
-        {/* 활성화 설정 */}
-        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-          <div>
-            <div className="font-medium text-gray-900">스케줄 활성화</div>
-            <div className="text-sm text-gray-600">체크 해제 시 스케줄이 일시 정지됩니다</div>
           </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={schedule.isActive}
-              onChange={(e) => setSchedule(prev => ({ ...prev, isActive: e.target.checked }))}
-              className="sr-only peer"
-            />
-            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-          </label>
         </div>
 
-        {/* 액션 버튼 */}
-        <div className="flex justify-end gap-3 pt-4 border-t">
-          <Button
-            variant="ghost"
-            onClick={onClose}
-          >
-            취소
-          </Button>
-          <Button
-            onClick={handleSave}
-            disabled={!schedule.name.trim() || !schedule.expression.trim() || !isValid}
-          >
-            저장
-          </Button>
+        {/* 활성화 설정 및 버튼 */}
+        <div className="mt-6 pt-6 border-t space-y-4">
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <div>
+              <div className="font-medium text-gray-900 text-sm">스케줄 활성화</div>
+              <div className="text-xs text-gray-600">체크 해제 시 스케줄이 일시 정지됩니다</div>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={schedule.isActive}
+                onChange={(e) => setSchedule(prev => ({ ...prev, isActive: e.target.checked }))}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+
+          {/* 액션 버튼 */}
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="ghost"
+              onClick={onClose}
+            >
+              취소
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={!schedule.name.trim() || !schedule.expression.trim() || !isValid}
+            >
+              저장
+            </Button>
+          </div>
         </div>
       </div>
     </Modal>
