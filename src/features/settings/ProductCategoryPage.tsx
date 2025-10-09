@@ -24,13 +24,7 @@ export type Category = {
   isDefault?: boolean;
 };
 
-const defaultCategories: Category[] = [
-  { id: "default-1", name: "의류", parentId: null, depth: 0, isDefault: true },
-  { id: "default-2", name: "상의", parentId: "default-1", depth: 1, isDefault: true },
-  { id: "default-3", name: "티셔츠", parentId: "default-2", depth: 2, isDefault: true },
-  { id: "default-4", name: "신발", parentId: null, depth: 0, isDefault: true },
-  { id: "default-5", name: "스니커즈", parentId: "default-4", depth: 1, isDefault: true },
-];
+const defaultCategories: Category[] = [];
 
 const loadCategories = (): Category[] => {
   if (typeof window === "undefined") return defaultCategories;
