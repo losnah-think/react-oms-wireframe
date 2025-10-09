@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
+import ImageUrlModal from '../../components/products/ImageUrlModal';
+import OptionDetailModal from '../../components/products/OptionDetailModal';
 
 interface ProductDetailPageProps {
   productId?: string;
@@ -13,6 +15,14 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ productId: propPr
   const [images, setImages] = useState<string[]>([]);
   const [additionalImages, setAdditionalImages] = useState<string[]>([]);
   const [isLocked, setIsLocked] = useState(false);
+  const [isUrlModalOpen, setIsUrlModalOpen] = useState(false);
+  const [currentImageType, setCurrentImageType] = useState<'main' | 'additional'>('main');
+  const [isOptionModalOpen, setIsOptionModalOpen] = useState(false);
+  const [selectedOption, setSelectedOption] = useState<any>(null);
+  const [options, setOptions] = useState([
+    { id: 1, code: 'V-1000-1', status: '판매중', stock: '30', location: 'A-01-01', barcode: '123456', dimensions: '10x10x10cm, 100g', lastModified: '2025.01.01' },
+    { id: 2, code: 'V-1000-2', status: '판매중', stock: '20', location: 'A-01-02', barcode: '123457', dimensions: '10x10x10cm, 100g', lastModified: '2025.01.01' }
+  ]);
   
   const [formData, setFormData] = useState({
     productName: '라뮤즈 본딩 하프코트 SET',
@@ -100,6 +110,19 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ productId: propPr
     }
   };
 
+  const handleOpenUrlModal = (type: 'main' | 'additional') => {
+    setCurrentImageType(type);
+    setIsUrlModalOpen(true);
+  };
+
+  const handleUrlUpload = (imageUrl: string) => {
+    if (currentImageType === 'main') {
+      setImages(prev => [...prev, imageUrl]);
+    } else {
+      setAdditionalImages(prev => [...prev, imageUrl]);
+    }
+  };
+
   const handleImageRemove = (index: number, type: 'main' | 'additional') => {
     if (type === 'main') {
       setImages(prev => prev.filter((_, i) => i !== index));
@@ -126,8 +149,38 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ productId: propPr
   };
 
   const handleOptionAdd = () => {
-    console.log('옵션 추가');
-    alert('옵션 추가 기능이 호출되었습니다.');
+    const newOption = {
+      id: options.length + 1,
+      code: `V-1000-${options.length + 1}`,
+      status: '판매중',
+      stock: '0',
+      location: '',
+      barcode: '',
+      dimensions: '',
+      lastModified: new Date().toLocaleDateString('ko-KR')
+    };
+    setOptions([...options, newOption]);
+  };
+
+  const handleOptionRemove = (id: number) => {
+    setOptions(options.filter(option => option.id !== id));
+  };
+
+  const handleOptionChange = (id: number, field: string, value: string) => {
+    setOptions(options.map(option => 
+      option.id === id ? { ...option, [field]: value } : option
+    ));
+  };
+
+  const handleOptionClick = (option: any) => {
+    setSelectedOption(option);
+    setIsOptionModalOpen(true);
+  };
+
+  const handleOptionSave = (updatedOption: any) => {
+    setOptions(options.map(option => 
+      option.id === updatedOption.id ? updatedOption : option
+    ));
   };
 
   const handleSave = () => {
@@ -145,6 +198,21 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ productId: propPr
 
     return (
     <div className="min-h-screen bg-gray-50">
+      {/* Image URL Modal */}
+      <ImageUrlModal
+        isOpen={isUrlModalOpen}
+        onClose={() => setIsUrlModalOpen(false)}
+        onUpload={handleUrlUpload}
+      />
+
+      {/* Option Detail Modal */}
+      <OptionDetailModal
+        isOpen={isOptionModalOpen}
+        option={selectedOption}
+        onClose={() => setIsOptionModalOpen(false)}
+        onSave={handleOptionSave}
+      />
+      
       {/* 헤더 */}
       <div className="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-10">
         <div className="flex items-center justify-between">
@@ -226,44 +294,102 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ productId: propPr
 
           {/* 섹션들 */}
           <div className="space-y-6">
-            {/* 대표 이미지 섹션 */}
+            {/* 이미지 섹션 */}
             <div 
               ref={(el) => { sectionRefs.current['images'] = el; }}
               className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
             >
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">대표 이미지</h3>
-              <div className="grid grid-cols-3 gap-4">
-                {[1, 2, 3, 4, 5, 6].map((index) => (
-                  <div key={index} className="aspect-square bg-gray-200 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300 relative">
-                    {images[index - 1] ? (
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">상품 이미지</h3>
+              <div className="flex gap-6">
+                {/* 대표 이미지 */}
+                <div className="flex-shrink-0">
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">대표 이미지 (1장)</h4>
+                  <div className="w-64 aspect-square bg-gray-200 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300 relative">
+                    {images[0] ? (
                       <>
                         <img 
-                          src={images[index - 1]} 
-                          alt="상품 이미지"
+                          src={images[0]} 
+                          alt="대표 이미지"
                           className="w-full h-full object-cover rounded-lg"
                         />
                         <button
-                          onClick={() => handleImageRemove(index - 1, 'main')}
+                          onClick={() => handleImageRemove(0, 'main')}
                           className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
                         >
                           ×
                         </button>
                       </>
                     ) : (
-                      <label className="cursor-pointer w-full h-full flex items-center justify-center">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => handleImageUpload(e, 'main')}
-                          className="hidden"
-                        />
-                        <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </label>
+                      <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+                        <label className="cursor-pointer flex flex-col items-center justify-center">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleImageUpload(e, 'main')}
+                            className="hidden"
+                          />
+                          <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <span className="text-xs text-gray-500 mt-1">파일 선택</span>
+                        </label>
+                        <button
+                          onClick={() => handleOpenUrlModal('main')}
+                          className="text-xs text-blue-600 hover:text-blue-800 underline"
+                        >
+                          URL 입력
+                        </button>
+                      </div>
                     )}
                   </div>
-                ))}
+                </div>
+
+                {/* 추가 이미지 */}
+                <div className="flex-1">
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">추가 이미지 (5장)</h4>
+                  <div className="grid grid-cols-5 gap-3">
+                    {[1, 2, 3, 4, 5].map((index) => (
+                      <div key={index} className="aspect-square bg-gray-200 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300 relative">
+                        {additionalImages[index - 1] ? (
+                          <>
+                            <img 
+                              src={additionalImages[index - 1]} 
+                              alt={`추가 이미지 ${index}`}
+                              className="w-full h-full object-cover rounded-lg"
+                            />
+                            <button
+                              onClick={() => handleImageRemove(index - 1, 'additional')}
+                              className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                            >
+                              ×
+                            </button>
+                          </>
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+                            <label className="cursor-pointer flex flex-col items-center justify-center">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => handleImageUpload(e, 'additional')}
+                                className="hidden"
+                              />
+                              <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                              <span className="text-xs text-gray-500 mt-1">파일</span>
+                            </label>
+                            <button
+                              onClick={() => handleOpenUrlModal('additional')}
+                              className="text-xs text-blue-600 hover:text-blue-800 underline"
+                            >
+                              URL
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -425,7 +551,8 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ productId: propPr
               <thead className="bg-gray-50">
                 <tr>
                       <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b border-gray-200">옵션명/코드</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b border-gray-200">판매상태/재고</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b border-gray-200">판매상태</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b border-gray-200">재고</th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b border-gray-200">위치</th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b border-gray-200">바코드</th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b border-gray-200">규격·중량</th>
@@ -434,27 +561,91 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ productId: propPr
                 </tr>
               </thead>
               <tbody>
-                    {[1, 2].map((index) => (
-                      <tr key={index} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 border-b border-gray-200">V-1000-{index}</td>
+                    {options.map((option) => (
+                      <tr 
+                        key={option.id} 
+                        className="hover:bg-blue-50 cursor-pointer transition-colors"
+                        onClick={() => handleOptionClick(option)}
+                      >
                         <td className="px-4 py-3 border-b border-gray-200">
-                          <div className="flex items-center gap-2">
-                            <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">판매중</span>
-                            <span>30</span>
-                          </div>
+                          <input
+                            type="text"
+                            value={option.code}
+                            onChange={(e) => handleOptionChange(option.id, 'code', e.target.value)}
+                            className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            placeholder="옵션 코드"
+                          />
                         </td>
-                        <td className="px-4 py-3 border-b border-gray-200">aaaaaaaaa</td>
                         <td className="px-4 py-3 border-b border-gray-200">
-                          <div className="flex items-center gap-2">
-                            <span>없음</span>
-                            <span className="text-blue-600">123456 관리</span>
-                          </div>
+                          <select
+                            value={option.status}
+                            onChange={(e) => handleOptionChange(option.id, 'status', e.target.value)}
+                            className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          >
+                            <option value="판매중">판매중</option>
+                            <option value="품절">품절</option>
+                            <option value="판매중지">판매중지</option>
+                          </select>
                         </td>
-                        <td className="px-4 py-3 border-b border-gray-200">aaaaaaaaa</td>
-                        <td className="px-4 py-3 border-b border-gray-200">2025.01.01-7분 전</td>
-                        <td className="px-4 py-3 border-b border-gray-200">aaaaaaaaa</td>
+                        <td className="px-4 py-3 border-b border-gray-200">
+                          <input
+                            type="number"
+                            value={option.stock}
+                            onChange={(e) => handleOptionChange(option.id, 'stock', e.target.value)}
+                            className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            placeholder="재고"
+                          />
+                        </td>
+                        <td className="px-4 py-3 border-b border-gray-200">
+                          <input
+                            type="text"
+                            value={option.location}
+                            onChange={(e) => handleOptionChange(option.id, 'location', e.target.value)}
+                            className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            placeholder="위치"
+                          />
+                        </td>
+                        <td className="px-4 py-3 border-b border-gray-200">
+                          <input
+                            type="text"
+                            value={option.barcode}
+                            onChange={(e) => handleOptionChange(option.id, 'barcode', e.target.value)}
+                            className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            placeholder="바코드"
+                          />
+                        </td>
+                        <td className="px-4 py-3 border-b border-gray-200">
+                          <input
+                            type="text"
+                            value={option.dimensions}
+                            onChange={(e) => handleOptionChange(option.id, 'dimensions', e.target.value)}
+                            className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            placeholder="규격·중량"
+                          />
+                        </td>
+                        <td className="px-4 py-3 border-b border-gray-200 text-sm text-gray-600">
+                          {option.lastModified}
+                        </td>
+                        <td className="px-4 py-3 border-b border-gray-200">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOptionRemove(option.id);
+                            }}
+                            className="text-red-600 hover:text-red-800 text-sm font-medium"
+                          >
+                            삭제
+                          </button>
+                        </td>
                       </tr>
                     ))}
+                    {options.length === 0 && (
+                      <tr>
+                        <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                          옵션을 추가해주세요
+                        </td>
+                      </tr>
+                    )}
               </tbody>
             </table>
           </div>
@@ -484,21 +675,30 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ productId: propPr
                         </button>
                       </>
                     ) : (
-                      <label className="cursor-pointer w-full h-full flex items-center justify-center">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => handleImageUpload(e, 'additional')}
-                          className="hidden"
-                        />
-                        <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </label>
+                      <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+                        <label className="cursor-pointer flex flex-col items-center justify-center">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleImageUpload(e, 'additional')}
+                            className="hidden"
+                          />
+                          <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <span className="text-xs text-gray-500 mt-1">파일 선택</span>
+                        </label>
+                        <button
+                          onClick={() => handleOpenUrlModal('additional')}
+                          className="text-xs text-blue-600 hover:text-blue-800 underline"
+                        >
+                          URL 입력
+                        </button>
+                      </div>
                     )}
                   </div>
                 ))}
-            </div>
+              </div>
             </div>
 
             {/* 추가 속성 섹션 */}

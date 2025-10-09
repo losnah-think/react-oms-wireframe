@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Container, Card, Button, Input } from '../../design-system';
 import { useRouter } from 'next/router';
+import ImageUrlModal from '../../components/products/ImageUrlModal';
 
 const IndividualRegistrationPage: React.FC = () => {
   const router = useRouter();
@@ -18,6 +19,7 @@ const IndividualRegistrationPage: React.FC = () => {
   });
 
   const [loading, setLoading] = useState(false);
+  const [isUrlModalOpen, setIsUrlModalOpen] = useState(false);
 
   // 사용자의 기본 분류 불러오기 (localStorage 사용)
   React.useEffect(() => {
@@ -41,6 +43,32 @@ const IndividualRegistrationPage: React.FC = () => {
     setFormData(prev => ({
       ...prev,
       [field]: value
+    }));
+  };
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files) {
+      const fileArray = Array.from(files);
+      const imageUrls = fileArray.map(file => URL.createObjectURL(file));
+      setFormData(prev => ({
+        ...prev,
+        images: [...prev.images, ...imageUrls]
+      }));
+    }
+  };
+
+  const handleImageRemove = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleUrlUpload = (imageUrl: string) => {
+    setFormData(prev => ({
+      ...prev,
+      images: [...prev.images, imageUrl]
     }));
   };
 
@@ -68,6 +96,13 @@ const IndividualRegistrationPage: React.FC = () => {
   return (
     <Container>
       <div className="py-8">
+        {/* Image URL Modal */}
+        <ImageUrlModal
+          isOpen={isUrlModalOpen}
+          onClose={() => setIsUrlModalOpen(false)}
+          onUpload={handleUrlUpload}
+        />
+
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             개별 상품 등록
@@ -78,6 +113,107 @@ const IndividualRegistrationPage: React.FC = () => {
         </div>
 
         <form onSubmit={handleSubmit}>
+          {/* 이미지 섹션 */}
+          <Card padding="lg" className="mb-8">
+            <h2 className="text-xl font-semibold mb-6">상품 이미지</h2>
+            
+            <div className="flex gap-6">
+              {/* 대표 이미지 */}
+              <div className="flex-shrink-0">
+                <h3 className="text-sm font-medium text-gray-700 mb-3">대표 이미지 (1장)</h3>
+                <div className="w-64 aspect-square bg-gray-200 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300 relative">
+                  {formData.images[0] ? (
+                    <>
+                      <img 
+                        src={formData.images[0]} 
+                        alt="대표 이미지"
+                        className="w-full h-full object-cover rounded-lg"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleImageRemove(0)}
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                      >
+                        ×
+                      </button>
+                    </>
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+                      <label className="cursor-pointer flex flex-col items-center justify-center">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="hidden"
+                        />
+                        <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span className="text-xs text-gray-500 mt-1">파일 선택</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setIsUrlModalOpen(true)}
+                        className="text-xs text-blue-600 hover:text-blue-800 underline"
+                      >
+                        URL 입력
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 추가 이미지 */}
+              <div className="flex-1">
+                <h3 className="text-sm font-medium text-gray-700 mb-3">추가 이미지 (5장)</h3>
+                <div className="grid grid-cols-5 gap-3">
+                  {[1, 2, 3, 4, 5].map((index) => (
+                    <div key={index} className="aspect-square bg-gray-200 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300 relative">
+                      {formData.images[index] ? (
+                        <>
+                          <img 
+                            src={formData.images[index]} 
+                            alt={`추가 이미지 ${index}`}
+                            className="w-full h-full object-cover rounded-lg"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleImageRemove(index)}
+                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                          >
+                            ×
+                          </button>
+                        </>
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+                          <label className="cursor-pointer flex flex-col items-center justify-center">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleImageUpload}
+                              className="hidden"
+                            />
+                            <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span className="text-xs text-gray-500 mt-1">파일</span>
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => setIsUrlModalOpen(true)}
+                            className="text-xs text-blue-600 hover:text-blue-800 underline"
+                          >
+                            URL
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </Card>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* 기본 정보 */}
             <Card padding="lg">
