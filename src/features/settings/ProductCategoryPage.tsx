@@ -70,7 +70,9 @@ const ProductCategoryPage: React.FC = () => {
   const [isSavingDefault, setIsSavingDefault] = React.useState(false);
 
   // 현재 페이지가 "상품 분류" 페이지인지 확인 (product-classifications)
-  const isClassificationPage = router.pathname.includes('product-classifications');
+  // product-categories는 기본값 기능 없음
+  // product-classifications는 기본값 기능 있음
+  const isClassificationPage = router.pathname === '/settings/product-classifications';
 
   // localStorage를 사용한 기본 분류 키
   const DEFAULT_CLASSIFICATION_KEY = "defaultProductClassification";
@@ -352,17 +354,43 @@ const ProductCategoryPage: React.FC = () => {
     },
   ];
 
+  // 데이터 초기화 함수
+  const handleResetData = () => {
+    if (!window.confirm("모든 카테고리와 설정을 초기화하시겠습니까? (기본 카테고리로 복원됩니다)")) return;
+    
+    // 카테고리 초기화
+    setCategories(defaultCategories);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultCategories));
+    
+    // 기본값 초기화 (상품 분류 페이지에서만)
+    if (isClassificationPage) {
+      setDefaultClassificationId(null);
+      localStorage.removeItem(DEFAULT_CLASSIFICATION_KEY);
+    }
+    
+    window.alert("초기화가 완료되었습니다");
+  };
+
   return (
     <Container maxWidth="full" centered={false} padding="lg">
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">상품 카테고리</h1>
-            <p className="text-sm text-gray-600 mt-1">상품 카테고리 관리</p>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {isClassificationPage ? "상품 분류" : "상품 카테고리"}
+            </h1>
+            <p className="text-sm text-gray-600 mt-1">
+              {isClassificationPage ? "상품 분류 관리" : "상품 카테고리 관리"}
+            </p>
           </div>
-          <Button onClick={() => openModal()}>
-            카테고리 추가
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="ghost" onClick={handleResetData}>
+              데이터 초기화
+            </Button>
+            <Button onClick={() => openModal()}>
+              카테고리 추가
+            </Button>
+          </div>
         </div>
 
         {/* 검색 */}
