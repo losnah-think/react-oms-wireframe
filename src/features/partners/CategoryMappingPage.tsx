@@ -72,172 +72,6 @@ function SkeletonCard() {
   );
 }
 
-// 도움말 컴포넌트
-interface HelpModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-function HelpModal({ isOpen, onClose }: HelpModalProps) {
-  if (!isOpen) return null;
-
-  return (
-    <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto transform transition-all duration-300 ease-out animate-scale-in">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">도움말</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <div className="space-y-8">
-          {/* 기본 사용법 */}
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              기본 사용법
-            </h3>
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <ol className="list-decimal list-inside space-y-2 text-gray-700">
-                <li>좌측에서 판매처를 선택하세요</li>
-                <li>선택된 판매처의 카테고리 매핑을 확인하세요</li>
-                <li>"매핑 추가" 버튼으로 새로운 매핑을 생성하세요</li>
-                <li>기존 매핑을 수정하거나 삭제할 수 있습니다</li>
-                <li>매핑 상태를 활성/비활성으로 변경할 수 있습니다</li>
-              </ol>
-            </div>
-          </div>
-
-          {/* 키보드 단축키 */}
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-              키보드 단축키
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-700">모달 닫기</span>
-                    <kbd className="px-2 py-1 bg-gray-200 rounded text-sm">ESC</kbd>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-700">검색 포커스</span>
-                    <kbd className="px-2 py-1 bg-gray-200 rounded text-sm">Ctrl + F</kbd>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-700">새 매핑 추가</span>
-                    <kbd className="px-2 py-1 bg-gray-200 rounded text-sm">Ctrl + N</kbd>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-700">도움말 열기</span>
-                    <kbd className="px-2 py-1 bg-gray-200 rounded text-sm">F1</kbd>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 팁과 요령 */}
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <svg className="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-              </svg>
-              팁과 요령
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                  <div>
-                    <h4 className="font-medium text-gray-900">빠른 검색</h4>
-                    <p className="text-sm text-gray-600">판매처명이나 대표자명으로 검색할 수 있습니다</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                  <div>
-                    <h4 className="font-medium text-gray-900">상태 필터링</h4>
-                    <p className="text-sm text-gray-600">활성/비활성 상태별로 매핑을 필터링할 수 있습니다</p>
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
-                  <div>
-                    <h4 className="font-medium text-gray-900">일괄 작업</h4>
-                    <p className="text-sm text-gray-600">여러 매핑을 선택하여 일괄 활성화/비활성화할 수 있습니다</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
-                  <div>
-                    <h4 className="font-medium text-gray-900">저장 방식</h4>
-                    <p className="text-sm text-gray-600">변경사항은 실시간으로 저장되며 알림으로 확인할 수 있습니다</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 문제 해결 */}
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
-              문제 해결
-            </h3>
-            <div className="bg-red-50 p-4 rounded-lg">
-              <div className="space-y-3">
-                <div>
-                  <h4 className="font-medium text-gray-900">매핑이 저장되지 않아요</h4>
-                  <p className="text-sm text-gray-600">필수 필드(판매처 카테고리, 내부 카테고리)가 모두 입력되었는지 확인해주세요</p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-900">검색 결과가 나오지 않아요</h4>
-                  <p className="text-sm text-gray-600">검색어를 다시 확인하고, 필터를 "전체 상태"로 변경해보세요</p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-900">페이지가 느려요</h4>
-                  <p className="text-sm text-gray-600">브라우저를 새로고침하거나 캐시를 삭제해보세요</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-8 flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-          >
-            닫기
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // 판매처별 카테고리 타입 정의
 interface VendorCategory {
@@ -489,40 +323,31 @@ const mockMappings: CategoryMapping[] = [
 ];
 
 // 판매처 정보 카드 컴포넌트
-function VendorInfoCard({ vendor, onSyncCategories, isLoadingCategories, vendorCategories, lastSyncTime }: any) {
-  const vendorCats = vendorCategories.filter((cat: any) => cat.vendorId === vendor.id);
-  
+function VendorInfoCard({ vendor, onSyncCategories, isLoadingCategories, lastSyncTime }: any) {
   return (
-    <div className="bg-white rounded-lg border shadow-sm p-6 mb-6">
-      <div className="flex items-start justify-between mb-4">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">{vendor.name}</h2>
-          <div className="flex items-center gap-2 mt-2">
-            <span
-              className={`px-3 py-1 text-sm rounded-full ${
-                vendor.status === "active"
-                  ? "bg-green-100 text-green-700"
-                  : "bg-gray-100 text-gray-700"
-              }`}
-            >
-              {vendor.status === "active" ? "활성" : "비활성"}
+    <div className="bg-white rounded-lg border shadow-sm p-4 mb-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <h2 className="text-lg font-bold text-gray-900">{vendor.name}</h2>
+          <span className="text-sm text-gray-600">{vendor.representative}</span>
+          {vendor.apiKey && (
+            <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700">
+              API 연동됨
             </span>
-            {vendor.apiKey && (
-              <span className="px-3 py-1 text-sm rounded-full bg-blue-100 text-blue-700">
-                API 연동됨
-              </span>
-            )}
-          </div>
+          )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-3">
+          <div className="text-xs text-gray-500">
+            마지막 동기화: {lastSyncTime || "동기화 필요"}
+          </div>
           <button
             onClick={() => onSyncCategories(vendor.id)}
             disabled={isLoadingCategories}
-            className="px-4 py-2 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md"
+            className="px-3 py-1.5 text-sm bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1"
           >
             {isLoadingCategories ? (
               <>
-                <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
@@ -530,67 +355,13 @@ function VendorInfoCard({ vendor, onSyncCategories, isLoadingCategories, vendorC
               </>
             ) : (
               <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
-                카테고리 동기화
+                동기화
               </>
             )}
           </button>
-        </div>
-      </div>
-
-      {/* 마지막 동기화 정보만 표시 */}
-      <div className="bg-blue-50 rounded-lg p-4 mb-4">
-        <div className="text-sm text-blue-600">마지막 동기화</div>
-        <div className="text-sm font-medium text-blue-700">
-          {lastSyncTime || "동기화 필요"}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-6">
-        <div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">기본 정보</h3>
-          <div className="space-y-2">
-            <div className="flex">
-              <span className="text-sm text-gray-600 w-24">대표자</span>
-              <span className="text-sm text-gray-900 font-medium">
-                {vendor.representative}
-              </span>
-            </div>
-            <div className="flex">
-              <span className="text-sm text-gray-600 w-24">사업자번호</span>
-              <span className="text-sm text-gray-900 font-medium">
-                {vendor.businessNumber}
-              </span>
-            </div>
-            <div className="flex">
-              <span className="text-sm text-gray-600 w-24">등록일</span>
-              <span className="text-sm text-gray-900">{vendor.registrationDate}</span>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">연락 정보</h3>
-          <div className="space-y-2">
-            <div className="flex">
-              <span className="text-sm text-gray-600 w-24">전화번호</span>
-              <span className="text-sm text-gray-900 font-medium">
-                {vendor.phone}
-              </span>
-            </div>
-            <div className="flex">
-              <span className="text-sm text-gray-600 w-24">이메일</span>
-              <span className="text-sm text-gray-900 font-medium">
-                {vendor.email}
-              </span>
-            </div>
-            <div className="flex">
-              <span className="text-sm text-gray-600 w-24">주소</span>
-              <span className="text-sm text-gray-900">{vendor.address}</span>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -858,7 +629,6 @@ export default function VendorCategoryMappingPage() {
                 vendor={selectedVendor}
                 onSyncCategories={syncVendorCategories}
                 isLoadingCategories={isLoadingCategories}
-                vendorCategories={vendorCategories}
                 lastSyncTime={lastSyncTime}
               />
 
@@ -898,77 +668,78 @@ export default function VendorCategoryMappingPage() {
                   </div>
                 </div>
 
-                <div className="divide-y">
-                  {filteredMappings.length === 0 ? (
-                    <div className="text-center py-12">
-                      <div className="text-gray-400 text-4xl mb-3">🔗</div>
-                      <p className="text-gray-600">등록된 매핑이 없습니다</p>
-                      <button
-                        onClick={handleAddMapping}
-                        className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                      >
-                        매핑 추가하기
-                      </button>
-                    </div>
-                  ) : (
-                    filteredMappings.map((mapping) => (
-                      <div
-                        key={mapping.id}
-                        className="p-4 hover:bg-gray-50 transition-colors"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <span className="px-2 py-1 text-xs rounded bg-blue-100 text-blue-700">
-                                매핑됨
-                              </span>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <div className="text-xs text-gray-500 mb-1">
-                                  판매처 카테고리
-                                </div>
-                                <div className="font-medium text-gray-900">
-                                  {mapping.vendorCategory}
-                                </div>
+                {filteredMappings.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="text-gray-400 text-4xl mb-3">🔗</div>
+                    <p className="text-gray-600">등록된 매핑이 없습니다</p>
+                    <button
+                      onClick={handleAddMapping}
+                      className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                    >
+                      매핑 추가하기
+                    </button>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            번호
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            판매처 카테고리
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            내부 카테고리
+                          </th>
+                          <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider w-32">
+                            관리
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200 bg-white">
+                        {filteredMappings.map((mapping, index) => (
+                          <tr key={mapping.id} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-4 py-3 text-sm text-gray-600">
+                              {index + 1}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="text-sm font-medium text-gray-900">
+                                {mapping.vendorCategory}
                               </div>
-                              <div>
-                                <div className="text-xs text-gray-500 mb-1">
-                                  내부 카테고리
-                                </div>
-                                <div className="font-medium text-gray-900">
-                                  {mapping.internalCategoryPath}
-                                </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="text-sm text-gray-900">
+                                {mapping.internalCategoryPath}
                               </div>
-                            </div>
-                          </div>
-                          <div className="ml-4 flex flex-col gap-2">
-                            <button
-                              onClick={() => handleEditMapping(mapping)}
-                              disabled={isLoading}
-                              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-                            >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
-                              수정
-                            </button>
-                            <button
-                              onClick={() => handleDeleteMapping(mapping.id)}
-                              disabled={isLoading}
-                              className="px-3 py-1.5 text-sm text-red-600 border border-red-300 rounded-lg hover:bg-red-50 hover:border-red-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-                            >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                              삭제
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center justify-center gap-2">
+                                <button
+                                  onClick={() => handleEditMapping(mapping)}
+                                  disabled={isLoading}
+                                  className="px-3 py-1.5 text-xs border border-gray-300 rounded hover:bg-gray-50 hover:border-gray-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                  title="수정"
+                                >
+                                  수정
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteMapping(mapping.id)}
+                                  disabled={isLoading}
+                                  className="px-3 py-1.5 text-xs text-red-600 border border-red-300 rounded hover:bg-red-50 hover:border-red-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                  title="삭제"
+                                >
+                                  삭제
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </>
           ) : (
