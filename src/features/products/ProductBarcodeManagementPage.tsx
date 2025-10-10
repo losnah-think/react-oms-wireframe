@@ -73,6 +73,20 @@ interface PrintQueueItem {
   quantity: number;
 }
 
+interface PrintHistoryItem {
+  id: string;
+  productId: string;
+  productName: string;
+  productCode: string;
+  templateId: string;
+  templateName: string;
+  shipperId: string;
+  shipperName: string;
+  printedAt: string;
+  quantity: number;
+  printedBy?: string;
+}
+
 // Mock 데이터
 const mockShippers: Shipper[] = [
   {
@@ -335,7 +349,7 @@ const ProductBarcodeManagementPage: React.FC = () => {
   const router = useRouter();
   
   // 상태 관리
-  const [activeTab, setActiveTab] = useState<'create' | 'queue'>('create');
+  const [activeTab, setActiveTab] = useState<'create' | 'queue' | 'history'>('create');
   const [shippers, setShippers] = useState<Shipper[]>(mockShippers);
   const [templates, setTemplates] = useState<BarcodeTemplate[]>([]);
   const [products, setProducts] = useState<Product[]>(mockProducts);
@@ -344,6 +358,8 @@ const ProductBarcodeManagementPage: React.FC = () => {
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [printQueue, setPrintQueue] = useState<PrintQueueItem[]>([]);
   const [selectedQueueItems, setSelectedQueueItems] = useState<string[]>([]);
+  const [printHistory, setPrintHistory] = useState<PrintHistoryItem[]>([]);
+  const [historyFilter, setHistoryFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState("");
   const [previewItems, setPreviewItems] = useState<PrintQueueItem[]>([]);
@@ -545,17 +561,76 @@ const ProductBarcodeManagementPage: React.FC = () => {
     // PDF 출력 로직 (실제로는 서버 API 호출)
     console.log('PDF 출력:', itemsToPrint);
     
-    // 상태 업데이트
+    // 인쇄 이력에 추가
+    const newHistoryItems: PrintHistoryItem[] = itemsToPrint.map(item => ({
+      id: `HISTORY-${Date.now()}-${item.id}`,
+      productId: item.productId,
+      productName: item.productName,
+      productCode: item.productCode,
+      templateId: item.templateId,
+      templateName: item.templateName,
+      shipperId: item.shipperId,
+      shipperName: item.shipperName,
+      printedAt: new Date().toISOString(),
+      quantity: item.quantity,
+      printedBy: '현재 사용자' // 실제로는 로그인한 사용자 정보
+    }));
+
+    setPrintHistory(prev => [...newHistoryItems, ...prev]);
+    
+    // 인쇄 대기에서 제거 또는 상태 업데이트
     setPrintQueue(prev =>
-      prev.map(item =>
-        (selectedQueueItems.length === 0 || selectedQueueItems.includes(item.id))
-          ? { ...item, status: 'completed' as const }
-          : item
+      prev.filter(item => 
+        !(selectedQueueItems.length === 0 || selectedQueueItems.includes(item.id))
       )
     );
 
     setToastMessage(`${itemsToPrint.length}개 바코드가 PDF로 출력되었습니다.`);
     setSelectedQueueItems([]);
+  };
+
+  // 재인쇄
+  const handleReprint = (historyItem: PrintHistoryItem) => {
+    const newQueueItem: PrintQueueItem = {
+      id: `QUEUE-${Date.now()}-${historyItem.productId}`,
+      productId: historyItem.productId,
+      productName: historyItem.productName,
+      productCode: historyItem.productCode,
+      templateId: historyItem.templateId,
+      templateName: historyItem.templateName,
+      shipperId: historyItem.shipperId,
+      shipperName: historyItem.shipperName,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      quantity: historyItem.quantity
+    };
+
+    setPrintQueue(prev => [newQueueItem, ...prev]);
+    setToastMessage('인쇄 대기에 추가되었습니다.');
+    setActiveTab('queue');
+  };
+
+  // 이력 필터링
+  const getFilteredHistory = () => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    return printHistory.filter(item => {
+      const printedDate = new Date(item.printedAt);
+      
+      switch (historyFilter) {
+        case 'today':
+          return printedDate >= today;
+        case 'week':
+          return printedDate >= weekAgo;
+        case 'month':
+          return printedDate >= monthAgo;
+        default:
+          return true;
+      }
+    });
   };
 
   // 인쇄 대기 전체 삭제
@@ -656,6 +731,26 @@ const ProductBarcodeManagementPage: React.FC = () => {
                 {printQueue.length > 0 && (
                   <span className="ml-1 px-2 py-0.5 text-xs bg-blue-100 text-blue-600 rounded-full">
                     {printQueue.length}
+                  </span>
+                )}
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`px-4 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${
+                activeTab === 'history'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                인쇄 이력
+                {printHistory.length > 0 && (
+                  <span className="ml-1 px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded-full">
+                    {printHistory.length}
                   </span>
                 )}
               </div>
@@ -878,7 +973,7 @@ const ProductBarcodeManagementPage: React.FC = () => {
               </div>
             </div>
           </div>
-        ) : (
+        ) : activeTab === 'queue' ? (
           /* 인쇄 대기 목록 */
           <div className="max-w-6xl mx-auto">
             <div className="bg-white rounded-lg shadow-sm">
@@ -1029,6 +1124,167 @@ const ProductBarcodeManagementPage: React.FC = () => {
                                item.status === 'printing' ? '출력 중' :
                                item.status === 'error' ? '오류' : '대기 중'}
                             </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* 인쇄 이력 */
+          <div className="max-w-6xl mx-auto">
+            <div className="bg-white rounded-lg shadow-sm">
+              <div className="p-4 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">인쇄 이력</h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      인쇄된 바코드 이력을 조회합니다. ({getFilteredHistory().length}개 항목)
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {/* 필터 버튼 */}
+                    <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-1">
+                      <button
+                        onClick={() => setHistoryFilter('all')}
+                        className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                          historyFilter === 'all'
+                            ? 'bg-white text-blue-600 shadow-sm'
+                            : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                      >
+                        전체
+                      </button>
+                      <button
+                        onClick={() => setHistoryFilter('today')}
+                        className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                          historyFilter === 'today'
+                            ? 'bg-white text-blue-600 shadow-sm'
+                            : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                      >
+                        오늘
+                      </button>
+                      <button
+                        onClick={() => setHistoryFilter('week')}
+                        className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                          historyFilter === 'week'
+                            ? 'bg-white text-blue-600 shadow-sm'
+                            : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                      >
+                        최근 7일
+                      </button>
+                      <button
+                        onClick={() => setHistoryFilter('month')}
+                        className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                          historyFilter === 'month'
+                            ? 'bg-white text-blue-600 shadow-sm'
+                            : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                      >
+                        최근 30일
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4">
+                {getFilteredHistory().length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="text-gray-400 text-5xl mb-4">📜</div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      {historyFilter === 'all' 
+                        ? '인쇄 이력이 없습니다' 
+                        : '해당 기간의 인쇄 이력이 없습니다'}
+                    </h3>
+                    <p className="text-gray-600 mb-4">
+                      인쇄 대기 탭에서 바코드를 출력하면 이력이 저장됩니다.
+                    </p>
+                    <button
+                      onClick={() => setActiveTab('queue')}
+                      className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors inline-flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                      </svg>
+                      인쇄 대기로 이동
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {getFilteredHistory().map((item) => (
+                      <div
+                        key={item.id}
+                        className="p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h4 className="font-medium text-gray-900">{item.productName}</h4>
+                              <span className="text-sm text-gray-500">({item.productCode})</span>
+                              <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">
+                                출력 완료
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
+                              <div className="flex items-center gap-2">
+                                <span className="text-gray-600">템플릿:</span>
+                                <span className="text-gray-900">{item.templateName}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-gray-600">화주사:</span>
+                                <span className="text-gray-900">{item.shipperName}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-gray-600">수량:</span>
+                                <span className="text-gray-900">{item.quantity}개</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-gray-600">출력자:</span>
+                                <span className="text-gray-900">{item.printedBy || '-'}</span>
+                              </div>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-2">
+                              출력 시간: {new Date(item.printedAt).toLocaleString('ko-KR')}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 ml-4">
+                            <button
+                              onClick={() => handlePreviewItem({
+                                id: item.id,
+                                productId: item.productId,
+                                productName: item.productName,
+                                productCode: item.productCode,
+                                templateId: item.templateId,
+                                templateName: item.templateName,
+                                shipperId: item.shipperId,
+                                shipperName: item.shipperName,
+                                status: 'completed',
+                                createdAt: item.printedAt,
+                                quantity: item.quantity
+                              })}
+                              className="px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors inline-flex items-center gap-1"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                              미리보기
+                            </button>
+                            <button
+                              onClick={() => handleReprint(item)}
+                              className="px-3 py-2 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors inline-flex items-center gap-1"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                              </svg>
+                              재인쇄
+                            </button>
                           </div>
                         </div>
                       </div>
