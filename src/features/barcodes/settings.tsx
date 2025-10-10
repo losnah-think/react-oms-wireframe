@@ -3,18 +3,14 @@ import { Container, Button } from "../../design-system";
 import { useBarcodeSettings } from "./useBarcodeSettings";
 import TemplatesPanel from "./panels/TemplatesPanel";
 import EditorPanel from "./panels/EditorPanel";
-import QueuePanel from "./panels/QueuePanel";
 import RulesPanel from "./panels/RulesPanel";
-import ShipperRulesPanel from "./panels/ShipperRulesPanel";
 
-const Tabs = ["Templates", "Editor", "Queue", "Rules", "ShipperRules"] as const;
+const Tabs = ["Templates", "Editor", "Rules"] as const;
 
 const TAB_CONFIG = {
   Templates: { label: "템플릿", icon: null },
   Editor: { label: "편집", icon: null },
-  Queue: { label: "인쇄대기", icon: null },
-  Rules: { label: "자동정리", icon: null },
-  ShipperRules: { label: "화주사별 규칙", icon: null }
+  Rules: { label: "자동정리", icon: null }
 };
 
 const BarcodeSettingsPage: React.FC = () => {
@@ -99,27 +95,12 @@ const BarcodeSettingsPage: React.FC = () => {
           />
         )}
 
-        {active === "Queue" && (
-          <QueuePanel
-            queue={api.queue}
-            selectedQueueIds={api.selectedQueueIds}
-            setSelectedQueueIds={api.setSelectedQueueIds}
-            removeQueueItems={api.removeQueueItems}
-            clearQueue={api.clearQueue}
-            updateQueueStatus={api.updateQueueStatus}
-          />
-        )}
-
         {active === "Rules" && (
           <RulesPanel 
             rules={api.rules} 
             toggleRule={api.toggleRule} 
             addRule={api.addRule} 
           />
-        )}
-
-        {active === "ShipperRules" && (
-          <ShipperRulesPanel />
         )}
       </div>
     </div>
