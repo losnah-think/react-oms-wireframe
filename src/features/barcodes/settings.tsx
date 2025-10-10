@@ -1,9 +1,10 @@
 import React from "react";
 import { Container, Button } from "../../design-system";
-import { useBarcodeSettings } from "./useBarcodeSettings";
+import { useBarcodeSettings, BarcodeTemplate } from "./useBarcodeSettings";
 import TemplatesPanel from "./panels/TemplatesPanel";
 import EditorPanel from "./panels/EditorPanel";
 import RulesPanel from "./panels/RulesPanel";
+import CreateTemplateModal from "./modals/CreateTemplateModal";
 
 const Tabs = ["Templates", "Editor", "Rules"] as const;
 
@@ -103,6 +104,14 @@ const BarcodeSettingsPage: React.FC = () => {
           />
         )}
       </div>
+
+      {/* 템플릿 생성 모달 */}
+      {api.isCreateModalOpen && (
+        <CreateTemplateModal
+          onClose={() => api.setCreateModalOpen(false)}
+          onCreate={api.createTemplate}
+        />
+      )}
     </div>
   );
 };
