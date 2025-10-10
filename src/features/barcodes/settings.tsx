@@ -2,22 +2,19 @@ import React from "react";
 import { Container, Button } from "../../design-system";
 import { useBarcodeSettings, BarcodeTemplate } from "./useBarcodeSettings";
 import TemplatesPanel from "./panels/TemplatesPanel";
-import EditorPanel from "./panels/EditorPanel";
 import RulesPanel from "./panels/RulesPanel";
 import CreateTemplateModal from "./modals/CreateTemplateModal";
 
-const Tabs = ["Templates", "Editor", "Rules"] as const;
+const Tabs = ["Templates", "Rules"] as const;
 
 const TAB_CONFIG = {
   Templates: { label: "템플릿", icon: null },
-  Editor: { label: "편집", icon: null },
   Rules: { label: "자동정리", icon: null }
 };
 
 const BarcodeSettingsPage: React.FC = () => {
   const [active, setActive] = React.useState<typeof Tabs[number]>("Templates");
   const api = useBarcodeSettings();
-  const previewRef = React.useRef<HTMLDivElement | null>(null);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -60,39 +57,10 @@ const BarcodeSettingsPage: React.FC = () => {
           <TemplatesPanel
             templates={api.templates}
             selectedTemplateId={api.selectedTemplateId}
-            onSelect={api.handleTemplateSelect}
             onDuplicate={api.duplicateTemplate}
             onRemove={api.removeTemplate}
             onSetDefault={api.handleSetDefaultTemplate}
             onCreate={() => api.setCreateModalOpen(true)}
-          />
-        )}
-
-        {active === "Editor" && (
-          <EditorPanel
-            template={api.selectedTemplate}
-            elements={api.elements}
-            selectedElementId={api.selectedElementId}
-            onUpdateField={api.updateTemplateField}
-            onDuplicate={api.duplicateTemplate}
-            onSetDefault={api.handleSetDefaultTemplate}
-            mmToPreviewPx={api.mmToPreviewPx}
-            clamp={api.clamp}
-            previewRef={previewRef}
-            onAddElement={api.addElementToTemplate}
-            onMoveElement={api.moveElement}
-            onRemoveElement={api.removeElement}
-            onUpdateElementField={api.updateElementField}
-            componentPalette={[
-              { type: "text", label: "상품명", hint: "상품 이름" },
-              { type: "sku", label: "상품코드", hint: "SKU" },
-              { type: "price", label: "가격", hint: "판매가" },
-              { type: "barcode", label: "바코드", hint: "1D 바코드" },
-              { type: "qr", label: "QR", hint: "QR 코드" },
-              { type: "custom", label: "텍스트", hint: "자유 입력" },
-            ]}
-            selectedElement={api.selectedElement}
-            onOpenCreate={() => api.setCreateModalOpen(true)}
           />
         )}
 

@@ -1,11 +1,11 @@
 import React from "react";
+import { useRouter } from "next/router";
 import { Button, Badge } from "../../../design-system";
 import type { BarcodeTemplate } from "../useBarcodeSettings";
 
 type Props = {
   templates: BarcodeTemplate[];
   selectedTemplateId: string;
-  onSelect: (id: string) => void;
   onDuplicate: (id: string) => void;
   onRemove: (id: string) => void;
   onSetDefault: (id: string) => void;
@@ -15,18 +15,22 @@ type Props = {
 const TemplatesPanel: React.FC<Props> = ({
   templates,
   selectedTemplateId,
-  onSelect,
   onDuplicate,
   onRemove,
   onSetDefault,
   onCreate,
 }) => {
+  const router = useRouter();
+
+  const handleTemplateClick = (templateId: string) => {
+    router.push(`/barcodes/template/${templateId}`);
+  };
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold text-gray-900">인쇄 템플릿 목록</h2>
-          <p className="text-sm text-gray-500">템플릿을 선택하면 편집할 수 있습니다.</p>
+          <p className="text-sm text-gray-500">템플릿을 클릭하여 편집하세요.</p>
         </div>
         <Button size="small" onClick={onCreate}>
           템플릿 만들기
@@ -40,7 +44,7 @@ const TemplatesPanel: React.FC<Props> = ({
             <button
               type="button"
               key={template.id}
-              onClick={() => onSelect(template.id)}
+              onClick={() => handleTemplateClick(template.id)}
               className={`w-full rounded-lg border px-4 py-3 text-left transition ${
                 isSelected
                   ? "border-primary-400 bg-primary-50"
