@@ -67,6 +67,129 @@ const mockProducts = [
   }
 ];
 
+// 판매처별 부가 정보 타입 정의
+interface VendorExtraInfo {
+  id: string;
+  vendorId: string;
+  key: string;
+  value: string;
+  description?: string;
+  mappingField?: string;
+}
+
+// 판매처별 부가 정보 Mock 데이터
+const mockExtraInfo: VendorExtraInfo[] = [
+  // 네이버 스마트스토어
+  {
+    id: "EI001",
+    vendorId: "V001",
+    key: "판매자 ID",
+    value: "naver_seller_123",
+    description: "네이버 스마트스토어 판매자 식별자",
+    mappingField: "seller_id"
+  },
+  {
+    id: "EI002",
+    vendorId: "V001",
+    key: "정산 주기",
+    value: "월 2회 (15일, 말일)",
+    description: "정산 받는 주기",
+    mappingField: "settlement_period"
+  },
+  {
+    id: "EI003",
+    vendorId: "V001",
+    key: "수수료율",
+    value: "12%",
+    description: "판매 수수료 비율",
+    mappingField: "commission_rate"
+  },
+  {
+    id: "EI004",
+    vendorId: "V001",
+    key: "배송비 템플릿 ID",
+    value: "TPL-NAVER-001",
+    description: "배송비 계산 템플릿",
+    mappingField: "shipping_template_id"
+  },
+  {
+    id: "EI005",
+    vendorId: "V001",
+    key: "고객센터 번호",
+    value: "1588-1234",
+    description: "고객 문의 전화번호",
+    mappingField: "customer_service_phone"
+  },
+  
+  // 쿠팡
+  {
+    id: "EI006",
+    vendorId: "V002",
+    key: "판매자 ID",
+    value: "coupang_seller_456",
+    description: "쿠팡 판매자 식별자",
+    mappingField: "seller_id"
+  },
+  {
+    id: "EI007",
+    vendorId: "V002",
+    key: "정산 주기",
+    value: "주 1회 (매주 금요일)",
+    description: "정산 받는 주기",
+    mappingField: "settlement_period"
+  },
+  {
+    id: "EI008",
+    vendorId: "V002",
+    key: "수수료율",
+    value: "15%",
+    description: "판매 수수료 비율",
+    mappingField: "commission_rate"
+  },
+  {
+    id: "EI009",
+    vendorId: "V002",
+    key: "로켓배송 사용",
+    value: "사용함",
+    description: "쿠팡 로켓배송 서비스 사용 여부",
+    mappingField: "rocket_delivery_enabled"
+  },
+  {
+    id: "EI010",
+    vendorId: "V002",
+    key: "반품배송비",
+    value: "5,000원",
+    description: "반품 시 고객 부담 배송비",
+    mappingField: "return_shipping_fee"
+  },
+  
+  // 11번가
+  {
+    id: "EI011",
+    vendorId: "V003",
+    key: "판매자 ID",
+    value: "11st_seller_789",
+    description: "11번가 판매자 식별자",
+    mappingField: "seller_id"
+  },
+  {
+    id: "EI012",
+    vendorId: "V003",
+    key: "정산 주기",
+    value: "월 1회 (말일)",
+    description: "정산 받는 주기",
+    mappingField: "settlement_period"
+  },
+  {
+    id: "EI013",
+    vendorId: "V003",
+    key: "수수료율",
+    value: "10%",
+    description: "판매 수수료 비율",
+    mappingField: "commission_rate"
+  }
+];
+
 const ExternalSendPage: React.FC = () => {
   const router = useRouter();
   const { ids } = router.query;
@@ -77,6 +200,7 @@ const ExternalSendPage: React.FC = () => {
   // 상태 관리
   const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
   const [productSettings, setProductSettings] = useState<Record<string, Record<string, {
+    name?: string;
     price: number;
     stock: number;
     category: string;
@@ -96,6 +220,21 @@ const ExternalSendPage: React.FC = () => {
     status: 'active' | 'inactive' | 'out_of_stock' | 'discontinued';
     isNew: boolean; // 신규 등록인지 기존 수정인지
   }>>>({});
+
+  // 판매처/상품별 부가 정보 관리
+  const [selectedExtraInfo, setSelectedExtraInfo] = useState<Record<string, Record<string, Array<{
+    key: string;
+    value: string;
+    description?: string;
+    mappingField?: string;
+  }>>>>({});
+
+  // 부가 정보 모달 상태
+  const [extraInfoModalOpen, setExtraInfoModalOpen] = useState(false);
+  const [extraInfoModalContext, setExtraInfoModalContext] = useState<{
+    productId: string;
+    vendorId: string;
+  } | null>(null);
 
   // 상품 정보 가져오기
   const products = mockProducts.filter(p => productIds.includes(p.id));
@@ -230,20 +369,137 @@ const ExternalSendPage: React.FC = () => {
     }
   };
 
+  // 판매처의 사용 가능한 부가 정보 가져오기
+  const getAvailableExtraInfo = (vendorId: string) => {
+    return mockExtraInfo.filter(info => info.vendorId === vendorId);
+  };
+
+  // 판매처/상품별 부가 정보 추가
+  const addExtraInfo = (productId: string, vendorId: string, extraInfoId: string) => {
+    const extraInfo = mockExtraInfo.find(info => info.id === extraInfoId);
+    if (!extraInfo) return;
+
+    setSelectedExtraInfo(prev => ({
+      ...prev,
+      [productId]: {
+        ...prev[productId],
+        [vendorId]: [
+          ...(prev[productId]?.[vendorId] || []),
+          {
+            key: extraInfo.key,
+            value: extraInfo.value,
+            description: extraInfo.description,
+            mappingField: extraInfo.mappingField
+          }
+        ]
+      }
+    }));
+  };
+
+  // 판매처/상품별 부가 정보 삭제
+  const removeExtraInfo = (productId: string, vendorId: string, index: number) => {
+    setSelectedExtraInfo(prev => {
+      const vendorInfo = prev[productId]?.[vendorId] || [];
+      const newVendorInfo = vendorInfo.filter((_, i) => i !== index);
+      
+      return {
+        ...prev,
+        [productId]: {
+          ...prev[productId],
+          [vendorId]: newVendorInfo
+        }
+      };
+    });
+  };
+
+  // 판매처/상품별 부가 정보 값 수정
+  const updateExtraInfoValue = (productId: string, vendorId: string, index: number, newValue: string) => {
+    setSelectedExtraInfo(prev => {
+      const vendorInfo = prev[productId]?.[vendorId] || [];
+      const newVendorInfo = [...vendorInfo];
+      newVendorInfo[index] = {
+        ...newVendorInfo[index],
+        value: newValue
+      };
+      
+      return {
+        ...prev,
+        [productId]: {
+          ...prev[productId],
+          [vendorId]: newVendorInfo
+        }
+      };
+    });
+  };
+
+  // 판매처/상품별 부가 정보 가져오기
+  const getProductVendorExtraInfo = (productId: string, vendorId: string) => {
+    return selectedExtraInfo[productId]?.[vendorId] || [];
+  };
+
+  // 부가 정보 모달 열기
+  const openExtraInfoModal = (productId: string, vendorId: string) => {
+    setExtraInfoModalContext({ productId, vendorId });
+    setExtraInfoModalOpen(true);
+  };
+
+  // 부가 정보 모달 닫기
+  const closeExtraInfoModal = () => {
+    setExtraInfoModalOpen(false);
+    setExtraInfoModalContext(null);
+  };
+
+  // 부가 정보 일괄 추가
+  const addMultipleExtraInfo = (productId: string, vendorId: string, extraInfoIds: string[]) => {
+    const newExtraInfoList = extraInfoIds.map(id => {
+      const extraInfo = mockExtraInfo.find(info => info.id === id);
+      if (!extraInfo) return null;
+      return {
+        key: extraInfo.key,
+        value: extraInfo.value,
+        description: extraInfo.description,
+        mappingField: extraInfo.mappingField
+      };
+    }).filter(Boolean) as Array<{
+      key: string;
+      value: string;
+      description?: string;
+      mappingField?: string;
+    }>;
+
+    setSelectedExtraInfo(prev => ({
+      ...prev,
+      [productId]: {
+        ...prev[productId],
+        [vendorId]: newExtraInfoList
+      }
+    }));
+
+    closeExtraInfoModal();
+  };
+
+  // 이미 추가된 부가 정보인지 확인
+  const isExtraInfoAdded = (productId: string, vendorId: string, extraInfoKey: string) => {
+    const existingInfo = getProductVendorExtraInfo(productId, vendorId);
+    return existingInfo.some(info => info.key === extraInfoKey);
+  };
+
   // 기본값 설정
   const getDefaultSetting = (productId: string, vendorId: string, field: string) => {
     const product = products.find(p => p.id === productId);
     if (!product) return '';
     
     switch (field) {
+      case 'name':
+        return productSettings[productId]?.[vendorId]?.name || product.name;
       case 'price':
-        return productSettings[productId]?.[vendorId]?.price || getEditedProductInfo(productId, 'price');
+        return productSettings[productId]?.[vendorId]?.price || product.selling_price;
       case 'stock':
-        return productSettings[productId]?.[vendorId]?.stock || getEditedProductInfo(productId, 'stock');
+        return productSettings[productId]?.[vendorId]?.stock || product.stock;
       case 'category':
-        return productSettings[productId]?.[vendorId]?.category || getEditedProductInfo(productId, 'category');
+        return productSettings[productId]?.[vendorId]?.category || product.classificationPath.join(' > ');
       case 'description':
-        return productSettings[productId]?.[vendorId]?.description || `${getEditedProductInfo(productId, 'name')} - ${product.brand}`;
+        return productSettings[productId]?.[vendorId]?.description || `${product.name} - ${product.brand}`;
       default:
         return '';
     }
@@ -259,7 +515,8 @@ const ExternalSendPage: React.FC = () => {
     console.log('외부 송신 실행:', {
       productIds,
       selectedVendors,
-      productSettings
+      productSettings,
+      selectedExtraInfo
     });
     
     alert('외부 송신이 완료되었습니다!');
@@ -336,251 +593,166 @@ const ExternalSendPage: React.FC = () => {
             </div>
           </div>
 
-          {/* 2단계: 상품별 설정 */}
+          {/* 2단계: 상품별 판매처 설정 */}
           {selectedVendors.length > 0 && (
             <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">2. 상품별 판매처 설정</h3>
               <p className="text-sm text-gray-600 mb-6">
-                각 상품의 판매처별 가격, 재고, 카테고리를 설정하세요.
+                각 상품의 판매처별 가격, 재고, 카테고리 등을 개별적으로 설정하세요.
               </p>
               
-              <div className="space-y-6">
+              <div className="space-y-8">
                 {products.map((product) => (
-                  <div key={product.id} className="border border-gray-200 rounded-lg p-4">
-                    {/* 판매처별 기본값 설정 */}
-                    <div className="bg-blue-50 rounded-lg p-4 mb-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div>
-                          <h5 className="font-semibold text-blue-900">판매처별 기본값 설정</h5>
-                          <p className="text-sm text-blue-700 mt-1">
-                            아래 값들이 각 판매처별 설정의 기본값으로 사용됩니다. 필요에 따라 개별 판매처에서 수정할 수 있습니다.
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => initializeProductBasicInfo(product.id)}
-                          className="px-3 py-1 text-sm bg-blue-200 text-blue-700 rounded hover:bg-blue-300"
-                        >
-                          원본값으로 초기화
-                        </button>
-                      </div>
-                      
-                      <div className="flex items-start gap-4 mb-4">
-                        {/* 상품 이미지 */}
-                        <div className="w-20 h-20 bg-gray-200 rounded-lg flex-shrink-0 overflow-hidden">
-                          <img 
-                            src={product.image} 
-                            alt={product.name}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                              e.currentTarget.nextElementSibling.style.display = 'flex';
-                            }}
-                          />
-                          <div className="w-full h-full bg-gray-200 flex items-center justify-center" style={{display: 'none'}}>
-                            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                          </div>
-                        </div>
-                        
-                        {/* 상품 기본 정보 */}
-                        <div className="flex-1">
-                          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-                        {/* 기본 상품명 */}
-                        <div className="lg:col-span-2">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            기본 상품명
-                          </label>
-                          <input
-                            type="text"
-                            value={getEditedProductInfo(product.id, 'name')}
-                            onChange={(e) => updateProductBasicInfo(product.id, 'name', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="판매처별 기본 상품명"
-                          />
-                        </div>
-                        
-                        {/* 기본 가격 */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            기본 가격
-                          </label>
-                          <input
-                            type="number"
-                            min="1"
-                            value={getEditedProductInfo(product.id, 'price')}
-                            onChange={(e) => updateProductBasicInfo(product.id, 'price', Number(e.target.value))}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="기본 가격"
-                          />
-                        </div>
-                        
-                        {/* 기본 재고 */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            기본 재고
-                          </label>
-                          <input
-                            type="number"
-                            min="0"
-                            value={getEditedProductInfo(product.id, 'stock')}
-                            onChange={(e) => updateProductBasicInfo(product.id, 'stock', Number(e.target.value))}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="기본 재고"
-                          />
-                        </div>
-                          </div>
+                  <div key={product.id} className="border border-gray-200 rounded-lg p-5">
+                    {/* 상품 정보 헤더 */}
+                    <div className="flex items-start gap-4 pb-4 mb-4 border-b border-gray-200">
+                      <div className="w-16 h-16 bg-gray-200 rounded-lg flex-shrink-0 overflow-hidden">
+                        <img 
+                          src={product.image} 
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling.style.display = 'flex';
+                          }}
+                        />
+                        <div className="w-full h-full bg-gray-200 flex items-center justify-center" style={{display: 'none'}}>
+                          <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
                         </div>
                       </div>
-                      
-                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
-                        {/* 기본 카테고리 */}
-                        <div className="lg:col-span-2">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            기본 카테고리
-                          </label>
-                          <input
-                            type="text"
-                            value={getEditedProductInfo(product.id, 'category')}
-                            onChange={(e) => updateProductBasicInfo(product.id, 'category', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="기본 카테고리"
-                          />
-                        </div>
-                        
-                        {/* 읽기 전용 정보 */}
-                        <div className="flex items-end">
-                          <div className="text-sm text-gray-600">
-                            <div>코드: {product.code}</div>
-                            <div>브랜드: {product.brand} | {product.year} {product.season}</div>
-                          </div>
+                      <div className="flex-1">
+                        <h4 className="text-lg font-semibold text-gray-900">{product.name}</h4>
+                        <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                          <span>상품코드: {product.code}</span>
+                          <span>•</span>
+                          <span>브랜드: {product.brand}</span>
+                          <span>•</span>
+                          <span>{product.year} {product.season}</span>
                         </div>
                       </div>
                     </div>
 
-                    {/* 판매처별 개별 설정 - 테이블 형태 */}
-                    <div className="overflow-x-auto">
-                      <div className="mb-3">
-                        <h6 className="font-semibold text-gray-900">판매처별 개별 설정</h6>
-                        <p className="text-sm text-gray-600">각 판매처별로 다른 가격, 재고, 카테고리를 설정할 수 있습니다.</p>
-                      </div>
-                      <table className="w-full border border-gray-200 rounded-lg">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b border-gray-200">
-                              이미지
-                            </th>
-                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b border-gray-200">
-                              판매처
-                            </th>
-                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b border-gray-200">
-                              상태
-                            </th>
-                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b border-gray-200">
-                              판매 가격
-                            </th>
-                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b border-gray-200">
-                              판매 재고
-                            </th>
-                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b border-gray-200">
-                              판매처 카테고리
-                            </th>
-                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b border-gray-200">
-                              상품 설명
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {selectedVendors.map((vendorId) => {
-                            const vendor = mockVendors.find(v => v.id === vendorId);
+                    {/* 판매처별 개별 설정 리스트 */}
+                    <div className="space-y-4">
+                      {selectedVendors.map((vendorId) => {
+                        const vendor = mockVendors.find(v => v.id === vendorId);
+                        const productStatus = getProductStatus(product.id, vendorId);
+                        
+                        return (
+                          <div key={vendorId} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                            <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-300">
+                              <div>
+                                <h5 className="font-semibold text-gray-900">{vendor?.name}</h5>
+                                <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                                  <span>{productStatus.isNew ? '신규 등록' : '기존 수정'}</span>
+                                  <span>•</span>
+                                  <span>원본 가격: ₩{formatPrice(product.selling_price)}</span>
+                                  <span>•</span>
+                                  <span>원본 재고: {product.stock}개</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm text-gray-600">상태:</span>
+                                <select
+                                  value={productStatus.status}
+                                  onChange={(e) => updateProductStatus(product.id, vendorId, e.target.value as any)}
+                                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                >
+                                  <option value="active">판매중</option>
+                                  <option value="inactive">판매중지</option>
+                                  <option value="out_of_stock">품절</option>
+                                  <option value="discontinued">단종</option>
+                                </select>
+                              </div>
+                            </div>
                             
-                            return (
-                              <tr key={vendorId} className="hover:bg-gray-50">
-                                <td className="px-4 py-3 border-b border-gray-200">
-                                  <div className="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden">
-                                    <img 
-                                      src={product.image} 
-                                      alt={product.name}
-                                      className="w-full h-full object-cover"
-                                      onError={(e) => {
-                                        e.currentTarget.style.display = 'none';
-                                        e.currentTarget.nextElementSibling.style.display = 'flex';
-                                      }}
-                                    />
-                                    <div className="w-full h-full bg-gray-200 flex items-center justify-center" style={{display: 'none'}}>
-                                      <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                      </svg>
-                                    </div>
-                                  </div>
-                                </td>
-                                <td className="px-4 py-3 border-b border-gray-200">
-                                  <div className="font-medium text-gray-900">{vendor?.name}</div>
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    {getProductStatus(product.id, vendorId).isNew ? '신규 등록' : '기존 수정'}
-                                  </div>
-                                </td>
-                                <td className="px-4 py-3 border-b border-gray-200">
-                                  <select
-                                    value={getProductStatus(product.id, vendorId).status}
-                                    onChange={(e) => updateProductStatus(product.id, vendorId, e.target.value as any)}
-                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                  >
-                                    <option value="active">판매중</option>
-                                    <option value="inactive">판매중지</option>
-                                    <option value="out_of_stock">품절</option>
-                                    <option value="discontinued">단종</option>
-                                  </select>
-                                </td>
-                                <td className="px-4 py-3 border-b border-gray-200">
+                            {/* 입력 필드들 */}
+                            <div className="space-y-4">
+                              {/* 상품명 */}
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                  상품명
+                                </label>
+                                <input
+                                  type="text"
+                                  value={getDefaultSetting(product.id, vendorId, 'name') || product.name}
+                                  onChange={(e) => updateProductSetting(product.id, vendorId, 'name', e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                  placeholder="판매처별 상품명"
+                                />
+                              </div>
+
+                              {/* 가격과 재고 */}
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                    판매 가격
+                                  </label>
                                   <input
                                     type="number"
                                     min="1"
                                     value={getDefaultSetting(product.id, vendorId, 'price')}
                                     onChange={(e) => updateProductSetting(product.id, vendorId, 'price', Number(e.target.value))}
-                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                    placeholder="가격"
                                   />
-                                </td>
-                                <td className="px-4 py-3 border-b border-gray-200">
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                    판매 재고
+                                  </label>
                                   <input
                                     type="number"
                                     min="0"
                                     value={getDefaultSetting(product.id, vendorId, 'stock')}
                                     onChange={(e) => updateProductSetting(product.id, vendorId, 'stock', Number(e.target.value))}
-                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                    placeholder="재고"
                                   />
-                                </td>
-                                <td className="px-4 py-3 border-b border-gray-200">
-                                  <select
-                                    value={getDefaultSetting(product.id, vendorId, 'category')}
-                                    onChange={(e) => updateProductSetting(product.id, vendorId, 'category', e.target.value)}
-                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                  >
-                                    <option value="의류/상의">의류/상의</option>
-                                    <option value="의류/하의">의류/하의</option>
-                                    <option value="신발">신발</option>
-                                    <option value="가방">가방</option>
-                                    <option value="액세서리">액세서리</option>
-                                    <option value="화장품">화장품</option>
-                                    <option value="생활용품">생활용품</option>
-                                    <option value="전자제품">전자제품</option>
-                                    <option value="기타">기타</option>
-                                  </select>
-                                </td>
-                                <td className="px-4 py-3 border-b border-gray-200">
-                                  <textarea
-                                    value={getDefaultSetting(product.id, vendorId, 'description')}
-                                    onChange={(e) => updateProductSetting(product.id, vendorId, 'description', e.target.value)}
-                                    rows={1}
-                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
-                                    placeholder="상품 설명"
-                                  />
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
+                                </div>
+                              </div>
+
+                              {/* 카테고리 */}
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                  판매처 카테고리
+                                </label>
+                                <select
+                                  value={getDefaultSetting(product.id, vendorId, 'category')}
+                                  onChange={(e) => updateProductSetting(product.id, vendorId, 'category', e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                >
+                                  <option value="의류/상의">의류/상의</option>
+                                  <option value="의류/하의">의류/하의</option>
+                                  <option value="신발">신발</option>
+                                  <option value="가방">가방</option>
+                                  <option value="액세서리">액세서리</option>
+                                  <option value="화장품">화장품</option>
+                                  <option value="생활용품">생활용품</option>
+                                  <option value="전자제품">전자제품</option>
+                                  <option value="기타">기타</option>
+                                </select>
+                              </div>
+
+                              {/* 상품 설명 */}
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                  상품 설명
+                                </label>
+                                <textarea
+                                  value={getDefaultSetting(product.id, vendorId, 'description')}
+                                  onChange={(e) => updateProductSetting(product.id, vendorId, 'description', e.target.value)}
+                                  rows={3}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none bg-white"
+                                  placeholder="판매처에 표시될 상품 설명을 입력하세요"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 ))}
@@ -588,10 +760,10 @@ const ExternalSendPage: React.FC = () => {
             </div>
           )}
 
-          {/* 3단계: 최종 확인 */}
+          {/* 3단계: 기본정보 확인 */}
           {selectedVendors.length > 0 && (
             <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">3. 전송 정보 확인</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">3. 기본정보 확인</h3>
               
               <div className="space-y-4">
                 {selectedVendors.map((vendorId) => {
@@ -666,6 +838,130 @@ const ExternalSendPage: React.FC = () => {
             </div>
           )}
 
+          {/* 4단계: 부가 정보 추가 */}
+          {selectedVendors.length > 0 && (
+            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">4. 판매처별 부가 정보 추가 (선택사항)</h3>
+              <p className="text-sm text-gray-600 mb-6">
+                각 판매처의 요구사항에 맞는 부가 정보를 추가하세요. 키와 값을 설정하여 여러 개를 추가할 수 있습니다.
+              </p>
+              
+              <div className="space-y-6">
+                {selectedVendors.map((vendorId) => {
+                  const vendor = mockVendors.find(v => v.id === vendorId);
+                  const availableExtraInfo = getAvailableExtraInfo(vendorId);
+                  
+                  return (
+                    <div key={vendorId} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-4">
+                        <h5 className="font-semibold text-gray-900">{vendor?.name}</h5>
+                        <span className="text-sm text-gray-500">
+                          사용 가능한 부가 정보: {availableExtraInfo.length}개
+                        </span>
+                      </div>
+                      
+                      {products.map((product) => {
+                        const extraInfoList = getProductVendorExtraInfo(product.id, vendorId);
+                        
+                        return (
+                          <div key={product.id} className="mb-4 last:mb-0">
+                            <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-200">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-gray-200 rounded overflow-hidden flex-shrink-0">
+                                  <img 
+                                    src={product.image} 
+                                    alt={product.name}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = 'none';
+                                    }}
+                                  />
+                                </div>
+                                <div>
+                                  <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                                  <div className="text-xs text-gray-500">{product.code}</div>
+                                </div>
+                              </div>
+                              
+                              {/* 부가 정보 추가 버튼 */}
+                              <button
+                                onClick={() => openExtraInfoModal(product.id, vendorId)}
+                                className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                                부가 정보 추가
+                              </button>
+                            </div>
+                            
+                            {/* 선택된 부가 정보 목록 */}
+                            {extraInfoList.length > 0 ? (
+                              <div className="space-y-2">
+                                {extraInfoList.map((info, index) => (
+                                  <div key={index} className="bg-gray-50 rounded-lg p-3">
+                                    <div className="flex items-start gap-3">
+                                      <div className="flex-1 grid grid-cols-2 gap-3">
+                                        <div>
+                                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                                            키
+                                          </label>
+                                          <input
+                                            type="text"
+                                            value={info.key}
+                                            readOnly
+                                            className="w-full px-2 py-1.5 text-sm bg-white border border-gray-300 rounded focus:outline-none text-gray-600"
+                                          />
+                                          {info.description && (
+                                            <p className="text-xs text-gray-500 mt-1">{info.description}</p>
+                                          )}
+                                        </div>
+                                        <div>
+                                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                                            값
+                                          </label>
+                                          <input
+                                            type="text"
+                                            value={info.value}
+                                            onChange={(e) => updateExtraInfoValue(product.id, vendorId, index, e.target.value)}
+                                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="값을 입력하세요"
+                                          />
+                                          {info.mappingField && (
+                                            <p className="text-xs text-gray-500 mt-1">
+                                              매핑 필드: {info.mappingField}
+                                            </p>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <button
+                                        onClick={() => removeExtraInfo(product.id, vendorId, index)}
+                                        className="mt-6 p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                                        title="삭제"
+                                      >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="text-center py-4 text-sm text-gray-500">
+                                추가된 부가 정보가 없습니다. 위에서 부가 정보를 선택하여 추가하세요.
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* 하단 버튼 */}
           <div className="flex justify-between items-center">
             <button
@@ -683,6 +979,185 @@ const ExternalSendPage: React.FC = () => {
               외부 송신 시작
             </button>
           </div>
+      </div>
+
+      {/* 부가 정보 선택 모달 */}
+      {extraInfoModalOpen && extraInfoModalContext && (
+        <ExtraInfoModal
+          productId={extraInfoModalContext.productId}
+          vendorId={extraInfoModalContext.vendorId}
+          availableExtraInfo={getAvailableExtraInfo(extraInfoModalContext.vendorId)}
+          selectedExtraInfo={getProductVendorExtraInfo(extraInfoModalContext.productId, extraInfoModalContext.vendorId)}
+          onClose={closeExtraInfoModal}
+          onSave={addMultipleExtraInfo}
+        />
+      )}
+    </div>
+  );
+};
+
+// 부가 정보 선택 모달 컴포넌트
+interface ExtraInfoModalProps {
+  productId: string;
+  vendorId: string;
+  availableExtraInfo: VendorExtraInfo[];
+  selectedExtraInfo: Array<{
+    key: string;
+    value: string;
+    description?: string;
+    mappingField?: string;
+  }>;
+  onClose: () => void;
+  onSave: (productId: string, vendorId: string, extraInfoIds: string[]) => void;
+}
+
+const ExtraInfoModal: React.FC<ExtraInfoModalProps> = ({
+  productId,
+  vendorId,
+  availableExtraInfo,
+  selectedExtraInfo,
+  onClose,
+  onSave
+}) => {
+  const [checkedItems, setCheckedItems] = useState<Set<string>>(() => {
+    // 이미 선택된 항목들을 초기 체크 상태로 설정
+    const initialChecked = new Set<string>();
+    selectedExtraInfo.forEach(info => {
+      const matchingItem = availableExtraInfo.find(item => item.key === info.key);
+      if (matchingItem) {
+        initialChecked.add(matchingItem.id);
+      }
+    });
+    return initialChecked;
+  });
+
+  const toggleItem = (id: string) => {
+    setCheckedItems(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSave = () => {
+    onSave(productId, vendorId, Array.from(checkedItems));
+  };
+
+  const handleSelectAll = () => {
+    setCheckedItems(new Set(availableExtraInfo.map(info => info.id)));
+  };
+
+  const handleDeselectAll = () => {
+    setCheckedItems(new Set());
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[80vh] flex flex-col">
+        {/* 모달 헤더 */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div>
+            <h3 className="text-xl font-semibold text-gray-900">부가 정보 선택</h3>
+            <p className="text-sm text-gray-600 mt-1">
+              추가할 부가 정보를 선택하세요 ({checkedItems.size}개 선택됨)
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* 전체 선택/해제 버튼 */}
+        <div className="px-6 py-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+          <div className="text-sm text-gray-600">
+            총 {availableExtraInfo.length}개 항목
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleSelectAll}
+              className="px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded transition-colors"
+            >
+              전체 선택
+            </button>
+            <button
+              onClick={handleDeselectAll}
+              className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded transition-colors"
+            >
+              전체 해제
+            </button>
+          </div>
+        </div>
+
+        {/* 모달 바디 - 스크롤 가능 */}
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="space-y-2">
+            {availableExtraInfo.map((info) => {
+              const isChecked = checkedItems.has(info.id);
+              
+              return (
+                <label
+                  key={info.id}
+                  className={`flex items-start p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                    isChecked
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300 bg-white'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => toggleItem(info.id)}
+                    className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <div className="ml-3 flex-1">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-900">{info.key}</div>
+                        {info.description && (
+                          <div className="text-sm text-gray-600 mt-1">{info.description}</div>
+                        )}
+                        <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+                          <span>기본값: {info.value}</span>
+                          {info.mappingField && (
+                            <>
+                              <span>•</span>
+                              <span>매핑: {info.mappingField}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 모달 푸터 */}
+        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            취소
+          </button>
+          <button
+            onClick={handleSave}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            선택 완료 ({checkedItems.size}개)
+          </button>
+        </div>
       </div>
     </div>
   );
