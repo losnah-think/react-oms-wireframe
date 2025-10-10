@@ -468,7 +468,7 @@ export default function VendorCategoryMappingPage() {
   const handleEditMapping = (mapping: CategoryMapping) => {
     setEditingMapping(mapping);
     setVendorCategory(mapping.vendorCategory);
-    setSelectedInternalCategory(mapping.internalCategoryId);
+    setSelectedInternalCategory(mapping.internalCategoryPath);
     setShowModal(true);
   };
 
@@ -477,20 +477,19 @@ export default function VendorCategoryMappingPage() {
       showToast("판매처 카테고리를 입력해주세요", "error");
       return;
     }
-    if (!selectedInternalCategory) {
-      showToast("내부 카테고리를 먼저 선택해주세요", "error");
+    if (!selectedInternalCategory.trim()) {
+      showToast("내부 카테고리를 입력해주세요", "error");
       return;
     }
-
-    const internalCat = mockInternalCategories.find(
-      (c) => c.id === selectedInternalCategory
-    );
-    if (!internalCat) return;
 
     setIsLoading(true);
     
     // 실제 API 호출을 시뮬레이션
     await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // 기존 카테고리에서 찾거나 새로운 ID 생성
+    const existingCat = mockInternalCategories.find((c) => c.path === selectedInternalCategory);
+    const internalCategoryId = existingCat?.id || `IC${Date.now()}`;
 
     if (editingMapping) {
       // 수정
@@ -500,8 +499,8 @@ export default function VendorCategoryMappingPage() {
             ? {
                 ...m,
                 vendorCategory,
-                internalCategoryId: selectedInternalCategory,
-                internalCategoryPath: internalCat.path,
+                internalCategoryId: internalCategoryId,
+                internalCategoryPath: selectedInternalCategory,
               }
             : m
         )
@@ -513,8 +512,8 @@ export default function VendorCategoryMappingPage() {
         id: `M${Date.now()}`,
         vendorId: selectedVendor.id,
         vendorCategory,
-        internalCategoryId: selectedInternalCategory,
-        internalCategoryPath: internalCat.path,
+        internalCategoryId: internalCategoryId,
+        internalCategoryPath: selectedInternalCategory,
       };
       setMappings([...mappings, newMapping]);
       showToast("매핑이 추가되었습니다.", "success");
@@ -771,22 +770,33 @@ export default function VendorCategoryMappingPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   판매처 카테고리 (필수)
                 </label>
-                <select
+                <input
+                  type="text"
+                  list="vendor-categories"
                   value={vendorCategory}
                   onChange={(e) => setVendorCategory(e.target.value)}
+                  placeholder="카테고리를 입력하거나 선택하세요 (예: 패션 > 남성의류 > 상의)"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">카테고리를 선택하세요</option>
-                  {selectedVendor && getVendorCategories(selectedVendor.id).map((category: VendorCategory) => (
-                    <option key={category.id} value={category.path}>
-                      {category.path} {category.productCount && `(${category.productCount}개 상품)`}
-                    </option>
-                  ))}
-                </select>
-                {selectedVendor && getVendorCategories(selectedVendor.id).length === 0 && (
+                />
+                {selectedVendor && getVendorCategories(selectedVendor.id).length > 0 && (
+                  <datalist id="vendor-categories">
+                    {getVendorCategories(selectedVendor.id).map((category: VendorCategory) => (
+                      <option key={category.id} value={category.path}>
+                        {category.path} {category.productCount && `(${category.productCount}개 상품)`}
+                      </option>
+                    ))}
+                  </datalist>
+                )}
+                {selectedVendor && getVendorCategories(selectedVendor.id).length > 0 ? (
+                  <div className="mt-2 p-2 bg-blue-50 rounded-lg">
+                    <div className="text-xs text-blue-700">
+                      💡 동기화된 카테고리를 사용하거나 직접 입력할 수 있습니다
+                    </div>
+                  </div>
+                ) : (
                   <div className="mt-2 p-3 bg-yellow-50 rounded-lg">
                     <div className="text-sm text-yellow-800">
-                      <strong>알림:</strong> 이 판매처의 카테고리가 동기화되지 않았습니다. 
+                      <strong>알림:</strong> 이 판매처의 카테고리가 동기화되지 않았습니다. 직접 입력하거나 
                       <button 
                         onClick={() => syncVendorCategories(selectedVendor.id)}
                         className="ml-1 text-blue-600 hover:text-blue-800 underline"
@@ -802,18 +812,26 @@ export default function VendorCategoryMappingPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   내부 카테고리 (필수)
                 </label>
-                <select
+                <input
+                  type="text"
+                  list="internal-categories"
                   value={selectedInternalCategory}
                   onChange={(e) => setSelectedInternalCategory(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">카테고리 선택</option>
+                  placeholder="카테고리를 입력하거나 선택하세요 (예: 의류 > 상의)"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <datalist id="internal-categories">
                   {mockInternalCategories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
+                    <option key={cat.id} value={cat.path}>
                       {cat.path}
                     </option>
                   ))}
-                </select>
+                </datalist>
+                <div className="mt-2 p-2 bg-green-50 rounded-lg">
+                  <div className="text-xs text-green-700">
+                    💡 기존 카테고리를 선택하거나 새로운 카테고리를 직접 입력할 수 있습니다
+                  </div>
+                </div>
               </div>
             </div>
 
