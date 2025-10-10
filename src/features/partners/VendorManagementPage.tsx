@@ -66,8 +66,6 @@ const VendorManagementPage = () => {
   // 추가 모달 상태들
   const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
   const [vendorToDelete, setVendorToDelete] = useState<Vendor | null>(null);
-  const [showStatusChangeModal, setShowStatusChangeModal] = useState(false);
-  const [vendorToChangeStatus, setVendorToChangeStatus] = useState<Vendor | null>(null);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showStatsModal, setShowStatsModal] = useState(false);
@@ -195,26 +193,6 @@ const VendorManagementPage = () => {
     }
   };
 
-  // 상태 변경 확인 모달 열기
-  const toggleStatus = (vendor: Vendor) => {
-    setVendorToChangeStatus(vendor);
-    setShowStatusChangeModal(true);
-  };
-
-  // 실제 상태 변경 실행
-  const confirmStatusChange = () => {
-    if (vendorToChangeStatus) {
-      const newVendors = vendors.map(v => {
-        if (v.id === vendorToChangeStatus.id) {
-          return { ...v, status: v.status === '사용중' ? '정지' : '사용중' } as Vendor;
-        }
-        return v;
-      });
-      saveVendors(newVendors);
-      setShowStatusChangeModal(false);
-      setVendorToChangeStatus(null);
-    }
-  };
 
   // 통계 계산
   const getStats = () => {
@@ -323,13 +301,6 @@ const VendorManagementPage = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3">
                       <h3 className="text-xl font-bold text-gray-900">{vendor.name}</h3>
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        vendor.status === '사용중' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {vendor.status}
-                      </span>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 text-sm">
@@ -364,16 +335,6 @@ const VendorManagementPage = () => {
 
                   {/* 오른쪽: 버튼 */}
                   <div className="flex flex-col gap-2 ml-6">
-                    <button
-                      onClick={() => toggleStatus(vendor)}
-                      className={`px-4 py-2 rounded text-sm font-medium whitespace-nowrap ${
-                        vendor.status === '사용중'
-                          ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                          : 'bg-green-50 text-green-600 hover:bg-green-100'
-                      }`}
-                    >
-                      {vendor.status === '사용중' ? ' 정지' : ' 재개'}
-                    </button>
                     <button
                       onClick={() => openEditModal(vendor)}
                       className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-sm font-medium"

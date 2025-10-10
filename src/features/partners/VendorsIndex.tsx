@@ -135,16 +135,6 @@ const VendorManagementPage = () => {
     }
   };
 
-  // 상태 토글
-  const toggleStatus = (id: string) => {
-    const newVendors = vendors.map(v => {
-      if (v.id === id) {
-        return { ...v, status: v.status === '사용중' ? '정지' : '사용중' } as Vendor;
-      }
-      return v;
-    });
-    saveVendors(newVendors);
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -236,13 +226,6 @@ const VendorManagementPage = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3">
                       <h3 className="text-xl font-bold text-gray-900">{vendor.name}</h3>
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        vendor.status === '사용중' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {vendor.status}
-                      </span>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 text-sm">
@@ -277,16 +260,6 @@ const VendorManagementPage = () => {
 
                   {/* 오른쪽: 버튼 */}
                   <div className="flex flex-col gap-2 ml-6">
-                    <button
-                      onClick={() => toggleStatus(vendor.id)}
-                      className={`px-4 py-2 rounded text-sm font-medium whitespace-nowrap ${
-                        vendor.status === '사용중'
-                          ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                          : 'bg-green-50 text-green-600 hover:bg-green-100'
-                      }`}
-                    >
-                      {vendor.status === '사용중' ? ' 정지' : ' 재개'}
-                    </button>
                     <button
                       onClick={() => openEditModal(vendor)}
                       className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-sm font-medium"
