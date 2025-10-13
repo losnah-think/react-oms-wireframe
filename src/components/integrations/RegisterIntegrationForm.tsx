@@ -39,6 +39,7 @@ interface RegisterIntegrationFormProps {
     name?: string;
     credentials?: Record<string, string>;
   } | null;
+  initialVendorId?: string | null;
 }
 
 const fieldLabel = {
@@ -57,9 +58,10 @@ export default function RegisterIntegrationForm({
   onRegistered,
   vendors = mockVendors,
   initialShop = null,
+  initialVendorId = null,
 }: RegisterIntegrationFormProps) {
   const [platform, setPlatform] = React.useState(initialShop?.platform ?? "");
-  const [vendorId, setVendorId] = React.useState<string>("");
+  const [vendorId, setVendorId] = React.useState<string>(initialVendorId ?? "");
   const [shopId, setShopId] = React.useState(initialShop?.id ?? "");
   const [storeName, setStoreName] = React.useState(initialShop?.name ?? "");
   const [domain, setDomain] = React.useState(initialShop?.credentials?.storeDomain ?? "");
@@ -98,6 +100,11 @@ export default function RegisterIntegrationForm({
     setClientSecret(initialShop.credentials?.clientSecret ?? "");
     setAccessToken(initialShop.credentials?.accessToken ?? "");
   }, [initialShop]);
+
+  // if an initial vendor id is provided (edit mode), set it
+  React.useEffect(() => {
+    if (initialVendorId) setVendorId(initialVendorId);
+  }, [initialVendorId]);
 
   const visibleFields = React.useMemo(() => {
     switch (platform) {
