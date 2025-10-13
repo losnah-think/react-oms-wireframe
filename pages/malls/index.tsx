@@ -1,6 +1,6 @@
 import React from "react";
-import MallsListPage from "../../src/features/partners/MallsListPage";
+import VendorsListPage from "../../src/features/partners/VendorsListPage";
 
-export default function MallsIndexRoute() {
-  return <MallsListPage />;
+export default function MallsPage() {
+  return <VendorsListPage />;
 }

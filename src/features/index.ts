@@ -12,9 +12,9 @@ export { default as ProductImportPage } from "./products/ProductImportPage";
 export { default as ExternalProductImportPage } from "./products/ExternalProductImportPage";
 export { default as ProductCsvUploadPage } from "./products/ProductCsvUploadPage";
 
-export { default as MallsListPage } from "./partners/MallsListPage";
-export { default as MallProductsPage } from "./partners/MallProductsPage";
-export { default as MallInfoManagementPage } from "./partners/MallInfoManagementPage";
+export { default as VendorsListPage } from "./partners/VendorsListPage";
+export { default as VendorProductsPage } from "./partners/VendorProductsPage";
+export { default as VendorInfoManagementPage } from "./partners/VendorInfoManagementPage";
 export { default as CategoryMappingPage } from "./partners/CategoryMappingPage";
 
 export { default as CategoriesManagementPage } from "./categories/CategoriesManagementPage";
