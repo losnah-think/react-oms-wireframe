@@ -281,12 +281,9 @@ const ProductCategoryPage: React.FC<ProductCategoryPageProps> = ({ pageType }) =
       title: "카테고리",
       render: (value, cat) => (
         <div style={{ paddingLeft: `${cat.depth * 24}px` }}>
-          <div className="font-medium text-gray-900 flex items-center gap-2">
+          <div className="font-medium text-gray-900">
             {cat.depth > 0 && <span className="text-gray-400 mr-2">└</span>}
             {value}
-            {isClassificationPage && defaultClassificationId === cat.id && (
-              <Badge variant="primary">기본값</Badge>
-            )}
           </div>
           {cat.description && (
             <div className="text-sm text-gray-500 mt-1">{cat.description}</div>
@@ -323,30 +320,6 @@ const ProductCategoryPage: React.FC<ProductCategoryPageProps> = ({ pageType }) =
           >
             삭제
           </Button>
-          {/* 상품 분류 페이지에서만 기본값 설정 버튼 표시 */}
-          {isClassificationPage && (
-            <>
-              {defaultClassificationId !== cat.id ? (
-                <Button
-                  size="small"
-                  variant="ghost"
-                  onClick={() => handleSetAsDefault(cat.id)}
-                  disabled={isSavingDefault}
-                >
-                  기본값 설정
-                </Button>
-              ) : (
-                <Button
-                  size="small"
-                  variant="ghost"
-                  onClick={() => saveDefaultClassification(null)}
-                  disabled={isSavingDefault}
-                >
-                  기본값 해제
-                </Button>
-              )}
-            </>
-          )}
         </div>
       ),
     },
