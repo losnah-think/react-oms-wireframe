@@ -5,6 +5,7 @@ const mockVendors = [
   {
     id: "V001",
     name: "네이버 스마트스토어",
+    platform: "네이버 스마트스토어",
     type: "판매처" as const,
     businessNumber: "123-45-67890",
     representative: "김철수",
@@ -19,6 +20,7 @@ const mockVendors = [
   {
     id: "V002",
     name: "쿠팡 파트너스",
+    platform: "쿠팡",
     type: "판매처" as const,
     businessNumber: "987-65-43210",
     representative: "이영희",
@@ -33,6 +35,7 @@ const mockVendors = [
   {
     id: "V003",
     name: "11번가",
+    platform: "11번가",
     type: "판매처" as const,
     businessNumber: "111-22-33444",
     representative: "박민수",
@@ -174,7 +177,14 @@ function VendorInfoCard({ vendor, onEdit }: any) {
     <div className="bg-white rounded-lg border shadow-sm p-6 mb-6">
       <div className="flex items-start justify-between mb-4">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">{vendor.name}</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-bold text-gray-900">{vendor.name}</h2>
+            {vendor.platform && (
+              <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">
+                {vendor.platform}
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-2 mt-2">
             <span
               className={`px-3 py-1 text-sm rounded-full ${

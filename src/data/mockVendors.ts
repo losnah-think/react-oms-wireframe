@@ -1,17 +1,11 @@
-export interface MockVendor {
-  id: string;
-  name: string;
-  code: string;
-  platform: 'godomall' | 'wisa' | 'kurly' | 'smartstore' | 'cafe24' | 'gmarket' | 'coupang' | 'naver';
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-  settings?: Record<string, unknown>;
-}
+import { BaseVendor } from '../types/vendor';
+
+// 타입 alias for backward compatibility
+export type MockVendor = BaseVendor;
 
 const now = () => new Date().toISOString();
 
-export const mockVendors: MockVendor[] = [
+export const mockVendors: BaseVendor[] = [
   {
     id: '1',
     name: '고도몰 샵',
@@ -98,20 +92,52 @@ export const mockVendors: MockVendor[] = [
       productPageUrl: 'https://cafe24.com/product',
     },
   },
+  {
+    id: '6',
+    name: '쿠팡',
+    code: 'COUPANG006',
+    platform: 'coupang',
+    is_active: true,
+    created_at: '2024-04-15T09:00:00Z',
+    updated_at: '2024-04-20T14:30:00Z',
+    settings: {
+      vendorType: '오픈마켓',
+      site: 'CoupangAPI',
+      commissionRate: '15%',
+      loginId: 'coupang_partner',
+      productPageUrl: 'https://www.coupang.com/vp/products',
+    },
+  },
+  {
+    id: '7',
+    name: 'G마켓',
+    code: 'GMARKET007',
+    platform: 'gmarket',
+    is_active: true,
+    created_at: '2024-04-20T10:30:00Z',
+    updated_at: '2024-04-25T16:45:00Z',
+    settings: {
+      vendorType: '오픈마켓',
+      site: 'GmarketAPI',
+      commissionRate: '12%',
+      loginId: 'gmarket_seller',
+      productPageUrl: 'https://www.gmarket.co.kr/item',
+    },
+  },
 ];
 
-export function cloneVendor(vendor: MockVendor): MockVendor {
+export function cloneVendor(vendor: BaseVendor): BaseVendor {
   return JSON.parse(JSON.stringify(vendor));
 }
 
-export function stampVendor(partial: Partial<MockVendor> & { id?: string }): MockVendor {
+export function stampVendor(partial: Partial<BaseVendor> & { id?: string }): BaseVendor {
   const timestamp = now();
   const id = partial.id ?? String(Date.now());
   return {
     id,
     name: partial.name ?? '',
     code: partial.code ?? '',
-    platform: (partial.platform as MockVendor['platform']) ?? 'cafe24',
+    platform: (partial.platform as BaseVendor['platform']) ?? 'cafe24',
     is_active: partial.is_active ?? true,
     created_at: partial.created_at ?? timestamp,
     updated_at: timestamp,
@@ -119,17 +145,17 @@ export function stampVendor(partial: Partial<MockVendor> & { id?: string }): Moc
   };
 }
 
-let vendorsStore: MockVendor[] = mockVendors.map(cloneVendor);
+let vendorsStore: BaseVendor[] = mockVendors.map(cloneVendor);
 
 export function listVendors() {
   return vendorsStore.slice();
 }
 
-export function replaceVendors(next: MockVendor[]) {
+export function replaceVendors(next: BaseVendor[]) {
   vendorsStore = next.slice();
 }
 
-export function upsertVendor(vendor: MockVendor) {
+export function upsertVendor(vendor: BaseVendor) {
   const idx = vendorsStore.findIndex((item) => item.id === vendor.id);
   if (idx === -1) vendorsStore = [vendor, ...vendorsStore];
   else vendorsStore[idx] = vendor;
@@ -137,4 +163,16 @@ export function upsertVendor(vendor: MockVendor) {
 
 export function removeVendor(id: string) {
   vendorsStore = vendorsStore.filter((item) => item.id !== id);
+}
+
+// 특정 vendor의 연동 상태 업데이트
+export function updateVendorIntegrationStatus(vendorId: string, isActive: boolean) {
+  const idx = vendorsStore.findIndex((item) => item.id === vendorId);
+  if (idx !== -1) {
+    vendorsStore[idx] = {
+      ...vendorsStore[idx],
+      is_active: isActive,
+      updated_at: now(),
+    };
+  }
 }

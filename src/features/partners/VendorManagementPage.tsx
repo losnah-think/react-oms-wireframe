@@ -1,26 +1,8 @@
 import React, { useState, useEffect } from 'react';
-
-// 타입 정의
-interface FixedAddress {
-  id: string;
-  name: string;
-  address: string;
-  description?: string;
-}
-
-interface Vendor {
-  id: string;
-  name: string;
-  type: '판매처' | '공급처';
-  businessNumber: string;
-  representative: string;
-  phone: string;
-  email?: string;
-  address: string;
-  fixedAddressId?: string; // 고정 주소 ID
-  status: '사용중' | '정지';
-  registrationDate: string;
-}
+import { Vendor, FixedAddress, PLATFORM_OPTIONS, getPlatformLabel } from '../../types/vendor';
+import { mockVendors, upsertVendor as upsertMockVendor, removeVendor as removeMockVendor } from '../../data/mockVendors';
+import { getIntegrationsByVendorId } from '../../data/mockVendorIntegrations';
+import { BaseVendor } from '../../types/vendor';
 
 // 고정 주소 목록
 const fixedAddresses: FixedAddress[] = [
@@ -71,39 +53,32 @@ const VendorManagementPage = () => {
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [showImportExportModal, setShowImportExportModal] = useState(false);
 
-  // 로컬스토리지에서 로드
+  // 로컬스토리지에서 로드 또는 mockVendors 기반 초기화
   useEffect(() => {
     const saved = localStorage.getItem('vendors');
     if (saved) {
       setVendors(JSON.parse(saved));
     } else {
-      // 초기 데이터
-      const initialVendors: Vendor[] = [
-        {
-          id: '1',
-          name: '스마트스토어',
-          type: '판매처',
-          businessNumber: '123-45-67890',
-          representative: '김판매',
-          phone: '02-1234-5678',
-          email: 'smart@store.com',
-          address: '서울시 강남구 테헤란로 123',
-          status: '사용중',
-          registrationDate: '2024-01-15'
-        },
-        {
-          id: '2',
-          name: '쿠팡',
-          type: '판매처',
-          businessNumber: '234-56-78901',
-          representative: '이쿠팡',
-          phone: '02-2345-6789',
-          email: 'coupang@partners.com',
-          address: '서울시 송파구 올림픽로 300',
-          status: '사용중',
-          registrationDate: '2024-02-01'
-        }
-      ];
+      // mockVendors 기반으로 초기 데이터 생성
+      console.log('🔄 mockVendors 기반으로 판매처 데이터 초기화:', mockVendors.length, '개');
+      const initialVendors: Vendor[] = mockVendors.map((baseVendor, index) => ({
+        id: baseVendor.id,
+        name: baseVendor.name,
+        code: baseVendor.code,
+        type: '판매처' as const,
+        platform: getPlatformLabel(baseVendor.platform),
+        businessNumber: `${100 + index}-${20 + index}-${30000 + index * 1000}`,
+        representative: baseVendor.settings?.contact || `대표자${index + 1}`,
+        phone: `02-${1000 + index * 100}-${5000 + index * 100}`,
+        email: baseVendor.settings?.loginId ? `${baseVendor.settings.loginId}@example.com` : `vendor${index + 1}@example.com`,
+        address: `서울시 강남구 테헤란로 ${123 + index * 10}`,
+        status: baseVendor.is_active ? '사용중' as const : '정지' as const,
+        registrationDate: baseVendor.created_at?.split('T')[0] || '2024-01-01',
+        created_at: baseVendor.created_at,
+        updated_at: baseVendor.updated_at,
+        settings: baseVendor.settings,
+      }));
+      console.log('✅ 생성된 판매처:', initialVendors.length, '개');
       setVendors(initialVendors);
       localStorage.setItem('vendors', JSON.stringify(initialVendors));
     }
@@ -174,6 +149,33 @@ const VendorManagementPage = () => {
     }
 
     saveVendors(newVendors);
+    
+    // mockVendors에도 동기화 (판매처만)
+    if (editingVendor.type === '판매처') {
+      // platform 레이블을 value로 변환
+      const platformValue = PLATFORM_OPTIONS.find(opt => opt.label === editingVendor.platform)?.value || 'cafe24';
+      
+      const baseVendor: BaseVendor = {
+        id: editingVendor.id,
+        name: editingVendor.name,
+        code: editingVendor.code || `VENDOR${editingVendor.id}`,
+        platform: platformValue as BaseVendor['platform'],
+        is_active: editingVendor.status === '사용중',
+        created_at: editingVendor.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        settings: {
+          vendorType: editingVendor.settings?.vendorType || '오픈마켓',
+          commissionRate: editingVendor.settings?.commissionRate || '0%',
+          contact: editingVendor.representative,
+          loginId: editingVendor.email?.split('@')[0] || '',
+          ...editingVendor.settings,
+        },
+      };
+      
+      upsertMockVendor(baseVendor);
+      console.log('✅ mockVendors 업데이트:', baseVendor.name);
+    }
+    
     setIsModalOpen(false);
     setEditingVendor(null);
   };
@@ -187,6 +189,21 @@ const VendorManagementPage = () => {
   // 실제 삭제 실행
   const confirmDelete = () => {
     if (vendorToDelete) {
+      // 외부 연동 확인 (판매처만)
+      if (vendorToDelete.type === '판매처') {
+        const integrations = getIntegrationsByVendorId(vendorToDelete.id);
+        if (integrations.length > 0) {
+          alert(`⚠️ 이 판매처는 ${integrations.length}개의 외부 연동이 있어 삭제할 수 없습니다.\n\n먼저 외부 연동을 해제해주세요.`);
+          setShowDeleteConfirmModal(false);
+          setVendorToDelete(null);
+          return;
+        }
+        
+        // mockVendors에서도 삭제
+        removeMockVendor(vendorToDelete.id);
+        console.log('✅ mockVendors에서 삭제:', vendorToDelete.name);
+      }
+      
       saveVendors(vendors.filter(v => v.id !== vendorToDelete.id));
       setShowDeleteConfirmModal(false);
       setVendorToDelete(null);
@@ -301,9 +318,29 @@ const VendorManagementPage = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3">
                       <h3 className="text-xl font-bold text-gray-900">{vendor.name}</h3>
+                      {vendor.platform && (
+                        <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-semibold rounded-full">
+                          {vendor.platform}
+                        </span>
+                      )}
+                      <span
+                        className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                          vendor.status === '사용중'
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-red-100 text-red-700'
+                        }`}
+                      >
+                        {vendor.status}
+                      </span>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 text-sm">
+                      {vendor.code && (
+                        <div>
+                          <span className="text-gray-500">코드:</span>
+                          <span className="ml-2 font-medium text-gray-900">{vendor.code}</span>
+                        </div>
+                      )}
                       <div>
                         <span className="text-gray-500">대표자:</span>
                         <span className="ml-2 font-medium text-gray-900">{vendor.representative}</span>
@@ -328,8 +365,13 @@ const VendorManagementPage = () => {
                       </div>
                     </div>
 
-                    <div className="mt-3 text-xs text-gray-500">
-                      등록일: {vendor.registrationDate}
+                    <div className="mt-3 flex items-center gap-4 text-xs text-gray-500">
+                      <span>등록일: {vendor.registrationDate}</span>
+                      {vendor.settings?.commissionRate && (
+                        <span className="text-orange-600 font-medium">
+                          수수료: {vendor.settings.commissionRate}
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -388,6 +430,27 @@ const VendorManagementPage = () => {
                 />
               </div>
 
+              {/* 플랫폼 (판매처만) */}
+              {selectedType === '판매처' && (
+                <div>
+                  <label className="block text-base font-semibold text-gray-900 mb-2">
+                    플랫폼
+                  </label>
+                  <select
+                    value={editingVendor.platform || ''}
+                    onChange={(e) => setEditingVendor({ ...editingVendor, platform: e.target.value })}
+                    className="w-full px-4 py-3 border rounded-lg text-base"
+                  >
+                    <option value="">선택 안함</option>
+                    {PLATFORM_OPTIONS.map(option => (
+                      <option key={option.value} value={option.label}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               {/* 대표자 */}
               <div>
                 <label className="block text-base font-semibold text-gray-900 mb-2">
@@ -443,6 +506,26 @@ const VendorManagementPage = () => {
                   className="w-full px-4 py-3 border rounded-lg text-base"
                 />
               </div>
+
+              {/* 수수료율 (판매처만) */}
+              {selectedType === '판매처' && (
+                <div>
+                  <label className="block text-base font-semibold text-gray-900 mb-2">
+                    수수료율
+                  </label>
+                  <input
+                    type="text"
+                    value={editingVendor.settings?.commissionRate || ''}
+                    onChange={(e) => setEditingVendor({ 
+                      ...editingVendor, 
+                      settings: { ...editingVendor.settings, commissionRate: e.target.value }
+                    })}
+                    placeholder="예: 5%, 10%, 15%"
+                    className="w-full px-4 py-3 border rounded-lg text-base"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">플랫폼에서 부과하는 수수료율을 입력하세요.</p>
+                </div>
+              )}
 
               {/* 주소 */}
               <div>

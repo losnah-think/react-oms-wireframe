@@ -10,6 +10,18 @@ interface Vendor {
   is_active: boolean;
 }
 
+// 플랫폼 이름 매핑
+const platformNameMap: Record<string, string> = {
+  'godomall': '고도몰',
+  'wisa': '위사몰',
+  'kurly': '마켓컬리',
+  'smartstore': '네이버 스마트스토어',
+  'cafe24': '카페24',
+  'gmarket': 'G마켓',
+  'coupang': '쿠팡',
+  'naver': '네이버',
+};
+
 export default function VendorsListPage() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
 
@@ -35,15 +47,20 @@ export default function VendorsListPage() {
           )}
           <div className="grid gap-3">
             {vendors.map(vendor => (
-              <div key={vendor.id} className="border rounded p-4 flex items-center justify-between">
+              <div key={vendor.id} className="border rounded p-4 flex items-center justify-between hover:shadow-md transition-shadow">
                 <div className="flex items-center gap-4">
                   <div>
-                    <div className="font-medium">{vendor.name}</div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-medium text-base">{vendor.name}</span>
+                      <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">
+                        {platformNameMap[vendor.platform] || vendor.platform}
+                      </span>
+                    </div>
                     <div className="text-sm text-gray-500">
-                      {vendor.code} • {vendor.platform}
+                      {vendor.code}
                     </div>
                   </div>
-                  <div className={`px-2 py-1 rounded text-xs ${
+                  <div className={`px-3 py-1 rounded-full text-xs font-medium ${
                     vendor.is_active
                       ? "bg-green-100 text-green-800"
                       : "bg-gray-100 text-gray-800"
@@ -52,10 +69,10 @@ export default function VendorsListPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button className="px-3 py-1 border rounded text-sm hover:bg-gray-50">
+                  <button className="px-3 py-1.5 border rounded-md text-sm hover:bg-gray-50 transition-colors">
                     상세보기
                   </button>
-                  <button className="px-3 py-1 border rounded text-sm hover:bg-gray-50">
+                  <button className="px-3 py-1.5 border rounded-md text-sm hover:bg-gray-50 transition-colors">
                     설정
                   </button>
                 </div>

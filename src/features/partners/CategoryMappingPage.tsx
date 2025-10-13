@@ -99,6 +99,7 @@ const mockVendors = [
   {
     id: "V001",
     name: "네이버 스마트스토어",
+    platform: "네이버 스마트스토어",
     type: "판매처" as const,
     businessNumber: "123-45-67890",
     representative: "김철수",
@@ -113,6 +114,7 @@ const mockVendors = [
   {
     id: "V002",
     name: "쿠팡 파트너스",
+    platform: "쿠팡",
     type: "판매처" as const,
     businessNumber: "987-65-43210",
     representative: "이영희",
@@ -127,6 +129,7 @@ const mockVendors = [
   {
     id: "V003",
     name: "11번가",
+    platform: "11번가",
     type: "판매처" as const,
     businessNumber: "111-22-33444",
     representative: "박민수",
@@ -326,9 +329,14 @@ function VendorInfoCard({ vendor, onSyncCategories, isLoadingCategories, lastSyn
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <h2 className="text-lg font-bold text-gray-900">{vendor.name}</h2>
+          {vendor.platform && (
+            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">
+              {vendor.platform}
+            </span>
+          )}
           <span className="text-sm text-gray-600">{vendor.representative}</span>
           {vendor.apiKey && (
-            <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700">
+            <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">
               API 연동됨
             </span>
           )}

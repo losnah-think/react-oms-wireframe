@@ -76,6 +76,7 @@ function SkeletonCard() {
 interface Vendor {
   id: string;
   name: string;
+  platform?: string;
   type: string;
   businessNumber: string;
   representative: string;
@@ -247,6 +248,7 @@ const mockVendors: Vendor[] = [
   {
     id: "cafe24",
     name: "카페24",
+    platform: "카페24",
     type: "판매처",
     businessNumber: "123-45-67890",
     representative: "김철수",
@@ -261,6 +263,7 @@ const mockVendors: Vendor[] = [
   {
     id: "smartstore",
     name: "스마트스토어",
+    platform: "네이버 스마트스토어",
     type: "판매처",
     businessNumber: "987-65-43210",
     representative: "이영희",
@@ -634,9 +637,16 @@ export default function VendorProductsPage() {
               <div className="bg-white rounded-lg border shadow-sm p-6 mb-6">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h2 className="text-xl font-bold text-gray-900">
-                      {selectedVendor.name}
-                    </h2>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-xl font-bold text-gray-900">
+                        {selectedVendor.name}
+                      </h2>
+                      {selectedVendor.platform && (
+                        <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">
+                          {selectedVendor.platform}
+                        </span>
+                      )}
+                    </div>
                     <div className="flex items-center gap-2 mt-2">
                       <span
                         className={`px-3 py-1 text-sm rounded-full ${

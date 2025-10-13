@@ -87,3 +87,4 @@ export default function VendorsHome() {
 }
 
 export { default as VendorsIndexPage } from "./VendorsIndex";
+export { default as VendorManagementPage } from "./VendorManagementPage";

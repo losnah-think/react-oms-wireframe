@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 interface Vendor {
   id: string;
   name: string;
+  platform?: string;
   type: '판매처' | '공급처';
   businessNumber: string;
   representative: string;
@@ -32,6 +33,7 @@ const VendorManagementPage = () => {
         {
           id: '1',
           name: '스마트스토어',
+          platform: '네이버 스마트스토어',
           type: '판매처',
           businessNumber: '123-45-67890',
           representative: '김판매',
@@ -44,6 +46,7 @@ const VendorManagementPage = () => {
         {
           id: '2',
           name: '쿠팡',
+          platform: '쿠팡',
           type: '판매처',
           businessNumber: '234-56-78901',
           representative: '이쿠팡',
@@ -78,6 +81,7 @@ const VendorManagementPage = () => {
     setEditingVendor({
       id: Date.now().toString(),
       name: '',
+      platform: '',
       type: selectedType,
       businessNumber: '',
       representative: '',
@@ -102,6 +106,10 @@ const VendorManagementPage = () => {
 
     if (!editingVendor.name.trim()) {
       alert('업체명을 입력하세요');
+      return;
+    }
+    if (selectedType === '판매처' && !editingVendor.platform) {
+      alert('플랫폼을 선택하세요');
       return;
     }
     if (!editingVendor.representative.trim()) {
@@ -226,6 +234,11 @@ const VendorManagementPage = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3">
                       <h3 className="text-xl font-bold text-gray-900">{vendor.name}</h3>
+                      {vendor.platform && (
+                        <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">
+                          {vendor.platform}
+                        </span>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 text-sm">
@@ -311,6 +324,28 @@ const VendorManagementPage = () => {
                   placeholder="예: 스마트스토어, 쿠팡"
                   className="w-full px-4 py-3 border rounded-lg text-base"
                 />
+              </div>
+
+              {/* 플랫폼 */}
+              <div>
+                <label className="block text-base font-semibold text-gray-900 mb-2">
+                  플랫폼 {selectedType === '판매처' ? '*' : '(선택)'}
+                </label>
+                <select
+                  value={editingVendor.platform || ''}
+                  onChange={(e) => setEditingVendor({ ...editingVendor, platform: e.target.value })}
+                  className="w-full px-4 py-3 border rounded-lg text-base"
+                >
+                  <option value="">플랫폼을 선택하세요</option>
+                  <option value="네이버 스마트스토어">네이버 스마트스토어</option>
+                  <option value="쿠팡">쿠팡</option>
+                  <option value="카페24">카페24</option>
+                  <option value="위사몰">위사몰</option>
+                  <option value="메이크샵">메이크샵</option>
+                  <option value="고도몰5">고도몰5</option>
+                  <option value="자사몰">자사몰</option>
+                  <option value="기타">기타</option>
+                </select>
               </div>
 
               {/* 대표자 */}

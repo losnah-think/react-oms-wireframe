@@ -12,6 +12,13 @@ import {
   type TableColumn,
 } from "../../design-system";
 import { mockVendors } from "../../data/mockVendors";
+import { 
+  allVendorIntegrations, 
+  getIntegrationStatusCounts,
+  updateIntegrationStatus,
+  getIntegrationsByVendorId
+} from "../../data/mockVendorIntegrations";
+import { VendorIntegration, PLATFORM_OPTIONS, getPlatformLabel } from "../../types/vendor";
 
 import ConnectionsList from "../../components/integrations/ConnectionsList";
 import RegisterIntegrationForm from "../../components/integrations/RegisterIntegrationForm";
@@ -20,83 +27,13 @@ import CollectionScheduleManager from "../../components/integrations/CollectionS
 import CronScheduleModal, { CronSchedule } from "../../components/integrations/CronScheduleModal";
 import ScheduleHistoryModal from "../../components/integrations/ScheduleHistoryModal";
 
-// 판매처 연동 관리 타입 정의
-interface VendorIntegration {
-  id: string;
-  vendorId: string;
-  vendorName: string;
-  platform: string;
-  apiKey: string;
-  status: "연동중" | "오류" | "미연동" | "수집중";
-  lastSync: string;
-  nextSync: string;
-  productCount: number;
-  categoryCount: number;
-  syncProgress?: number; // 수집 진행률 (0-100)
-  syncStartTime?: string; // 수집 시작 시간
-  lastRunTime?: string; // 마지막 크론 실행 시간
-}
 
 const channelOptions = [
   { value: "", label: "전체" },
-  { value: "cafe24", label: "카페24" },
-  { value: "smartstore", label: "스마트스토어" },
-  { value: "coupang", label: "쿠팡" },
-  { value: "kurly", label: "마켓컬리" },
-  { value: "godo", label: "고도몰" },
-  { value: "wisa", label: "위사" },
+  ...PLATFORM_OPTIONS.map(opt => ({ value: opt.value, label: opt.label })),
 ];
 
-// 판매처 연동 Mock 데이터 - 100개 이상 생성
-const generateMockVendorIntegrations = (): VendorIntegration[] => {
-  const platforms = ["smartstore", "coupang", "11st", "cafe24", "godo", "kurly"];
-  const statuses: ("연동중" | "오류" | "미연동" | "수집중")[] = ["연동중", "오류", "미연동", "수집중"];
-  const vendors: VendorIntegration[] = [];
-
-  for (let i = 1; i <= 20; i++) {
-    const platform = platforms[Math.floor(Math.random() * platforms.length)];
-    const status = statuses[Math.floor(Math.random() * statuses.length)];
-    
-    const isCollecting = status === "수집중";
-    const syncProgress = isCollecting ? Math.floor(Math.random() * 100) : undefined;
-    const syncStartTime = isCollecting ? `2025-01-15 ${String(Math.floor(Math.random() * 24)).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}` : undefined;
-    
-    // 마지막 실행 시간 생성 (최근 7일 내 랜덤)
-    const now = new Date();
-    const randomDaysAgo = Math.floor(Math.random() * 7);
-    const randomHoursAgo = Math.floor(Math.random() * 24);
-    const randomMinutesAgo = Math.floor(Math.random() * 60);
-    const lastRunDate = new Date(now.getTime() - (randomDaysAgo * 24 * 60 * 60 * 1000) - (randomHoursAgo * 60 * 60 * 1000) - (randomMinutesAgo * 60 * 1000));
-    const lastRunTime = status === "미연동" ? "-" : lastRunDate.toLocaleString('ko-KR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-    
-    vendors.push({
-      id: `vendor-int-${i}`,
-      vendorId: `V${i.toString().padStart(3, '0')}`,
-      vendorName: `${channelOptions.find(o => o.value === platform)?.label || platform} 스토어 ${i}`,
-      platform: platform,
-      apiKey: status === "미연동" ? "" : `${platform}_api_key_${i}`,
-      status: status,
-      lastSync: status === "미연동" ? "-" : `2025-01-15 ${String(Math.floor(Math.random() * 24)).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}`,
-      nextSync: status === "미연동" ? "-" : `2025-01-15 ${String(Math.floor(Math.random() * 24)).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}`,
-      productCount: status === "미연동" ? 0 : Math.floor(Math.random() * 3000) + 100,
-      categoryCount: status === "미연동" ? 0 : Math.floor(Math.random() * 50) + 5,
-      syncProgress,
-      syncStartTime,
-      lastRunTime
-    });
-  }
-  
-  return vendors;
-};
-
-const mockVendorIntegrations: VendorIntegration[] = generateMockVendorIntegrations();
-
+// ConnectedShop 인터페이스 (기존 시스템과의 호환성 유지)
 interface ConnectedShop {
   id: string;
   name: string;
@@ -179,7 +116,7 @@ const IntegrationPage: React.FC = () => {
   const [selectedCronSchedule, setSelectedCronSchedule] = React.useState<CronSchedule | undefined>(undefined);
   
   // 수집 진행률 실시간 업데이트를 위한 상태
-  const [vendorIntegrations, setVendorIntegrations] = React.useState<VendorIntegration[]>(mockVendorIntegrations);
+  const [vendorIntegrations, setVendorIntegrations] = React.useState<VendorIntegration[]>(allVendorIntegrations);
   const [isLoadingSync, setIsLoadingSync] = React.useState(false);
   const [cronSchedules, setCronSchedules] = React.useState<CronSchedule[]>([]);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = React.useState(false);
@@ -274,7 +211,7 @@ const IntegrationPage: React.FC = () => {
 
   // 판매처 목록을 크론 스케줄 모달에 전달하기 위한 변환
   const vendorOptions = React.useMemo(() => {
-    return mockVendorIntegrations.map(integration => ({
+    return allVendorIntegrations.map((integration: VendorIntegration) => ({
       id: integration.id,
       name: integration.vendorName,
       platform: integration.platform
@@ -1001,7 +938,7 @@ const IntegrationPage: React.FC = () => {
         {selectedVendorIntegration && (
           <div className="p-6">
             {(() => {
-              const integration = mockVendorIntegrations.find(i => i.id === selectedVendorIntegration);
+              const integration = allVendorIntegrations.find((i: VendorIntegration) => i.id === selectedVendorIntegration);
               if (!integration) return null;
               
               return (

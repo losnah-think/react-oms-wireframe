@@ -23,7 +23,8 @@ const platformOptions = [
 
 const vendorsForSelect = mockVendors.map((vendor) => ({
   value: vendor.id,
-  label: `${vendor.name} · ${vendor.platform}`,
+  label: `${vendor.name} (${vendor.platform})`,
+  platform: vendor.platform,
 }));
 
 interface RegisterIntegrationFormProps {
@@ -55,7 +56,7 @@ export default function RegisterIntegrationForm({
   vendors = mockVendors,
   initialShop = null,
 }: RegisterIntegrationFormProps) {
-  const [platform, setPlatform] = React.useState(initialShop?.platform ?? "cafe24");
+  const [platform, setPlatform] = React.useState(initialShop?.platform ?? "");
   const [vendorId, setVendorId] = React.useState<string>("");
   const [shopId, setShopId] = React.useState(initialShop?.id ?? "");
   const [storeName, setStoreName] = React.useState(initialShop?.name ?? "");
@@ -66,6 +67,12 @@ export default function RegisterIntegrationForm({
   const [clientSecret, setClientSecret] = React.useState(initialShop?.credentials?.clientSecret ?? "");
   const [accessToken, setAccessToken] = React.useState(initialShop?.credentials?.accessToken ?? "");
   const [isTesting, setTesting] = React.useState(false);
+
+  // 선택된 판매처 정보
+  const selectedVendor = React.useMemo(() => {
+    if (!vendorId) return null;
+    return vendors.find((v) => v.id === vendorId);
+  }, [vendorId, vendors]);
 
   React.useEffect(() => {
     if (!vendorId) return;
@@ -233,8 +240,9 @@ export default function RegisterIntegrationForm({
     <form onSubmit={handleSubmit} className="p-6 space-y-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="space-y-1">
+          <h3 className="text-lg font-semibold text-gray-900">판매처 연동 등록</h3>
           <p className="text-sm text-gray-600">
-            플랫폼을 선택하고 필수 정보를 입력하세요.
+            연동할 판매처를 선택하고 필수 정보를 입력하세요.
           </p>
         </div>
         {initialShop && (
@@ -244,34 +252,114 @@ export default function RegisterIntegrationForm({
         )}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      {/* 판매처 선택 섹션 - 강조 */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-4">
+        <div>
+          <label className="block text-sm font-semibold text-gray-900 mb-2">
+            1. 판매처 선택 <span className="text-red-500">*</span>
+          </label>
+          <Dropdown
+            options={[{ value: "", label: "판매처를 선택하세요" }, ...vendorsForSelect]}
+            value={vendorId}
+            onChange={(value) => setVendorId(value)}
+            fullWidth
+          />
+          <p className="mt-2 text-xs text-gray-600">
+            기존에 등록된 판매처를 선택하거나, 선택하지 않으면 새로운 판매처로 등록됩니다.
+          </p>
+        </div>
+
+        {/* 선택된 판매처 정보 미리보기 */}
+        {selectedVendor && (
+          <div className="bg-white border border-blue-300 rounded-lg p-4">
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <h4 className="font-semibold text-gray-900">{selectedVendor.name}</h4>
+                <p className="text-sm text-gray-600 mt-1">코드: {selectedVendor.code}</p>
+              </div>
+              <Badge variant="primary" size="small">
+                {selectedVendor.platform}
+              </Badge>
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              {selectedVendor.settings?.contact && (
+                <div>
+                  <span className="text-gray-500">담당자:</span>
+                  <span className="ml-2 text-gray-900">{selectedVendor.settings.contact}</span>
+                </div>
+              )}
+              {selectedVendor.settings?.loginId && (
+                <div>
+                  <span className="text-gray-500">로그인ID:</span>
+                  <span className="ml-2 text-gray-900">{selectedVendor.settings.loginId}</span>
+                </div>
+              )}
+              {selectedVendor.settings?.vendorType && (
+                <div className="col-span-2">
+                  <span className="text-gray-500">타입:</span>
+                  <span className="ml-2 text-gray-900">{selectedVendor.settings.vendorType}</span>
+                </div>
+              )}
+              {selectedVendor.settings?.commissionRate && (
+                <div className="col-span-2">
+                  <span className="text-gray-500">수수료율:</span>
+                  <span className="ml-2 text-gray-900">{selectedVendor.settings.commissionRate}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 플랫폼 설정 섹션 */}
+      <div className={`space-y-4 ${!vendorId ? 'opacity-50' : ''}`}>
+        <label className="block text-sm font-semibold text-gray-900">
+          2. 플랫폼 정보 <span className="text-red-500">*</span>
+        </label>
         <Dropdown
-          label="플랫폼"
+          label="플랫폼 종류"
           options={platformOptions}
           value={platform}
           onChange={(value) => setPlatform(value)}
           fullWidth
+          disabled={true}
         />
-        <Dropdown
-          label="연동할 거래처 (선택)"
-          options={[{ value: "", label: "직접 입력" }, ...vendorsForSelect]}
-          value={vendorId}
-          onChange={(value) => setVendorId(value)}
-          fullWidth
-        />
+        {!vendorId ? (
+          <p className="text-xs text-amber-600">
+            ⚠️ 먼저 판매처를 선택해주세요.
+          </p>
+        ) : (
+          <p className="text-xs text-blue-600">
+            ✓ 선택한 판매처의 플랫폼이 자동으로 설정되었습니다.
+          </p>
+        )}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        {visibleFields.map((fieldKey) => (
-          <Input
-            key={fieldKey}
-            label={`${fieldLabel[fieldKey]}${isRequired(fieldKey) ? " *" : ""}`}
-            value={getStateValue(fieldKey)}
-            onChange={(event) => setStateValue(fieldKey, event.target.value)}
-            placeholder={fieldLabel[fieldKey]}
-            fullWidth
-          />
-        ))}
+      {/* API 인증 정보 섹션 */}
+      <div className={`space-y-4 ${!vendorId ? 'opacity-50' : ''}`}>
+        <label className="block text-sm font-semibold text-gray-900">
+          3. API 인증 정보 <span className="text-red-500">*</span>
+        </label>
+        {!vendorId ? (
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+            <p className="text-gray-500 text-sm">
+              판매처를 선택하면 API 인증 정보를 입력할 수 있습니다.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            {visibleFields.map((fieldKey) => (
+              <Input
+                key={fieldKey}
+                label={`${fieldLabel[fieldKey]}${isRequired(fieldKey) ? " *" : ""}`}
+                value={getStateValue(fieldKey)}
+                onChange={(event) => setStateValue(fieldKey, event.target.value)}
+                placeholder={fieldLabel[fieldKey]}
+                fullWidth
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="flex justify-end gap-3 pt-4 border-t">
@@ -279,14 +367,14 @@ export default function RegisterIntegrationForm({
           type="button"
           variant="outline"
           onClick={handleTestConnection}
-          disabled={isTesting}
+          disabled={isTesting || !vendorId}
         >
           {isTesting ? "테스트 중..." : "테스트 연결"}
         </Button>
         <Button type="button" variant="outline" onClick={onClose}>
           취소
         </Button>
-        <Button type="submit">
+        <Button type="submit" disabled={!vendorId}>
           저장
         </Button>
       </div>

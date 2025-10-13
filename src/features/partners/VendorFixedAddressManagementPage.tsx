@@ -16,6 +16,7 @@ interface FixedAddress {
 interface Vendor {
   id: string;
   name: string;
+  platform?: string;
   type: string;
   businessNumber: string;
   representative: string;
@@ -31,6 +32,7 @@ const mockVendors: Vendor[] = [
   {
     id: "V001",
     name: "네이버 스마트스토어",
+    platform: "네이버 스마트스토어",
     type: "판매처",
     businessNumber: "123-45-67890",
     representative: "김철수",
@@ -43,6 +45,7 @@ const mockVendors: Vendor[] = [
   {
     id: "V002",
     name: "쿠팡 파트너스",
+    platform: "쿠팡",
     type: "판매처",
     businessNumber: "987-65-43210",
     representative: "이영희",
@@ -55,6 +58,7 @@ const mockVendors: Vendor[] = [
   {
     id: "V003",
     name: "11번가",
+    platform: "11번가",
     type: "판매처",
     businessNumber: "111-22-33444",
     representative: "박민수",
