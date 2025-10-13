@@ -117,6 +117,7 @@ const IntegrationPage: React.FC = () => {
   
   // 수집 진행률 실시간 업데이트를 위한 상태
   const [vendorIntegrations, setVendorIntegrations] = React.useState<VendorIntegration[]>(allVendorIntegrations);
+  const [editIntegration, setEditIntegration] = React.useState<VendorIntegration | null>(null);
   const [isLoadingSync, setIsLoadingSync] = React.useState(false);
   const [cronSchedules, setCronSchedules] = React.useState<CronSchedule[]>([]);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = React.useState(false);
@@ -254,6 +255,9 @@ const IntegrationPage: React.FC = () => {
   // 판매처 연동 설정 함수
   const configureVendorIntegration = (integrationId: string) => {
     setSelectedVendorIntegration(integrationId);
+    // prefill editable copy
+    const found = vendorIntegrations.find(i => i.id === integrationId) || allVendorIntegrations.find(i => i.id === integrationId);
+    setEditIntegration(found ? { ...found } : null);
     setIsVendorIntegrationModalOpen(true);
   };
 
@@ -935,75 +939,91 @@ const IntegrationPage: React.FC = () => {
         footer={null}
         size="big"
       >
-        {selectedVendorIntegration && (
+        {selectedVendorIntegration && editIntegration && (
           <div className="p-6">
-            {(() => {
-              const integration = allVendorIntegrations.find((i: VendorIntegration) => i.id === selectedVendorIntegration);
-              if (!integration) return null;
-              
-              return (
-                <div className="space-y-6">
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h3 className="text-lg font-semibold mb-2">{integration.vendorName}</h3>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-600">플랫폼:</span>
-                        <span className="ml-2 font-medium">{channelOptions.find(o => o.value === integration.platform)?.label}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">상태:</span>
-                        <span className={`ml-2 font-medium ${
-                          integration.status === "연동중" ? "text-green-600" : 
-                          integration.status === "오류" ? "text-red-600" : "text-gray-600"
-                        }`}>
-                          {integration.status}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">상품 수:</span>
-                        <span className="ml-2 font-medium">{integration.productCount}개</span>
-                      </div>
-                    </div>
-                  </div>
-
+            <div className="space-y-6">
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="text-lg font-semibold mb-2">{editIntegration.vendorName}</h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">API 키</label>
-                    <div className="flex gap-2">
-                      <input
-                        type="password"
-                        value={integration.apiKey}
-                        readOnly
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
-                      />
-                      <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
-                        복사
-                      </button>
-                    </div>
+                    <span className="text-gray-600">플랫폼:</span>
+                    <span className="ml-2 font-medium">{channelOptions.find(o => o.value === editIntegration.platform)?.label}</span>
                   </div>
-
-                  <div className="bg-blue-50 rounded-lg p-4">
-                    <p className="text-sm text-blue-800">
-                      수집 스케줄은 <strong>스케줄 관리</strong>에서 설정할 수 있습니다.
-                    </p>
+                  <div>
+                    <label className="text-gray-600">상태</label>
+                    <select
+                      value={editIntegration.status}
+                      onChange={(e) => setEditIntegration({ ...editIntegration, status: e.target.value as VendorIntegration['status'] })}
+                      className="ml-2 px-2 py-1 border rounded text-sm"
+                    >
+                      <option value="연동중">연동중</option>
+                      <option value="수집중">수집중</option>
+                      <option value="오류">오류</option>
+                      <option value="미연동">미연동</option>
+                    </select>
                   </div>
-
-                  <div className="flex justify-end gap-3 pt-4 border-t">
-                    <button
-                      onClick={() => setIsVendorIntegrationModalOpen(false)}
-                      className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-                    >
-                      취소
-                    </button>
-                    <button
-                      onClick={() => setIsVendorIntegrationModalOpen(false)}
-                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                    >
-                      저장
-                    </button>
+                  <div>
+                    <label className="text-gray-600">상품 수</label>
+                    <input
+                      type="number"
+                      value={editIntegration.productCount}
+                      onChange={(e) => setEditIntegration({ ...editIntegration, productCount: Number(e.target.value) })}
+                      className="ml-2 px-2 py-1 border rounded text-sm w-32"
+                    />
                   </div>
                 </div>
-              );
-            })()}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">API 키</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={editIntegration.apiKey}
+                    onChange={(e) => setEditIntegration({ ...editIntegration, apiKey: e.target.value })}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-white"
+                  />
+                  <button
+                    onClick={() => navigator.clipboard?.writeText(editIntegration.apiKey)}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                  >
+                    복사
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 rounded-lg p-4">
+                <p className="text-sm text-blue-800">수집 스케줄은 <strong>스케줄 관리</strong>에서 설정할 수 있습니다.</p>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <button
+                  onClick={() => { setIsVendorIntegrationModalOpen(false); setEditIntegration(null); }}
+                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={() => {
+                    if (!editIntegration) return;
+                    // update local state
+                    setVendorIntegrations(prev => prev.map(i => i.id === editIntegration.id ? { ...i, ...editIntegration } : i));
+                    // update mock store
+                    updateIntegrationStatus(editIntegration.id, editIntegration.status, {
+                      apiKey: editIntegration.apiKey,
+                      productCount: editIntegration.productCount,
+                      lastRunTime: editIntegration.lastRunTime,
+                      syncProgress: editIntegration.syncProgress,
+                    });
+                    setIsVendorIntegrationModalOpen(false);
+                    setEditIntegration(null);
+                  }}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                >
+                  저장
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </Modal>
