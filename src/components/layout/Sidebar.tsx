@@ -92,16 +92,7 @@ const menuItems: MenuItem[] = [
       },
       { id: "vendors-products", label: "판매처별 상품 관리", icon: "package" },
       { id: "vendors-info", label: "판매처별 부가 정보", icon: "info" },
-      { id: "vendors-category-mapping", label: "판매처별 카테고리 매핑", icon: "copy" },
-      // 숨김 처리된 메뉴들
-      // { id: "vendors-delivery", label: "택배사 관리", icon: "truck" },
-      // { id: "vendors-suppliers", label: "공급처 관리", icon: "truck" },
-      // {
-      //   id: "vendors-supplier-orders",
-      //   label: "공급처 발주 관리",
-      //   icon: "shoppingCart",
-      // },
-      // { id: "vendors-payments", label: "지불 관리", icon: "document" },
+      { id: "vendors-category-mapping", label: "카테고리 매핑", icon: "copy" },
     ],
   },
   {

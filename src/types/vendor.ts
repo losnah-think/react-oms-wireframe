@@ -50,7 +50,6 @@ export interface Vendor {
   email?: string;
   address: string;
   fixedAddressId?: string;
-  status: '사용중' | '정지';
   registrationDate: string;
 }
 
@@ -113,7 +112,6 @@ export function baseVendorToVendor(base: BaseVendor): Vendor {
     email: base.settings?.email as string || '',
     address: base.settings?.address as string || '',
     fixedAddressId: base.settings?.fixedAddressId as string,
-    status: base.is_active ? '사용중' : '정지',
     registrationDate: base.created_at.split('T')[0],
   };
 }
@@ -125,7 +123,7 @@ export function vendorToBaseVendor(vendor: Vendor): BaseVendor {
     name: vendor.name,
     code: vendor.code || `CODE-${vendor.id}`, // 기본값 생성
     platform: (vendor.platform || 'cafe24') as BaseVendor['platform'], // 기본값 설정
-    is_active: vendor.status === '사용중',
+    is_active: vendor.is_active !== false, // 기본값 true
     created_at: vendor.created_at || new Date().toISOString(),
     updated_at: vendor.updated_at || new Date().toISOString(),
     settings: {

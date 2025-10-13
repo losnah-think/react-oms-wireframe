@@ -72,7 +72,6 @@ const VendorManagementPage = () => {
         phone: `02-${1000 + index * 100}-${5000 + index * 100}`,
         email: baseVendor.settings?.loginId ? `${baseVendor.settings.loginId}@example.com` : `vendor${index + 1}@example.com`,
         address: `서울시 강남구 테헤란로 ${123 + index * 10}`,
-        status: baseVendor.is_active ? '사용중' as const : '정지' as const,
         registrationDate: baseVendor.created_at?.split('T')[0] || '2024-01-01',
         created_at: baseVendor.created_at,
         updated_at: baseVendor.updated_at,
@@ -109,7 +108,6 @@ const VendorManagementPage = () => {
       phone: '',
       email: '',
       address: '',
-      status: '사용중',
       registrationDate: new Date().toISOString().split('T')[0]
     });
     setIsModalOpen(true);
@@ -160,7 +158,7 @@ const VendorManagementPage = () => {
         name: editingVendor.name,
         code: editingVendor.code || `VENDOR${editingVendor.id}`,
         platform: platformValue as BaseVendor['platform'],
-        is_active: editingVendor.status === '사용중',
+        is_active: editingVendor.is_active !== false, // 기본값 true
         created_at: editingVendor.created_at || new Date().toISOString(),
         updated_at: new Date().toISOString(),
         settings: {
@@ -210,23 +208,6 @@ const VendorManagementPage = () => {
     }
   };
 
-
-  // 통계 계산
-  const getStats = () => {
-    const totalVendors = vendors.length;
-    const activeVendors = vendors.filter(v => v.status === '사용중').length;
-    const inactiveVendors = vendors.filter(v => v.status === '정지').length;
-    const sellers = vendors.filter(v => v.type === '판매처').length;
-    const suppliers = vendors.filter(v => v.type === '공급처').length;
-    
-    return {
-      totalVendors,
-      activeVendors,
-      inactiveVendors,
-      sellers,
-      suppliers
-    };
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -323,15 +304,6 @@ const VendorManagementPage = () => {
                           {vendor.platform}
                         </span>
                       )}
-                      <span
-                        className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                          vendor.status === '사용중'
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-red-100 text-red-700'
-                        }`}
-                      >
-                        {vendor.status}
-                      </span>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 text-sm">
