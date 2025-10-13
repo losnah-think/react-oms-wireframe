@@ -46,6 +46,8 @@ const EditorPanel: React.FC<Props> = ({
   selectedElement,
   onOpenCreate,
 }) => {
+  const [selectedFields, setSelectedFields] = React.useState<Record<string, string>>({});
+
   const handlePreviewDragOver = (event: React.DragEvent<HTMLDivElement>) => event.preventDefault();
 
   const parseDragPayload = (event: React.DragEvent<HTMLDivElement>) => {
@@ -129,145 +131,75 @@ const EditorPanel: React.FC<Props> = ({
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {template ? (
-        <div className="grid grid-cols-1 gap-6 2xl:grid-cols-[minmax(0,0.65fr)_minmax(0,0.35fr)]">
-          <div className="space-y-5">
+        <>
+          {/* 1. 템플릿 편집 섹션 */}
+          <Card padding="lg" className="space-y-4">
+            <div className="flex items-center gap-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-red-500 text-sm font-bold text-white">
+                01
+              </div>
+              <h2 className="text-lg font-bold text-gray-900">템플릿 편집</h2>
+            </div>
             <Input
               label="템플릿 이름"
               value={template.name}
               onChange={(event: React.ChangeEvent<HTMLInputElement>) => onUpdateField("name", event.target.value)}
               fullWidth
+              placeholder="템플릿 이름을 입력하세요"
             />
-            <Dropdown
-              label="라벨지 종류"
-              options={[{ value: template.paperType, label: template.paperType }]}
-              value={template.paperType}
-              onChange={(value: any) => onUpdateField("paperType", value)}
-              fullWidth
-            />
-            <Input
-              label="설명"
-              value={template.description}
-              onChange={(event: React.ChangeEvent<HTMLInputElement>) => onUpdateField("description", event.target.value)}
-              fullWidth
-            />
-            <Stack direction="row" gap={4}>
-              <Input
-                type="number"
-                label="가로 라벨 개수"
-                value={template.columns}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>) => onUpdateField("columns", Number(event.target.value) || 1)}
-                fullWidth
-              />
-              <Input
-                type="number"
-                label="세로 라벨 개수"
-                value={template.rows}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>) => onUpdateField("rows", Number(event.target.value) || 1)}
-                fullWidth
-              />
-              <Input
-                type="number"
-                label="세로 라벨 개수"
-                value={template.rows}
-                onChange={(event) => onUpdateField("rows", Number(event.target.value) || 1)}
-                fullWidth
-              />
-            </Stack>
-              <Dropdown
-              label="라벨 크기 프리셋"
-              options={labelSizePresets}
-              placeholder="프리셋 선택"
-              onChange={(value) => {
-                const [w, h] = value.split("x");
-                onUpdateField("labelWidth", Number(w));
-                onUpdateField("labelHeight", Number(h));
-              }}
-              fullWidth
-            />
+          </Card>
 
-            <Stack direction="row" gap={4}>
-              <Input
-                type="number"
-                label="라벨 가로 (mm)"
-                value={template.labelWidth}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>) => onUpdateField("labelWidth", Number(event.target.value) || 10)}
-                fullWidth
-              />
-              <Input
-                type="number"
-                label="라벨 세로 (mm)"
-                value={template.labelHeight}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>) => onUpdateField("labelHeight", Number(event.target.value) || 10)}
-                fullWidth
-              />
-            </Stack>
-
-            <Stack direction="row" gap={4}>
-              <Input
-                type="number"
-                label="상단 여백 (mm)"
-                value={template.marginTop}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>) => onUpdateField("marginTop", Number(event.target.value) || 0)}
-                fullWidth
-              />
-              <Input
-                type="number"
-                label="좌측 여백 (mm)"
-                value={template.marginLeft}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>) => onUpdateField("marginLeft", Number(event.target.value) || 0)}
-                fullWidth
-              />
-            </Stack>
-            <Stack direction="row" gap={4}>
-              <Input
-                type="number"
-                label="라벨 간격 (mm)"
-                value={template.gap}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>) => onUpdateField("gap", Number(event.target.value) || 0)}
-                fullWidth
-              />
-              <Input
-                type="number"
-                label="폰트 크기 (pt)"
-                value={template.fontSize}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>) => onUpdateField("fontSize", Number(event.target.value) || 8)}
-                fullWidth
-              />
-            </Stack>
-            <label className="flex items-center gap-3 rounded-md border border-gray-200 px-4 py-3">
-              <input
-                type="checkbox"
-                checked={template.autoCut}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>) => onUpdateField("autoCut", event.target.checked)}
-              />
-              <div>
-                <span className="text-sm font-medium text-gray-700">출력 후 자동 커팅</span>
-                <p className="text-xs text-gray-500">라벨기가 자동 컷팅하도록 신호를 전송합니다.</p>
+          {/* 사용 가이드 경고 */}
+          <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+                !
               </div>
-            </label>
+              <div className="flex-1 space-y-2 text-sm text-gray-700">
+                <p className="font-semibold text-red-700">템플릿 사용 가이드</p>
+                <ul className="list-disc space-y-1 pl-5 text-xs">
+                  <li>사전에 지정된 필드는 아래 표시할 입력값 외에 추가 데이터가 입력 불가합니다.</li>
+                  <li>이미지 / 기호 스팩에는 파일명만 참조가 입력으로 적용 됩니다.</li>
+                  <li>단/복합 모두 최소 2.5mm 이상 가능합니다.</li>
+                  <li>단/복합 모두 최대 개수는 없이 원하는 크기 만큼 가능합니다.</li>
+                  <li>단/복합 각 기능은 인쇄 전에만 변경 가능 합니다.</li>
+                </ul>
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-4">
-            <Card padding="md" className="space-y-4">
-              <div>
-                <h3 className="text-sm font-semibold text-gray-800">드래그 앤 드롭 미리보기</h3>
-                <p className="mt-1 text-xs text-gray-500">좌측 요소를 드래그해서 배치하고, 요소를 다시 드래그하여 위치를 조정할 수 있습니다.</p>
+          {/* 2. 바코드 레이아웃 섹션 */}
+          <Card padding="lg" className="space-y-4">
+            <div className="flex items-center gap-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-red-500 text-sm font-bold text-white">
+                02
               </div>
-              <div className="overflow-auto">
+              <h2 className="text-lg font-bold text-gray-900">바코드 레이아웃</h2>
+            </div>
+
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              {/* 왼쪽: 캔버스 */}
+              <div className="space-y-3">
+                <p className="text-sm text-gray-600">사용 가능한 모듈을 클릭하세요. 배치하신 후 나오는 모듈은 버튼을 눌러서 캔버스에 그리거나 추가할 수 있습니다.</p>
                 <div
                   ref={previewRef}
-                  className="relative mx-auto flex min-h-[160px] min-w-[160px] items-center justify-center overflow-hidden rounded border border-dashed border-gray-300 bg-white"
+                  className="relative mx-auto flex items-center justify-center overflow-hidden rounded-lg border-2 border-gray-300 bg-white"
                   style={{
                     width: mmToPreviewPx(template.labelWidth),
                     height: mmToPreviewPx(template.labelHeight),
+                    minWidth: '300px',
+                    minHeight: '200px',
                   }}
                   onDragOver={handlePreviewDragOver}
                   onDrop={handlePreviewDrop}
                 >
                   {elements.length === 0 && (
-                    <span className="px-3 text-center text-xs text-gray-400">팔레트에서 요소를 끌어다 놓으세요.</span>
+                    <div className="text-center">
+                      <p className="text-sm text-gray-400">사용 가능한 모듈</p>
+                      <p className="text-xs text-gray-400">드래그 또는 클릭하여 배치</p>
+                    </div>
                   )}
                   {elements.map((element) => (
                     <div
@@ -276,7 +208,7 @@ const EditorPanel: React.FC<Props> = ({
                       onDragStart={(event: React.DragEvent<HTMLDivElement>) => handleElementDragStart(event, element)}
                       onClick={() => onUpdateElementField(element.id, "selected", true)}
                       className={`absolute cursor-move rounded border px-2 py-1 text-xs shadow-sm ${
-                        selectedElementId === element.id ? "border-primary-500 bg-primary-50" : "border-gray-200 bg-white"
+                        selectedElementId === element.id ? "border-blue-500 bg-blue-50" : "border-gray-300 bg-white"
                       }`}
                       style={{
                         left: element.x,
@@ -293,91 +225,399 @@ const EditorPanel: React.FC<Props> = ({
                   ))}
                 </div>
               </div>
-            </Card>
 
-            <Card padding="md" className="space-y-4">
-              <h3 className="text-sm font-semibold text-gray-800">사용 가능한 요소</h3>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {componentPalette.map((component) => (
-                  <div
-                    key={component.type}
-                    draggable
-                    onDragStart={(event: React.DragEvent<HTMLDivElement>) => handlePaletteDragStart(event, component.type)}
-                    className="cursor-grab rounded-md border border-gray-200 px-3 py-3 shadow-sm transition hover:border-primary-300 hover:bg-primary-50"
-                  >
-                    <p className="text-sm font-semibold text-gray-800">{component.label}</p>
-                    <p className="text-xs text-gray-500">{component.hint}</p>
+              {/* 오른쪽: 필드 선택 테이블 */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-gray-700">모듈 선택</p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500">17</span>
+                    <span className="text-xs text-gray-400">사용 가능 모듈 오소</span>
                   </div>
-                ))}
-              </div>
-            </Card>
+                </div>
 
-            <Card padding="md" className="space-y-3">
-              <h3 className="text-sm font-semibold text-gray-800">선택한 요소 속성</h3>
-              {selectedElement ? (
-                <div className="space-y-3">
-                  <Input
-                    label="라벨"
-                    value={selectedElement.label}
-                    onChange={(event) => onUpdateElementField(selectedElement.id, "label", event.target.value)}
-                    fullWidth
-                  />
-                  {selectedElement.type !== "barcode" && selectedElement.type !== "qr" && (
-                    <Stack direction="row" gap={3}>
+                <div className="overflow-hidden rounded-lg border border-gray-200">
+                  <table className="w-full text-sm">
+                    <tbody className="divide-y divide-gray-200">
+                      {/* 바코드 섹션 */}
+                      <tr className="bg-gray-50">
+                        <td className="px-4 py-2 font-semibold text-gray-700" colSpan={3}>Code 39 바코드</td>
+                      </tr>
+                      <tr className="hover:bg-blue-50">
+                        <td className="px-4 py-2">
+                          <Dropdown
+                            options={[
+                              { value: "", label: "추가 모듈" },
+                              { value: "code39", label: "Code 39" },
+                            ]}
+                            value={selectedFields['code39'] || ''}
+                            onChange={(v) => setSelectedFields({...selectedFields, code39: v})}
+                            fullWidth
+                          />
+                        </td>
+                        <td className="px-4 py-2">
+                          <Dropdown
+                            options={[
+                              { value: "", label: "추가 모듈" },
+                              { value: "code93", label: "Code 93" },
+                            ]}
+                            value={selectedFields['code93'] || ''}
+                            onChange={(v) => setSelectedFields({...selectedFields, code93: v})}
+                            fullWidth
+                          />
+                        </td>
+                        <td className="px-4 py-2">
+                          <Dropdown
+                            options={[
+                              { value: "", label: "추가 모듈" },
+                              { value: "code128", label: "Code 128" },
+                            ]}
+                            value={selectedFields['code128'] || ''}
+                            onChange={(v) => setSelectedFields({...selectedFields, code128: v})}
+                            fullWidth
+                          />
+                        </td>
+                      </tr>
+
+                      <tr className="bg-gray-50">
+                        <td className="px-4 py-2 font-semibold text-gray-700" colSpan={3}>code 128 바코드 RAW</td>
+                      </tr>
+                      <tr className="hover:bg-blue-50">
+                        <td className="px-4 py-2">
+                          <Dropdown
+                            options={[
+                              { value: "", label: "추가 모듈" },
+                              { value: "ean13", label: "EAN 13" },
+                            ]}
+                            value={selectedFields['ean13'] || ''}
+                            onChange={(v) => setSelectedFields({...selectedFields, ean13: v})}
+                            fullWidth
+                          />
+                        </td>
+                        <td className="px-4 py-2">
+                          <Dropdown
+                            options={[
+                              { value: "", label: "EAN 13 바코드" },
+                              { value: "ean13-alt", label: "EAN 13" },
+                            ]}
+                            value={selectedFields['ean13-alt'] || ''}
+                            onChange={(v) => setSelectedFields({...selectedFields, 'ean13-alt': v})}
+                            fullWidth
+                          />
+                        </td>
+                        <td className="px-4 py-2">
+                          <Dropdown
+                            options={[
+                              { value: "", label: "OR코드" },
+                              { value: "qr", label: "QR" },
+                            ]}
+                            value={selectedFields['qr'] || ''}
+                            onChange={(v) => setSelectedFields({...selectedFields, qr: v})}
+                            fullWidth
+                          />
+                        </td>
+                      </tr>
+
+                      <tr className="bg-gray-50">
+                        <td className="px-4 py-2 font-semibold text-gray-700" colSpan={3}>상품명</td>
+                      </tr>
+                      <tr className="hover:bg-blue-50">
+                        <td className="px-4 py-2">
+                          <Dropdown
+                            options={[
+                              { value: "", label: "상품명" },
+                              { value: "productName", label: "상품명" },
+                            ]}
+                            value={selectedFields['productName'] || ''}
+                            onChange={(v) => setSelectedFields({...selectedFields, productName: v})}
+                            fullWidth
+                          />
+                        </td>
+                        <td className="px-4 py-2">
+                          <Dropdown
+                            options={[
+                              { value: "", label: "사업장명" },
+                              { value: "businessName", label: "사업장명" },
+                            ]}
+                            value={selectedFields['businessName'] || ''}
+                            onChange={(v) => setSelectedFields({...selectedFields, businessName: v})}
+                            fullWidth
+                          />
+                        </td>
+                        <td className="px-4 py-2">
+                          <Dropdown
+                            options={[
+                              { value: "", label: "판매가" },
+                              { value: "price", label: "판매가" },
+                            ]}
+                            value={selectedFields['price'] || ''}
+                            onChange={(v) => setSelectedFields({...selectedFields, price: v})}
+                            fullWidth
+                          />
+                        </td>
+                      </tr>
+
+                      <tr className="bg-gray-50">
+                        <td className="px-4 py-2 font-semibold text-gray-700" colSpan={3}>추가 필드 부분</td>
+                      </tr>
+                      <tr className="hover:bg-blue-50">
+                        <td className="px-4 py-2">
+                          <Dropdown
+                            options={[
+                              { value: "", label: "가격" },
+                              { value: "priceField", label: "가격" },
+                            ]}
+                            value={selectedFields['priceField'] || ''}
+                            onChange={(v) => setSelectedFields({...selectedFields, priceField: v})}
+                            fullWidth
+                          />
+                        </td>
+                        <td className="px-4 py-2">
+                          <Dropdown
+                            options={[
+                              { value: "", label: "바코드" },
+                              { value: "barcodeField", label: "바코드" },
+                            ]}
+                            value={selectedFields['barcodeField'] || ''}
+                            onChange={(v) => setSelectedFields({...selectedFields, barcodeField: v})}
+                            fullWidth
+                          />
+                        </td>
+                        <td className="px-4 py-2">
+                          <Dropdown
+                            options={[
+                              { value: "", label: "바코드" },
+                              { value: "barcodeField2", label: "바코드" },
+                            ]}
+                            value={selectedFields['barcodeField2'] || ''}
+                            onChange={(v) => setSelectedFields({...selectedFields, barcodeField2: v})}
+                            fullWidth
+                          />
+                        </td>
+                      </tr>
+
+                      <tr className="bg-gray-50">
+                        <td className="px-4 py-2 font-semibold text-gray-700" colSpan={3}>바코드</td>
+                      </tr>
+                      <tr className="hover:bg-blue-50">
+                        <td className="px-4 py-2">
+                          <Dropdown
+                            options={[
+                              { value: "", label: "바코드" },
+                              { value: "barcode1", label: "바코드" },
+                            ]}
+                            value={selectedFields['barcode1'] || ''}
+                            onChange={(v) => setSelectedFields({...selectedFields, barcode1: v})}
+                            fullWidth
+                          />
+                        </td>
+                        <td className="px-4 py-2">
+                          <Dropdown
+                            options={[
+                              { value: "", label: "OR" },
+                              { value: "or1", label: "OR" },
+                            ]}
+                            value={selectedFields['or1'] || ''}
+                            onChange={(v) => setSelectedFields({...selectedFields, or1: v})}
+                            fullWidth
+                          />
+                        </td>
+                        <td className="px-4 py-2">
+                          <Dropdown
+                            options={[
+                              { value: "", label: "OR" },
+                              { value: "or2", label: "OR" },
+                            ]}
+                            value={selectedFields['or2'] || ''}
+                            onChange={(v) => setSelectedFields({...selectedFields, or2: v})}
+                            fullWidth
+                          />
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          {/* 3. 템플릿 이름 섹션 (하단 설정) */}
+          <Card padding="lg" className="space-y-4">
+            <div className="flex items-center gap-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-red-500 text-sm font-bold text-white">
+                03
+              </div>
+              <h2 className="text-lg font-bold text-gray-900">템플릿 이름</h2>
+            </div>
+
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">템플릿을 저장합니다.</p>
+
+              {/* 인쇄 옵션 */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-gray-700">인쇄 옵션</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="mb-1 block text-xs text-gray-600">라벨 크기 (mm)</label>
+                    <div className="flex items-center gap-2">
                       <Input
                         type="number"
-                        label="폰트 크기"
-                        value={selectedElement.fontSize}
-                        onChange={(event) => onUpdateElementField(selectedElement.id, "fontSize", Number(event.target.value) || 8)}
+                        value={template.labelWidth}
+                        onChange={(event: React.ChangeEvent<HTMLInputElement>) => onUpdateField("labelWidth", Number(event.target.value) || 10)}
                         fullWidth
+                        placeholder="50"
                       />
-                      <label className="mt-6 flex items-center gap-2 text-xs text-gray-600">
-                        <input
-                          type="checkbox"
-                          checked={selectedElement.bold}
-                          onChange={(event) => onUpdateElementField(selectedElement.id, "bold", event.target.checked)}
-                        />
-                        볼드 처리
-                      </label>
-                    </Stack>
-                  )}
+                      <span className="text-gray-400">×</span>
+                      <Input
+                        type="number"
+                        value={template.labelHeight}
+                        onChange={(event: React.ChangeEvent<HTMLInputElement>) => onUpdateField("labelHeight", Number(event.target.value) || 10)}
+                        fullWidth
+                        placeholder="30"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-gray-600">여백 세로 (mm)</label>
+                    <Input
+                      type="number"
+                      value={template.marginTop}
+                      onChange={(event: React.ChangeEvent<HTMLInputElement>) => onUpdateField("marginTop", Number(event.target.value) || 0)}
+                      fullWidth
+                      placeholder="30"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="mb-1 block text-xs text-gray-600">상/하 여백 (mm)</label>
+                    <Input
+                      type="number"
+                      value={template.marginTop}
+                      onChange={(event: React.ChangeEvent<HTMLInputElement>) => onUpdateField("marginTop", Number(event.target.value) || 0)}
+                      fullWidth
+                      placeholder="2"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-gray-600">좌/우 여백 (mm)</label>
+                    <Input
+                      type="number"
+                      value={template.marginLeft}
+                      onChange={(event: React.ChangeEvent<HTMLInputElement>) => onUpdateField("marginLeft", Number(event.target.value) || 0)}
+                      fullWidth
+                      placeholder="2"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="mb-1 block text-xs text-gray-600">라벨 간격 (mm)</label>
+                    <Input
+                      type="number"
+                      value={template.gap}
+                      onChange={(event: React.ChangeEvent<HTMLInputElement>) => onUpdateField("gap", Number(event.target.value) || 0)}
+                      fullWidth
+                      placeholder="1"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-gray-600">폰트 크기 (pt)</label>
+                    <Input
+                      type="number"
+                      value={template.fontSize}
+                      onChange={(event: React.ChangeEvent<HTMLInputElement>) => onUpdateField("fontSize", Number(event.target.value) || 8)}
+                      fullWidth
+                      placeholder="12"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="mb-1 block text-xs text-gray-600">바코드</label>
+                    <Input
+                      type="text"
+                      value=""
+                      onChange={() => {}}
+                      fullWidth
+                      placeholder="사용자 지정 템플릿명"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 하단 버튼 */}
+              <div className="flex justify-end gap-3 border-t pt-4">
+                <Button variant="outline" onClick={() => window.history.back()}>
+                  다음으로
+                </Button>
+                <Button onClick={() => alert('저장되었습니다!')}>
+                  저장
+                </Button>
+              </div>
+            </div>
+          </Card>
+
+          {/* 선택한 요소 속성 (우측 고정 패널 - 옵션) */}
+          {selectedElement && (
+            <Card padding="md" className="fixed right-6 top-24 w-80 space-y-3 shadow-xl">
+              <h3 className="text-sm font-semibold text-gray-800">선택한 요소 속성</h3>
+              <div className="space-y-3">
+                <Input
+                  label="라벨"
+                  value={selectedElement.label}
+                  onChange={(event) => onUpdateElementField(selectedElement.id, "label", event.target.value)}
+                  fullWidth
+                />
+                {selectedElement.type !== "barcode" && selectedElement.type !== "qr" && (
                   <Stack direction="row" gap={3}>
                     <Input
                       type="number"
-                      label="너비"
-                      value={selectedElement.width}
-                      onChange={(event) => onUpdateElementField(selectedElement.id, "width", Number(event.target.value) || selectedElement.width)}
+                      label="폰트 크기"
+                      value={selectedElement.fontSize}
+                      onChange={(event) => onUpdateElementField(selectedElement.id, "fontSize", Number(event.target.value) || 8)}
                       fullWidth
                     />
-                    <Input
-                      type="number"
-                      label="높이"
-                      value={selectedElement.height}
-                      onChange={(event) => onUpdateElementField(selectedElement.id, "height", Number(event.target.value) || selectedElement.height)}
-                      fullWidth
-                    />
+                    <label className="mt-6 flex items-center gap-2 text-xs text-gray-600">
+                      <input
+                        type="checkbox"
+                        checked={selectedElement.bold}
+                        onChange={(event) => onUpdateElementField(selectedElement.id, "bold", event.target.checked)}
+                      />
+                      볼드
+                    </label>
                   </Stack>
-                  <Button variant="outline" size="small" onClick={() => onRemoveElement(selectedElement.id)}>
-                    요소 삭제
-                  </Button>
-                </div>
-              ) : (
-                <p className="text-xs text-gray-500">미리보기에서 요소를 선택하면 설정을 수정할 수 있습니다.</p>
-              )}
+                )}
+                <Stack direction="row" gap={3}>
+                  <Input
+                    type="number"
+                    label="너비"
+                    value={selectedElement.width}
+                    onChange={(event) => onUpdateElementField(selectedElement.id, "width", Number(event.target.value) || selectedElement.width)}
+                    fullWidth
+                  />
+                  <Input
+                    type="number"
+                    label="높이"
+                    value={selectedElement.height}
+                    onChange={(event) => onUpdateElementField(selectedElement.id, "height", Number(event.target.value) || selectedElement.height)}
+                    fullWidth
+                  />
+                </Stack>
+                <Button variant="outline" size="small" onClick={() => onRemoveElement(selectedElement.id)}>
+                  요소 삭제
+                </Button>
+              </div>
             </Card>
-
-            <Card padding="md" className="space-y-3">
-              <h3 className="text-sm font-semibold text-gray-800">템플릿 사용 가이드</h3>
-              <ul className="list-disc space-y-1 pl-5 text-xs text-gray-500">
-                <li>라벨 간격과 여백은 실제 장비 기준으로 1~2mm 여유를 두는 것이 안전합니다.</li>
-                <li>문자열 제거 규칙은 인쇄 직전에 자동으로 적용됩니다.</li>
-                <li>요소를 더블 클릭하거나 속성에서 삭제할 수 있습니다.</li>
-              </ul>
-            </Card>
-          </div>
-        </div>
+          )}
+        </>
       ) : (
-        <div className="rounded-md border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">템플릿을 선택하면 상세 설정을 편집할 수 있습니다.</div>
+        <div className="rounded-md border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
+          템플릿을 선택하면 상세 설정을 편집할 수 있습니다.
+        </div>
       )}
     </div>
   );
