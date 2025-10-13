@@ -437,13 +437,19 @@ const VendorManagementPage = () => {
                     플랫폼
                   </label>
                   <select
-                    value={editingVendor.platform || ''}
-                    onChange={(e) => setEditingVendor({ ...editingVendor, platform: e.target.value })}
+                    value={
+                      // store/display label in vendor, fallback to empty
+                      editingVendor.platform || ''
+                    }
+                    onChange={(e) => {
+                      const found = PLATFORM_OPTIONS.find(o => o.value === e.target.value);
+                      setEditingVendor({ ...editingVendor, platform: found ? found.label : '' });
+                    }}
                     className="w-full px-4 py-3 border rounded-lg text-base"
                   >
                     <option value="">선택 안함</option>
                     {PLATFORM_OPTIONS.map(option => (
-                      <option key={option.value} value={option.label}>
+                      <option key={option.value} value={option.value}>
                         {option.label}
                       </option>
                     ))}
@@ -527,42 +533,67 @@ const VendorManagementPage = () => {
                 </div>
               )}
 
-              {/* 주소 */}
+              {/* 주소 입력 + 고정 주소 선택 (개선된 UX) */}
               <div>
-                <label className="block text-base font-semibold text-gray-900 mb-2">
-                  고정 주소 선택
-                </label>
-                <select
-                  value={editingVendor.fixedAddressId || ''}
-                  onChange={(e) => {
-                    const selectedAddress = fixedAddresses.find(addr => addr.id === e.target.value);
-                    setEditingVendor({ 
-                      ...editingVendor, 
-                      fixedAddressId: e.target.value,
-                      address: selectedAddress?.address || ''
-                    });
-                  }}
-                  className="w-full px-4 py-3 border rounded-lg text-base"
-                >
-                  <option value="">주소를 선택하세요</option>
-                  {fixedAddresses.map((address) => (
-                    <option key={address.id} value={address.id}>
-                      {address.name} - {address.address}
-                    </option>
-                  ))}
-                </select>
-                {editingVendor.fixedAddressId && (
-                  <div className="mt-2 p-3 bg-blue-50 rounded-lg">
-                    <div className="text-sm text-blue-800">
-                      <strong>선택된 주소:</strong> {editingVendor.address}
+                <label className="block text-base font-semibold text-gray-900 mb-2">주소</label>
+                <div className="flex gap-3 items-start">
+                  {/* 수동 주소 입력: 고정 주소 선택 시 비활성화 */}
+                  <input
+                    type="text"
+                    value={editingVendor.address}
+                    onChange={(e) => setEditingVendor({ ...editingVendor, address: e.target.value })}
+                    placeholder="도로명 또는 상세주소를 입력하세요"
+                    className={`flex-1 px-4 py-3 border rounded-lg text-base ${editingVendor.fixedAddressId ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                    disabled={!!editingVendor.fixedAddressId}
+                  />
+
+                  {/* 고정 주소 선택 드롭다운 */}
+                  <div className="w-72">
+                    <label className="block text-xs text-gray-500 mb-1">고정 주소 선택 (선택)</label>
+                    <div className="flex gap-2">
+                      <select
+                        value={editingVendor.fixedAddressId || ''}
+                        onChange={(e) => {
+                          const selectedAddress = fixedAddresses.find(addr => addr.id === e.target.value);
+                          setEditingVendor({
+                            ...editingVendor,
+                            fixedAddressId: e.target.value || undefined,
+                            address: selectedAddress?.address || editingVendor.address,
+                          });
+                        }}
+                        className="flex-1 px-3 py-2 border rounded-lg text-sm"
+                      >
+                        <option value="">선택 안함 (직접 입력)</option>
+                        {fixedAddresses.map((address) => (
+                          <option key={address.id} value={address.id}>
+                            {address.name} — {address.address}
+                          </option>
+                        ))}
+                      </select>
+
+                      <button
+                        type="button"
+                        onClick={() => setEditingVendor({ ...editingVendor, fixedAddressId: undefined })}
+                        className="px-3 py-2 bg-white border border-gray-300 rounded-md text-sm hover:bg-gray-50"
+                        title="직접 입력 모드로 전환"
+                      >
+                        직접 입력
+                      </button>
                     </div>
-                    {fixedAddresses.find(addr => addr.id === editingVendor.fixedAddressId)?.description && (
-                      <div className="text-xs text-blue-600 mt-1">
-                        {fixedAddresses.find(addr => addr.id === editingVendor.fixedAddressId)?.description}
+
+                    {editingVendor.fixedAddressId && (
+                      <div className="mt-2 p-3 bg-blue-50 rounded-lg text-sm text-blue-800">
+                        <div><strong>선택된 주소:</strong></div>
+                        <div className="mt-1">{editingVendor.address}</div>
+                        {fixedAddresses.find(addr => addr.id === editingVendor.fixedAddressId)?.description && (
+                          <div className="text-xs text-blue-600 mt-1">
+                            {fixedAddresses.find(addr => addr.id === editingVendor.fixedAddressId)?.description}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
-                )}
+                </div>
               </div>
             </div>
 

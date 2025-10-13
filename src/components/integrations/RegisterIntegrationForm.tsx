@@ -10,6 +10,7 @@ import {
   Badge,
 } from "../../design-system";
 import { mockVendors, type MockVendor } from "../../data/mockVendors";
+import { getPlatformLabel } from "../../types/vendor";
 
 const platformOptions = [
   { value: "cafe24", label: "카페24" },
@@ -23,7 +24,8 @@ const platformOptions = [
 
 const vendorsForSelect = mockVendors.map((vendor) => ({
   value: vendor.id,
-  label: `${vendor.name} (${vendor.platform})`,
+  // show vendor name, code and user-friendly platform label
+  label: `${vendor.name} · ${vendor.code || vendor.id} · ${getPlatformLabel(vendor.platform)}`,
   platform: vendor.platform,
 }));
 
@@ -278,7 +280,7 @@ export default function RegisterIntegrationForm({
                 <p className="text-sm text-gray-600 mt-1">코드: {selectedVendor.code}</p>
               </div>
               <Badge variant="primary" size="small">
-                {selectedVendor.platform}
+                {getPlatformLabel(selectedVendor.platform)}
               </Badge>
             </div>
             <div className="grid grid-cols-2 gap-3 text-sm">
