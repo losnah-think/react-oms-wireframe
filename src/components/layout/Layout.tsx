@@ -32,9 +32,9 @@ export default function Layout({ children }: LayoutProps) {
     // Vendors
     if (pathname === '/vendors/sales') return 'vendors-sales'
     if (pathname === '/vendors/fixed-addresses') return 'vendors-fixed-addresses'
-    if (pathname === '/vendors/vendor-products') return 'vendors-products'
-    if (pathname === '/vendors/vendor-info') return 'vendors-info'
-    if (pathname === '/vendors/vendor-category-mapping') return 'vendors-category-mapping'
+    if (pathname === '/vendors/products') return 'vendors-products'
+    if (pathname === '/vendors/info') return 'vendors-info'
+    if (pathname === '/vendors/category-mapping') return 'vendors-category-mapping'
     if (pathname === '/vendors/delivery-companies') return 'vendors-delivery'
     if (pathname === '/vendors/automation') return 'vendors-automation'
     if (pathname === '/vendors/suppliers') return 'vendors-suppliers'
@@ -63,9 +63,6 @@ export default function Layout({ children }: LayoutProps) {
     if (pathname === '/malls/products') return 'malls-products'
     if (pathname === '/malls/info') return 'malls-info'
     if (pathname === '/malls' || pathname.startsWith('/malls/')) return 'malls'
-    
-    // Categories
-    if (pathname === '/categories/mapping') return 'category-mapping'
     
     return 'products-list'
   }

@@ -90,9 +90,9 @@ export class Router {
     const sub = parts[1] ?? "";
     if (sub === "sales" || sub === "") return { page: "vendors-sales" };
     if (sub === "fixed-addresses") return { page: "vendors-fixed-addresses" };
-    if (sub === "products" || sub === "vendor-products") return { page: "vendors-products" };
-    if (sub === "info" || sub === "vendor-info") return { page: "vendors-info" };
-    if (sub === "category-mapping" || sub === "vendor-category-mapping") {
+    if (sub === "products") return { page: "vendors-products" };
+    if (sub === "info") return { page: "vendors-info" };
+    if (sub === "category-mapping") {
       return { page: "vendors-category-mapping" };
     }
     return { page: "vendors-sales" };
