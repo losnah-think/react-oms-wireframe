@@ -1,3 +1,3 @@
-import UsersIndexPage from "../../src/features/users/index";
+import UsersSimplePage from "../../src/features/users/UsersSimplePage";
 
-export default UsersIndexPage;
+export default UsersSimplePage;

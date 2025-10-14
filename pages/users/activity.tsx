@@ -1,3 +1,3 @@
-import UsersActivityPage from "../../src/features/users/UsersActivityPage";
+import LogsPage from "../../src/features/users/LogsPage";
 
-export default UsersActivityPage;
+export default LogsPage;

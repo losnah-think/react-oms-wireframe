@@ -155,22 +155,29 @@ model Role {
   @@map("roles")
 }
 
+// 통합 활동 로그 (서버 타임스탬프 기반)
 model ActivityLog {
   id          String   @id @default(cuid())
+  timestamp   DateTime @default(now())  // 서버 시간으로 자동 생성
   userId      String
   userName    String
-  action      String
-  resource    String
-  details     Json?    // 추가 세부사항을 JSON으로 저장
+  category    String   // auth, user, product, vendor, order, settings, integration, system
+  action      String   // 구체적인 액션 (예: product_create, vendor_update)
+  target      String   // 대상 (예: "상품", "판매처", "사용자")
+  targetId    String?  // 대상 ID
+  description String   // 간단한 설명
+  details     String?  // JSON 문자열로 저장 (변경 전/후 등)
+  level       String   // info, warning, error
   ipAddress   String?
   userAgent   String?
-  timestamp   DateTime @default(now())
-  status      LogStatus @default(SUCCESS)
-  sessionId   String?
 
   // Relations
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
+  @@index([category])
+  @@index([action])
+  @@index([timestamp])
   @@map("activity_logs")
 }
 
@@ -187,10 +194,4 @@ enum UserStatus {
   INACTIVE
   PENDING
   SUSPENDED
-}
-
-enum LogStatus {
-  SUCCESS
-  FAILED
-  WARNING
 }
