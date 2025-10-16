@@ -1,1 +1,0 @@
-Fixed: added alt attributes to image preview elements in ProductDetailPage.tsx to satisfy eslint jsx-a11y/alt-text
