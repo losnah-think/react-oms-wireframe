@@ -7,9 +7,10 @@ import { InboundRequest } from '@/app/types/inbound'
 
 interface InboundRequestFormProps {
   onSubmitSuccess?: (request: InboundRequest) => void
+  locale?: string
 }
 
-export default function InboundRequestForm({ onSubmitSuccess }: InboundRequestFormProps) {
+export default function InboundRequestForm({ onSubmitSuccess, locale = 'ko' }: InboundRequestFormProps) {
   const [formData, setFormData] = useState({
     poNumber: '',
     supplierName: '',
