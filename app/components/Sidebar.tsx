@@ -8,19 +8,20 @@ export default function Sidebar() {
   const pathname = usePathname()
 
   const menuItems = [
-    { name: '대시보드', path: '/', icon: '📊' },
-    { name: '입고 요청', path: '/inbound', icon: '📥', active: true },
-    { name: '출고 관리', path: '/outbound', icon: '📦' },
-    { name: 'OMS-WMS 플로우', path: '/flow', icon: '🔄' },
-    { name: '설정', path: '/settings', icon: '⚙️' },
+    { name: 'Dashboard', path: '/', icon: null },
+    { name: 'Inbound Request', path: '/inbound', icon: null, active: true },
+    { name: 'Inbound Detail', path: '/inbound-detail', icon: null },
+    { name: 'Outbound', path: '/outbound', icon: null },
+    { name: 'Flow', path: '/flow', icon: null },
+    { name: 'Settings', path: '/settings', icon: null },
   ]
 
   return (
     <aside className="w-64 bg-white border-r border-gray-200 min-h-screen">
       {/* 로고 영역 */}
       <div className="p-6 border-b border-gray-200">
-        <h1 className="text-2xl font-bold text-gray-800">OMS-WMS</h1>
-        <p className="text-xs text-gray-500 mt-1">Order & Warehouse Management</p>
+        <h1 className="text-2xl font-bold text-gray-800">OMS System</h1>
+        <p className="text-xs text-gray-500 mt-1">Warehouse Management</p>
       </div>
 
       {/* 메뉴 */}
@@ -37,7 +38,6 @@ export default function Sidebar() {
                   : 'text-gray-700 hover:bg-gray-100'
               }`}
             >
-              <span className="text-xl">{item.icon}</span>
               <span className="font-medium text-sm">{item.name}</span>
             </Link>
           )
