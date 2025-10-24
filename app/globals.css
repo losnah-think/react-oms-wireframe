@@ -2,10 +2,166 @@
 @tailwind components;
 @tailwind utilities;
 
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 html {
   scroll-behavior: smooth;
+  font-size: 16px;
 }
 
 body {
-  @apply bg-slate-50;
+  @apply bg-slate-50 text-gray-900;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 레이아웃 */
+.main-container {
+  @apply flex h-screen;
+}
+
+.sidebar {
+  @apply w-64 fixed left-0 top-0 h-screen;
+}
+
+.content-wrapper {
+  @apply flex-1 ml-64;
+}
+
+/* 폼 스타일 */
+.form-group {
+  @apply mb-6;
+}
+
+.form-label {
+  @apply block text-sm font-medium text-gray-700 mb-2;
+}
+
+.form-input {
+  @apply w-full px-4 py-2 border border-gray-300 rounded-lg 
+         focus:ring-2 focus:ring-blue-500 focus:border-transparent
+         transition-all duration-200;
+}
+
+.form-input:hover {
+  @apply border-gray-400;
+}
+
+.form-textarea {
+  @apply w-full px-4 py-2 border border-gray-300 rounded-lg 
+         focus:ring-2 focus:ring-blue-500 focus:border-transparent
+         transition-all duration-200 resize-none;
+}
+
+/* 버튼 스타일 */
+.btn {
+  @apply px-4 py-2 rounded-lg font-medium transition-all duration-200
+         inline-flex items-center justify-center gap-2;
+}
+
+.btn-primary {
+  @apply bg-blue-500 text-white hover:bg-blue-600 active:bg-blue-700;
+}
+
+.btn-secondary {
+  @apply bg-gray-300 text-gray-800 hover:bg-gray-400 active:bg-gray-500;
+}
+
+.btn-success {
+  @apply bg-green-500 text-white hover:bg-green-600 active:bg-green-700;
+}
+
+.btn-danger {
+  @apply bg-red-500 text-white hover:bg-red-600 active:bg-red-700;
+}
+
+.btn-small {
+  @apply px-3 py-1 text-sm;
+}
+
+/* 카드 스타일 */
+.card {
+  @apply bg-white rounded-lg shadow-md p-6 transition-all duration-200;
+}
+
+.card:hover {
+  @apply shadow-lg;
+}
+
+/* 테이블 스타일 */
+.table {
+  @apply w-full border-collapse;
+}
+
+.table th {
+  @apply bg-gray-100 text-gray-700 font-semibold text-left px-4 py-3
+         border-b border-gray-200;
+}
+
+.table td {
+  @apply px-4 py-3 border-b border-gray-100;
+}
+
+.table tr:hover {
+  @apply bg-gray-50;
+}
+
+/* 모달 스타일 */
+.modal-overlay {
+  @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50;
+}
+
+.modal-content {
+  @apply bg-white rounded-lg shadow-xl max-w-md w-full mx-4;
+}
+
+/* 상태 태그 */
+.status-badge {
+  @apply inline-block px-3 py-1 rounded-full text-sm font-semibold
+         border;
+}
+
+.status-pending {
+  @apply bg-gray-100 text-gray-800 border-gray-400;
+}
+
+.status-approved {
+  @apply bg-green-100 text-green-800 border-green-400;
+}
+
+.status-rejected {
+  @apply bg-red-100 text-red-800 border-red-400;
+}
+
+.status-completed {
+  @apply bg-blue-100 text-blue-800 border-blue-400;
+}
+
+/* 로딩 스피너 */
+.spinner {
+  @apply animate-spin rounded-full border-b-2 border-blue-500;
+}
+
+/* 텍스트 유틸리티 */
+.text-truncate {
+  @apply truncate;
+}
+
+.text-muted {
+  @apply text-gray-500;
+}
+
+.text-error {
+  @apply text-red-600;
+}
+
+.text-success {
+  @apply text-green-600;
 }

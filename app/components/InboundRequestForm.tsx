@@ -87,7 +87,7 @@ export default function InboundRequestForm({ onSubmitSuccess }: InboundRequestFo
     <>
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-lg shadow-lg p-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-6">📥 입고 요청</h1>
+          <h1 className="text-3xl font-bold text-gray-800 mb-6">입고 요청</h1>
 
           <form onSubmit={handleSubmit}>
             {/* 기본 정보 */}
@@ -224,7 +224,7 @@ export default function InboundRequestForm({ onSubmitSuccess }: InboundRequestFo
                 className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition font-medium"
                 disabled={!lastRequestId}
               >
-                📋 입고 상태 조회
+                입고 상태 조회
               </button>
               <button
                 type="submit"
@@ -239,10 +239,10 @@ export default function InboundRequestForm({ onSubmitSuccess }: InboundRequestFo
       </div>
 
       {/* 성공 모달 */}
-      {showSuccessModal && (
+              {showSuccessModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md shadow-xl">
-            <h3 className="text-xl font-bold text-gray-800 mb-2">✓ 입고 요청 완료</h3>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">입고 요청 완료</h3>
             <p className="text-gray-600 mb-4">
               입고 요청이 WMS로 전송되었습니다. 승인 완료 후 입고가 진행됩니다.
             </p>

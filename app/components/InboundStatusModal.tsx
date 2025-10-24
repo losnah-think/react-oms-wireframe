@@ -42,10 +42,10 @@ export default function InboundStatusModal({ requestId, onClose }: InboundStatus
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 max-w-md shadow-xl">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold text-gray-800">📋 입고 상태 조회</h3>
+          <h3 className="text-xl font-bold text-gray-800">입고 상태 조회</h3>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
@@ -90,7 +90,7 @@ export default function InboundStatusModal({ requestId, onClose }: InboundStatus
               {status.status === '승인완료' && (
                 <div className="p-3 bg-green-50 border border-green-300 rounded-md">
                   <p className="text-sm text-green-700">
-                    ✓ 승인이 완료되었습니다. 입고를 진행할 수 있습니다.
+                    승인이 완료되었습니다. 입고를 진행할 수 있습니다.
                   </p>
                 </div>
               )}
@@ -98,20 +98,20 @@ export default function InboundStatusModal({ requestId, onClose }: InboundStatus
               {status.status === '승인대기' && (
                 <div className="p-3 bg-yellow-50 border border-yellow-300 rounded-md">
                   <p className="text-sm text-yellow-700">
-                    ⏳ WMS 담당자의 승인을 대기중입니다.
+                    WMS 담당자의 승인을 대기중입니다.
                   </p>
                 </div>
               )}
 
               {status.status === '반려됨' && (
                 <div className="p-3 bg-red-50 border border-red-300 rounded-md">
-                  <p className="text-sm text-red-700">✗ 입고 요청이 반려되었습니다.</p>
+                  <p className="text-sm text-red-700">입고 요청이 반려되었습니다.</p>
                 </div>
               )}
 
               {status.status === '입고완료' && (
                 <div className="p-3 bg-blue-50 border border-blue-300 rounded-md">
-                  <p className="text-sm text-blue-700">✓ 입고가 완료되었습니다.</p>
+                  <p className="text-sm text-blue-700">입고가 완료되었습니다.</p>
                 </div>
               )}
             </>
